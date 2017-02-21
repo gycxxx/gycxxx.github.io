@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>落子无悔</title>
+  <subtitle>长风破浪会有时，直挂云帆济沧海。</subtitle>
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="YOUR_SITE/"/>
+  <updated>2017-02-21T16:49:54.231Z</updated>
+  <id>YOUR_SITE/</id>
+  
+  <author>
+    <name>gyc</name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Hello World</title>
+    <link href="YOUR_SITE/2017/02/21/hello-world/"/>
+    <id>YOUR_SITE/2017/02/21/hello-world/</id>
+    <published>2017-02-21T16:49:54.231Z</published>
+    <updated>2017-02-21T16:49:54.231Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;Welcome to &lt;a href=&quot;https://hexo.io/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Hexo&lt;/a&gt;! This is your very first post. Check &lt;a href=&quot;https://hexo.
+    
+    </summary>
+    
+      <category term="java" scheme="YOUR_SITE/categories/java/"/>
+    
+    
+      <category term="java" scheme="YOUR_SITE/tags/java/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Test</title>
+    <link href="YOUR_SITE/2017/02/20/Test/"/>
+    <id>YOUR_SITE/2017/02/20/Test/</id>
+    <published>2017-02-20T22:58:29.000Z</published>
+    <updated>2017-02-21T16:47:10.326Z</updated>
+    
+    <summary type="html">
+    
+    </summary>
+    
+      <category term="java" scheme="YOUR_SITE/categories/java/"/>
+    
+    
+      <category term="elasticsearch" scheme="YOUR_SITE/tags/elasticsearch/"/>
+    
+  </entry>
+  
+</feed>
