@@ -132,18 +132,18 @@ var _hmt = _hmt || [];
   <section class="meta">
     
     <h2 class="title">
-      <a href="/2017/02/21/hello-world/">
+      <a href="/2017/02/23/hello-world/">
         Hello World
       </a>
     </h2>
     
     <time>
-      2月 22, 2017
+      2月 23, 2017
     </time>
 		
     
     <div class='cats'>
-        <a href="/categories/elasticsearch/">elasticsearch</a>
+        <a href="/categories/hexo/">hexo</a>
     </div>
 
   </section>
@@ -164,7 +164,7 @@ var _hmt = _hmt || [];
     
 	  <div class="full-width auto-padding tags">
       
-        <a href="/tags/java/">java</a>
+        <a href="/tags/hexo/">hexo</a>
       
 	  </div>
     
@@ -177,30 +177,77 @@ var _hmt = _hmt || [];
   <section class="meta">
     
     <h2 class="title">
-      <a href="/2017/02/20/Test/">
-        Test
+      <a href="/2017/02/22/书库/">
+        书库
       </a>
     </h2>
     
     <time>
-      2月 21, 2017
+      2月 23, 2017
     </time>
 		
     
     <div class='cats'>
-        <a href="/categories/java/">java</a>
+        <a href="/categories/书库/">书库</a>
     </div>
 
   </section>
   <section class="article typo">
-	  
+	  <p>大型网站技术架构：核心原理与案例分析<br>大型网站系统与Java中间件实践<br>深入理解Java虚拟机JVM高级特性与最佳实践<br>HotSpot实战</p>
+
 
     
     
     
 	  <div class="full-width auto-padding tags">
       
-        <a href="/tags/elasticsearch/">elasticsearch</a>
+        <a href="/tags/书/">书</a>
+      
+	  </div>
+    
+  </section>
+</article>
+    </div>
+  
+    <div class='post-wrapper'>
+      <article class="post reveal">
+  <section class="meta">
+    
+    <h2 class="title">
+      <a href="/2017/02/21/搭建hexo博客遇到的问题与解决/">
+        搭建hexo博客遇到的问题与解决
+      </a>
+    </h2>
+    
+    <time>
+      2月 22, 2017
+    </time>
+		
+    
+    <div class='cats'>
+        <a href="/categories/hexo/">hexo</a>
+    </div>
+
+  </section>
+  <section class="article typo">
+	  <p>经过两天的努力终于吧博客给整好了。看网上帖子都挺简单的但是自己动手做还是遇到挺多问题的，今天就总结一下经验，还有体验一下写博客的乐趣，好了闲话不多说了。</p>
+<h2 id="1首先注册github帐号"><a href="#1首先注册github帐号" class="headerlink" title="1首先注册github帐号"></a>1首先注册github帐号</h2><p>这一步比较简单，要注意的是新建版本库的名称格式：yourname.github.io(yourname与你的注册用户名一致,这个就是你博客的域名了) </p>
+<h2 id="2安装Node"><a href="#2安装Node" class="headerlink" title="2安装Node"></a>2安装Node</h2><p>这步参考<a href="http://www.runoob.com/nodejs/nodejs-install-setup.html" target="_blank" rel="external">runoob.com</a>,比较简单就是网速比较慢下载要很久的，有时候会报错，由于我是Ubuntu系统，使用apt-get默认安装版本较低后面要升级一下，但是升级都要很久最后是看网上设置<a href="http://npm.taobao.org/" target="_blank" rel="external">淘宝NPM镜像</a>更新:<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ sudo npm install -g cnpm --registry=https://registry.npm.taobao.org</div></pre></td></tr></table></figure></p>
+<p>然后按照n模块，一键管理Node版本：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ sudo cnpm install -g n</div></pre></td></tr></table></figure></p>
+<p>由于n模块也是到官网下载，所以修改一下n模块的下载路径<br>查找安装位置<br><img src="/img/02.png" alt="查找n模块"><br>修改下载路径<br><img src="/img/01.png" alt="设置下载路径"><br>然后运行如下命令升级<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ sudo n stable</div></pre></td></tr></table></figure></p>
+<p>安装速度杠杆的</p>
+<h2 id="3安装Hexo"><a href="#3安装Hexo" class="headerlink" title="3安装Hexo"></a>3安装Hexo</h2><p>执行命令如下：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">$ sudo cnpm install -g hexo</div><div class="line">$ sudo hexo init</div><div class="line">$ sudo hexo g</div><div class="line">$ sudo hexo s</div></pre></td></tr></table></figure></p>
+<p>所有命令执行完后就能跑起来了,浏览器输入<a href="http://localhost:4000，" target="_blank" rel="external">http://localhost:4000，</a><br>基本上没问题，如果有问题可以参考<a href="http://www.jianshu.com/p/465830080ea9" target="_blank" rel="external">这篇文章</a></p>
+<h2 id="4添加评论模块"><a href="#4添加评论模块" class="headerlink" title="4添加评论模块"></a>4添加评论模块</h2><p>1.评论模块在<a href="http://duoshuo.com/events/" target="_blank" rel="external">多说</a>注册一下，<br>2.修改_config.xml下的disqus_shortname为刚才注册的二级域名。<br>3.是在主题文件查找(post.comments &amp;&amp; config.disqus_shortname)这段话，把多说生成的代码复制进去就完成了。</p>
+<h2 id="5百度统计"><a href="#5百度统计" class="headerlink" title="5百度统计"></a>5百度统计</h2><p>1.注册百度统计帐号<a href="http://tongji.baidu.com/web/welcome/login" target="_blank" rel="external">这里</a><br>2.修改_config.xml新增baidu_analytics，值是百度统计生成的<a href="https://hm.baidu.com/hm.js?xxxxxx，" target="_blank" rel="external">https://hm.baidu.com/hm.js?xxxxxx，</a><br>?后面的字符串xxxxxx。<br>3.把生成的脚本加入到模板之前。</p>
+
+
+    
+    
+    
+	  <div class="full-width auto-padding tags">
+      
+        <a href="/tags/hexo/">hexo</a>
       
 	  </div>
     
@@ -231,9 +278,9 @@ var _hmt = _hmt || [];
     
     <ul class="entry">
     
-        <li><a class="flat-box" href="/categories/elasticsearch/"><div class='name'>elasticsearch</div><div class='badget'>1</div></a></li>
+        <li><a class="flat-box" href="/categories/hexo/"><div class='name'>hexo</div><div class='badget'>2</div></a></li>
     
-        <li><a class="flat-box" href="/categories/java/"><div class='name'>java</div><div class='badget'>1</div></a></li>
+        <li><a class="flat-box" href="/categories/书库/"><div class='name'>书库</div><div class='badget'>1</div></a></li>
     
     </ul>
     
@@ -245,7 +292,7 @@ var _hmt = _hmt || [];
 <div class="m_widget tagcloud">
     <div class="header">标签</div>
     <div class='content'>
-        <a href="/tags/elasticsearch/" style="font-size: 14px; color: #808080">elasticsearch</a> <a href="/tags/java/" style="font-size: 14px; color: #808080">java</a>
+        <a href="/tags/hexo/" style="font-size: 20px; color: #000">hexo</a> <a href="/tags/书/" style="font-size: 14px; color: #808080">书</a>
     </div>
 </div>
 
@@ -258,6 +305,14 @@ var _hmt = _hmt || [];
     
         <li><a class="flat-box" target="_blank" href="http://www.cnblogs.com/tomxu/archive/2011/12/15/2288411.html">
             <div class='name'>深入理解JavaScript系列</div>
+        </a></li>
+    
+        <li><a class="flat-box" target="_blank" href="http://tech.meituan.com/archives">
+            <div class='name'>美团点评技术团队</div>
+        </a></li>
+    
+        <li><a class="flat-box" target="_blank" href="http://www.cnblogs.com/forfuture1978/archive/2010/06/13/1757479.html">
+            <div class='name'>Lucene 原理与代码分析完整版</div>
         </a></li>
     
     </ul>

@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="YOUR_SITE/"/>
-  <updated>2017-02-21T17:22:28.509Z</updated>
+  <updated>2017-02-22T14:53:55.239Z</updated>
   <id>YOUR_SITE/</id>
   
   <author>
@@ -17,10 +17,10 @@
   
   <entry>
     <title>Hello World</title>
-    <link href="YOUR_SITE/2017/02/21/hello-world/"/>
-    <id>YOUR_SITE/2017/02/21/hello-world/</id>
-    <published>2017-02-21T17:22:28.509Z</published>
-    <updated>2017-02-21T17:22:28.509Z</updated>
+    <link href="YOUR_SITE/2017/02/23/hello-world/"/>
+    <id>YOUR_SITE/2017/02/23/hello-world/</id>
+    <published>2017-02-23T13:45:22.957Z</published>
+    <updated>2017-02-22T14:53:55.239Z</updated>
     
     <summary type="html">
     
@@ -28,28 +28,52 @@
     
     </summary>
     
-      <category term="elasticsearch" scheme="YOUR_SITE/categories/elasticsearch/"/>
+      <category term="hexo" scheme="YOUR_SITE/categories/hexo/"/>
     
     
-      <category term="java" scheme="YOUR_SITE/tags/java/"/>
+      <category term="hexo" scheme="YOUR_SITE/tags/hexo/"/>
     
   </entry>
   
   <entry>
-    <title>Test</title>
-    <link href="YOUR_SITE/2017/02/20/Test/"/>
-    <id>YOUR_SITE/2017/02/20/Test/</id>
-    <published>2017-02-20T22:58:29.000Z</published>
-    <updated>2017-02-22T12:31:31.152Z</updated>
+    <title>书库</title>
+    <link href="YOUR_SITE/2017/02/22/%E4%B9%A6%E5%BA%93/"/>
+    <id>YOUR_SITE/2017/02/22/书库/</id>
+    <published>2017-02-22T21:42:51.000Z</published>
+    <updated>2017-02-23T14:03:35.188Z</updated>
     
     <summary type="html">
     
+      &lt;p&gt;大型网站技术架构：核心原理与案例分析&lt;br&gt;大型网站系统与Java中间件实践&lt;br&gt;深入理解Java虚拟机JVM高级特性与最佳实践&lt;br&gt;HotSpot实战&lt;/p&gt;
+
+    
     </summary>
     
-      <category term="java" scheme="YOUR_SITE/categories/java/"/>
+      <category term="书库" scheme="YOUR_SITE/categories/%E4%B9%A6%E5%BA%93/"/>
     
     
-      <category term="elasticsearch" scheme="YOUR_SITE/tags/elasticsearch/"/>
+      <category term="书" scheme="YOUR_SITE/tags/%E4%B9%A6/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>搭建hexo博客遇到的问题与解决</title>
+    <link href="YOUR_SITE/2017/02/21/%E6%90%AD%E5%BB%BAhexo%E5%8D%9A%E5%AE%A2%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98%E4%B8%8E%E8%A7%A3%E5%86%B3/"/>
+    <id>YOUR_SITE/2017/02/21/搭建hexo博客遇到的问题与解决/</id>
+    <published>2017-02-22T00:16:20.000Z</published>
+    <updated>2017-02-23T14:36:43.418Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;经过两天的努力终于吧博客给整好了。看网上帖子都挺简单的但是自己动手做还是遇到挺多问题的，今天就总结一下经验，还有体验一下写博客的乐趣，好了闲话不多说了。&lt;/p&gt;
+&lt;h2 id=&quot;1首先注册github帐号&quot;&gt;&lt;a href=&quot;#1首先注册github帐号&quot; class=&quot;h
+    
+    </summary>
+    
+      <category term="hexo" scheme="YOUR_SITE/categories/hexo/"/>
+    
+    
+      <category term="hexo" scheme="YOUR_SITE/tags/hexo/"/>
     
   </entry>
   
