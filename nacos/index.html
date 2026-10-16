@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"gycxxx.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12,"onmobile":true},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"flat","show_result":true},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="基于对 bootstrap、core、naming、config、consistency、client 等模块源码的逐文件精读整理而成。源码版本：tag 3.2.4，commit 2c587c04891d532df1544ae95b906b677ac8eeff，commit 时间 2026-08-27 11:16:33 +0800。阅读顺序即学习顺序：启动装配 → 服务发现（naming）→ 配">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Nacos 源码深度学习笔记">
+<meta property="og:url" content="https://gycxxx.github.io/nacos/index.html">
+<meta property="og:site_name" content="源码深读笔记">
+<meta property="og:description" content="基于对 bootstrap、core、naming、config、consistency、client 等模块源码的逐文件精读整理而成。源码版本：tag 3.2.4，commit 2c587c04891d532df1544ae95b906b677ac8eeff，commit 时间 2026-08-27 11:16:33 +0800。阅读顺序即学习顺序：启动装配 → 服务发现（naming）→ 配">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-10-14T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-16T01:42:18.771Z">
+<meta property="article:author" content="gyc">
+<meta property="article:tag" content="源码">
+<meta property="article:tag" content="Nacos">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://gycxxx.github.io/nacos/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://gycxxx.github.io/nacos/","path":"nacos/","title":"Nacos 源码深度学习笔记"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Nacos 源码深度学习笔记 | 源码深读笔记</title>
+  
+
+
+
+
+
+
+
+
+  
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.10.1/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">源码深读笔记</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Kafka / Nacos / Spring / Redis / MySQL / ES / Java / JVM / RAG</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95"><span class="nav-number">1.</span> <span class="nav-text">目录</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E3%80%87%E3%80%81%E5%85%A8%E6%99%AF%E5%9C%B0%E5%9B%BE"><span class="nav-number">2.</span> <span class="nav-text">〇、全景地图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9D%A2%E8%AF%95%E9%80%9F%E9%80%9A%EF%BC%9ANacos-%E9%AB%98%E9%A2%91%E9%97%AE%E9%A2%98%E4%B8%80%E9%A1%B5%E7%BA%B8"><span class="nav-number">3.</span> <span class="nav-text">面试速通：Nacos 高频问题一页纸</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%AB%98%E9%A2%91-Q-A%EF%BC%88%E5%85%88%E7%BB%93%E8%AE%BA%EF%BC%89"><span class="nav-number">3.1.</span> <span class="nav-text">高频 Q&amp;A（先结论）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%98%93%E9%94%99%E7%82%B9%E4%B8%8E%E9%9D%A2%E8%AF%95%E5%9D%91"><span class="nav-number">3.2.</span> <span class="nav-text">易错点与面试坑</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E6%95%B0%E5%80%BC%E4%B8%8E%E9%BB%98%E8%AE%A4%E5%80%BC%E9%80%9F%E8%AE%B0"><span class="nav-number">3.3.</span> <span class="nav-text">关键数值与默认值速记</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%EF%BC%9A%E6%A8%A1%E5%9D%97%E8%A3%85%E9%85%8D%E4%B8%8E%E5%90%AF%E5%8A%A8-%E2%80%94%E2%80%94-NacosBootstrap-%E7%9A%84%E4%B8%89%E6%AE%B5%E5%BC%8F%E7%82%B9%E7%81%AB"><span class="nav-number">4.</span> <span class="nav-text">第一讲：模块装配与启动 —— NacosBootstrap 的三段式点火</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9A%E4%BD%8D"><span class="nav-number">4.1.</span> <span class="nav-text">定位</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84%EF%BC%9A%E5%90%AF%E5%8A%A8%E7%9B%B8%E5%85%B3%E6%96%87%E4%BB%B6%E7%9A%84%E6%A0%91"><span class="nav-number">4.2.</span> <span class="nav-text">目录结构：启动相关文件的树</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB"><span class="nav-number">4.3.</span> <span class="nav-text">逐文件精读</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-bootstrap-src-main-java-com-alibaba-nacos-bootstrap-NacosBootstrap-java-%E2%80%94%E2%80%94-%E9%83%A8%E7%BD%B2%E7%B1%BB%E5%9E%8B%E5%88%86%E5%8F%91"><span class="nav-number">4.3.1.</span> <span class="nav-text">1. bootstrap&#x2F;src&#x2F;main&#x2F;java&#x2F;com&#x2F;alibaba&#x2F;nacos&#x2F;bootstrap&#x2F;NacosBootstrap.java —— 部署类型分发</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E5%90%AF%E5%8A%A8%E9%98%B6%E6%AE%B5-SPI%EF%BC%9Acore-listener-startup-%E5%8C%85"><span class="nav-number">4.3.2.</span> <span class="nav-text">2. 启动阶段 SPI：core&#x2F;listener&#x2F;startup&#x2F; 包</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-standalone-vs-cluster-%E7%9A%84%E5%88%A4%E5%AE%9A%E7%82%B9"><span class="nav-number">4.3.3.</span> <span class="nav-text">3. standalone vs cluster 的判定点</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-%E6%A8%A1%E5%9D%97%E5%BC%80%E5%85%B3%EF%BC%9ANacosTypeExcludeFilter-%E4%B8%8E-SPI-%E8%BF%87%E6%BB%A4%E5%99%A8"><span class="nav-number">4.3.4.</span> <span class="nav-text">4. 模块开关：NacosTypeExcludeFilter 与 SPI 过滤器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-console-%E6%A8%A1%E5%9D%97%E7%AE%80%E8%BF%B0"><span class="nav-number">4.3.5.</span> <span class="nav-text">5. console 模块简述</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E5%9B%BE%EF%BC%9A%E5%90%AF%E5%8A%A8%E6%97%B6%E5%BA%8F"><span class="nav-number">4.4.</span> <span class="nav-text">关键图：启动时序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BE%93%E5%85%A5-%E8%BE%93%E5%87%BA%E8%A1%A8"><span class="nav-number">4.5.</span> <span class="nav-text">输入&#x2F;输出表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%BC%94%E7%AE%97%EF%BC%9A%E4%B8%80%E6%AC%A1-startup-sh-m-standalone"><span class="nav-number">4.6.</span> <span class="nav-text">端到端演算：一次 .&#x2F;startup.sh -m standalone</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E4%B8%80%E6%AC%A1-main%EF%BC%8C%E4%B8%89-%E5%9B%9B%E4%B8%AA%E4%B8%8A%E4%B8%8B%E6%96%87%EF%BC%8CSPI-%E8%A3%81%E8%A1%A3"><span class="nav-number">4.7.</span> <span class="nav-text">第一讲小结：一次 main，三&#x2F;四个上下文，SPI 裁衣</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%EF%BC%9Anaming-%E6%9C%8D%E5%8A%A1%E5%8F%91%E7%8E%B0%E6%A0%B8%E5%BF%83-%E2%80%94%E2%80%94-v2-%E6%A8%A1%E5%9E%8B%E3%80%81distro-%E4%B8%8E-gRPC-%E6%8E%A8%E9%80%81"><span class="nav-number">5.</span> <span class="nav-text">第二讲：naming 服务发现核心 —— v2 模型、distro 与 gRPC 推送</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9A%E4%BD%8D-1"><span class="nav-number">5.1.</span> <span class="nav-text">定位</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84%EF%BC%9Anaming-%E6%A8%A1%E5%9D%97%E7%9A%84%E6%A0%91%EF%BC%88%E5%8F%AA%E5%88%97%E4%B8%BB%E8%B7%AF%E5%BE%84%EF%BC%89"><span class="nav-number">5.2.</span> <span class="nav-text">目录结构：naming 模块的树（只列主路径）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-1"><span class="nav-number">5.3.</span> <span class="nav-text">逐文件精读</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E6%B3%A8%E5%86%8C%E5%85%A5%E5%8F%A3%EF%BC%9Acontrollers-v3-InstanceControllerV3-java"><span class="nav-number">5.3.1.</span> <span class="nav-text">1. 注册入口：controllers&#x2F;v3&#x2F;InstanceControllerV3.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E5%86%99%E8%B7%AF%E5%BE%84%E9%97%A8%E9%9D%A2%EF%BC%9Acore-InstanceOperatorClientImpl-java"><span class="nav-number">5.3.2.</span> <span class="nav-text">2. 写路径门面：core&#x2F;InstanceOperatorClientImpl.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B%EF%BC%9Acore-v2-ServiceManager-java-%E4%B8%8E-Service"><span class="nav-number">5.3.3.</span> <span class="nav-text">3. 内存模型：core&#x2F;v2&#x2F;ServiceManager.java 与 Service</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-%E4%B8%B4%E6%97%B6%E5%AE%9E%E4%BE%8B%E5%86%99%E8%B7%AF%E5%BE%84%EF%BC%9Acore-v2-service-impl-EphemeralClientOperationServiceImpl-java"><span class="nav-number">5.3.4.</span> <span class="nav-text">4. 临时实例写路径：core&#x2F;v2&#x2F;service&#x2F;impl&#x2F;EphemeralClientOperationServiceImpl.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-%E8%AF%BB%E8%B7%AF%E5%BE%84%EF%BC%9Acore-v2-index-ServiceStorage-java"><span class="nav-number">5.3.5.</span> <span class="nav-text">5. 读路径：core&#x2F;v2&#x2F;index&#x2F;ServiceStorage.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6-distro-%E8%B7%AF%E7%94%B1%E4%B8%8E%E5%90%8C%E6%AD%A5%EF%BC%9ADistroMapper-DistroClientDataProcessor"><span class="nav-number">5.3.6.</span> <span class="nav-text">6. distro 路由与同步：DistroMapper + DistroClientDataProcessor</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7-%E6%8E%A8%E9%80%81%EF%BC%9Apush-v2-%E5%AE%B6%E6%97%8F"><span class="nav-number">5.3.7.</span> <span class="nav-text">7. 推送：push&#x2F;v2&#x2F; 家族</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#8-%E5%81%A5%E5%BA%B7%E6%A3%80%E6%9F%A5%E5%AE%B6%E6%97%8F%EF%BC%9Ahealthcheck"><span class="nav-number">5.3.8.</span> <span class="nav-text">8. 健康检查家族：healthcheck&#x2F;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#9-%E8%BF%87%E6%9C%9F%E6%B8%85%E7%90%86%EF%BC%9AEphemeralIpPortClientManager"><span class="nav-number">5.3.9.</span> <span class="nav-text">9. 过期清理：EphemeralIpPortClientManager</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E5%9B%BE%EF%BC%9A%E4%B8%80%E6%AC%A1%E6%B3%A8%E5%86%8C%E7%9A%84%E5%AE%8C%E6%95%B4%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F"><span class="nav-number">5.4.</span> <span class="nav-text">关键图：一次注册的完整生命周期</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BE%93%E5%85%A5-%E8%BE%93%E5%87%BA%E8%A1%A8-1"><span class="nav-number">5.5.</span> <span class="nav-text">输入&#x2F;输出表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%BC%94%E7%AE%97-%E2%91%A0%EF%BC%9A%E4%B8%80%E4%B8%AA%E5%AE%9E%E4%BE%8B%E4%BB%8E%E6%B3%A8%E5%86%8C%E5%88%B0%E8%A2%AB%E6%8E%A8%E9%80%81"><span class="nav-number">5.6.</span> <span class="nav-text">端到端演算 ①：一个实例从注册到被推送</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%8D%B3%E6%95%B0%E6%8D%AE%EF%BC%8C%E8%B4%A3%E4%BB%BB%E5%8D%B3%E8%B7%AF%E7%94%B1%EF%BC%8C%E6%8E%A8%E9%80%81%E5%8D%B3-gRPC"><span class="nav-number">5.7.</span> <span class="nav-text">第二讲小结：客户端即数据，责任即路由，推送即 gRPC</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%EF%BC%9Aconfig-%E9%85%8D%E7%BD%AE%E4%B8%AD%E5%BF%83-%E2%80%94%E2%80%94-%E7%BC%93%E5%AD%98%E3%80%81dump%E3%80%81%E9%95%BF%E8%BD%AE%E8%AF%A2%E4%B8%8E-gRPC-%E7%9B%91%E5%90%AC"><span class="nav-number">6.</span> <span class="nav-text">第三讲：config 配置中心 —— 缓存、dump、长轮询与 gRPC 监听</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9A%E4%BD%8D-2"><span class="nav-number">6.1.</span> <span class="nav-text">定位</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84%EF%BC%9Aconfig-%E6%A8%A1%E5%9D%97%E7%9A%84%E6%A0%91%EF%BC%88%E5%8F%AA%E5%88%97%E4%B8%BB%E8%B7%AF%E5%BE%84%EF%BC%89"><span class="nav-number">6.2.</span> <span class="nav-text">目录结构：config 模块的树（只列主路径）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-2"><span class="nav-number">6.3.</span> <span class="nav-text">逐文件精读</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E5%8F%91%E5%B8%83%E5%85%A5%E5%8F%A3%EF%BC%9Acontroller-v3-ConfigControllerV3-java-%E4%B8%8E-gRPC-handler"><span class="nav-number">6.3.1.</span> <span class="nav-text">1. 发布入口：controller&#x2F;v3&#x2F;ConfigControllerV3.java 与 gRPC handler</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E5%8F%91%E5%B8%83%E7%BC%96%E6%8E%92%EF%BC%9Aservice-ConfigOperationService-java"><span class="nav-number">6.3.2.</span> <span class="nav-text">2. 发布编排：service&#x2F;ConfigOperationService.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-%E4%BA%8B%E4%BB%B6%E9%97%A8%E9%9D%A2%EF%BC%9Aservice-ConfigChangePublisher-java"><span class="nav-number">6.3.3.</span> <span class="nav-text">3. 事件门面：service&#x2F;ConfigChangePublisher.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-%E5%8F%8C%E5%B1%82%E7%BC%93%E5%AD%98%EF%BC%9Aservice-ConfigCacheService-java"><span class="nav-number">6.3.4.</span> <span class="nav-text">4. 双层缓存：service&#x2F;ConfigCacheService.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-%E7%A3%81%E7%9B%98-dump-%E4%B8%8E%E8%A1%A5%E5%81%BF%EF%BC%9Aservice-dump-%E5%AE%B6%E6%97%8F"><span class="nav-number">6.3.5.</span> <span class="nav-text">5. 磁盘 dump 与补偿：service&#x2F;dump&#x2F; 家族</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6-HTTP-%E9%95%BF%E8%BD%AE%E8%AF%A2%EF%BC%9Aservice-LongPollingService-java"><span class="nav-number">6.3.6.</span> <span class="nav-text">6. HTTP 长轮询：service&#x2F;LongPollingService.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7-%E8%8A%82%E7%82%B9%E9%97%B4%E9%80%9A%E7%9F%A5%EF%BC%9Aservice-notify-AsyncNotifyService-java"><span class="nav-number">6.3.7.</span> <span class="nav-text">7. 节点间通知：service&#x2F;notify&#x2F;AsyncNotifyService.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#8-gRPC-%E7%9B%91%E5%90%AC%E4%B8%8E%E4%B8%BB%E5%8A%A8%E6%8E%A8%E9%80%81"><span class="nav-number">6.3.8.</span> <span class="nav-text">8. gRPC 监听与主动推送</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E5%9B%BE%EF%BC%9A%E4%B8%80%E6%AC%A1%E9%85%8D%E7%BD%AE%E5%8F%91%E5%B8%83%E7%9A%84%E4%B8%A4%E6%9D%A1%E9%80%9A%E7%9F%A5%E8%B7%AF%E5%BE%84"><span class="nav-number">6.4.</span> <span class="nav-text">关键图：一次配置发布的两条通知路径</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BE%93%E5%85%A5-%E8%BE%93%E5%87%BA%E8%A1%A8-2"><span class="nav-number">6.5.</span> <span class="nav-text">输入&#x2F;输出表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%BC%94%E7%AE%97-%E2%91%A1%EF%BC%9A%E4%B8%80%E6%AC%A1%E9%85%8D%E7%BD%AE%E5%8F%91%E5%B8%83%E5%88%B0%E9%95%BF%E8%BD%AE%E8%AF%A2%E5%AE%A2%E6%88%B7%E7%AB%AF%E6%94%B6%E5%88%B0%E5%8F%98%E6%9B%B4"><span class="nav-number">6.6.</span> <span class="nav-text">端到端演算 ②：一次配置发布到长轮询客户端收到变更</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E5%86%85%E5%AE%B9%E8%90%BD%E5%BA%93%E3%80%81%E7%BC%93%E5%AD%98%E5%8F%8C%E5%B1%82%E3%80%81%E9%80%9A%E7%9F%A5%E4%B8%89%E8%B7%AF%E3%80%81%E8%A1%A5%E5%81%BF%E5%85%9C%E5%BA%95"><span class="nav-number">6.7.</span> <span class="nav-text">第三讲小结：内容落库、缓存双层、通知三路、补偿兜底</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%EF%BC%9A%E4%B8%80%E8%87%B4%E6%80%A7%E5%8D%8F%E8%AE%AE-%E2%80%94%E2%80%94-AP%EF%BC%88distro%EF%BC%89%E4%B8%8E-CP%EF%BC%88JRaft%EF%BC%89%E5%8F%8C%E8%BD%A8%E5%88%B6"><span class="nav-number">7.</span> <span class="nav-text">第四讲：一致性协议 —— AP（distro）与 CP（JRaft）双轨制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9A%E4%BD%8D-3"><span class="nav-number">7.1.</span> <span class="nav-text">定位</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84%EF%BC%9A%E4%B8%80%E8%87%B4%E6%80%A7%E5%B1%82%E7%9A%84%E6%A0%91"><span class="nav-number">7.2.</span> <span class="nav-text">目录结构：一致性层的树</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-3"><span class="nav-number">7.3.</span> <span class="nav-text">逐文件精读</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E5%8D%8F%E8%AE%AE%E6%8A%BD%E8%B1%A1%EF%BC%9Aconsistency-%E5%8C%85"><span class="nav-number">7.3.1.</span> <span class="nav-text">1. 协议抽象：consistency&#x2F; 包</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E6%80%BB%E9%97%B8%EF%BC%9Acore-distributed-ProtocolManager-java"><span class="nav-number">7.3.2.</span> <span class="nav-text">2. 总闸：core&#x2F;distributed&#x2F;ProtocolManager.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-CP-%E5%AE%9E%E7%8E%B0%EF%BC%9Acore-distributed-raft-JRaftProtocol-java"><span class="nav-number">7.3.3.</span> <span class="nav-text">3. CP 实现：core&#x2F;distributed&#x2F;raft&#x2F;JRaftProtocol.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-CP-%E7%9A%84%E4%B8%9A%E5%8A%A1%E8%90%BD%E7%82%B9%EF%BC%9Anaming-core-v2-service-impl-PersistentClientOperationServiceImpl-java"><span class="nav-number">7.3.4.</span> <span class="nav-text">4. CP 的业务落点：naming&#x2F;core&#x2F;v2&#x2F;service&#x2F;impl&#x2F;PersistentClientOperationServiceImpl.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-CP-%E7%9A%84%E7%AC%AC%E4%BA%8C%E4%B8%AA%E4%B8%9A%E5%8A%A1%E8%90%BD%E7%82%B9%EF%BC%9A%E5%86%85%E5%B5%8C%E5%AD%98%E5%82%A8%E7%9A%84-config"><span class="nav-number">7.3.5.</span> <span class="nav-text">5. CP 的第二个业务落点：内嵌存储的 config</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6-AP-%E4%BE%A7%E7%9A%84%E5%AF%B9%E7%85%A7%EF%BC%88%E5%9B%9E%E6%8C%87%E7%AC%AC%E4%BA%8C%E8%AE%B2%EF%BC%89"><span class="nav-number">7.3.6.</span> <span class="nav-text">6. AP 侧的对照（回指第二讲）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E5%9B%BE%EF%BC%9A%E4%B8%80%E6%AC%A1%E6%8C%81%E4%B9%85%E5%AE%9E%E4%BE%8B%E6%B3%A8%E5%86%8C%E7%9A%84-CP-%E9%93%BE%E8%B7%AF-vs-%E4%B8%B4%E6%97%B6%E5%AE%9E%E4%BE%8B%E7%9A%84-AP-%E9%93%BE%E8%B7%AF"><span class="nav-number">7.4.</span> <span class="nav-text">关键图：一次持久实例注册的 CP 链路 vs 临时实例的 AP 链路</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BE%93%E5%85%A5-%E8%BE%93%E5%87%BA%E8%A1%A8-3"><span class="nav-number">7.5.</span> <span class="nav-text">输入&#x2F;输出表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%BC%94%E7%AE%97%EF%BC%9A%E6%8C%81%E4%B9%85%E5%AE%9E%E4%BE%8B%E5%9C%A8-3-%E8%8A%82%E7%82%B9%E9%9B%86%E7%BE%A4%E7%9A%84%E6%B3%A8%E5%86%8C"><span class="nav-number">7.6.</span> <span class="nav-text">端到端演算：持久实例在 3 节点集群的注册</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E4%B8%80%E4%BB%BD%E6%95%B0%E6%8D%AE%E4%B8%A4%E6%9D%A1%E8%BD%A8%E9%81%93%EF%BC%8C%E4%B8%B4%E6%97%B6%E5%B9%BF%E6%92%AD%E3%80%81%E6%8C%81%E4%B9%85%E9%80%89%E4%B8%BE"><span class="nav-number">7.7.</span> <span class="nav-text">第四讲小结：一份数据两条轨道，临时广播、持久选举</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%EF%BC%9A%E5%AE%A2%E6%88%B7%E7%AB%AF-SDK-%E2%80%94%E2%80%94-Naming-Config-%E5%8F%8C%E5%AE%A2%E6%88%B7%E7%AB%AF%E7%9A%84%E9%9F%A7%E6%80%A7%E8%AE%BE%E8%AE%A1"><span class="nav-number">8.</span> <span class="nav-text">第五讲：客户端 SDK —— Naming&#x2F;Config 双客户端的韧性设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9A%E4%BD%8D-4"><span class="nav-number">8.1.</span> <span class="nav-text">定位</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84%EF%BC%9Aclient-SDK-%E7%9A%84%E6%A0%91%EF%BC%88%E5%8F%AA%E5%88%97%E4%B8%BB%E8%B7%AF%E5%BE%84%EF%BC%89"><span class="nav-number">8.2.</span> <span class="nav-text">目录结构：client SDK 的树（只列主路径）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-4"><span class="nav-number">8.3.</span> <span class="nav-text">逐文件精读</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-Naming-%E9%97%A8%E9%9D%A2%EF%BC%9Anaming-NacosNamingService-java"><span class="nav-number">8.3.1.</span> <span class="nav-text">1. Naming 门面：naming&#x2F;NacosNamingService.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-gRPC-%E4%BB%A3%E7%90%86%E4%B8%8E%E9%87%8D%E6%94%BE%EF%BC%9Aremote-gprc"><span class="nav-number">8.3.2.</span> <span class="nav-text">2. gRPC 代理与重放：remote&#x2F;gprc&#x2F;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-%E6%95%85%E9%9A%9C%E8%BD%AC%E7%A7%BB%EF%BC%9Anaming-backups-FailoverReactor-java"><span class="nav-number">8.3.3.</span> <span class="nav-text">3. 故障转移：naming&#x2F;backups&#x2F;FailoverReactor.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-Config-%E9%97%A8%E9%9D%A2%E4%B8%8E-ClientWorker%EF%BC%9Aconfig"><span class="nav-number">8.3.4.</span> <span class="nav-text">4. Config 门面与 ClientWorker：config&#x2F;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-%E5%8D%95%E9%85%8D%E7%BD%AE%E7%BC%93%E5%AD%98%EF%BC%9Aconfig-impl-CacheData-java"><span class="nav-number">8.3.5.</span> <span class="nav-text">5. 单配置缓存：config&#x2F;impl&#x2F;CacheData.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6-%E6%9C%AC%E5%9C%B0%E6%96%87%E4%BB%B6%EF%BC%9Aconfig-impl-LocalConfigInfoProcessor-java"><span class="nav-number">8.3.6.</span> <span class="nav-text">6. 本地文件：config&#x2F;impl&#x2F;LocalConfigInfoProcessor.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7-%E7%99%BB%E5%BD%95%E6%80%81%EF%BC%9Asecurity-SecurityProxy-java"><span class="nav-number">8.3.7.</span> <span class="nav-text">7. 登录态：security&#x2F;SecurityProxy.java</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E5%9B%BE%EF%BC%9A%E5%AE%A2%E6%88%B7%E7%AB%AF%E7%9A%84%E9%9F%A7%E6%80%A7%E4%B8%89%E4%BB%B6%E5%A5%97"><span class="nav-number">8.4.</span> <span class="nav-text">关键图：客户端的韧性三件套</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BE%93%E5%85%A5-%E8%BE%93%E5%87%BA%E8%A1%A8-4"><span class="nav-number">8.5.</span> <span class="nav-text">输入&#x2F;输出表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%BC%94%E7%AE%97%EF%BC%9AgRPC-%E6%96%AD%E7%BA%BF%E6%81%A2%E5%A4%8D%E4%B8%AD%E7%9A%84%E6%B3%A8%E5%86%8C%E4%B8%8D%E4%B8%A2"><span class="nav-number">8.6.</span> <span class="nav-text">端到端演算：gRPC 断线恢复中的注册不丢</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E5%85%88%E7%BC%93%E5%AD%98%E6%84%8F%E5%9B%BE%E5%86%8D%E6%89%A7%E8%A1%8C%EF%BC%8Cpush-%E5%8F%AA%E6%95%B2%E9%97%A8%E3%80%81%E5%86%85%E5%AE%B9%E8%87%AA%E5%B7%B1%E6%8B%89"><span class="nav-number">8.7.</span> <span class="nav-text">第五讲小结：先缓存意图再执行，push 只敲门、内容自己拉</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%99%84%EF%BC%9A%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E4%B8%8E%E5%A4%8D%E4%B9%A0%E5%8D%A1%E6%B1%87%E6%80%BB"><span class="nav-number">9.</span> <span class="nav-text">附：学习路线与复习卡汇总</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8E%A8%E8%8D%90%E9%98%85%E8%AF%BB%E9%A1%BA%E5%BA%8F%EF%BC%88%E7%94%B1%E6%B5%85%E5%85%A5%E6%B7%B1%EF%BC%89"><span class="nav-number">9.1.</span> <span class="nav-text">推荐阅读顺序（由浅入深）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%A8%E9%93%BE%E8%B7%AF%E5%A4%8D%E4%B9%A0%E5%8D%A1"><span class="nav-number">9.2.</span> <span class="nav-text">全链路复习卡</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B6%89%E5%8F%8A%E6%96%87%E4%BB%B6%E7%B4%A2%E5%BC%95"><span class="nav-number">10.</span> <span class="nav-text">涉及文件索引</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">gyc</p>
+  <div class="site-description" itemprop="description">主流基础设施、框架与 JDK 的源码级深度学习笔记</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://gycxxx.github.io/nacos/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="gyc">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="源码深读笔记">
+      <meta itemprop="description" content="主流基础设施、框架与 JDK 的源码级深度学习笔记">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Nacos 源码深度学习笔记 | 源码深读笔记">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Nacos 源码深度学习笔记
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-10-15 00:00:00" itemprop="dateCreated datePublished" datetime="2026-10-15T00:00:00+08:00">2026-10-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%B8%AD%E9%97%B4%E4%BB%B6/" itemprop="url" rel="index"><span itemprop="name">中间件</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><blockquote>
+<p>基于对 <code>bootstrap</code>、<code>core</code>、<code>naming</code>、<code>config</code>、<code>consistency</code>、<code>client</code> 等模块源码的逐文件精读整理而成。<br>源码版本：tag <code>3.2.4</code>，commit <code>2c587c04891d532df1544ae95b906b677ac8eeff</code>，commit 时间 <code>2026-08-27 11:16:33 +0800</code>。<br>阅读顺序即学习顺序：启动装配 → 服务发现（naming）→ 配置中心（config）→ 一致性协议 → 客户端 SDK。<br>所有结论均标注了源文件位置（相对仓库根目录的 <code>路径:行号</code>），建议对照代码阅读。<br>注意：3.2.4 与 2.x 相比有结构性变化——<code>NacosApplication</code> 已不存在（被 <code>bootstrap</code> 模块的 <code>NacosBootstrap</code> 取代）、UDP 推送已在 3.2.0 移除（改走 gRPC）、v2 数据模型从 <code>core/</code> 迁到 <code>core/v2/</code>。凡与旧版认知不符之处，本笔记均以 3.2.4 实际代码为准并明确标注。</p>
+</blockquote>
+<hr>
+<h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ul>
+<li><a href="#%E3%80%87%E5%85%A8%E6%99%AF%E5%9C%B0%E5%9B%BE">〇、全景地图</a></li>
+<li><a href="#%E9%9D%A2%E8%AF%95%E9%80%9F%E9%80%9Anacos-%E9%AB%98%E9%A2%91%E9%97%AE%E9%A2%98%E4%B8%80%E9%A1%B5%E7%BA%B8">面试速通：Nacos 高频问题一页纸</a></li>
+<li><a href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%E6%A8%A1%E5%9D%97%E8%A3%85%E9%85%8D%E4%B8%8E%E5%90%AF%E5%8A%A8--nacosbootstrap-%E7%9A%84%E4%B8%89%E6%AE%B5%E5%BC%8F%E7%82%B9%E7%81%AB">第一讲：模块装配与启动 —— NacosBootstrap 的三段式点火</a></li>
+<li><a href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2naming-%E6%9C%8D%E5%8A%A1%E5%8F%91%E7%8E%B0%E6%A0%B8%E5%BF%83--v2-%E6%A8%A1%E5%9E%8Bdistro-%E4%B8%8E-grpc-%E6%8E%A8%E9%80%81">第二讲：naming 服务发现核心 —— v2 模型、distro 与 gRPC 推送</a></li>
+<li><a href="#%E7%AC%AC%E4%B8%89%E8%AE%B2config-%E9%85%8D%E7%BD%AE%E4%B8%AD%E5%BF%83--%E7%BC%93%E5%AD%98dump%E9%95%BF%E8%BD%AE%E8%AF%A2%E4%B8%8E-grpc-%E7%9B%91%E5%90%AC">第三讲：config 配置中心 —— 缓存、dump、长轮询与 gRPC 监听</a></li>
+<li><a href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%E4%B8%80%E8%87%B4%E6%80%A7%E5%8D%8F%E8%AE%AE--apdistro%E4%B8%8E-cpjraft%E5%8F%8C%E8%BD%A8%E5%88%B6">第四讲：一致性协议 —— AP（distro）与 CP（JRaft）双轨制</a></li>
+<li><a href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%E5%AE%A2%E6%88%B7%E7%AB%AF-sdk--namingconfig-%E5%8F%8C%E5%AE%A2%E6%88%B7%E7%AB%AF%E7%9A%84%E9%9F%A7%E6%80%A7%E8%AE%BE%E8%AE%A1">第五讲：客户端 SDK —— Naming&#x2F;Config 双客户端的韧性设计</a></li>
+<li><a href="#%E9%99%84%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E4%B8%8E%E5%A4%8D%E4%B9%A0%E5%8D%A1%E6%B1%87%E6%80%BB">附：学习路线与复习卡汇总</a></li>
+<li><a href="#%E6%B6%89%E5%8F%8A%E6%96%87%E4%BB%B6%E7%B4%A2%E5%BC%95">涉及文件索引</a></li>
+</ul>
+<hr>
+<h2 id="〇、全景地图"><a href="#〇、全景地图" class="headerlink" title="〇、全景地图"></a>〇、全景地图</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">┌──────────────────── 启动层（bootstrap 模块） ────────────────────┐</span><br><span class="line">│ NacosBootstrap.main                                             │</span><br><span class="line">│   读 nacos.deployment.type（MERGED / SERVER / CONSOLE）           │</span><br><span class="line">│   ├─ startCoreContext      NacosServerBasicApplication（非 Web）  │</span><br><span class="line">│   │     └─ NacosStartUpManager.start(&quot;core&quot;)  建 logs/conf/data  │</span><br><span class="line">│   ├─ startServerWebContext NacosServerWebApplication（父上下文）   │</span><br><span class="line">│   ├─ startConsoleContext   NacosConsole（管理台 UI + API）        │</span><br><span class="line">│   └─ startAiRegistryContext（nacos.ai.*.enabled 才启动）          │</span><br><span class="line">│ 模块开关：NacosTypeExcludeFilter（SPI 过滤包，naming/config/...） │</span><br><span class="line">└──────────────────────────────┬──────────────────────────────────┘</span><br><span class="line">                               ▼</span><br><span class="line">┌──────────────────── 服务发现 naming（AP + 最终一致） ────────────────────┐</span><br><span class="line">│ InstanceControllerV3 / InstanceRequestHandler(gRPC)                     │</span><br><span class="line">│   └─ InstanceOperatorClientImpl.registerInstance                        │</span><br><span class="line">│        └─ EphemeralClientOperationServiceImpl（写 IpPortBasedClient）    │</span><br><span class="line">│             ├─ ServiceManager（Service 单例注册表）                      │</span><br><span class="line">│             ├─ ClientEvent → DistroClientDataProcessor → DistroProtocol  │</span><br><span class="line">│             │      └─ 延迟任务 → gRPC DistroDataRequest → 对端 onReceive  │</span><br><span class="line">│             └─ ServiceChangedEvent → PushDelayTaskEngine（500ms 合并）   │</span><br><span class="line">│                    └─ PushExecutorRpcImpl → RpcPushService（gRPC 推送）  │</span><br><span class="line">│ 心跳：ClientBeatCheckTaskV2 每 5s；过期：ExpiredClientCleaner（3min）     │</span><br><span class="line">└──────────────────────────────┬─────────────────────────────────────────┘</span><br><span class="line">                               ▼</span><br><span class="line">┌──────────────────── 配置中心 config（CP 元数据 + 本地缓存） ──────────────┐</span><br><span class="line">│ ConfigControllerV3 / ConfigPublishRequestHandler(gRPC)                  │</span><br><span class="line">│   └─ ConfigOperationService.publishConfig                                │</span><br><span class="line">│        ├─ 落库（外部数据库 / 内嵌 Derby）                                 │</span><br><span class="line">│        ├─ ConfigCacheService.dumpWithMd5（JVM CACHE + 磁盘 + MD5）        │</span><br><span class="line">│        └─ ConfigDataChangeEvent                                          │</span><br><span class="line">│             ├─ AsyncNotifyService → gRPC 通知其它 Server                  │</span><br><span class="line">│             └─ LocalDataChangeEvent → LongPollingService / RpcNotifier   │</span><br><span class="line">│ 客户端：长轮询 30s（HTTP）或 ConfigBatchListen（gRPC 长连接监听）          │</span><br><span class="line">└──────────────────────────────┬─────────────────────────────────────────┘</span><br><span class="line">                               ▼</span><br><span class="line">┌──────────────────── 一致性层 consistency ────────────────────────────────┐</span><br><span class="line">│ ProtocolManager（懒加载，双协议）                                          │</span><br><span class="line">│   ├─ AP：DistroProtocol —— 路由表 + 异步同步 + 定期校验（最终一致）        │</span><br><span class="line">│   └─ CP：JRaftProtocol —— Raft 选主 + 日志复制（强一致，持久实例/内嵌存储配置）│</span><br><span class="line">└──────────────────────────────────────────────────────────────────────────┘</span><br></pre></td></tr></table></figure>
+
+<p>渲染友好版（GitHub&#x2F;GitLab 直接出图，信息同上图）：</p>
+<pre><code class="highlight mermaid">flowchart TD
+    subgraph BOOT[&quot;启动层 bootstrap&quot;]
+        NB[&quot;NacosBootstrap.main&lt;br/&gt;读 nacos.deployment.type&quot;] --&gt; CORE[&quot;startCoreContext&lt;br/&gt;NacosServerBasicApplication（非 Web）&quot;]
+        NB --&gt; WEB[&quot;startServerWebContext&lt;br/&gt;NacosServerWebApplication&quot;]
+        NB --&gt; CON[&quot;startConsoleContext&lt;br/&gt;NacosConsole&quot;]
+        NB --&gt; AI[&quot;startAiRegistryContext&lt;br/&gt;nacos.ai.*.enabled 才启动&quot;]
+        EX[&quot;NacosTypeExcludeFilter&lt;br/&gt;SPI 包过滤决定模块开关&quot;] -.-&gt;|&quot;扫描时排除&quot;| CORE
+    end
+    subgraph NAMING[&quot;服务发现 naming（AP 最终一致）&quot;]
+        IC[&quot;InstanceControllerV3&lt;br/&gt;InstanceRequestHandler(gRPC)&quot;] --&gt; IOP[&quot;InstanceOperatorClientImpl&lt;br/&gt;registerInstance&quot;]
+        IOP --&gt; EPHEPHE[&quot;EphemeralClientOperationServiceImpl&lt;br/&gt;写 IpPortBasedClient&quot;]
+        EPHEPHE --&gt; SM[&quot;ServiceManager&lt;br/&gt;Service 单例注册表&quot;]
+        EPHEPHE --&gt; CE[&quot;ClientEvent&quot;] --&gt; DCP[&quot;DistroClientDataProcessor&lt;br/&gt;sync(CHANGE)&quot;]
+        DCP --&gt; DP[&quot;DistroProtocol&lt;br/&gt;延迟任务 + 路由表&quot;]
+        DP --&gt; GRPC[&quot;gRPC DistroDataRequest&lt;br/&gt;对端 onReceive&quot;]
+        EPHEPHE --&gt; SCE[&quot;ServiceChangedEvent&quot;] --&gt; PDL[&quot;PushDelayTaskExecuteEngine&lt;br/&gt;500ms 合并&quot;]
+        PDL --&gt; PER[&quot;PushExecutorRpcImpl&lt;br/&gt;RpcPushService gRPC 推送&quot;]
+        SM --&gt; SS[&quot;ServiceStorage&lt;br/&gt;组装 ServiceInfo&quot;]
+    end
+    subgraph CONFIG[&quot;配置中心 config&quot;]
+        CC[&quot;ConfigControllerV3&lt;br/&gt;ConfigPublishRequestHandler(gRPC)&quot;] --&gt; COS[&quot;ConfigOperationService&lt;br/&gt;publishConfig&quot;]
+        COS --&gt; DB[(&quot;外部数据库 / 内嵌 Derby&quot;)]
+        COS --&gt; CCS[&quot;ConfigCacheService&lt;br/&gt;dumpWithMd5：JVM+磁盘+MD5&quot;]
+        COS --&gt; DCE[&quot;ConfigDataChangeEvent&quot;]
+        DCE --&gt; ANS[&quot;AsyncNotifyService&lt;br/&gt;gRPC 通知其它 Server&quot;]
+        DCE --&gt; LDE[&quot;LocalDataChangeEvent&quot;]
+        LDE --&gt; LPS[&quot;LongPollingService&lt;br/&gt;HTTP 长轮询 30s&quot;]
+        LDE --&gt; RCN[&quot;RpcConfigChangeNotifier&lt;br/&gt;gRPC 主动推送&quot;]
+    end
+    subgraph CONS[&quot;一致性层 consistency&quot;]
+        PM[&quot;ProtocolManager&lt;br/&gt;懒加载双协议&quot;]
+        PM --&gt; AP[&quot;AP: DistroProtocol&lt;br/&gt;最终一致&quot;]
+        PM --&gt; CP[&quot;CP: JRaftProtocol&lt;br/&gt;Raft 强一致&quot;]
+    end
+    DP --&gt; PM
+    COS --&gt; PM</code></pre>
+
+<p><strong>三条主线</strong>：</p>
+<ol>
+<li><strong>数据流（注册数据）</strong>：HTTP&#x2F;gRPC 注册请求 → <code>Instance</code> → <code>InstancePublishInfo</code> → <code>IpPortBasedClient.publishers</code> → distro 序列化成 <code>ClientSyncData</code> → 对端 <code>clientManager.syncClientConnected</code> → <code>ServiceStorage.getPushData</code> 组装 <code>ServiceInfo</code> → 推送给订阅者；</li>
+<li><strong>控制流（配置数据）</strong>：发布请求 → 落库 → <code>ConfigCacheService.dumpWithMd5</code>（JVM CACHE + 磁盘 + MD5）→ <code>ConfigDataChangeEvent</code> →（本机）<code>LocalDataChangeEvent</code> 唤醒长轮询 &#x2F; gRPC 主动推送，（他机）<code>AsyncNotifyService</code> gRPC 同步；</li>
+<li><strong>恢复流（故障转移）</strong>：客户端 <code>FailoverReactor</code> 读本地 failover 文件（naming）与 snapshot&#x2F;failover 目录（config）；<code>NacosGrpcRedoService</code> 断线标记未注册、重连后重放；服务端 distro 定期校验 + 快照全量加载修补漏同步；配置侧 dump 任务定时扫描数据库补偿本地缓存。</li>
+</ol>
+<hr>
+<h2 id="面试速通：Nacos-高频问题一页纸"><a href="#面试速通：Nacos-高频问题一页纸" class="headerlink" title="面试速通：Nacos 高频问题一页纸"></a>面试速通：Nacos 高频问题一页纸</h2><blockquote>
+<p>先给结论：Nacos 3.2.4 的面试叙事收敛为三句话——naming 是”客户端即数据、责任即路由、推送即 gRPC”；<br>config 是”内容落库、缓存双层、通知三路、补偿兜底”；<br>一致性层由 <code>ProtocolManager</code> 懒加载 AP&#x2F;CP 双协议，临时实例走 distro（最终一致）、持久实例走 JRaft（强一致）。<br>用法：先答”一句话结论”列，被追问再按”深入”列回查讲次；数值题只报文档出现过的常量，不要现场编。</p>
+</blockquote>
+<p>被追问时的展开顺序（结论 → 讲次，一句话均取自各讲小结）：</p>
+<table>
+<thead>
+<tr>
+<th>追问方向</th>
+<th>该讲一句话</th>
+<th>回查</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>启动装配 &#x2F; 部署类型 &#x2F; 模块开关 &#x2F; standalone</td>
+<td>一次 main，三&#x2F;四个上下文，SPI 裁衣；standalone 是短路不是分支</td>
+<td>第一讲</td>
+</tr>
+<tr>
+<td>数据模型 &#x2F; 心跳 &#x2F; distro &#x2F; gRPC 推送</td>
+<td>客户端即数据，责任即路由，推送即 gRPC</td>
+<td>第二讲</td>
+</tr>
+<tr>
+<td>缓存 &#x2F; dump &#x2F; 长轮询 &#x2F; 节点间通知</td>
+<td>内容落库、缓存双层、通知三路、补偿兜底</td>
+<td>第三讲</td>
+</tr>
+<tr>
+<td>AP 与 CP &#x2F; Raft &#x2F; 协议懒加载</td>
+<td>一份数据两条轨道，临时广播、持久选举</td>
+<td>第四讲</td>
+</tr>
+<tr>
+<td>redo &#x2F; failover &#x2F; 监听引擎</td>
+<td>先缓存意图再执行，push 只敲门、内容自己拉</td>
+<td>第五讲</td>
+</tr>
+</tbody></table>
+<h3 id="高频-Q-A（先结论）"><a href="#高频-Q-A（先结论）" class="headerlink" title="高频 Q&amp;A（先结论）"></a>高频 Q&amp;A（先结论）</h3><p>14 题，按”注册 → 同步 → 推送 → 配置 → 一致性 → 客户端”的链路排序；结论均提炼自各讲小结与复习卡：</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>面试问题</th>
+<th>一句话结论</th>
+<th>深入</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Nacos 如何保证 AP 与 CP 的取舍？</td>
+<td>临时实例（默认 <code>ephemeral=true</code>）走 AP：distro 本机写即成功，靠延迟广播 + 定期校验 + 快照补齐做到最终一致；持久实例走 CP：JRaft 多数派提交才返回；判决写在业务写方法里，<code>ProtocolManager</code> 只懒加载管生命周期</td>
+<td>第四讲</td>
+</tr>
+<tr>
+<td>2</td>
+<td>临时实例与持久实例的区别？</td>
+<td><code>ephemeral</code> 是 Service 四元组的一等字段：同名服务的临时&#x2F;持久实例是两个 key、两套存储、两条一致性轨道；持久实例没有订阅推送概念，订阅是临时实例专属</td>
+<td>第二、四讲</td>
+</tr>
+<tr>
+<td>3</td>
+<td>服务注册的心跳与健康检查？</td>
+<td>临时实例靠客户端心跳：每 5s 检查，空发布 30s、有发布 3min 未更新才回收；主动健康检查（TCP&#x2F;HTTP&#x2F;MySQL&#x2F;NONE）失败计数达 <code>checkTimes</code> 且本节点对该 client 负责才真正置不健康，地址非法则跳过计数直接摘除</td>
+<td>第二讲</td>
+</tr>
+<tr>
+<td>4</td>
+<td>一次注册到被推送的完整链路？</td>
+<td>注册写入 <code>IpPortBasedClient.publishers</code> → <code>ClientRegisterServiceEvent</code> → <code>ServiceChangedEvent</code> → 500ms 延迟任务合并 → gRPC 发 <code>NotifySubscriberRequest</code>；读路径 <code>ServiceStorage</code> 实时拼装 <code>ServiceInfo</code>，不是独立存储</td>
+<td>第二讲</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Nacos 集群间 naming 数据如何同步？</td>
+<td>distro：<code>DistroMapper</code> 把全节点排序后取模分责任，只同步本机负责的 ephemeral client，最小单元是”一个 client 的全部发布”（带 revision）；三板斧 &#x3D; 即时 sync + 定期 VERIFY + 新节点拉 SNAPSHOT 全量</td>
+<td>第二、四讲</td>
+</tr>
+<tr>
+<td>6</td>
+<td>distro 是强一致协议吗？</td>
+<td>不是：无 leader 无日志，写本机立即返回成功，其他节点只是镜像，期间可能读到旧数据；最终一致靠延迟同步 + 定期校验 + 快照补齐，没有任何强一致保证</td>
+<td>第四讲</td>
+</tr>
+<tr>
+<td>7</td>
+<td>配置发布后如何通知客户端？</td>
+<td>HTTP 客户端走长轮询（挂起最长 30s，有变更即时唤醒）；gRPC 客户端由服务端推 <code>ConfigChangeNotifyRequest</code>，但只带 key 不带内容，内容永远客户端主动拉</td>
+<td>第三讲</td>
+</tr>
+<tr>
+<td>8</td>
+<td>长轮询的原理与关键参数？</td>
+<td><code>allSubs</code> 队列持有 in-flight 客户端，进来先比 md5，有变秒回；无变挂起至 <code>max(10s, 客户端值-500ms)</code>，服务端提前 500ms 返回、超时自管理；连接超限返回 503 并随机延迟 1-3s 防惊群</td>
+<td>第三讲</td>
+</tr>
+<tr>
+<td>9</td>
+<td>配置监听如何保证最终一致？</td>
+<td>事实源是数据库；服务端缓存三层 &#x3D; 落库 + JVM CACHE + 磁盘 dump；节点间通知不可靠（平方退避重试），兜底是 <code>DumpChangeConfigWorker</code> 定时扫 DB 补偿；md5 是唯一变更标尺，md5 不变不通知</td>
+<td>第三讲</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Nacos 的数据模型（namespace&#x2F;group）？</td>
+<td><code>Service</code> 是 namespace + group + name + ephemeral 的不可变四元组，<code>ServiceManager</code> 保全进程单例；实例数据不在 Service 里，在客户端的发布表里</td>
+<td>第二讲</td>
+</tr>
+<tr>
+<td>11</td>
+<td>客户端缓存与故障转移？</td>
+<td>Naming 侧有 <code>ServiceInfoHolder</code> 本地缓存 + <code>FailoverReactor</code> 每 5s 读 failover 开关，开则整体切本地文件数据；Config 侧 failover 是运维覆盖（优先级高于服务端），snapshot 仅启动兜底</td>
+<td>第五讲</td>
+</tr>
+<tr>
+<td>12</td>
+<td>客户端断线恢复怎么做？</td>
+<td>注册&#x2F;订阅先缓存意图再执行，断线全部标记未注册，重连后定时重放；服务端 <code>addServiceInstance</code> 幂等覆盖使重放安全；Config 监听是”bell + 5s 轮询 + 3min 全量”三速引擎</td>
+<td>第五讲</td>
+</tr>
+<tr>
+<td>13</td>
+<td>standalone 与 cluster 的差异？</td>
+<td>standalone 是短路不是特例分支：<code>DistroProtocol</code> 直接置初始化完成、不做节点间同步，寻址用 <code>StandaloneMemberLookup</code>；<code>EnvUtil.getStandaloneMode()</code> 一个布尔扩散到寻址、distro、持久化各处</td>
+<td>第一讲</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Nacos 2.x 与 3.x 的差异？</td>
+<td><code>NacosApplication</code> 被 <code>NacosBootstrap</code> 多上下文取代；UDP 推送在 3.2.0 已移除，gRPC 一统客户端与节点间通信；v2 数据模型迁入 <code>core/v2/</code>，HTTP 管理 API 在 v3</td>
+<td>第一、二讲</td>
+</tr>
+</tbody></table>
+<p>追问”为什么这样设计”时的通用答案：所有取舍都指向同一组三角——高可用（AP 本机写即成功）、最终一致（补偿三板斧）、<br>读写不对称（CP 用最长 10s 的阻塞换强一致）——先答取舍，再答机制，最后答数值。</p>
+<h3 id="易错点与面试坑"><a href="#易错点与面试坑" class="headerlink" title="易错点与面试坑"></a>易错点与面试坑</h3><ul>
+<li><strong>“临时实例 30s 不心跳就被摘除”不准确</strong>：文档口径是空发布 30s（<code>DEFAULT_IP_DELETE_TIMEOUT</code>）、<br>发布了服务则 3min（<code>DEFAULT_CLIENT_EXPIRED_TIME</code>）未更新才回收，且清理前还要过”本节点对该 client 是否负责”这一层。</li>
+<li><strong>数据不在”服务”里，在”客户端”里</strong>：<code>ServiceManager</code> 只维护 Service 单例，实例真实存储是 <code>IpPortBasedClient.publishers</code>，<br>所以 distro 同步的最小单元是”一个 client 的全部发布”，不是单个实例——这决定了同步粒度与 revision 校验方式。</li>
+<li><strong>写临时实例成功 ≠ 集群都已同步</strong>：AP 本机写即返回，其他节点靠延迟广播追赶，期间读到旧数据是设计使然；<br>要强一致就得用持久实例走 Raft，代价是同步写最长阻塞 10s、读等 5s。</li>
+<li><strong>长轮询不是干等 30s</strong>：服务端主动提前 500ms 返回（<code>max(10s, 客户端值-500ms)</code>），且超时由服务端自管理（<code>setTimeout(0L)</code>），<br>客户端在自家超时前就拿到空响应进入下一轮；连接超限还会吃到 503。</li>
+<li><strong>配置推送不带内容</strong>：<code>ConfigChangeNotifyRequest</code> 只带 dataId&#x2F;group&#x2F;tenant，答”服务端推全量配置”即错；<br>另外 md5 不变（哪怕时间戳变）不发本地事件——没有假变更。</li>
+<li><strong>“所有实例都能被订阅推送”是错的</strong>：持久实例没有订阅者概念，<code>subscribeService</code> 直接抛 <code>UnsupportedOperationException</code>；<br>订阅推送是临时实例专属，这与”临时实例可丢、持久实例要一致”的定位一致。</li>
+<li><strong>健康检查摘除有三个前提</strong>：失败计数达 <code>checkTimes</code>、服务&#x2F;实例开关打开、本节点对该 client 负责；<br>非责任节点只做镜像不做决策——责任模型贯穿心跳、健康检查、distro 同步三处。</li>
+<li><strong>同一个集群两套端口语义</strong>：AP 成员是 <code>ip:port</code>，CP 成员是 <code>ip:raftPort</code>；<br>CP 同步写最长等 10s、读等 5s，AP 写本机立即返回——这就是”临时实例高可用、持久实例强一致”的工程代价。</li>
+</ul>
+<h3 id="关键数值与默认值速记"><a href="#关键数值与默认值速记" class="headerlink" title="关键数值与默认值速记"></a>关键数值与默认值速记</h3><p>均为文档中出现过的源码常量或默认值，答数值题优先报常量名：</p>
+<table>
+<thead>
+<tr>
+<th>数值</th>
+<th>含义</th>
+<th>讲次</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ephemeral=true</code></td>
+<td>实例默认临时的开关值（<code>SwitchDomain</code>）</td>
+<td>第二讲</td>
+</tr>
+<tr>
+<td>5s</td>
+<td>心跳检查周期，也是过期清理扫描周期</td>
+<td>第二讲</td>
+</tr>
+<tr>
+<td>30s &#x2F; 3min</td>
+<td>客户端回收阈值：空发布 30s、有发布 3min 未更新</td>
+<td>第二讲</td>
+</tr>
+<tr>
+<td>500ms</td>
+<td>推送合并窗口（<code>pushTaskDelay</code>），防推送风暴</td>
+<td>第二讲</td>
+</tr>
+<tr>
+<td>30s</td>
+<td>HTTP 长轮询默认挂起时长</td>
+<td>第三讲</td>
+</tr>
+<tr>
+<td><code>max(10s, 客户端值-500ms)</code></td>
+<td>长轮询实际超时，提前 500ms 返回</td>
+<td>第三讲</td>
+</tr>
+<tr>
+<td>503 + 1-3s</td>
+<td>长轮询连接超限的响应与随机延迟</td>
+<td>第三讲</td>
+</tr>
+<tr>
+<td>10s</td>
+<td><code>StatTask</code> 订阅数打点周期</td>
+<td>第三讲</td>
+</tr>
+<tr>
+<td><code>500 + failCount²×1000ms</code>（封顶 6 次）</td>
+<td>节点间通知的平方退避公式</td>
+<td>第三讲</td>
+</tr>
+<tr>
+<td>100&#x2F;页</td>
+<td>删除扫描的分页大小</td>
+<td>第三讲</td>
+</tr>
+<tr>
+<td>10s &#x2F; 5s</td>
+<td>JRaft 同步写 &#x2F; 读超时</td>
+<td>第四讲</td>
+</tr>
+<tr>
+<td>5 次 × 100ms</td>
+<td>Raft 成员变更失败重试</td>
+<td>第四讲</td>
+</tr>
+<tr>
+<td>多数派（3 节点示例 2&#x2F;3）</td>
+<td>Raft 提交条件</td>
+<td>第四讲</td>
+</tr>
+<tr>
+<td>延迟 0</td>
+<td>distro 校验失败后的立即补发</td>
+<td>第四讲</td>
+</tr>
+<tr>
+<td>由配置控制</td>
+<td>distro 定期校验周期（<code>verifyIntervalMillis</code>，无硬编码默认值）</td>
+<td>第四讲</td>
+</tr>
+<tr>
+<td>5s &#x2F; 3min</td>
+<td>Config 监听轮询间隔 &#x2F; 全量同步周期</td>
+<td>第五讲</td>
+</tr>
+<tr>
+<td>5s</td>
+<td><code>FailoverReactor</code> 读 failover 开关周期</td>
+<td>第五讲</td>
+</tr>
+</tbody></table>
+<p>收尾：一页纸只放结论与数值，机制细节回对应讲次查；本表与 Q&amp;A 的全部内容均出自前五讲，未引入文档外知识点。</p>
+<hr>
+<h2 id="第一讲：模块装配与启动-——-NacosBootstrap-的三段式点火"><a href="#第一讲：模块装配与启动-——-NacosBootstrap-的三段式点火" class="headerlink" title="第一讲：模块装配与启动 —— NacosBootstrap 的三段式点火"></a>第一讲：模块装配与启动 —— NacosBootstrap 的三段式点火</h2><h3 id="定位"><a href="#定位" class="headerlink" title="定位"></a>定位</h3><p>Nacos 3.2.4 是一个<strong>多 Maven 模块的单体 Spring Boot 应用</strong>：根 <code>pom.xml:661-690</code> 声明 30 个模块（config&#x2F;core&#x2F;naming&#x2F;api&#x2F;client&#x2F;common&#x2F;console&#x2F;auth&#x2F;consistency&#x2F;istio&#x2F;sys&#x2F;persistence&#x2F;bootstrap&#x2F;server&#x2F;lock&#x2F;ai&#x2F;copilot 等）。所有模块打进同一个可执行 jar（<code>nacos-all</code>），运行时由 <code>bootstrap</code> 模块的 <code>NacosBootstrap</code> 按部署类型<strong>分阶段点亮多个 Spring 上下文</strong>。旧版的统一入口 <code>Nacos.java</code>（console 模块）仍保留但已标记 <code>@Deprecated</code>（<code>console/src/main/java/com/alibaba/nacos/Nacos.java:36</code>），其 javadoc 明确指向 <code>NacosBootstrap</code>。</p>
+<h3 id="目录结构：启动相关文件的树"><a href="#目录结构：启动相关文件的树" class="headerlink" title="目录结构：启动相关文件的树"></a>目录结构：启动相关文件的树</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">bootstrap/src/main/java/com/alibaba/nacos/bootstrap/</span><br><span class="line">└── NacosBootstrap.java              # 唯一 main 入口，部署类型分发</span><br><span class="line">server/src/main/java/com/alibaba/nacos/</span><br><span class="line">├── NacosServerBasicApplication.java # core 上下文（非 Web）</span><br><span class="line">└── NacosServerWebApplication.java   # server web 上下文</span><br><span class="line">console/src/main/java/com/alibaba/nacos/</span><br><span class="line">├── Nacos.java                       # 旧全量入口（已废弃）</span><br><span class="line">└── console/NacosConsole.java        # console 上下文（管理台）</span><br><span class="line">core/src/main/java/com/alibaba/nacos/core/</span><br><span class="line">├── listener/startup/                # 启动阶段 SPI（core/web/console/ai-registry）</span><br><span class="line">│   ├── NacosStartUp.java            #   阶段常量与生命周期接口</span><br><span class="line">│   ├── NacosStartUpManager.java     #   阶段管理器（SPI 加载）</span><br><span class="line">│   ├── AbstractNacosStartUp.java</span><br><span class="line">│   ├── NacosCoreStartUp.java        #   core 阶段：建目录/注入 Environment</span><br><span class="line">│   └── NacosWebStartUp.java</span><br><span class="line">├── cluster/lookup/                  # 成员寻址（standalone/file/address-server）</span><br><span class="line">└── config/                          # 模块状态构建器（Distro/Raft）</span><br><span class="line">sys/src/main/java/com/alibaba/nacos/sys/</span><br><span class="line">├── env/EnvUtil.java                 # standalone/cluster 模式判定</span><br><span class="line">└── filter/                          # 包级 SPI 排除过滤器（模块开关）</span><br><span class="line">naming/src/main/java/com/alibaba/nacos/naming/</span><br><span class="line">└── config/NamingEnabledFilter.java  # naming 模块开关实现</span><br></pre></td></tr></table></figure>
+
+<h3 id="逐文件精读"><a href="#逐文件精读" class="headerlink" title="逐文件精读"></a>逐文件精读</h3><h4 id="1-bootstrap-src-main-java-com-alibaba-nacos-bootstrap-NacosBootstrap-java-——-部署类型分发"><a href="#1-bootstrap-src-main-java-com-alibaba-nacos-bootstrap-NacosBootstrap-java-——-部署类型分发" class="headerlink" title="1. bootstrap/src/main/java/com/alibaba/nacos/bootstrap/NacosBootstrap.java —— 部署类型分发"></a>1. <code>bootstrap/src/main/java/com/alibaba/nacos/bootstrap/NacosBootstrap.java</code> —— 部署类型分发</h4><p><code>main</code>（<code>NacosBootstrap.java:48-66</code>）先读系统属性 <code>nacos.deployment.type</code>（默认 <code>merged</code>），转成 <code>DeploymentType</code> 存入 <code>EnvUtil</code>，再 switch：</p>
+<table>
+<thead>
+<tr>
+<th>部署类型</th>
+<th>方法</th>
+<th>启动的上下文</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>MERGED（默认）</td>
+<td><code>startWithConsole</code>（<code>:86-95</code>）</td>
+<td>core → server web → console →（可选）ai-registry</td>
+</tr>
+<tr>
+<td>SERVER</td>
+<td><code>startWithoutConsole</code>（<code>:76-84</code>）</td>
+<td>core → server web →（可选）ai-registry</td>
+</tr>
+<tr>
+<td>CONSOLE</td>
+<td><code>startOnlyConsole</code>（<code>:125-129</code>）</td>
+<td>仅 console</td>
+</tr>
+</tbody></table>
+<p>每个上下文都用 <code>SpringApplicationBuilder(...).parent(coreContext)</code> 挂到 core 上下文下，且启动前调 <code>NacosStartUpManager.start(phase)</code>（如 <code>startCoreContext</code>，<code>:97-102</code>）：core 上下文是 <code>WebApplicationType.NONE</code> 的非 Web 容器，加载”公共非 Web bean”；server web 上下文加载 Web 层；console 上下文加载管理台。AI Registry 上下文是否启动由 <code>nacos.ai.mcp.registry.enabled</code> 或 <code>nacos.ai.skill.registry.enabled</code> 决定（<code>:135-141</code>）。<code>prepareCoreContext</code>（<code>:68-74</code>）处理 JMX 重复注册（设 <code>IGNORE_EXISTING</code>）。</p>
+<h4 id="2-启动阶段-SPI：core-listener-startup-包"><a href="#2-启动阶段-SPI：core-listener-startup-包" class="headerlink" title="2. 启动阶段 SPI：core/listener/startup/ 包"></a>2. 启动阶段 SPI：<code>core/listener/startup/</code> 包</h4><p><code>NacosStartUp</code>（<code>NacosStartUp.java:30-36</code>）定义四个阶段常量：<code>core</code>、<code>web</code>、<code>console</code>、<code>ai-registry</code>。<code>NacosStartUpManager</code> 构造时通过 <code>NacosServiceLoader.load(NacosStartUp.class)</code> 加载所有 SPI 实现并按阶段名建 map（<code>NacosStartUpManager.java:43-49</code>）；<code>start(phase)</code> 记录进入新阶段并加入 <code>startedList</code>（<code>:60-67</code>），<code>getReverseStartedList()</code> 反序返回供停机时逆序销毁（<code>:85-89</code>）。</p>
+<p><code>NacosCoreStartUp</code> 的关键动作：</p>
+<ul>
+<li><code>makeWorkDir</code>（<code>NacosCoreStartUp.java:85-99</code>）：强制创建 <code>$nacos.home/&#123;logs,conf,data&#125;</code>；</li>
+<li><code>injectEnvironment</code>（<code>:101-104</code>）：把 Spring <code>Environment</code> 注入 <code>EnvUtil</code>；</li>
+<li><code>loadPreProperties</code>（<code>:106-115</code>）：加载 <code>application.properties</code> 并注册文件监听（配置热更新基础）；</li>
+<li><code>initSystemProperty</code>（<code>:118-137</code>）：standalone 模式下设置 <code>nacos.standalone=true</code> 系统属性，并按 <code>functionMode</code> 设置功能模式。</li>
+</ul>
+<h4 id="3-standalone-vs-cluster-的判定点"><a href="#3-standalone-vs-cluster-的判定点" class="headerlink" title="3. standalone vs cluster 的判定点"></a>3. standalone vs cluster 的判定点</h4><p>模式判定分散在两处，共同决定行为差异：</p>
+<ul>
+<li><code>EnvUtil.getStandaloneMode()</code>（<code>sys/env/EnvUtil.java:275-277</code>）：读系统属性 <code>nacos.standalone</code>（布尔），即 <code>mode=standalone</code> 的启动参数最终落点；</li>
+<li><code>LookupFactory.createLookUp(ServerMemberManager)</code>（<code>core/cluster/lookup/LookupFactory.java:64-75</code>）：**standalone 直接返回 <code>StandaloneMemberLookup</code>**；cluster 模式才按 <code>nacos.core.member.lookup.type</code> 配置选 <code>FileConfigMemberLookup</code>（读 <code>cluster.conf</code>）或 <code>AddressServerMemberLookup</code>。<code>chooseLookup</code>（<code>:124-136</code>）在未显式配置时的兜底逻辑：<code>cluster.conf</code> 存在或配置了成员列表 → FILE_CONFIG，否则 ADDRESS_SERVER。</li>
+</ul>
+<p><code>StandaloneMemberLookup.doStart</code>（<code>StandaloneMemberLookup.java:32-36</code>）只把本机地址当作唯一成员上报。standalone 的深远影响：<code>DistroProtocol</code> 构造时若 <code>EnvUtil.getStandaloneMode()</code> 为真，直接置 <code>isInitialized=true</code> 并跳过校验&#x2F;加载任务（<code>core/distributed/distro/DistroProtocol.java:63-70</code>），即<strong>单机不做节点间同步</strong>。</p>
+<h4 id="4-模块开关：NacosTypeExcludeFilter-与-SPI-过滤器"><a href="#4-模块开关：NacosTypeExcludeFilter-与-SPI-过滤器" class="headerlink" title="4. 模块开关：NacosTypeExcludeFilter 与 SPI 过滤器"></a>4. 模块开关：<code>NacosTypeExcludeFilter</code> 与 SPI 过滤器</h4><p><code>NacosTypeExcludeFilter</code>（<code>sys/filter/NacosTypeExcludeFilter.java:53-80</code>）是 Spring 组件扫描的 <code>TypeFilter</code>：构造时 SPI 加载所有 <code>NacosPackageExcludeFilter</code> 按包前缀建 map（<code>:43-51</code>）；匹配时先剔除任何带 <code>@SpringBootApplication</code> 的类防重复扫描（<code>:60-68</code>），再按类名前缀委托对应过滤器裁决（<code>:69-77</code>）。</p>
+<p>以 <code>naming/config/NamingEnabledFilter.java:42-52</code> 为例：读 <code>EnvUtil.getFunctionMode()</code>，若为空（未指定功能模式）则<strong>不排除</strong>（naming 默认加载）；若指定了 <code>config</code> 等其它功能模式，则排除 <code>com.alibaba.nacos.naming</code> 包——这就是 <code>nacos.functionMode</code> 配置裁剪模块的机制。同类实现还有 <code>ConfigEnabledFilter</code>、<code>ConsolePackageExcludeFilter</code>、<code>IstioEnabledFilter</code>、<code>K8sSyncEnabledFilter</code>、<code>AiEnabledFilter</code>、<code>AiRegistryPackageExcludeFilter</code>、<code>AuthImplPackageExcludeFilter</code>。</p>
+<h4 id="5-console-模块简述"><a href="#5-console-模块简述" class="headerlink" title="5. console 模块简述"></a>5. console 模块简述</h4><p><code>console/NacosConsole.java:28-37</code> 是管理台上下文入口（<code>@PropertySource(&quot;classpath:nacos-console.properties&quot;)</code>），依赖 <code>nacos-config/nacos-naming/nacos-core/nacos-ai/nacos-istio</code> 等（<code>console/pom.xml:34-72</code>），即控制台 API 是<strong>跨模块的聚合层</strong>，自身几乎不含业务逻辑，只有 UI 资源（console-ui）与参数装配。<code>Nacos.java</code>（旧入口）用 <code>@ComponentScan(basePackages = &quot;com.alibaba.nacos&quot;)</code> 一次性扫全量包，靠同一套 excludeFilters 裁剪——这也是它被拆成多上下文的原因：单上下文无法区分 core&#x2F;web&#x2F;console 生命周期。</p>
+<h3 id="关键图：启动时序"><a href="#关键图：启动时序" class="headerlink" title="关键图：启动时序"></a>关键图：启动时序</h3><pre><code class="highlight mermaid">sequenceDiagram
+    participant M as &quot;main(JVM)&quot;
+    participant NB as &quot;NacosBootstrap&quot;
+    participant SM as &quot;NacosStartUpManager&quot;
+    participant C as &quot;coreContext&quot;
+    participant W as &quot;serverWebContext&quot;
+    participant CO as &quot;consoleContext&quot;
+    M-&gt;&gt;NB: &quot;启动 ./startup.sh&quot;
+    NB-&gt;&gt;NB: &quot;getProperty(nacos.deployment.type)&quot;
+    NB-&gt;&gt;SM: &quot;start(core)&quot;
+    NB-&gt;&gt;C: &quot;SpringApplicationBuilder(NacosServerBasicApplication).web(NONE)&quot;
+    C-&gt;&gt;C: &quot;makeWorkDir logs/conf/data&quot;
+    C-&gt;&gt;C: &quot;loadPreProperties application.properties&quot;
+    NB-&gt;&gt;SM: &quot;start(web)&quot;
+    NB-&gt;&gt;W: &quot;builder(NacosServerWebApplication).parent(coreContext)&quot;
+    NB-&gt;&gt;SM: &quot;start(console)&quot;
+    NB-&gt;&gt;CO: &quot;builder(NacosConsole).parent(coreContext)&quot;
+    NB-&gt;&gt;CO: &quot;isEnabledAiRegistry? 是则再启动 ai-registry&quot;</code></pre>
+
+<h3 id="输入-输出表"><a href="#输入-输出表" class="headerlink" title="输入&#x2F;输出表"></a>输入&#x2F;输出表</h3><table>
+<thead>
+<tr>
+<th>输入</th>
+<th>处理</th>
+<th>输出</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>nacos.deployment.type</code>（默认 merged）</td>
+<td>switch 分发</td>
+<td>三个&#x2F;四个 Spring 上下文</td>
+</tr>
+<tr>
+<td><code>nacos.standalone</code> &#x2F; <code>mode=standalone</code></td>
+<td><code>EnvUtil.getStandaloneMode</code></td>
+<td>distro&#x2F;寻址行为切换</td>
+</tr>
+<tr>
+<td><code>nacos.functionMode</code>（config&#x2F;naming&#x2F;…）</td>
+<td><code>NacosTypeExcludeFilter</code> SPI 裁决</td>
+<td>被排除包的 bean 不注册</td>
+</tr>
+<tr>
+<td><code>cluster.conf</code> 或成员列表</td>
+<td><code>LookupFactory.chooseLookup</code></td>
+<td>FILE_CONFIG &#x2F; ADDRESS_SERVER 寻址</td>
+</tr>
+<tr>
+<td><code>application.properties</code></td>
+<td><code>NacosCoreStartUp.loadPreProperties</code></td>
+<td>Environment + 文件监听</td>
+</tr>
+</tbody></table>
+<h3 id="端到端演算：一次-startup-sh-m-standalone"><a href="#端到端演算：一次-startup-sh-m-standalone" class="headerlink" title="端到端演算：一次 ./startup.sh -m standalone"></a>端到端演算：一次 <code>./startup.sh -m standalone</code></h3><ol>
+<li>JVM 起 <code>NacosBootstrap.main</code>，<code>nacos.deployment.type</code> 缺省 → <code>MERGED</code>；</li>
+<li><code>startCoreContext</code>：先 <code>NacosStartUpManager.start(&quot;core&quot;)</code>，再跑非 Web 的 <code>NacosServerBasicApplication</code>——建 <code>logs/conf/data</code>、加载 application.properties、<code>EnvUtil</code> 就位；<code>@ComponentScan</code> 被 <code>NacosTypeExcludeFilter</code> 过滤（standalone 不改变包过滤，只改变运行时行为）；</li>
+<li><code>startServerWebContext</code>：<code>NacosServerWebApplication</code> 以 core 为父上下文启动，gRPC&#x2F;HTTP 端点、naming&#x2F;config 的远程处理器在此装配；</li>
+<li><code>startConsoleContext</code>：管理台上下文挂上；</li>
+<li>集群场景下，<code>ServerMemberManager</code> 此时才会通过 <code>LookupFactory</code> 选出寻址方式；standalone 下 <code>StandaloneMemberLookup</code> 直接上报单成员列表，<code>DistroProtocol</code> 标记 <code>isInitialized=true</code>，本机即全部。</li>
+</ol>
+<h3 id="第一讲小结：一次-main，三-四个上下文，SPI-裁衣"><a href="#第一讲小结：一次-main，三-四个上下文，SPI-裁衣" class="headerlink" title="第一讲小结：一次 main，三&#x2F;四个上下文，SPI 裁衣"></a>第一讲小结：一次 main，三&#x2F;四个上下文，SPI 裁衣</h3><p><strong>一句话定位</strong>：<code>NacosBootstrap</code> 按 <code>nacos.deployment.type</code> 把应用拆成 core（非 Web）→ server web → console 三级父子上下文依次点亮，模块增减不靠改代码而靠 <code>NacosTypeExcludeFilter</code> 的 SPI 包过滤，standalone&#x2F;cluster 的差异从 <code>EnvUtil.getStandaloneMode()</code> 一个布尔值扩散到寻址、distro、持久化各处的行为分支。</p>
+<pre><code class="highlight mermaid">flowchart TD
+    A[&quot;main&lt;br/&gt;deployment.type&quot;] --&gt; B[&quot;switch 分发&quot;]
+    B --&gt;|&quot;MERGED（默认）&quot;| C[&quot;core → web → console → ai-registry?&quot;]
+    B --&gt;|&quot;SERVER&quot;| D[&quot;core → web → ai-registry?&quot;]
+    B --&gt;|&quot;CONSOLE&quot;| E[&quot;仅 console&quot;]
+    C --&gt; F[&quot;NacosStartUpManager&lt;br/&gt;记录阶段供逆序停机&quot;]
+    D --&gt; F
+    E --&gt; F</code></pre>
+
+<p><strong>启动装配的输入&#x2F;输出</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>输入</th>
+<th>输出</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>NacosBootstrap</code></td>
+<td><code>nacos.deployment.type</code></td>
+<td>上下文链（父子关系）</td>
+</tr>
+<tr>
+<td><code>NacosTypeExcludeFilter</code></td>
+<td>类名 + 注解 + SPI 过滤器</td>
+<td>排除&#x2F;保留决策</td>
+</tr>
+<tr>
+<td><code>NacosCoreStartUp</code></td>
+<td><code>nacos.home</code>、application.properties</td>
+<td>工作目录、Environment、系统属性</td>
+</tr>
+<tr>
+<td><code>LookupFactory</code></td>
+<td><code>nacos.core.member.lookup.type</code>、cluster.conf</td>
+<td>MemberLookup 实例</td>
+</tr>
+</tbody></table>
+<p><strong>三个最值得记住的点</strong>：</p>
+<ol>
+<li><strong>多上下文而非单上下文</strong>：core 上下文 <code>WebApplicationType.NONE</code>，web&#x2F;console 是它的子上下文——这解决了旧版”一个上下文扫全量包”导致模块无法按阶段装配和停机的问题；</li>
+<li><strong>模块开关是 SPI 包过滤</strong>：<code>NacosPackageExcludeFilter</code> 按包前缀裁决，<code>functionMode</code> 只影响”加载哪些模块”，不改 classpath；</li>
+<li><strong>standalone 不是 cluster 的特例分支而是短路</strong>：<code>DistroProtocol</code> 在 standalone 下直接 <code>isInitialized=true</code> 不同步（<code>DistroProtocol.java:63-70</code>），寻址直接用 <code>StandaloneMemberLookup</code>——读集群代码时永远要先问”这行在 standalone 下会执行吗”。</li>
+</ol>
+<hr>
+<h2 id="第二讲：naming-服务发现核心-——-v2-模型、distro-与-gRPC-推送"><a href="#第二讲：naming-服务发现核心-——-v2-模型、distro-与-gRPC-推送" class="headerlink" title="第二讲：naming 服务发现核心 —— v2 模型、distro 与 gRPC 推送"></a>第二讲：naming 服务发现核心 —— v2 模型、distro 与 gRPC 推送</h2><h3 id="定位-1"><a href="#定位-1" class="headerlink" title="定位"></a>定位</h3><p>naming 模块管理”服务 → 实例”的内存模型与分发。3.2.4 的命名模块已全面 v2 化：数据模型在 <code>core/v2/</code>，HTTP 管理 API 在 <code>controllers/v3/</code>，客户端连接走 gRPC（<code>remote/rpc/handler/</code>），推送走 gRPC。<strong>与 2.x 最大的两个差异</strong>：① <code>core/ServiceManager.java</code> 已不存在，服务注册表是 <code>naming/core/v2/ServiceManager.java</code>；② UDP 推送在 3.2.0 被移除——<code>InstanceOperatorClientImpl.java:201-204</code> 对使用旧 HTTP 订阅的客户端直接打 warn：”UDP push has been removed in Nacos 3.2.0”，旧订阅者不再收到推送。</p>
+<h3 id="目录结构：naming-模块的树（只列主路径）"><a href="#目录结构：naming-模块的树（只列主路径）" class="headerlink" title="目录结构：naming 模块的树（只列主路径）"></a>目录结构：naming 模块的树（只列主路径）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">naming/src/main/java/com/alibaba/nacos/naming/</span><br><span class="line">├── controllers/v3/</span><br><span class="line">│   ├── InstanceControllerV3.java      # HTTP 管理 API：注册/注销/更新/列表</span><br><span class="line">│   └── ...</span><br><span class="line">├── core/</span><br><span class="line">│   ├── InstanceOperatorClientImpl.java # 实例操作门面（v1/v2 适配）</span><br><span class="line">│   ├── DistroMapper.java               # 路由表：谁负责哪个 client</span><br><span class="line">│   └── v2/</span><br><span class="line">│       ├── ServiceManager.java         # Service 单例注册表（内存模型核心）</span><br><span class="line">│       ├── pojo/Service.java           # namespace+group+name+ephemeral</span><br><span class="line">│       ├── pojo/InstancePublishInfo.java # 实例发布信息（v2 存储单元）</span><br><span class="line">│       ├── index/ServiceStorage.java   # 组装 ServiceInfo 的读路径</span><br><span class="line">│       ├── client/impl/IpPortBasedClient.java # IP:Port 客户端（发布/订阅容器）</span><br><span class="line">│       ├── client/manager/impl/EphemeralIpPortClientManager.java</span><br><span class="line">│       └── service/impl/EphemeralClientOperationServiceImpl.java # 临时实例写路径</span><br><span class="line">├── consistency/ephemeral/distro/v2/</span><br><span class="line">│   └── DistroClientDataProcessor.java  # 临时数据的 distro 处理器（AP）</span><br><span class="line">├── remote/rpc/handler/</span><br><span class="line">│   ├── InstanceRequestHandler.java     # gRPC 注册/注销</span><br><span class="line">│   └── DistroDataRequestHandler.java   # gRPC 节点间 distro 数据</span><br><span class="line">├── push/v2/</span><br><span class="line">│   ├── NamingSubscriberServiceV2Impl.java # 订阅事件 → 延迟推送任务</span><br><span class="line">│   ├── task/PushDelayTaskExecuteEngine.java</span><br><span class="line">│   └── executor/PushExecutorRpcImpl.java  # gRPC 推送执行器</span><br><span class="line">├── healthcheck/</span><br><span class="line">│   ├── heartbeat/ClientBeatCheckTaskV2.java  # 心跳检查任务</span><br><span class="line">│   └── v2/processor/HealthCheckProcessorV2Delegate.java # 健康检查家族</span><br><span class="line">└── misc/SwitchDomain.java              # 开关域：默认 ephemeral=true、心跳 5s</span><br></pre></td></tr></table></figure>
+
+<h3 id="逐文件精读-1"><a href="#逐文件精读-1" class="headerlink" title="逐文件精读"></a>逐文件精读</h3><h4 id="1-注册入口：controllers-v3-InstanceControllerV3-java"><a href="#1-注册入口：controllers-v3-InstanceControllerV3-java" class="headerlink" title="1. 注册入口：controllers/v3/InstanceControllerV3.java"></a>1. 注册入口：<code>controllers/v3/InstanceControllerV3.java</code></h4><p><code>register</code>（<code>InstanceControllerV3.java:99-120</code>）是 HTTP 管理面注册：<code>instanceForm.validate()</code> → <code>checkWeight</code> → <code>InstanceUtil.buildInstance(form, switchDomain.isDefaultInstanceEphemeral())</code> 构造 <code>Instance</code>（<strong>ephemeral 默认 true</strong>，见 <code>SwitchDomain.java:107</code>）→ <code>instanceService.registerInstance(namespaceId, groupName, serviceName, instance)</code> → 发 <code>RegisterInstanceTraceEvent</code>。生产客户端主要走 gRPC：<code>remote/rpc/handler/InstanceRequestHandler.java:64-95</code> 的 <code>handle</code> 按 <code>RegisterInstance/DeregisterInstance</code> 类型分发，最终同样调 <code>clientOperationService.registerInstance(service, instance, meta.getConnectionId())</code>（注意 clientId 是 <strong>gRPC 连接 ID</strong>，与 HTTP 面的 <code>ip:port</code> 不同）。</p>
+<h4 id="2-写路径门面：core-InstanceOperatorClientImpl-java"><a href="#2-写路径门面：core-InstanceOperatorClientImpl-java" class="headerlink" title="2. 写路径门面：core/InstanceOperatorClientImpl.java"></a>2. 写路径门面：<code>core/InstanceOperatorClientImpl.java</code></h4><p><code>registerInstance</code>（<code>InstanceOperatorClientImpl.java:102-111</code>）四步：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">NamingUtils.checkInstanceIsLegal(instance);</span><br><span class="line"><span class="type">boolean</span> <span class="variable">ephemeral</span> <span class="operator">=</span> instance.isEphemeral();</span><br><span class="line"><span class="type">String</span> <span class="variable">clientId</span> <span class="operator">=</span> IpPortBasedClient.getClientId(instance.toInetAddr(), ephemeral); <span class="comment">// ip:port$ephemeral</span></span><br><span class="line">createIpPortClientIfAbsent(clientId);          <span class="comment">// 不存在则 clientConnected</span></span><br><span class="line"><span class="type">Service</span> <span class="variable">service</span> <span class="operator">=</span> Service.newService(namespaceId, groupName, serviceName, ephemeral);</span><br><span class="line">clientOperationService.registerInstance(service, instance, clientId);</span><br></pre></td></tr></table></figure>
+
+<p><code>createIpPortClientIfAbsent</code>（<code>:382-388</code>）在 <code>ClientManager</code> 不存在该 clientId 时调 <code>clientConnected</code>。<code>handleBeat</code>（<code>:246-279</code>）处理 1.x 心跳：client 不存在且带 beat 信息时<strong>顺带注册</strong>（<code>:258-261</code>），然后调度 <code>ClientBeatProcessorV2</code> 并刷新 <code>lastUpdatedTime</code>。</p>
+<h4 id="3-内存模型：core-v2-ServiceManager-java-与-Service"><a href="#3-内存模型：core-v2-ServiceManager-java-与-Service" class="headerlink" title="3. 内存模型：core/v2/ServiceManager.java 与 Service"></a>3. 内存模型：<code>core/v2/ServiceManager.java</code> 与 <code>Service</code></h4><p><code>Service</code>（<code>core/v2/pojo/Service.java:32-46</code>）是不可变值对象：<code>namespace/group/name/ephemeral</code> 四元组 + <code>AtomicLong revision</code> + <code>lastUpdatedTime</code>。<strong>ephemeral 是 Service 的一等字段</strong>——同一 serviceName 的临时实例和持久实例是两个不同的 key。</p>
+<p><code>ServiceManager</code>（<code>core/v2/ServiceManager.java</code>）是进程内单例（<code>:36</code>）：</p>
+<ul>
+<li><code>singletonRepository</code>：<code>ConcurrentHashMap&lt;Service, Service&gt;</code>（<code>:38</code>），保证同一 Service 全进程唯一；</li>
+<li><code>namespaceSingletonMaps</code>：按 namespace 分组的索引（<code>:40</code>）；</li>
+<li><code>getSingleton(service)</code>（<code>:61-70</code>）：<code>computeIfAbsent</code> 放入新 Service 时发 <code>ServiceMetadataEvent</code>——**”服务诞生”事件从这儿流出**；</li>
+<li><code>removeSingleton</code>（<code>:104-110</code>）、<code>containSingleton</code>（<code>:112-114</code>）供清理与查询。</li>
+</ul>
+<h4 id="4-临时实例写路径：core-v2-service-impl-EphemeralClientOperationServiceImpl-java"><a href="#4-临时实例写路径：core-v2-service-impl-EphemeralClientOperationServiceImpl-java" class="headerlink" title="4. 临时实例写路径：core/v2/service/impl/EphemeralClientOperationServiceImpl.java"></a>4. 临时实例写路径：<code>core/v2/service/impl/EphemeralClientOperationServiceImpl.java</code></h4><p><code>registerInstance</code>（<code>EphemeralClientOperationServiceImpl.java:56-78</code>）：</p>
+<ol>
+<li><code>ServiceManager.getSingleton(service)</code> 拿单例，校验 <code>isEphemeral()</code>（持久服务拒绝临时实例，<code>:61-66</code>）；</li>
+<li><code>clientManager.getClient(clientId)</code> + <code>checkClientIsLegal</code>（<code>:153-168</code>，client 不存在或类型不匹配抛 <code>CLIENT_DISCONNECT</code>&#x2F;<code>INVALID_PARAM</code>）；</li>
+<li><code>client.addServiceInstance(singleton, instanceInfo)</code>——**写入 <code>IpPortBasedClient.publishers</code>**（临时实例的真实存储是”客户端对象里的发布表”）；</li>
+<li><code>client.recalculateRevision()</code> 重算 client 修订号；</li>
+<li>发布 <code>ClientOperationEvent.ClientRegisterServiceEvent</code> + <code>MetadataEvent.InstanceMetadataEvent</code>。</li>
+</ol>
+<p>注意第 5 步的事件流：<code>ClientRegisterServiceEvent</code> 最终会触发 <code>ServiceChangedEvent</code>（服务实例集合变化），这是推送与 distro 的共同源头。</p>
+<h4 id="5-读路径：core-v2-index-ServiceStorage-java"><a href="#5-读路径：core-v2-index-ServiceStorage-java" class="headerlink" title="5. 读路径：core/v2/index/ServiceStorage.java"></a>5. 读路径：<code>core/v2/index/ServiceStorage.java</code></h4><p><code>getData</code>（<code>ServiceStorage.java:78-81</code>）先查缓存 <code>serviceDataIndexes</code>，未命中走 <code>getPushData</code>（<code>:83-92</code>）：<code>getAllInstancesFromIndex</code>（<code>:108-132</code>）遍历该 Service 的所有注册 client，逐个取 <code>InstancePublishInfo</code>，经 <code>InstanceUtil.parseToApiInstance</code> 转成 API 层 <code>Instance</code>，并合并元数据；<code>BatchInstancePublishInfo</code>（批量注册）在此展开（<code>:116-121</code>）。<strong>读路径是”实时拼装”而非独立存储</strong>——这与 config 的 CACHE 是两种哲学。</p>
+<h4 id="6-distro-路由与同步：DistroMapper-DistroClientDataProcessor"><a href="#6-distro-路由与同步：DistroMapper-DistroClientDataProcessor" class="headerlink" title="6. distro 路由与同步：DistroMapper + DistroClientDataProcessor"></a>6. distro 路由与同步：<code>DistroMapper</code> + <code>DistroClientDataProcessor</code></h4><p><code>DistroMapper</code>（<code>core/DistroMapper.java</code>）是<strong>路由表</strong>：</p>
+<ul>
+<li><code>healthyList</code>（<code>:48</code>）由 <code>MembersChangeEvent</code> 维护，<strong>排序保证所有节点顺序一致</strong>（<code>:129-142</code>，<code>Collections.sort(list)</code>）；</li>
+<li><code>responsible(tag)</code>（<code>:78-99</code>）：<code>distroHash(tag) % servers.size()</code> 落在本机负责区间则返回 true；<strong>standalone 或 distro 关闭直接 true</strong>（<code>:81-83</code>）；</li>
+<li><code>mapSrv(tag)</code>（<code>:107-123</code>）：算出 tag 应落在哪台机器；</li>
+<li>v1 的 responsibleTag 是 serviceName，v2 是 <code>ip:port</code>（clientId，<code>:75</code> 注释）。</li>
+</ul>
+<p><code>DistroClientDataProcessor</code>（<code>consistency/ephemeral/distro/v2/DistroClientDataProcessor.java</code>）是临时数据的 AP 同步器，同时实现 <code>DistroDataStorage</code> 与 <code>DistroDataProcessor</code>（<code>:58-59</code>），类型常量 <code>Nacos:Naming:v2:ClientData</code>（<code>:61</code>）：</p>
+<ul>
+<li><code>onEvent</code>（<code>:95-104</code>）订阅三类 client 事件：<code>ClientChangedEvent</code>&#x2F;<code>ClientDisconnectEvent</code>&#x2F;<code>ClientVerifyFailedEvent</code>；standalone 直接 return（<code>:96-98</code>）；</li>
+<li><code>syncToAllServer</code>（<code>:116-128</code>）：断连 → <code>sync(key, DELETE)</code>，变更 → <code>sync(key, CHANGE)</code>；<code>isInvalidClient</code>（<code>:130-134</code>）<strong>只同步 ephemeral 且本机负责的 client</strong>（持久实例走 Raft，见第四讲）；</li>
+<li><code>processData</code>（<code>:142-159</code>）：收到 ADD&#x2F;CHANGE 反序列化 <code>ClientSyncData</code> → <code>handlerClientSyncData</code>（<code>:161-170</code>）→ <code>clientManager.syncClientConnected</code> + <code>upgradeClient</code>（<code>:172-207</code>，按 revision 逐服务对齐，多出的服务删掉）；</li>
+<li>校验失败事件 <code>syncToVerifyFailedServer</code>（<code>:106-114</code>）：<strong>延迟 0 立即补发</strong>到指定节点。</li>
+</ul>
+<p><code>DistroDataRequestHandler</code>（<code>remote/rpc/handler/DistroDataRequestHandler.java:56-81</code>）是节点间 gRPC 入口：VERIFY&#x2F;SNAPSHOT&#x2F;ADD&#x2F;CHANGE&#x2F;DELETE&#x2F;QUERY 六种数据操作分别转 <code>distroProtocol.onVerify/onSnapshot/onReceive/onQuery</code>。</p>
+<h4 id="7-推送：push-v2-家族"><a href="#7-推送：push-v2-家族" class="headerlink" title="7. 推送：push/v2/ 家族"></a>7. 推送：<code>push/v2/</code> 家族</h4><p>事件到推送的链路（<code>NamingSubscriberServiceV2Impl.java:111-137</code>）：</p>
+<ul>
+<li>订阅 <code>ServiceChangedEvent</code>（服务变更）→ <code>delayTaskEngine.addTask(service, new PushDelayTask(service, pushTaskDelay))</code>；</li>
+<li>订阅 <code>ServiceSubscribedEvent</code>（新订阅者）→ 只推这一个 client（<code>:133-135</code>）；</li>
+<li><code>PushDelayTaskExecuteEngine.PushDelayTaskProcessor.process</code>（<code>PushDelayTaskExecuteEngine.java:101-109</code>）到点后经 <code>NamingExecuteTaskDispatcher</code> 按 service 哈希分发到并行 executor，生成 <code>PushExecuteTask</code>；</li>
+<li><code>PushExecutorRpcImpl.doPush</code>（<code>PushExecutorRpcImpl.java:46-49</code>）：<code>pushService.pushWithoutAck(clientId, NotifySubscriberRequest.buildNotifySubscriberRequest(serviceInfo))</code>；带回调的 <code>doPushWithCallback</code>（<code>:52-59</code>）用于失败重试&#x2F;统计。</li>
+</ul>
+<p><strong>3.2.4 没有 UDP 也没有 SocketAddrReplacementTask</strong>——<code>misc/</code> 包里只剩配置类与工具类；默认 <code>pushTaskDelay=500ms</code>（<code>constants/PushConstants.java:31</code>），即 500ms 内的连续变更会被延迟任务合并，天然防推送风暴。</p>
+<h4 id="8-健康检查家族：healthcheck"><a href="#8-健康检查家族：healthcheck" class="headerlink" title="8. 健康检查家族：healthcheck/"></a>8. 健康检查家族：<code>healthcheck/</code></h4><ul>
+<li><code>ClientBeatCheckTaskV2</code>（<code>heartbeat/ClientBeatCheckTaskV2.java:67-78</code>）：每 5s（<code>SwitchDomain.java:47</code>）遍历 client 的所有发布服务，逐个构造 <code>InstanceBeatCheckTask</code> 过拦截链（<code>InstanceBeatCheckTaskInterceptorChain</code>，含”服务是否开启检查””实例是否开启检查””是否本节点负责”等拦截器）；</li>
+<li><code>HealthCheckProcessorV2Delegate</code>（<code>healthcheck/v2/processor/HealthCheckProcessorV2Delegate.java:66-77</code>）：按集群元数据的 <code>healthyCheckType</code> 选处理器（TCP&#x2F;HTTP&#x2F;MySQL&#x2F;NONE…），未命中回落 <code>NoneHealthCheckProcessor</code>；主动检查地址非法直接 <code>checkFailNow</code>（<code>:72-74</code>）；</li>
+<li><code>HealthCheckCommonV2.checkFail</code>（<code>HealthCheckCommonV2.java:144-188</code>）：失败计数达 <code>switchDomain.getCheckTimes()</code> 且<strong>本节点对该 client 负责</strong>（<code>:157-159</code> 的 <code>distroMapper.responsible</code>）才真正置不健康并同步状态；<code>checkFailNow</code>（<code>:197-232</code>）跳过计数直接置不健康。</li>
+</ul>
+<h4 id="9-过期清理：EphemeralIpPortClientManager"><a href="#9-过期清理：EphemeralIpPortClientManager" class="headerlink" title="9. 过期清理：EphemeralIpPortClientManager"></a>9. 过期清理：<code>EphemeralIpPortClientManager</code></h4><p>构造时即注册定时清理（<code>EphemeralIpPortClientManager.java:61-66</code>），周期 <code>Constants.DEFAULT_HEART_BEAT_INTERVAL=5s</code>（<code>api/common/Constants.java:189</code>）。<code>ExpiredClientCleaner.isExpireClient</code>（<code>:171-175</code>）：<strong>既发布了服务又超过 3 分钟未更新</strong>（<code>ClientConstants.DEFAULT_CLIENT_EXPIRED_TIME</code>，<code>ClientConstants.java:44</code>）或空发布等组合条件才回收。<code>IpPortBasedClient.isExpire</code>（<code>IpPortBasedClient.java:92-97</code>）同理。<code>isResponsibleClient</code>（<code>:122-126</code>）委托 <code>distroMapper.responsible(getResponsibleId())</code>——<strong>责任模型贯穿心跳、健康检查、distro 同步三处</strong>。</p>
+<h3 id="关键图：一次注册的完整生命周期"><a href="#关键图：一次注册的完整生命周期" class="headerlink" title="关键图：一次注册的完整生命周期"></a>关键图：一次注册的完整生命周期</h3><pre><code class="highlight mermaid">flowchart TD
+    A[&quot;HTTP register 或 gRPC InstanceRequest&quot;] --&gt; B[&quot;InstanceControllerV3 / InstanceRequestHandler&quot;]
+    B --&gt; C[&quot;InstanceOperatorClientImpl.registerInstance&lt;br/&gt;clientId = ip:port$ephemeral&quot;]
+    C --&gt; D[&quot;EphemeralClientOperationServiceImpl&lt;br/&gt;addServiceInstance 写入 IpPortBasedClient&quot;]
+    D --&gt; E[&quot;ClientRegisterServiceEvent&quot;]
+    E --&gt; F[&quot;ServiceChangedEvent&quot;]
+    F --&gt; G[&quot;NamingSubscriberServiceV2Impl&lt;br/&gt;PushDelayTask 500ms 合并&quot;]
+    G --&gt; H[&quot;PushExecuteTask → PushExecutorRpcImpl&quot;]
+    H --&gt; I[&quot;RpcPushService.pushWithoutAck&lt;br/&gt;gRPC NotifySubscriberRequest&quot;]
+    D --&gt; J[&quot;ClientChangedEvent&quot;]
+    J --&gt; K[&quot;DistroClientDataProcessor.syncToAllServer&lt;br/&gt;仅本机负责的 ephemeral client&quot;]
+    K --&gt; L[&quot;DistroProtocol.syncToTarget&lt;br/&gt;DistroDelayTask 默认延迟&quot;]
+    L --&gt; M[&quot;gRPC DistroDataRequest → 对端 DistroDataRequestHandler&quot;]
+    M --&gt; N[&quot;DistroProtocol.onReceive → processData&lt;br/&gt;ClientSyncData → syncClientConnected&quot;]
+    N --&gt; O[&quot;对端 ServiceStorage 拼装 ServiceInfo&quot;]
+    O --&gt; I</code></pre>
+
+<h3 id="输入-输出表-1"><a href="#输入-输出表-1" class="headerlink" title="输入&#x2F;输出表"></a>输入&#x2F;输出表</h3><table>
+<thead>
+<tr>
+<th>环节</th>
+<th>输入</th>
+<th>输出</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>InstanceControllerV3.register</code></td>
+<td><code>InstanceForm</code></td>
+<td><code>Instance</code>（ephemeral 默认 true）</td>
+</tr>
+<tr>
+<td><code>EphemeralClientOperationServiceImpl.registerInstance</code></td>
+<td><code>Service + Instance + clientId</code></td>
+<td>client.publishers 新增 + 2 个事件</td>
+</tr>
+<tr>
+<td><code>ServiceManager.getSingleton</code></td>
+<td><code>Service</code></td>
+<td>全进程唯一 Service（可能新诞生）</td>
+</tr>
+<tr>
+<td><code>DistroMapper.responsible</code></td>
+<td>clientId（v2）</td>
+<td>本机是否负责</td>
+</tr>
+<tr>
+<td><code>DistroClientDataProcessor.processData</code></td>
+<td><code>DistroData(ClientSyncData)</code></td>
+<td>对端 client 数据对齐</td>
+</tr>
+<tr>
+<td><code>ServiceStorage.getPushData</code></td>
+<td><code>Service</code></td>
+<td><code>ServiceInfo</code>（含 hosts&#x2F;metadata）</td>
+</tr>
+<tr>
+<td><code>PushExecutorRpcImpl.doPush</code></td>
+<td><code>clientId + PushDataWrapper</code></td>
+<td>gRPC <code>NotifySubscriberRequest</code></td>
+</tr>
+</tbody></table>
+<h3 id="端到端演算-①：一个实例从注册到被推送"><a href="#端到端演算-①：一个实例从注册到被推送" class="headerlink" title="端到端演算 ①：一个实例从注册到被推送"></a>端到端演算 ①：一个实例从注册到被推送</h3><p>场景：3 节点集群（A&#x2F;B&#x2F;C），客户端 X（10.0.0.1:8080，ephemeral）连到节点 A 注册 <code>default@@order-service</code>，订阅者 Y 连到节点 C。</p>
+<ol>
+<li><strong>注册落本机</strong>：X 的 gRPC <code>InstanceRequest</code> 到 A → <code>InstanceRequestHandler.registerInstance</code>（<code>InstanceRequestHandler.java:81-95</code>）→ <code>InstanceOperatorClientImpl.registerInstance</code> → <code>clientId = &quot;10.0.0.1:8080$true&quot;</code> → <code>EphemeralClientOperationServiceImpl</code> 把 <code>InstancePublishInfo</code> 写进 A 上的 <code>IpPortBasedClient</code>，<code>recalculateRevision</code>；</li>
+<li><strong>判定责任</strong>：A 的 <code>DistroMapper.responsible(&quot;10.0.0.1:8080$true&quot;)</code> 为 true（假设哈希落在 A），A 是该 client 的责任节点；</li>
+<li><strong>distro 同步</strong>：写操作发 <code>ClientChangedEvent</code> → <code>DistroClientDataProcessor.onEvent</code> → <code>syncToAllServer</code> → <code>DistroProtocol.sync(CHANGE)</code> → 对 B、C 各建 <code>DistroDelayTask</code> → 到点经 gRPC 发 <code>DistroDataRequest</code>；B&#x2F;C 的 <code>DistroDataRequestHandler.handleSyncData</code> → <code>DistroProtocol.onReceive</code> → <code>processData</code> 反序列化 → <code>syncClientConnected</code> + <code>upgradeClient</code>（B&#x2F;C 上凭空出现 X 的 client 记录，但<strong>不产生真实连接</strong>）；</li>
+<li><strong>触发推送</strong>：A 上 <code>ClientRegisterServiceEvent</code> 汇成 <code>ServiceChangedEvent</code> → <code>NamingSubscriberServiceV2Impl.onEvent</code> → 500ms 延迟任务 → <code>PushExecuteTask</code>；</li>
+<li><strong>执行推送</strong>：<code>PushExecutorRpcImpl.doPushWithCallback</code> 先从 <code>ServiceStorage</code> 拼 <code>ServiceInfo</code>（此时 C 节点上也已能拼出含 X 的列表）→ 对订阅者 Y 的 gRPC 连接 <code>pushWithCallback(NotifySubscriberRequest)</code>；</li>
+<li><strong>兜底</strong>：若 B 错过 CHANGE（丢包&#x2F;不在线），A 的 <code>DistroVerifyTimedTask</code>（默认周期由 <code>DistroConfig.verifyIntervalMillis</code> 控制）定期向 B 发 VERIFY，B 校验 revision 不符返回失败 → A 对该 target 立即补发（<code>syncToVerifyFailedServer</code> 延迟 0）；B 重启则 <code>DistroLoadDataTask</code> 向 A 拉 SNAPSHOT 全量（<code>DistroClientDataProcessor.processSnapshot</code>，<code>:254-261</code>）。</li>
+</ol>
+<h3 id="第二讲小结：客户端即数据，责任即路由，推送即-gRPC"><a href="#第二讲小结：客户端即数据，责任即路由，推送即-gRPC" class="headerlink" title="第二讲小结：客户端即数据，责任即路由，推送即 gRPC"></a>第二讲小结：客户端即数据，责任即路由，推送即 gRPC</h3><p><strong>一句话定位</strong>：3.2.4 的 naming 把”临时实例”存成”客户端对象的发布表”（<code>IpPortBasedClient.publishers</code>），用 <code>DistroMapper</code> 哈希环决定每台机器负责哪些 client，变更经事件总线同时流向 distro 同步（节点间）与延迟推送引擎（订阅者），读路径 <code>ServiceStorage</code> 实时拼装 <code>ServiceInfo</code>；UDP 已死，gRPC 一统客户端与节点间通信。</p>
+<pre><code class="highlight mermaid">flowchart LR
+    A[&quot;registerInstance&quot;] --&gt; B[&quot;IpPortBasedClient.publishers&quot;]
+    B --&gt; C[&quot;ClientChangedEvent&quot;]
+    C --&gt; D[&quot;distro sync&lt;br/&gt;仅本机负责 client&quot;]
+    B --&gt; E[&quot;ServiceChangedEvent&quot;]
+    E --&gt; F[&quot;PushDelayTask 500ms 合并&quot;]
+    F --&gt; G[&quot;gRPC NotifySubscriberRequest&quot;]
+    D --&gt; H[&quot;对端 syncClientConnected&lt;br/&gt;upgradeClient 按 revision 对齐&quot;]</code></pre>
+
+<p><strong>naming 核心的输入&#x2F;输出</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>机制</th>
+<th>输入</th>
+<th>输出</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ServiceManager</td>
+<td>Service 四元组</td>
+<td>单例 + 诞生事件</td>
+</tr>
+<tr>
+<td>DistroMapper</td>
+<td>clientId &#x2F; serviceName</td>
+<td>责任归属（哈希环）</td>
+</tr>
+<tr>
+<td>DistroClientDataProcessor</td>
+<td>ClientEvent</td>
+<td>节点间 ADD&#x2F;CHANGE&#x2F;DELETE 同步</td>
+</tr>
+<tr>
+<td>PushDelayTaskExecuteEngine</td>
+<td>ServiceChangedEvent</td>
+<td>合并后的 PushExecuteTask</td>
+</tr>
+<tr>
+<td>ClientBeatCheckTaskV2</td>
+<td>5s 定时</td>
+<td>心跳过期判定</td>
+</tr>
+<tr>
+<td>ExpiredClientCleaner</td>
+<td>5s 定时 + 3min 阈值</td>
+<td>client 回收</td>
+</tr>
+</tbody></table>
+<p><strong>三个最值得记住的点</strong>：</p>
+<ol>
+<li><strong>数据不在”服务”里，在”客户端”里</strong>：<code>ServiceManager</code> 只管服务单例，实例数据在 <code>IpPortBasedClient.publishers</code>，所以 distro 同步的最小单元是”一个 client 的全部发布”（<code>ClientSyncData</code> 带 revision），不是单个实例——这决定了同步粒度与校验方式；</li>
+<li><strong>责任模型是三处共用的一把尺</strong>：心跳检查、健康检查摘除、distro 同步都先问 <code>distroMapper.responsible(...)</code>，非责任节点只做镜像不做决策（<code>HealthCheckCommonV2.java:157-159</code>）；</li>
+<li><strong>3.2.4 没有 UDP</strong>：<code>InstanceOperatorClientImpl.java:201</code> 的 warn 是旧版迁移的硬边界；推送统一走 <code>RpcPushService</code> 的 gRPC，且 <code>pushWithoutAck</code>（不等客户端 ACK，失败靠客户端侧查询补偿）与 <code>pushWithCallback</code>（带重试回调）两种语义并存。</li>
+</ol>
+<hr>
+<h2 id="第三讲：config-配置中心-——-缓存、dump、长轮询与-gRPC-监听"><a href="#第三讲：config-配置中心-——-缓存、dump、长轮询与-gRPC-监听" class="headerlink" title="第三讲：config 配置中心 —— 缓存、dump、长轮询与 gRPC 监听"></a>第三讲：config 配置中心 —— 缓存、dump、长轮询与 gRPC 监听</h2><h3 id="定位-2"><a href="#定位-2" class="headerlink" title="定位"></a>定位</h3><p>config 模块管理”配置内容”的全生命周期：发布 → 落库 → 本地双层缓存（JVM + 磁盘）→ 通知。3.2.4 的 config 与 naming 形成有趣对照：<strong>naming 的数据在内存里实时拼装，config 的数据必须落库 + dump 磁盘</strong>（配置是耐久资产）；<strong>naming 节点间同步走 distro（AP），config 在外部数据库模式下节点间只走 <code>AsyncNotifyService</code> 的 gRPC 点对点通知 + 失败重试</strong>，而内嵌 Derby 模式下配置数据改由 Raft（CP）跨节点复制、且只有 leader 能执行 dump（<code>EmbeddedDumpService.java:178-183</code>，见第四讲）。</p>
+<h3 id="目录结构：config-模块的树（只列主路径）"><a href="#目录结构：config-模块的树（只列主路径）" class="headerlink" title="目录结构：config 模块的树（只列主路径）"></a>目录结构：config 模块的树（只列主路径）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">config/src/main/java/com/alibaba/nacos/config/server/</span><br><span class="line">├── Config.java                        # 模块独立启动类（生产由 bootstrap 统一点火）</span><br><span class="line">├── controller/v3/ConfigControllerV3.java   # HTTP 发布/查询/beta 管理</span><br><span class="line">├── service/</span><br><span class="line">│   ├── ConfigCacheService.java        # JVM 缓存 CACHE + MD5 + 磁盘 dump</span><br><span class="line">│   ├── ConfigOperationService.java    # 发布编排（正式/beta/tag 三路）</span><br><span class="line">│   ├── ConfigChangePublisher.java     # ConfigDataChangeEvent 发布门面</span><br><span class="line">│   ├── LongPollingService.java        # HTTP 长轮询（30s）</span><br><span class="line">│   ├── notify/AsyncNotifyService.java # 节点间 gRPC 通知 + 退避重试</span><br><span class="line">│   └── dump/</span><br><span class="line">│       ├── DumpService.java           # dump 抽象（内嵌/外部存储）</span><br><span class="line">│       ├── DumpChangeConfigWorker.java# 定时扫描 DB 补偿本地缓存</span><br><span class="line">│       └── disk/ConfigDiskServiceFactory.java</span><br><span class="line">├── model/event/ConfigDataChangeEvent.java  # 跨节点事件</span><br><span class="line">├── model/event/LocalDataChangeEvent.java   # 本机事件</span><br><span class="line">└── remote/</span><br><span class="line">    ├── ConfigPublishRequestHandler.java      # gRPC 发布</span><br><span class="line">    ├── ConfigChangeBatchListenRequestHandler.java # gRPC 批量监听</span><br><span class="line">    ├── ConfigChangeListenContext.java        # 连接→监听组 双向索引</span><br><span class="line">    └── RpcConfigChangeNotifier.java          # gRPC 主动推送</span><br></pre></td></tr></table></figure>
+
+<h3 id="逐文件精读-2"><a href="#逐文件精读-2" class="headerlink" title="逐文件精读"></a>逐文件精读</h3><h4 id="1-发布入口：controller-v3-ConfigControllerV3-java-与-gRPC-handler"><a href="#1-发布入口：controller-v3-ConfigControllerV3-java-与-gRPC-handler" class="headerlink" title="1. 发布入口：controller/v3/ConfigControllerV3.java 与 gRPC handler"></a>1. 发布入口：<code>controller/v3/ConfigControllerV3.java</code> 与 gRPC handler</h4><p>HTTP 发布（<code>ConfigControllerV3.java:204-250</code>）：校验参数 → 加密处理（<code>EncryptionHandler.encryptHandler</code>，<code>:233-237</code>）→ 组装 <code>ConfigRequestInfo</code>（含 <code>betaIps</code>、<code>casMd5</code> 头，<code>:239-245</code>）→ <code>configOperationService.publishConfig</code>。gRPC 入口 <code>ConfigPublishRequestHandler</code> 逻辑同构（<code>ConfigPublishRequestHandler.java:117-131</code>），只是来源换成请求附加参数。</p>
+<h4 id="2-发布编排：service-ConfigOperationService-java"><a href="#2-发布编排：service-ConfigOperationService-java" class="headerlink" title="2. 发布编排：service/ConfigOperationService.java"></a>2. 发布编排：<code>service/ConfigOperationService.java</code></h4><p><code>publishConfig</code>（<code>ConfigOperationService.java:88-191</code>）按优先级分三路：</p>
+<table>
+<thead>
+<tr>
+<th>分支</th>
+<th>条件</th>
+<th>动作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>beta</td>
+<td><code>configRequestInfo.betaIps</code> 非空（<code>:106</code>）</td>
+<td><code>grayName=beta</code>、优先级 <code>Integer.MAX_VALUE</code>，落 <code>config_info_beta</code> 表 + <code>publishConfigGray</code></td>
+</tr>
+<tr>
+<td>tag</td>
+<td><code>configForm.tag</code> 非空（<code>:118</code>）</td>
+<td><code>grayName=tag_&lt;tag&gt;</code>、优先级 <code>MAX-1</code>，落 tag 灰度</td>
+</tr>
+<tr>
+<td>正式</td>
+<td>其余</td>
+<td><code>insertOrUpdateCas</code>（带 casMd5，冲突抛 <code>RESOURCE_CONFLICT</code>，<code>:136-148</code>）或 <code>addConfigInfo</code>&#x2F;<code>insertOrUpdate</code></td>
+</tr>
+</tbody></table>
+<p>正式路最后 <code>ConfigChangePublisher.notifyConfigChange(new ConfigDataChangeEvent(...))</code>（<code>:172-175</code>），istio 标签额外发 <code>IstioConfigChangeEvent</code>（<code>:176-182</code>）。</p>
+<h4 id="3-事件门面：service-ConfigChangePublisher-java"><a href="#3-事件门面：service-ConfigChangePublisher-java" class="headerlink" title="3. 事件门面：service/ConfigChangePublisher.java"></a>3. 事件门面：<code>service/ConfigChangePublisher.java</code></h4><p><code>notifyConfigChange</code>（<code>ConfigChangePublisher.java:36-41</code>）有一个关键短路：<strong>内嵌存储且非 standalone 时直接丢弃</strong>（<code>:37-39</code>）——因为内嵌 Derby 在多节点下没有”主库触发变更”的语义，此时节点间同步完全靠轮询 dump 补偿，这是 3.x 推荐外部数据库的原因之一。</p>
+<h4 id="4-双层缓存：service-ConfigCacheService-java"><a href="#4-双层缓存：service-ConfigCacheService-java" class="headerlink" title="4. 双层缓存：service/ConfigCacheService.java"></a>4. 双层缓存：<code>service/ConfigCacheService.java</code></h4><p><code>CACHE</code> 是 <code>static ConcurrentHashMap&lt;String, CacheItem&gt;</code>（<code>ConfigCacheService.java:66</code>），key 是 <code>GroupKey2.getKey(dataId, group, tenant)</code>。<code>dumpWithMd5</code>（<code>:84-164</code>）是缓存写核心：</p>
+<ol>
+<li><code>tryWriteLock(groupKey)</code>（<code>:90</code>，CacheItem 级读写锁，拿不到返回 false）；</li>
+<li><strong>时间戳防线</strong>：<code>lastModifiedTs</code> 旧于本地则忽略（<code>:100-105</code>）——防旧消息覆盖新状态；</li>
+<li><code>md5</code> 为 null 则现算（<code>:110-112</code>）；</li>
+<li>md5 变化 → <code>saveToDisk</code>（<code>:117-122</code>）+ <code>updateMd5</code>；md5 相同但时间戳更新 → 只 <code>updateTimeStamp</code>（<code>:135-139</code>）；</li>
+<li><code>updateMd5</code>（<code>:385-396</code>）里 md5 真变了才 <code>NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey))</code>——<strong>本地事件只在内容真变时发</strong>；</li>
+<li>磁盘满（”No space left on device”&#x2F;“超出磁盘限额”）→ <code>EnvUtil.systemExit()</code>（<code>:149-157</code>）：<strong>宁可退出也不丢数据</strong>。</li>
+</ol>
+<p>灰度缓存 <code>dumpGray</code>（<code>:197-280</code>）同构：md5 变 → 更新 JVM + 磁盘；灰度规则变 → 只更新规则；时间戳变 → 只更新时间。<code>isUptodate(groupKey, md5, ip, tag)</code>（<code>:541-553</code>）是长轮询的比对基础，支持按 ip&#x2F;tag 匹配灰度优先级（<code>getContentMd5</code>，<code>:431-463</code>）。</p>
+<h4 id="5-磁盘-dump-与补偿：service-dump-家族"><a href="#5-磁盘-dump-与补偿：service-dump-家族" class="headerlink" title="5. 磁盘 dump 与补偿：service/dump/ 家族"></a>5. 磁盘 dump 与补偿：<code>service/dump/</code> 家族</h4><p><code>DumpService</code>（<code>DumpService.java:61</code>）是抽象类，<code>EmbeddedDumpService</code>&#x2F;<code>ExternalDumpService</code> 两种实现对应内嵌&#x2F;外部存储。<code>DumpChangeConfigWorker.run</code>（<code>DumpChangeConfigWorker.java:73-173</code>）是<strong>数据库 → 本地缓存的补偿循环</strong>：</p>
+<ul>
+<li>开关 <code>PropertyUtil.isDumpChangeOn()</code>（<code>:75-78</code>）；</li>
+<li>先扫删除：<code>historyConfigInfoPersistService.findDeletedConfig</code> 分页（100&#x2F;页）找已删配置 → <code>ConfigCacheService.remove</code>（<code>:90-101</code>）；</li>
+<li>再扫变更：<code>findChangeConfig(startTime, cursorId, pageSize)</code>（<code>:116-118</code>）按 <code>id</code> 游标翻页，md5 或时间戳变化则 <code>ConfigCacheService.dump</code> 拉全量内容入缓存（<code>:131-145</code>）；</li>
+<li>finally 里<strong>自调度下一轮</strong>：<code>scheduleConfigChangeTask(this, dumpChangeWorkerInterval)</code>（<code>:167-169</code>）——间隔由配置控制，这是”别人改的库，我怎么知道”的答案：定时轮询补偿。</li>
+</ul>
+<h4 id="6-HTTP-长轮询：service-LongPollingService-java"><a href="#6-HTTP-长轮询：service-LongPollingService-java" class="headerlink" title="6. HTTP 长轮询：service/LongPollingService.java"></a>6. HTTP 长轮询：<code>service/LongPollingService.java</code></h4><p><code>allSubs</code> 是 <code>ConcurrentLinkedQueue&lt;ClientLongPolling&gt;</code>（<code>LongPollingService.java:278</code>），即 in-flight 客户端集合。<code>addLongPollingClient</code>（<code>:177-226</code>）流程：</p>
+<ol>
+<li><code>MD5Util.compareMd5(req, rsp, clientMd5Map)</code> 立即比对，有变化<strong>秒回</strong>（<code>:184-191</code>，日志 <code>instant</code>）；</li>
+<li>带 <code>Long-Pulling-Timeout-No-Hangup</code> 头则直接返回不挂起（<code>:192-198</code>）；</li>
+<li><code>req.startAsync()</code> + <code>asyncContext.setTimeout(0L)</code>（<code>:201-203</code>）——<strong>超时完全自己管</strong>；</li>
+<li><code>checkLimit</code>（<code>:205-211</code>）连接数超限 → 延迟 1-3s 随机返回 <strong>503</strong>（防惊群）；</li>
+<li>超时时间 &#x3D; <code>max(10000, 客户端请求值 - 500)</code>（<code>:215-222</code>，提前 500ms 返回防客户端超时）；</li>
+<li><code>ConfigExecutor.executeLongPolling(new ClientLongPolling(...))</code>。</li>
+</ol>
+<p>构造函数里注册 <code>LocalDataChangeEvent</code> 订阅（<code>:243-269</code>）：<code>DataChangeTask</code>（<code>:280-316</code>）遍历 <code>allSubs</code>，把监听该 groupKey 的 client <strong>移出队列并 sendResponse</strong>（<code>:287-300</code>）。<code>ClientLongPolling.run</code>（<code>:330-357</code>）到超时后同样移出队列并 <code>sendResponse(null)</code>（空响应&#x3D;无变化，客户端下一轮再来）。<code>StatTask</code> 每 10s 打点订阅数（<code>:246</code>、<code>:318-325</code>）。</p>
+<h4 id="7-节点间通知：service-notify-AsyncNotifyService-java"><a href="#7-节点间通知：service-notify-AsyncNotifyService-java" class="headerlink" title="7. 节点间通知：service/notify/AsyncNotifyService.java"></a>7. 节点间通知：<code>service/notify/AsyncNotifyService.java</code></h4><p>构造时订阅 <code>ConfigDataChangeEvent</code>（<code>AsyncNotifyService.java:83-104</code>）。<code>handleConfigDataChangeEvent</code>（<code>:106-129</code>）对每个非本机成员生成 <code>NotifySingleRpcTask</code>；<code>executeAsyncRpcTask</code>（<code>:164-207</code>）：</p>
+<ul>
+<li>成员不健康（<code>isUnHealthy</code>，<code>:160-162</code>）→ 不进 RPC，直接 <code>asyncTaskExecute</code> 延迟重试（<code>:181-189</code>）；</li>
+<li>健康 → <code>configClusterRpcClientProxy.syncConfigChange(member, syncRequest, callback)</code>（<code>:194</code>）gRPC 通知对端”你的缓存该更新了”；</li>
+<li>回调 <code>AsyncRpcNotifyCallBack</code>（<code>:334-412</code>）：<code>onResponse</code> 成功记 trace；失败&#x2F;异常都回 <code>asyncTaskExecute</code>；</li>
+<li><strong>退避公式</strong>：<code>delay = 500 + failCount^2 * 1000</code>，<code>failCount</code> 封顶 6 次后不再涨（<code>getDelayTime</code>，<code>:421-428</code>）。</li>
+</ul>
+<p>注意与 2.x 的命名差异：旧版 <code>ConfigChangeNotifier</code> 在 3.2.4 已不存在，其职责由 <code>AsyncNotifyService</code>（节点间）+ <code>RpcConfigChangeNotifier</code>（对 gRPC 客户端）分担。</p>
+<h4 id="8-gRPC-监听与主动推送"><a href="#8-gRPC-监听与主动推送" class="headerlink" title="8. gRPC 监听与主动推送"></a>8. gRPC 监听与主动推送</h4><p>服务端 <code>ConfigChangeBatchListenRequestHandler.handle</code>（<code>ConfigChangeBatchListenRequestHandler.java:60-97</code>）：对每个监听项 <code>configChangeListenContext.addListen(groupKey, md5, connectionId, ...)</code>（<code>:80</code>），**顺手比对 <code>ConfigCacheService.isUptodate</code>**，不一致直接把该配置塞进响应 <code>addChangeConfig</code>（<code>:82-89</code>）——即 gRPC 监听请求本身是一次性检查。<code>ConfigChangeListenContext</code>（<code>:48</code>）维护 <code>connectionId → groupKey → md5</code> 与 <code>groupKey → connectionId</code> 双向索引（<code>addListen</code>，<code>:57-64</code>）。</p>
+<p><code>RpcConfigChangeNotifier.configDataChanged</code>（<code>RpcConfigChangeNotifier.java:87-116</code>）：本地&#x2F;远程事件到达后，从 context 取该 groupKey 的全部 connectionId，逐个发 <code>ConfigChangeNotifyRequest</code>（只带 dataId&#x2F;group&#x2F;tenant，不带内容——客户端收到后自己来取，<code>:107-108</code>）。</p>
+<h3 id="关键图：一次配置发布的两条通知路径"><a href="#关键图：一次配置发布的两条通知路径" class="headerlink" title="关键图：一次配置发布的两条通知路径"></a>关键图：一次配置发布的两条通知路径</h3><pre><code class="highlight mermaid">flowchart TD
+    A[&quot;publishConfig&lt;br/&gt;HTTP 或 gRPC&quot;] --&gt; B[&quot;ConfigOperationService&quot;]
+    B --&gt;|&quot;正式/beta/tag&quot;| C[&quot;configInfoPersistService 落库&quot;]
+    C --&gt; D[&quot;ConfigChangePublisher.notifyConfigChange&lt;br/&gt;ConfigDataChangeEvent&quot;]
+    D --&gt; E[&quot;AsyncNotifyService&lt;br/&gt;逐成员 gRPC syncConfigChange&quot;]
+    E --&gt; F[&quot;对端 ConfigChangeClusterSyncRequestHandler&lt;br/&gt;dump 更新本地缓存&quot;]
+    D --&gt; G[&quot;LocalDataChangeEvent&quot;]
+    G --&gt; H[&quot;LongPollingService.DataChangeTask&lt;br/&gt;唤醒 HTTP 长轮询 client&quot;]
+    G --&gt; I[&quot;RpcConfigChangeNotifier.configDataChanged&lt;br/&gt;向 gRPC 连接推 ConfigChangeNotifyRequest&quot;]
+    C --&gt; J[&quot;DumpChangeConfigWorker 定时补偿&lt;br/&gt;扫 DB findChangeConfig&quot;]
+    J --&gt; K[&quot;ConfigCacheService.dumpWithMd5&lt;br/&gt;JVM+磁盘+MD5&quot;]
+    K --&gt; G</code></pre>
+
+<h3 id="输入-输出表-2"><a href="#输入-输出表-2" class="headerlink" title="输入&#x2F;输出表"></a>输入&#x2F;输出表</h3><table>
+<thead>
+<tr>
+<th>环节</th>
+<th>输入</th>
+<th>输出</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ConfigControllerV3.publishConfig</code></td>
+<td><code>ConfigFormV3</code> + betaIps&#x2F;casMd5 头</td>
+<td>布尔成功</td>
+</tr>
+<tr>
+<td><code>ConfigCacheService.dumpWithMd5</code></td>
+<td>dataId&#x2F;group&#x2F;tenant&#x2F;content&#x2F;md5&#x2F;ts</td>
+<td>JVM CACHE + 磁盘 + 可选 <code>LocalDataChangeEvent</code></td>
+</tr>
+<tr>
+<td><code>LongPollingService.addLongPollingClient</code></td>
+<td>客户端 md5 map</td>
+<td>变更 groupKey 列表 or 空（30s 后）</td>
+</tr>
+<tr>
+<td><code>AsyncNotifyService</code></td>
+<td><code>ConfigDataChangeEvent</code></td>
+<td>逐成员 <code>ConfigChangeClusterSyncRequest</code></td>
+</tr>
+<tr>
+<td><code>DumpChangeConfigWorker</code></td>
+<td>startTime + 游标</td>
+<td>本地缓存与 DB 对齐</td>
+</tr>
+<tr>
+<td><code>ConfigChangeBatchListenRequestHandler</code></td>
+<td>监听项 + md5</td>
+<td>不一致的配置列表（立即）</td>
+</tr>
+</tbody></table>
+<h3 id="端到端演算-②：一次配置发布到长轮询客户端收到变更"><a href="#端到端演算-②：一次配置发布到长轮询客户端收到变更" class="headerlink" title="端到端演算 ②：一次配置发布到长轮询客户端收到变更"></a>端到端演算 ②：一次配置发布到长轮询客户端收到变更</h3><p>场景：3 节点集群（A&#x2F;B&#x2F;C，外部 MySQL），客户端 Z 用 <strong>HTTP 长轮询</strong>监听 <code>order-service.yaml</code>，发布者 P 向 A 发布新内容。</p>
+<ol>
+<li><strong>发布</strong>：P → A 的 <code>ConfigControllerV3.publishConfig</code> → <code>ConfigOperationService.publishConfig</code> 正式路 → <code>configInfoPersistService.addConfigInfo</code> 写 MySQL（带 <code>lastModifiedTs</code>）；</li>
+<li><strong>本机缓存更新</strong>：<code>ConfigChangePublisher.notifyConfigChange</code> 发 <code>ConfigDataChangeEvent</code> → A 的订阅者 <code>ConfigCacheService.dumpWithMd5</code>（经 dump 链路）把新内容 + 新 md5 写入 JVM CACHE 与磁盘，md5 真变 → 发 <code>LocalDataChangeEvent</code>；</li>
+<li><strong>本机长轮询唤醒</strong>：A 上挂着 Z 的 <code>ClientLongPolling</code>（在 <code>allSubs</code> 里），<code>DataChangeTask</code> 遍历发现监听该 groupKey → 移出队列、<code>sendResponse</code> 返回变更的 groupKey 列表（<code>:287-300</code>）；</li>
+<li><strong>Z 的下一轮</strong>：Z 收到非空响应 → 立即用 <code>getConfig</code> 拉全量新内容 → <code>CacheData.checkListenerMd5</code> 发现 md5 与 <code>lastCallMd5</code> 不同 → <code>safeNotifyListener</code> 触发用户 <code>Listener</code>（<code>CacheData.java:346-352</code>）；</li>
+<li><strong>通知 B&#x2F;C</strong>：<code>AsyncNotifyService</code> 同时（步骤 2 的事件）对 B、C 各发 gRPC <code>ConfigChangeClusterSyncRequest</code>；B&#x2F;C 收到后触发本机 dump 更新本地 CACHE——<strong>B&#x2F;C 上监听该配置的长轮询客户端也在各自节点被唤醒</strong>（Z 若连 B 则走 B 的 <code>DataChangeTask</code>）；</li>
+<li><strong>兜底</strong>：若 B 不在线没收到通知，B 恢复后 <code>DumpChangeConfigWorker</code> 下一轮 <code>findChangeConfig</code> 会按 <code>lastModified</code> 扫到该变更并 dump（<code>DumpChangeConfigWorker.java:116-145</code>）——<strong>轮询补偿保证最终一致</strong>；</li>
+<li><strong>gRPC 客户端对照</strong>：若 Z 用 2.x&#x2F;3.x SDK（gRPC），则步骤 3 换成：Z 发 <code>ConfigBatchListenRequest</code> 进 <code>ConfigChangeListenContext</code>，A 的 <code>RpcConfigChangeNotifier</code> 向 Z 的连接推 <code>ConfigChangeNotifyRequest</code>（只带 key），Z 的 <code>ClientWorker.handleConfigChangeNotifyRequest</code>（<code>ClientWorker.java:770-790</code>）置 <code>receiveNotifyChanged=true</code> 并敲响监听铃，下一轮 <code>executeConfigListen</code> 对比 md5 后拉取。</li>
+</ol>
+<h3 id="第三讲小结：内容落库、缓存双层、通知三路、补偿兜底"><a href="#第三讲小结：内容落库、缓存双层、通知三路、补偿兜底" class="headerlink" title="第三讲小结：内容落库、缓存双层、通知三路、补偿兜底"></a>第三讲小结：内容落库、缓存双层、通知三路、补偿兜底</h3><p><strong>一句话定位</strong>：config 把”发布”拆成落库（事实源）+ JVM 缓存（读热点）+ 磁盘 dump（重启恢复）三层，变更以 <code>ConfigDataChangeEvent</code> 为轴同时驱动本机长轮询唤醒、本机 gRPC 主动推送、他机 gRPC 通知三条路径，再用定时轮询 DB 的 <code>DumpChangeConfigWorker</code> 补偿一切漏网之问。</p>
+<pre><code class="highlight mermaid">flowchart LR
+    A[&quot;ConfigDataChangeEvent&quot;] --&gt; B[&quot;AsyncNotifyService&lt;br/&gt;节点间 gRPC&quot;]
+    A --&gt; C[&quot;LocalDataChangeEvent&quot;]
+    C --&gt; D[&quot;LongPollingService&lt;br/&gt;HTTP 30s 长轮询&quot;]
+    C --&gt; E[&quot;RpcConfigChangeNotifier&lt;br/&gt;gRPC 主动推 key&quot;]
+    F[&quot;DumpChangeConfigWorker&lt;br/&gt;定时扫 DB&quot;] --&gt; G[&quot;ConfigCacheService.dumpWithMd5&quot;]
+    G --&gt; C</code></pre>
+
+<p><strong>config 核心的输入&#x2F;输出</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>机制</th>
+<th>输入</th>
+<th>输出</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ConfigCacheService</code></td>
+<td>content + md5 + ts</td>
+<td>CACHE + 磁盘 + 事件</td>
+</tr>
+<tr>
+<td><code>LongPollingService</code></td>
+<td>客户端 md5 map</td>
+<td>变更 key 列表（instant&#x2F;in-advance&#x2F;timeout）</td>
+</tr>
+<tr>
+<td><code>AsyncNotifyService</code></td>
+<td>成员列表</td>
+<td>逐成员 RPC + 平方退避重试</td>
+</tr>
+<tr>
+<td><code>DumpChangeConfigWorker</code></td>
+<td>DB 变更扫描</td>
+<td>本地缓存对齐</td>
+</tr>
+<tr>
+<td><code>ConfigChangeListenContext</code></td>
+<td>连接 + md5</td>
+<td>双向索引 + 即时不一致响应</td>
+</tr>
+</tbody></table>
+<p><strong>三个最值得记住的点</strong>：</p>
+<ol>
+<li><strong>md5 是唯一变更标尺</strong>：缓存、长轮询、gRPC 监听、灰度匹配全部围绕 md5 比较；md5 不变即使时间戳变也不发 <code>LocalDataChangeEvent</code>（<code>ConfigCacheService.java:389-395</code>）——没有”假变更”；</li>
+<li><strong>长轮询 30s 但服务端提前 500ms 返回</strong>：<code>timeout = max(10000, 客户端值 - 500)</code>（<code>LongPollingService.java:215-222</code>），且超时由服务端自管理（<code>setTimeout(0L)</code>）；连接超限返回 503 且延迟随机 1-3s，防惊群；</li>
+<li><strong>通知不可靠，补偿才可靠</strong>：节点间通知失败只做平方退避重试（最多约 500+36×1000ms 量级），真正的最终一致靠 <code>DumpChangeConfigWorker</code> 定时扫库；内嵌存储 + 集群模式直接不发节点间通知（<code>ConfigChangePublisher.java:37-39</code>），因为内嵌库没有跨节点共享语义。</li>
+</ol>
+<hr>
+<h2 id="第四讲：一致性协议-——-AP（distro）与-CP（JRaft）双轨制"><a href="#第四讲：一致性协议-——-AP（distro）与-CP（JRaft）双轨制" class="headerlink" title="第四讲：一致性协议 —— AP（distro）与 CP（JRaft）双轨制"></a>第四讲：一致性协议 —— AP（distro）与 CP（JRaft）双轨制</h2><h3 id="定位-3"><a href="#定位-3" class="headerlink" title="定位"></a>定位</h3><p>Nacos 集群把数据按”重要性”分流到两套协议：<strong>临时实例（ephemeral）走 AP</strong>——distro 协议，最终一致、可丢、追求高可用；<strong>持久实例（以及内嵌 Derby 模式下的配置数据）走 CP</strong>——JRaft，强一致、选主、日志复制。分流的总闸是 <code>ProtocolManager</code>，而”哪种数据走哪条路”的判决写在业务服务的写方法里（<code>EphemeralClientOperationServiceImpl</code> vs <code>PersistentClientOperationServiceImpl</code>&#x2F;<code>EmbeddedDumpService</code>）。本讲读 <code>consistency/</code> 模块的协议抽象与 <code>core/distributed/</code> 的两个实现。</p>
+<h3 id="目录结构：一致性层的树"><a href="#目录结构：一致性层的树" class="headerlink" title="目录结构：一致性层的树"></a>目录结构：一致性层的树</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">consistency/src/main/java/com/alibaba/nacos/consistency/</span><br><span class="line">├── ConsistencyProtocol.java        # 协议总接口（init/write/read/memberChange/shutdown）</span><br><span class="line">├── Config.java                     # 协议配置（members 集合）</span><br><span class="line">├── DataOperation.java              # ADD/CHANGE/DELETE/VERIFY/SNAPSHOT/QUERY</span><br><span class="line">├── RequestProcessor.java           # 处理器总接口</span><br><span class="line">├── ap/</span><br><span class="line">│   ├── APProtocol.java             # AP 标记接口（无额外方法）</span><br><span class="line">│   └── RequestProcessor4AP.java    # AP 侧处理器（onRequest/onApply）</span><br><span class="line">├── cp/</span><br><span class="line">│   ├── CPProtocol.java             # CP 标记接口 + isLeader(group)</span><br><span class="line">│   └── RequestProcessor4CP.java    # CP 侧处理器</span><br><span class="line">└── snapshot/                       # 快照序列化支撑</span><br><span class="line"></span><br><span class="line">core/src/main/java/com/alibaba/nacos/core/distributed/</span><br><span class="line">├── ProtocolManager.java            # 双协议懒加载 + 成员变更分发</span><br><span class="line">├── ProtocolExecutor.java           # AP/CP 成员变更的单线程执行器</span><br><span class="line">├── distro/                         # AP 实现（第二讲已详述同步链路）</span><br><span class="line">│   ├── DistroProtocol.java</span><br><span class="line">│   ├── task/&#123;delay,load,verify,execute&#125;/   # 延迟同步/全量加载/定期校验</span><br><span class="line">│   └── component/                  # DistroDataProcessor/Storage/TransportAgent</span><br><span class="line">└── raft/                           # CP 实现（JRaft 集成）</span><br><span class="line">    ├── JRaftProtocol.java          # CPProtocol 实现</span><br><span class="line">    ├── JRaftServer.java            # JRaft 服务器封装</span><br><span class="line">    ├── NacosStateMachine.java      # 状态机：apply 日志</span><br><span class="line">    └── JRaftMaintainService.java   # 运维指令（transfer leader 等）</span><br></pre></td></tr></table></figure>
+
+<h3 id="逐文件精读-3"><a href="#逐文件精读-3" class="headerlink" title="逐文件精读"></a>逐文件精读</h3><h4 id="1-协议抽象：consistency-包"><a href="#1-协议抽象：consistency-包" class="headerlink" title="1. 协议抽象：consistency/ 包"></a>1. 协议抽象：<code>consistency/</code> 包</h4><p><code>APProtocol</code>（<code>consistency/ap/APProtocol.java</code>，全文 31 行）只是个标记接口，<code>extends ConsistencyProtocol&lt;C, P&gt;</code>，无任何额外方法——AP 的能力全部由实现类（distro）自己定义。<code>CPProtocol</code>（<code>consistency/cp/CPProtocol.java:37-39</code>）比 AP 多一个 <code>boolean isLeader(String group)</code>：CP 语义必须能回答”这个组我现在是不是主”，这是重定向&#x2F;拒绝写的基础。</p>
+<p><code>DataOperation</code> 枚举（<code>consistency/DataOperation.java</code>）被两条协议共用：<code>ADD/CHANGE/DELETE/VERIFY/SNAPSHOT/QUERY</code>——注意 distro 的六种数据操作与 CP 的写操作共用同一套词汇，但语义完全不同（distro 是”广播意图”，CP 是”日志条目类型”）。</p>
+<h4 id="2-总闸：core-distributed-ProtocolManager-java"><a href="#2-总闸：core-distributed-ProtocolManager-java" class="headerlink" title="2. 总闸：core/distributed/ProtocolManager.java"></a>2. 总闸：<code>core/distributed/ProtocolManager.java</code></h4><p><code>ProtocolManager</code>（<code>ProtocolManager.java:47</code>）同时监听成员变更（构造时 <code>NotifyCenter.registerSubscriber(this)</code>，<code>:65-68</code>），并以<strong>双检锁懒加载</strong>两个协议：</p>
+<ul>
+<li><code>getCpProtocol()</code>（<code>:86-96</code>）&#x2F;<code>getApProtocol()</code>（<code>:98-108</code>）：首次调用才 <code>initCPProtocol</code>&#x2F;<code>initAPProtocol</code>——<strong>不用的协议绝不启动</strong>（纯 config 部署不会拉起 JRaftServer）；</li>
+<li><code>initCPProtocol</code>（<code>:139-147</code>）：反射解析协议实现类的泛型拿到 <code>RaftConfig</code>，注入成员列表后 <code>protocol.init(config)</code>；</li>
+<li><code>injectMembers4CP</code>（<code>:149-155</code>）：成员地址带 <strong>Raft 端口</strong>（<code>MemberUtil.calculateRaftPort</code>），而 <code>injectMembers4AP</code>（<code>:157-161</code>）用普通 <code>ip:port</code>——<strong>同一个集群，两套端口语义</strong>；</li>
+<li><code>onEvent(MembersChangeEvent)</code>（<code>:163-181</code>）：把成员变化同时翻译成两份（AP 用 address，CP 用 ip:raftPort），经 <code>ProtocolExecutor.apMemberChange/cpMemberChange</code>（<code>ProtocolExecutor.java:37-41</code>）单线程串行执行——注释明确说”不同协议的节点变更不应互相阻塞，用单线程池串行通知一致性层”；</li>
+<li><code>destroy()</code>（<code>:118-127</code>）：停机时先 AP 后 CP  shutdown。</li>
+</ul>
+<h4 id="3-CP-实现：core-distributed-raft-JRaftProtocol-java"><a href="#3-CP-实现：core-distributed-raft-JRaftProtocol-java" class="headerlink" title="3. CP 实现：core/distributed/raft/JRaftProtocol.java"></a>3. CP 实现：<code>core/distributed/raft/JRaftProtocol.java</code></h4><p><code>JRaftProtocol</code>（<code>JRaftProtocol.java:95-96</code>）<code>extends AbstractConsistencyProtocol&lt;RaftConfig, RequestProcessor4CP&gt; implements CPProtocol</code>：</p>
+<ul>
+<li><code>init</code>（<code>:120-166</code>）：CAS 保证只初始化一次；<code>raftServer.init/start</code> 后注册 <code>RaftEvent</code> 订阅——<strong>每次 leader&#x2F;term 变化都把元数据（leader、term、raft 组成员、错误信息）写进协议 metadata 并 <code>injectProtocolMetaData</code> 更新到成员列表</strong>（<code>:144-156</code>），这就是控制台上能看到每个节点的 raft 角色的来源；</li>
+<li><code>addRequestProcessors</code>（<code>:169-171</code>）：<code>raftServer.createMultiRaftGroup(processors)</code>——<strong>一个进程多 Raft group</strong>，naming 持久实例、config 元数据各占一个 group；</li>
+<li><code>write</code>（<code>:185-189</code>）&#x2F;<code>writeAsync</code>（<code>:192-194</code>）：<code>raftServer.commit(group, request, future)</code>，同步写<strong>等 10 秒</strong>（<code>:188</code>）；</li>
+<li><code>getData/aGetData</code>（<code>:174-182</code>）：读走 <code>raftServer.get(request)</code>，同步读等 5 秒；</li>
+<li><code>isLeader</code>（<code>:227-232</code>）：<code>node.isLeader()</code>；</li>
+<li><code>memberChange</code>（<code>:196-205</code>）：<code>raftServer.peerChange</code> 变更组成员，<strong>失败重试 5 次、每次睡 100ms</strong>，仍失败只 warn 不抛。</li>
+</ul>
+<h4 id="4-CP-的业务落点：naming-core-v2-service-impl-PersistentClientOperationServiceImpl-java"><a href="#4-CP-的业务落点：naming-core-v2-service-impl-PersistentClientOperationServiceImpl-java" class="headerlink" title="4. CP 的业务落点：naming/core/v2/service/impl/PersistentClientOperationServiceImpl.java"></a>4. CP 的业务落点：<code>naming/core/v2/service/impl/PersistentClientOperationServiceImpl.java</code></h4><p>这个类一身三职：<code>extends RequestProcessor4CP implements ClientOperationService</code>（<code>PersistentClientOperationServiceImpl.java:85-86</code>）。构造时（<code>:100-104</code>）从 <code>ProtocolManager</code> 拿 CP 协议并<strong>把自己注册为请求处理器</strong>。</p>
+<p>写路径（<code>registerInstance</code>，<code>:106-131</code>）：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> <span class="type">InstanceStoreRequest</span> <span class="variable">request</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InstanceStoreRequest</span>(); <span class="comment">// service+instance+clientId</span></span><br><span class="line"><span class="keyword">final</span> <span class="type">WriteRequest</span> <span class="variable">writeRequest</span> <span class="operator">=</span> WriteRequest.newBuilder().setGroup(group())</span><br><span class="line">        .setData(ByteString.copyFrom(serializer.serialize(request)))</span><br><span class="line">        .setOperation(DataOperation.ADD.name()).build();</span><br><span class="line">protocol.write(writeRequest);   <span class="comment">// 阻塞至 Raft 提交（最长 10s）</span></span><br></pre></td></tr></table></figure>
+
+<p>读路径（<code>onApply</code>，<code>:200-240</code>）是<strong>状态机回调</strong>：leader 把日志 apply 到本机时按 <code>DataOperation</code> 分派——ADD&#x2F;CHANGE → <code>onInstanceRegister</code>（写 <code>PersistentIpPortClientManager</code> 的 client 发布表 + 发与临时实例相同的事件，<code>:240-258</code>），DELETE → <code>onInstanceDeregister</code>。注意 <code>subscribeService</code> 直接抛 <code>UnsupportedOperationException(&quot;No persistent subscribers&quot;)</code>（<code>:186-188</code>）——<strong>持久实例没有订阅者概念</strong>，订阅推送是临时实例专属。</p>
+<h4 id="5-CP-的第二个业务落点：内嵌存储的-config"><a href="#5-CP-的第二个业务落点：内嵌存储的-config" class="headerlink" title="5. CP 的第二个业务落点：内嵌存储的 config"></a>5. CP 的第二个业务落点：内嵌存储的 config</h4><p>除 naming 持久实例外，config 在内嵌 Derby（Derby + Raft）模式下也复用 CP：<code>EmbeddedDumpService.canExecute</code>（<code>config/src/main/java/com/alibaba/nacos/config/server/service/dump/EmbeddedDumpService.java:178-183</code>）先问 <code>protocol.isLeader(PersistenceConstant.CONFIG_MODEL_RAFT_GROUP)</code>——<strong>只有 Raft leader 执行 dump 写本地 Derby</strong>，其余节点等 leader 通过 Raft 复制数据；<code>init</code>（<code>:88-110</code>）监听 leader 元数据变化触发 dump。这正是 <code>ConfigChangePublisher</code> 在内嵌存储 + 集群时丢弃通知的原因（第三讲）：数据走 Raft，不走事件通知。</p>
+<h4 id="6-AP-侧的对照（回指第二讲）"><a href="#6-AP-侧的对照（回指第二讲）" class="headerlink" title="6. AP 侧的对照（回指第二讲）"></a>6. AP 侧的对照（回指第二讲）</h4><p>AP 没有 leader、没有日志：<code>DistroProtocol.sync</code>（<code>core/distributed/distro/DistroProtocol.java:107-122</code>）对每个成员建延迟任务；<code>DistroVerifyTimedTask</code>（<code>task/verify/DistroVerifyTimedTask.java:52-85</code>）定期对每种数据存储发 VERIFY；<code>DistroLoadDataTask</code>（<code>task/load/DistroLoadDataTask.java:62-113</code>）启动时向责任节点拉 SNAPSHOT 全量。<strong>AP 的”一致性”&#x3D; 延迟同步 + 定期校验 + 快照补齐三板斧</strong>，没有任何强一致保证。</p>
+<h3 id="关键图：一次持久实例注册的-CP-链路-vs-临时实例的-AP-链路"><a href="#关键图：一次持久实例注册的-CP-链路-vs-临时实例的-AP-链路" class="headerlink" title="关键图：一次持久实例注册的 CP 链路 vs 临时实例的 AP 链路"></a>关键图：一次持久实例注册的 CP 链路 vs 临时实例的 AP 链路</h3><pre><code class="highlight mermaid">flowchart TD
+    subgraph EPHEMERAL[&quot;AP：临时实例&quot;]
+        E1[&quot;registerInstance&lt;br/&gt;ephemeral=true&quot;] --&gt; E2[&quot;EphemeralClientOperationServiceImpl&lt;br/&gt;直接写本机 publishers&quot;]
+        E2 --&gt; E3[&quot;ClientChangedEvent&quot;]
+        E3 --&gt; E4[&quot;DistroProtocol.sync(CHANGE)&lt;br/&gt;异步延迟广播&quot;]
+        E4 --&gt; E5[&quot;对端 onReceive → processData&lt;br/&gt;镜像数据&quot;]
+    end
+    subgraph PERSIST[&quot;CP：持久实例&quot;]
+        P1[&quot;registerInstance&lt;br/&gt;ephemeral=false&quot;] --&gt; P2[&quot;PersistentClientOperationServiceImpl&lt;br/&gt;构造 InstanceStoreRequest&quot;]
+        P2 --&gt; P3[&quot;protocol.write(WriteRequest)&lt;br/&gt;JRaft commit，最长等 10s&quot;]
+        P3 --&gt; P4[&quot;leader 复制日志到 follower&quot;]
+        P4 --&gt; P5[&quot;各节点 NacosStateMachine.onApply&lt;br/&gt;状态机回放&quot;]
+        P5 --&gt; P6[&quot;onInstanceRegister&lt;br/&gt;写本机 publishers + 发事件&quot;]
+    end</code></pre>
+
+<h3 id="输入-输出表-3"><a href="#输入-输出表-3" class="headerlink" title="输入&#x2F;输出表"></a>输入&#x2F;输出表</h3><table>
+<thead>
+<tr>
+<th>组件</th>
+<th>输入</th>
+<th>输出</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ProtocolManager.getCpProtocol</code></td>
+<td>首次调用触发</td>
+<td>初始化后的 CP 协议（懒加载）</td>
+</tr>
+<tr>
+<td><code>injectMembers4CP</code></td>
+<td><code>ServerMemberManager.allMembers()</code></td>
+<td><code>ip:raftPort</code> 集合</td>
+</tr>
+<tr>
+<td><code>JRaftProtocol.write</code></td>
+<td><code>WriteRequest(group, data, operation)</code></td>
+<td><code>Response</code>（提交结果）</td>
+</tr>
+<tr>
+<td><code>PersistentClientOperationServiceImpl.onApply</code></td>
+<td>Raft 日志条目</td>
+<td>本机 client 数据 + 事件</td>
+</tr>
+<tr>
+<td><code>DistroProtocol.sync</code></td>
+<td><code>DistroKey + DataOperation</code></td>
+<td>每目标一个 <code>DistroDelayTask</code></td>
+</tr>
+<tr>
+<td><code>DistroVerifyTimedTask.run</code></td>
+<td>数据存储类型列表</td>
+<td>每成员一个 <code>DistroVerifyExecuteTask</code></td>
+</tr>
+</tbody></table>
+<h3 id="端到端演算：持久实例在-3-节点集群的注册"><a href="#端到端演算：持久实例在-3-节点集群的注册" class="headerlink" title="端到端演算：持久实例在 3 节点集群的注册"></a>端到端演算：持久实例在 3 节点集群的注册</h3><ol>
+<li>客户端带 <code>ephemeral=false</code> 注册到节点 B → <code>ClientOperationServiceProxy</code> 路由到 <code>PersistentClientOperationServiceImpl.registerInstance</code>（<code>PersistentClientOperationServiceImpl.java:106</code>）；</li>
+<li>构造 <code>InstanceStoreRequest</code> 序列化进 <code>WriteRequest</code>（group &#x3D; 持久实例的 raft 组名），调 <code>protocol.write</code>；</li>
+<li><code>JRaftProtocol.writeAsync</code> → <code>raftServer.commit</code>：B 是 follower 则转发给 leader（假设是 A）；</li>
+<li>A 的 JRaft 把日志持久化并复制到 B、C，<strong>多数派（2&#x2F;3）确认即提交</strong>；</li>
+<li>三台机器的 <code>NacosStateMachine</code> 按日志顺序 <code>onApply</code> → <code>onInstanceRegister</code> 各自写入本机 <code>PersistentIpPortClientManager</code>，发 <code>ClientRegisterServiceEvent</code>；</li>
+<li>写调用在 A 提交后返回，调用方收到成功；此时三台机器数据<strong>强一致</strong>；</li>
+<li>若 A 宕机，JRaft 在 B&#x2F;C 中选出新 leader（term+1），<code>RaftEvent</code> 订阅者更新各节点协议元数据（<code>JRaftProtocol.java:144-156</code>），未提交的日志由新 leader 决策——<strong>可能有已返回成功的写在新 leader 上被截断（Raft 的线性一致边界）</strong>，但所有节点看到的已提交日志一致。</li>
+</ol>
+<h3 id="第四讲小结：一份数据两条轨道，临时广播、持久选举"><a href="#第四讲小结：一份数据两条轨道，临时广播、持久选举" class="headerlink" title="第四讲小结：一份数据两条轨道，临时广播、持久选举"></a>第四讲小结：一份数据两条轨道，临时广播、持久选举</h3><p><strong>一句话定位</strong>：<code>ProtocolManager</code> 用懒加载管住 AP&#x2F;CP 两套协议的生命周期，临时实例（ephemeral）写进本机即成功、靠 distro 延迟广播 + 定期校验 + 快照补齐最终一致；持久实例（及内嵌 Derby 模式下的配置数据）经 <code>JRaftProtocol</code> 走 Raft 日志复制，多数派提交才返回，<code>onApply</code> 在各机器上以相同顺序回放——<strong>业务类自己决定数据进哪条轨道</strong>（<code>EphemeralClientOperationServiceImpl</code> vs <code>PersistentClientOperationServiceImpl</code>&#x2F;<code>EmbeddedDumpService</code>）。</p>
+<pre><code class="highlight mermaid">flowchart LR
+    A[&quot;ClientOperationServiceProxy&lt;br/&gt;按 ephemeral 分发&quot;] --&gt;|&quot;ephemeral=true&quot;| B[&quot;AP: DistroProtocol&lt;br/&gt;异步广播 + 校验 + 快照&quot;]
+    A --&gt;|&quot;ephemeral=false&quot;| C[&quot;CP: JRaftProtocol&lt;br/&gt;leader 复制 + 多数派提交&quot;]
+    C --&gt; D[&quot;NacosStateMachine.onApply&lt;br/&gt;顺序回放&quot;]
+    B --&gt; E[&quot;最终一致（可短暂分歧）&quot;]
+    D --&gt; F[&quot;强一致（提交即可读）&quot;]</code></pre>
+
+<p><strong>一致性层的输入&#x2F;输出</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>协议</th>
+<th>输入</th>
+<th>输出</th>
+<th>一致性</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>AP（distro）</td>
+<td><code>DistroKey + DataOperation</code></td>
+<td>延迟任务广播</td>
+<td>最终一致</td>
+</tr>
+<tr>
+<td>CP（JRaft）</td>
+<td><code>WriteRequest</code></td>
+<td><code>Response</code>（阻塞≤10s）</td>
+<td>强一致（线性）</td>
+</tr>
+<tr>
+<td><code>ProtocolManager</code></td>
+<td>成员变更事件</td>
+<td>AP&#x2F;CP 各自成员视图</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>JRaftProtocol.init</code></td>
+<td><code>RaftConfig</code></td>
+<td>raftServer + 元数据订阅</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p><strong>三个最值得记住的点</strong>：</p>
+<ol>
+<li><strong>两套端口语义</strong>：AP 成员是 <code>ip:port</code>，CP 成员是 <code>ip:raftPort</code>（<code>MemberUtil.calculateRaftPort</code>）——同一个集群在一致性层有两张成员表（<code>ProtocolManager.java:149-161</code>）；</li>
+<li><strong>CP 的读写不对称</strong>：写必须经 leader 且最长阻塞 10s（<code>JRaftProtocol.java:188</code>），读也有 5s 超时（<code>:176</code>），而 AP 写本机立即返回——<strong>这就是”临时实例高可用、持久实例强一致”的工程代价</strong>；</li>
+<li><strong>懒加载是部署裁剪的关键</strong>：<code>getCpProtocol()</code> 首次调用才初始化（<code>ProtocolManager.java:86-96</code>），纯 config 集群不会白白启动 JRaftServer；同理 standalone 下 distro 直接短路（<code>DistroProtocol.java:63-70</code>）。</li>
+</ol>
+<hr>
+<h2 id="第五讲：客户端-SDK-——-Naming-Config-双客户端的韧性设计"><a href="#第五讲：客户端-SDK-——-Naming-Config-双客户端的韧性设计" class="headerlink" title="第五讲：客户端 SDK —— Naming&#x2F;Config 双客户端的韧性设计"></a>第五讲：客户端 SDK —— Naming&#x2F;Config 双客户端的韧性设计</h2><h3 id="定位-4"><a href="#定位-4" class="headerlink" title="定位"></a>定位</h3><p>客户端 SDK（<code>client/</code> 模块）是普通 Java 应用接触 Nacos 的门面：<code>NacosNamingService</code> 与 <code>NacosConfigService</code>。3.x SDK 的骨架与 2.x 一脉相承，但连接层全面 gRPC 化（<code>nacos.client.naming.remote.gprc</code> 注意目录名拼写就是 <code>gprc</code>），并新增了 fuzzy watch 能力。本讲聚焦三个韧性设计：<strong>注册重放（redo）</strong>、<strong>故障转移文件（failover）</strong>、<strong>长轮询监听环</strong>。</p>
+<h3 id="目录结构：client-SDK-的树（只列主路径）"><a href="#目录结构：client-SDK-的树（只列主路径）" class="headerlink" title="目录结构：client SDK 的树（只列主路径）"></a>目录结构：client SDK 的树（只列主路径）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">client/src/main/java/com/alibaba/nacos/client/</span><br><span class="line">├── naming/</span><br><span class="line">│   ├── NacosNamingService.java            # 门面：注册/心跳/订阅/查询</span><br><span class="line">│   ├── core/ServiceInfoHolder.java        # 本地服务信息缓存（旧 HostReactor 演进）</span><br><span class="line">│   ├── backups/FailoverReactor.java       # 故障转移：读 failover 文件</span><br><span class="line">│   ├── remote/NamingClientProxyDelegate.java # gRPC/HTTP 代理选择</span><br><span class="line">│   └── remote/gprc/</span><br><span class="line">│       ├── NamingGrpcClientProxy.java     # gRPC 代理：注册/订阅/推送处理</span><br><span class="line">│       └── redo/NamingGrpcRedoService.java # 断线重放：注册/订阅缓存</span><br><span class="line">├── config/</span><br><span class="line">│   ├── NacosConfigService.java            # 门面：getConfig/addListener</span><br><span class="line">│   └── impl/</span><br><span class="line">│       ├── ClientWorker.java              # 监听引擎（内部类 ConfigRpcTransportClient）</span><br><span class="line">│       ├── CacheData.java                 # 单配置缓存（content+md5+listeners）</span><br><span class="line">│       ├── LocalConfigInfoProcessor.java  # snapshot/failover 本地文件</span><br><span class="line">│       └── ConfigServerListManager.java   # 服务器列表（含地址刷新）</span><br><span class="line">└── security/SecurityProxy.java            # 登录 token 管理</span><br></pre></td></tr></table></figure>
+
+<h3 id="逐文件精读-4"><a href="#逐文件精读-4" class="headerlink" title="逐文件精读"></a>逐文件精读</h3><h4 id="1-Naming-门面：naming-NacosNamingService-java"><a href="#1-Naming-门面：naming-NacosNamingService-java" class="headerlink" title="1. Naming 门面：naming/NacosNamingService.java"></a>1. Naming 门面：<code>naming/NacosNamingService.java</code></h4><p>构造器（<code>NacosNamingService.java:106-136</code>）装配四件套：<code>InstancesChangeNotifier</code>（事件范围 UUID）、<code>ServiceInfoHolder</code>（本地缓存）、<code>NamingFuzzyWatchServiceListHolder</code>（模糊监听）、<code>NamingClientProxyDelegate</code>（代理）。<code>registerInstance(serviceName, groupName, instance)</code>（<code>:179-184</code>）只做三件事：合法性检查 → 剥离 group 前缀 → <code>clientProxy.registerService(...)</code>。<strong>门面极薄，逻辑全在代理层</strong>。</p>
+<h4 id="2-gRPC-代理与重放：remote-gprc"><a href="#2-gRPC-代理与重放：remote-gprc" class="headerlink" title="2. gRPC 代理与重放：remote/gprc/"></a>2. gRPC 代理与重放：<code>remote/gprc/</code></h4><p><code>NamingGrpcClientProxy.start</code>（<code>NamingGrpcClientProxy.java:127-139</code>）启动 <code>rpcClient</code>（gRPC 连接）与 fuzzy watch holder，并把 <code>NamingGrpcRedoService</code> 注册为连接监听器（<code>:134</code>）。<code>registerServiceForEphemeral</code>（<code>:166-176</code>）先 <code>redoService.cacheInstanceForRedo(...)</code> 再发请求——<strong>先缓存意图，再执行</strong>。</p>
+<p><code>NamingGrpcRedoService</code>（<code>redo/NamingGrpcRedoService.java</code>）是韧性核心，实现 <code>ConnectionEventListener</code>（<code>:52</code>）：</p>
+<ul>
+<li><code>onConnected</code>（<code>:99-103</code>）：置 connected&#x3D;true；</li>
+<li><code>onDisConnect</code>（<code>:105-119</code>）：<strong>把所有注册实例与订阅的 <code>registered</code> 标记置 false</strong>（”mark to redo”），模糊监听重置一致性状态；</li>
+<li><code>cacheInstanceForRedo</code>（<code>:129-137</code>）：按 <code>serviceName@@group</code> 为 key 存 <code>InstanceRedoData</code>；</li>
+<li><code>instanceRegistered</code>（<code>:160-169</code>）：请求成功后 <code>redoData.registered()</code> 标记完成。</li>
+</ul>
+<p>重放定时器（<code>RedoScheduledTask</code>）周期性扫描 <code>!isRegistered()</code> 的条目重新发起注册——<strong>断线期间的注册意图不丢，重连即补</strong>。</p>
+<h4 id="3-故障转移：naming-backups-FailoverReactor-java"><a href="#3-故障转移：naming-backups-FailoverReactor-java" class="headerlink" title="3. 故障转移：naming/backups/FailoverReactor.java"></a>3. 故障转移：<code>naming/backups/FailoverReactor.java</code></h4><p><code>FailoverReactor</code>（<code>FailoverReactor.java:52</code>）单线程定时器每 5s 跑 <code>FailoverSwitchRefresher</code>（<code>:88-91</code>）：</p>
+<ul>
+<li>读 <code>failoverDataSource.getSwitch()</code>，开关关 → 若之前在 failover 状态，则用 <code>ServiceInfoHolder</code> 的真实数据 diff 后发 <code>InstancesChangeEvent</code> 通知回切（<code>:134-154</code>）；</li>
+<li>开关开 → 读 failover 文件数据，与服务缓存 diff，有变化发事件（<code>:106-131</code>）；</li>
+<li>数据源经 <code>NacosServiceLoader.load(FailoverDataSource.class)</code> SPI 加载（<code>:72-78</code>）。</li>
+</ul>
+<p>即：<strong>运维在客户端机器的 <code>failover</code> 目录放一个开关文件 + 服务数据文件，客户端就整体切到本地数据</strong>，Nacos 挂了也能发现（代价是数据静态）。</p>
+<h4 id="4-Config-门面与-ClientWorker：config"><a href="#4-Config-门面与-ClientWorker：config" class="headerlink" title="4. Config 门面与 ClientWorker：config/"></a>4. Config 门面与 ClientWorker：<code>config/</code></h4><p><code>NacosConfigService</code> 构造器（<code>NacosConfigService.java:73-89</code>）：校验参数 → <code>ConfigServerListManager</code>（服务器列表）→ <code>ClientWorker</code>。<code>ClientWorker</code> 构造（<code>ClientWorker.java:546-562</code>）创建 <code>ConfigRpcTransportClient</code> 并 <code>start()</code>。</p>
+<p><code>ConfigRpcTransportClient</code>（<code>ClientWorker.java:674-691</code>）是配置客户端的监听引擎，内部类结构：</p>
+<ul>
+<li><code>listenExecutebell</code>（<code>:680</code>）：容量 1 的队列作”警铃”；</li>
+<li><code>startInternal</code>（<code>:895-918</code>）：单线程循环 <code>poll(5s)</code> → <code>executeConfigListen()</code>；</li>
+<li><code>executeConfigListen</code>（<code>:931-984</code>）：对每个 <code>CacheData</code> 先 <code>checkLocalConfig</code>（本地 failover 文件优先，<code>:992-1038</code>）→ 一致且未到全量同步周期（3min，<code>:691</code>）则跳过 → 否则按 taskId 分组；</li>
+<li><code>checkListenCache</code>（<code>:1145-1238</code>）：对每组发 <code>ConfigBatchListenRequest</code>（<code>listen=true</code>），响应里的 <code>changedConfigs</code> 逐条 <code>refreshContentAndCheck</code>（查询新内容 + <code>checkListenerMd5</code>）；被服务端主动 push 过的（<code>receiveNotifyChanged</code>）也刷新；<code>hasChangedKeys</code> 则再敲铃立即下一轮（<code>:980-982</code>）；</li>
+<li><code>handleConfigChangeNotifyRequest</code>（<code>:770-790</code>）：<strong>服务端主动推送到达</strong>（gRPC 双流），只置 <code>receiveNotifyChanged=true</code> + <code>setConsistentWithServer(false)</code> + 敲铃——<strong>推送只带 key 不带内容，内容总是客户端来拉</strong>。</li>
+</ul>
+<h4 id="5-单配置缓存：config-impl-CacheData-java"><a href="#5-单配置缓存：config-impl-CacheData-java" class="headerlink" title="5. 单配置缓存：config/impl/CacheData.java"></a>5. 单配置缓存：<code>config/impl/CacheData.java</code></h4><p><code>CacheData</code>（<code>CacheData.java</code>）持有 <code>dataId/group/tenant/content/md5/type/encryptedDataKey</code> + <code>listeners</code>（<code>ManagerListenerWrap</code> 列表，每个 wrap 记 <code>lastCallMd5</code>）。<code>checkListenerMd5</code>（<code>:346-352</code>）：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (ManagerListenerWrap wrap : listeners) &#123;</span><br><span class="line">    <span class="keyword">if</span> (!md5.equals(wrap.lastCallMd5)) &#123;</span><br><span class="line">        safeNotifyListener(...);   <span class="comment">// md5 与上次通知不同才回调</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>safeNotifyListener</code>（<code>:426-527</code>）异步执行用户 Listener（用户有 executor 则用用户的），带超时看门狗（<code>LongNotifyHandler</code>），<code>AbstractConfigChangeListener</code> 额外收到 diff 后的 <code>ConfigChangeEvent</code>。**”每个 listener 记住自己上次被通知的 md5”**——同一进程多个 listener、不同订阅时机都能精确去重。</p>
+<h4 id="6-本地文件：config-impl-LocalConfigInfoProcessor-java"><a href="#6-本地文件：config-impl-LocalConfigInfoProcessor-java" class="headerlink" title="6. 本地文件：config/impl/LocalConfigInfoProcessor.java"></a>6. 本地文件：<code>config/impl/LocalConfigInfoProcessor.java</code></h4><p><code>LOCAL_SNAPSHOT_PATH</code>（<code>:45</code>）是 snapshot 根目录；<code>getFailoverFile</code>（<code>:198</code>）&#x2F;<code>getSnapshotFile</code>（<code>:211</code>）按 <code>serverName/dataId/group/tenant</code> 组织。snapshot 是<strong>最近一次成功拉取的配置内容</strong>（启动时兜底），failover 是<strong>运维下发的覆盖数据</strong>（优先级高于服务端，见 <code>ClientWorker.checkLocalConfig</code> <code>:1002-1013</code>）。</p>
+<h4 id="7-登录态：security-SecurityProxy-java"><a href="#7-登录态：security-SecurityProxy-java" class="headerlink" title="7. 登录态：security/SecurityProxy.java"></a>7. 登录态：<code>security/SecurityProxy.java</code></h4><p><code>login(Properties)</code>（<code>SecurityProxy.java:80-86</code>）调 <code>clientAuthService.login</code> 拿 <code>LoginIdentityContext</code>，之后每个请求头带上 token（<code>:99-102</code>）；token 过期前定时 <code>login</code> 刷新（<code>:114-126</code>）。auth 开关关闭时整段短路，对业务透明。</p>
+<h3 id="关键图：客户端的韧性三件套"><a href="#关键图：客户端的韧性三件套" class="headerlink" title="关键图：客户端的韧性三件套"></a>关键图：客户端的韧性三件套</h3><pre><code class="highlight mermaid">flowchart TD
+    subgraph NAMING[&quot;Naming 客户端&quot;]
+        N1[&quot;NacosNamingService.registerInstance&quot;] --&gt; N2[&quot;NamingGrpcClientProxy&lt;br/&gt;cacheInstanceForRedo 先缓存&quot;]
+        N2 --&gt; N3[&quot;gRPC InstanceRequest&quot;]
+        N4[&quot;onDisConnect&lt;br/&gt;全部标记 registered=false&quot;] --&gt; N5[&quot;RedoScheduledTask&lt;br/&gt;重连后重放注册/订阅&quot;]
+        N6[&quot;FailoverSwitchRefresher&lt;br/&gt;每 5s&quot;] --&gt; N7[&quot;failover 开关/文件&lt;br/&gt;InstancesChangeEvent 通知&quot;]
+    end
+    subgraph CONFIG[&quot;Config 客户端&quot;]
+        C1[&quot;ClientWorker.executeConfigListen&lt;br/&gt;bell 驱动 + 3min 全量&quot;] --&gt; C2[&quot;checkLocalConfig&lt;br/&gt;failover 文件优先&quot;]
+        C1 --&gt; C3[&quot;ConfigBatchListenRequest&lt;br/&gt;gRPC 长连接监听&quot;]
+        C4[&quot;handleConfigChangeNotifyRequest&lt;br/&gt;服务端推 key&quot;] --&gt; C5[&quot;敲铃 → 下一轮拉内容&quot;]
+        C3 --&gt; C6[&quot;changedConfigs → refreshContentAndCheck&quot;]
+        C6 --&gt; C7[&quot;CacheData.checkListenerMd5&lt;br/&gt;md5 变化才回调&quot;]
+    end</code></pre>
+
+<h3 id="输入-输出表-4"><a href="#输入-输出表-4" class="headerlink" title="输入&#x2F;输出表"></a>输入&#x2F;输出表</h3><table>
+<thead>
+<tr>
+<th>组件</th>
+<th>输入</th>
+<th>输出</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>NacosNamingService</code></td>
+<td>serviceName&#x2F;group&#x2F;instance</td>
+<td>代理调用</td>
+</tr>
+<tr>
+<td><code>NamingGrpcRedoService</code></td>
+<td>断线事件</td>
+<td>全部重放标记</td>
+</tr>
+<tr>
+<td><code>FailoverReactor</code></td>
+<td>failover 开关 + 文件</td>
+<td><code>InstancesChangeEvent</code></td>
+</tr>
+<tr>
+<td><code>ClientWorker.executeConfigListen</code></td>
+<td>bell &#x2F; 5s 轮询</td>
+<td>分组监听请求</td>
+</tr>
+<tr>
+<td><code>CacheData.checkListenerMd5</code></td>
+<td>新 content + md5</td>
+<td>Listener 回调（去重）</td>
+</tr>
+<tr>
+<td><code>LocalConfigInfoProcessor</code></td>
+<td>snapshot&#x2F;failover 文件</td>
+<td>本地内容</td>
+</tr>
+</tbody></table>
+<h3 id="端到端演算：gRPC-断线恢复中的注册不丢"><a href="#端到端演算：gRPC-断线恢复中的注册不丢" class="headerlink" title="端到端演算：gRPC 断线恢复中的注册不丢"></a>端到端演算：gRPC 断线恢复中的注册不丢</h3><ol>
+<li>客户端 X 调 <code>registerInstance(&quot;order-service&quot;, instance)</code> → <code>NacosGrpcClientProxy.registerServiceForEphemeral</code> → <code>redoService.cacheInstanceForRedo</code> 存 <code>InstanceRedoData(registered=false)</code> → 发 gRPC <code>InstanceRequest</code> → 成功回调 <code>instanceRegistered</code> 置 true；</li>
+<li>网络抖动，gRPC 连接断开 → <code>NamingGrpcRedoService.onDisConnect</code> 把所有 redo 数据（包括订阅 <code>SubscriberRedoData</code>）<code>setRegistered(false)</code>；</li>
+<li><code>RedoScheduledTask</code> 到点发现未注册条目 → 重连成功后逐条重发 <code>InstanceRequest</code>（注册）+ <code>InstanceRequest</code>（订阅）；</li>
+<li>服务端侧（第二讲）：重连后 clientId 不变（仍以 <code>ip:port$ephemeral</code> 计），若数据未过期则 <code>addServiceInstance</code> 幂等覆盖；若已过期被 <code>ExpiredClientCleaner</code> 回收，则重连的 <code>clientConnected</code> 重建 client，重放的注册把数据补回；</li>
+<li>若客户端配了 failover 文件且打开开关，<code>FailoverReactor</code> 每 5s 用文件数据发事件，<code>selectInstances</code> 直接返回本地列表——<strong>Nacos 全程不可用也能启动</strong>。</li>
+</ol>
+<h3 id="第五讲小结：先缓存意图再执行，push-只敲门、内容自己拉"><a href="#第五讲小结：先缓存意图再执行，push-只敲门、内容自己拉" class="headerlink" title="第五讲小结：先缓存意图再执行，push 只敲门、内容自己拉"></a>第五讲小结：先缓存意图再执行，push 只敲门、内容自己拉</h3><p><strong>一句话定位</strong>：3.x 客户端把”意图”与”执行”分离——注册&#x2F;订阅先入 redo 缓存再发 gRPC，断线全部标记重放；配置监听用”bell + 5s 轮询 + 3min 全量”三速引擎，服务端推送只带 key（敲门），内容永远是客户端主动拉；本地 snapshot&#x2F;failover 文件构成最后一道兜底，md5 差值是 listener 去重的唯一标尺。</p>
+<pre><code class="highlight mermaid">flowchart LR
+    A[&quot;registerInstance&quot;] --&gt; B[&quot;redo 缓存意图&quot;]
+    B --&gt; C[&quot;gRPC 请求&quot;]
+    C --&gt;|&quot;失败/断线&quot;| D[&quot;registered=false&lt;br/&gt;RedoScheduledTask 重放&quot;]
+    C --&gt;|&quot;成功&quot;| E[&quot;registered=true&quot;]
+    F[&quot;服务端 ConfigChangeNotifyRequest&quot;] --&gt;|&quot;只带 key&quot;| G[&quot;敲铃&quot;]
+    G --&gt; H[&quot;executeConfigListen&lt;br/&gt;拉内容 + checkListenerMd5&quot;]</code></pre>
+
+<p><strong>客户端韧性的输入&#x2F;输出</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>机制</th>
+<th>输入</th>
+<th>输出</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>NamingGrpcRedoService</code></td>
+<td>连接事件 + 注册意图</td>
+<td>重放集合</td>
+</tr>
+<tr>
+<td><code>FailoverReactor</code></td>
+<td>failover 文件</td>
+<td>本地服务列表事件</td>
+</tr>
+<tr>
+<td><code>ClientWorker</code></td>
+<td>bell + 定时</td>
+<td>分组监听请求</td>
+</tr>
+<tr>
+<td><code>CacheData</code></td>
+<td>新 content</td>
+<td>去重后的 listener 回调</td>
+</tr>
+<tr>
+<td><code>LocalConfigInfoProcessor</code></td>
+<td>本地文件</td>
+<td>snapshot&#x2F;failover 内容</td>
+</tr>
+</tbody></table>
+<p><strong>三个最值得记住的点</strong>：</p>
+<ol>
+<li><strong>redo 模式是”意图持久化”的轻量版</strong>：注册先进 <code>registeredInstances</code> map 再执行，断线统一置 false 重放——服务端幂等（<code>addServiceInstance</code> 覆盖语义）使重放安全；</li>
+<li><strong>配置推送不带内容</strong>：<code>ConfigChangeNotifyRequest</code> 只有 dataId&#x2F;group&#x2F;tenant（<code>RpcConfigChangeNotifier.java:107-108</code>），客户端必须回查——避免了”推送大配置把双流打满”；</li>
+<li><strong>failover &gt; snapshot &gt; 服务端</strong>：<code>checkLocalConfig</code>（<code>ClientWorker.java:1002-1013</code>）优先用 failover 文件，文件删除才回服务端；snapshot 只在启动取不到服务端数据时兜底——本地文件优先级是设计出来的降级链。</li>
+</ol>
+<hr>
+<h2 id="附：学习路线与复习卡汇总"><a href="#附：学习路线与复习卡汇总" class="headerlink" title="附：学习路线与复习卡汇总"></a>附：学习路线与复习卡汇总</h2><h3 id="推荐阅读顺序（由浅入深）"><a href="#推荐阅读顺序（由浅入深）" class="headerlink" title="推荐阅读顺序（由浅入深）"></a>推荐阅读顺序（由浅入深）</h3><table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>内容</th>
+<th>建议时长</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>跑起来建立体感：<code>./mvnw -pl distribution -am package</code> 后 <code>sh distribution/target/nacos-server-*/bin/startup.sh -m standalone</code>，开控制台看服务&#x2F;配置列表</td>
+<td>半天</td>
+</tr>
+<tr>
+<td>2</td>
+<td>第一讲：启动装配（bootstrap + core&#x2F;listener&#x2F;startup + sys&#x2F;filter）</td>
+<td>1 天</td>
+</tr>
+<tr>
+<td>3</td>
+<td>第二讲前半：v2 数据模型（<code>core/v2/ServiceManager</code>、<code>pojo/Service</code>、<code>IpPortBasedClient</code>、<code>ServiceStorage</code>）</td>
+<td>1–2 天</td>
+</tr>
+<tr>
+<td>4</td>
+<td>第二讲后半：distro 同步与推送（<code>DistroMapper</code>、<code>DistroClientDataProcessor</code>、<code>push/v2/</code>、<code>healthcheck/</code>）</td>
+<td>2 天</td>
+</tr>
+<tr>
+<td>5</td>
+<td>第三讲：config 缓存与长轮询（<code>ConfigCacheService</code>、<code>LongPollingService</code>、<code>dump/</code>、<code>notify/</code>）</td>
+<td>2 天</td>
+</tr>
+<tr>
+<td>6</td>
+<td>第四讲：一致性协议（<code>consistency/</code> 抽象 + <code>ProtocolManager</code> + <code>JRaftProtocol</code> + distro 任务族）</td>
+<td>1–2 天</td>
+</tr>
+<tr>
+<td>7</td>
+<td>第五讲：客户端 SDK（<code>NacosNamingService</code>&#x2F;<code>NacosConfigService</code> 门面 → redo&#x2F;FailoverReactor&#x2F;CacheData）</td>
+<td>2 天</td>
+</tr>
+<tr>
+<td>8</td>
+<td>端到端演算复盘：注册→distro→推送、发布→长轮询&#x2F;gRPC 两条链路各画一遍时序图</td>
+<td>1 天</td>
+</tr>
+<tr>
+<td>9</td>
+<td>（深入方向）fuzzy watch（<code>NamingFuzzyWatch*</code> &#x2F; <code>ConfigFuzzyWatch*</code>）、istio 同步、ai-registry 适配、lock 模块</td>
+<td>深入方向</td>
+</tr>
+</tbody></table>
+<h3 id="全链路复习卡"><a href="#全链路复习卡" class="headerlink" title="全链路复习卡"></a>全链路复习卡</h3><p><strong>启动装配（第一讲）：</strong></p>
+<ol>
+<li><code>NacosBootstrap</code> 按 <code>nacos.deployment.type</code>（MERGED&#x2F;SERVER&#x2F;CONSOLE）分阶段点亮 core（非 Web）→ web → console 父子上下文，AI Registry 按 <code>nacos.ai.*.enabled</code> 可选启动。</li>
+<li>旧统一入口 <code>Nacos.java</code> 已 <code>@Deprecated</code>，多上下文拆分是为了让 core&#x2F;web&#x2F;console 有独立生命周期与逆序停机（<code>NacosStartUpManager.getReverseStartedList</code>）。</li>
+<li>模块开关 &#x3D; <code>NacosTypeExcludeFilter</code> + SPI <code>NacosPackageExcludeFilter</code> 按包前缀裁决，<code>functionMode</code> 决定加载哪些模块，不改 classpath。</li>
+<li>standalone 是短路而非分支：<code>DistroProtocol</code> 直接 <code>isInitialized=true</code>，寻址用 <code>StandaloneMemberLookup</code>，全机单成员。</li>
+<li>集群寻址三选一：显式 <code>nacos.core.member.lookup.type</code> &gt; 有 cluster.conf&#x2F;成员列表（FILE_CONFIG）&gt; ADDRESS_SERVER。</li>
+</ol>
+<p><strong>naming 数据模型（第二讲前半）：</strong></p>
+<ol start="6">
+<li>临时实例不存在”服务表”里，存在 <code>IpPortBasedClient.publishers</code>；<code>ServiceManager</code> 只维护 <code>Service</code>（namespace+group+name+ephemeral）单例。</li>
+<li><code>ephemeral</code> 是 Service 四元组的一等字段：同名服务的临时&#x2F;持久实例是两个 key、两套存储、两条一致性轨道。</li>
+<li>读路径 <code>ServiceStorage.getPushData</code> 实时拼装 <code>ServiceInfo</code>，带 <code>serviceDataIndexes</code> 缓存兜底；批量注册 <code>BatchInstancePublishInfo</code> 在此展开。</li>
+<li>客户端标识 v2 是 <code>ip:port$ephemeral</code>（HTTP 管理面）或 gRPC 连接 ID（<code>meta.getConnectionId()</code>），clientId 是 distro 同步与责任判定的 key。</li>
+<li>默认 ephemeral&#x3D;true（<code>SwitchDomain.java:107</code>）；心跳 5s（<code>SwitchDomain.java:47</code>）；空发布 30s（<code>DEFAULT_IP_DELETE_TIMEOUT</code>）、有心跳 3min（<code>DEFAULT_CLIENT_EXPIRED_TIME</code>）才回收客户端。</li>
+<li><code>ExpiredClientCleaner</code> 每 5s 扫全量 client；<code>isExpireClient</code> 是”空发布且超时”或”超过 3 分钟未更新”的组合条件。</li>
+</ol>
+<p><strong>naming 同步与推送（第二讲后半）：</strong></p>
+<ol start="12">
+<li><code>DistroMapper.healthyList</code> 全节点排序后取模（<code>distroHash(tag) % size</code>），责任判定 <code>responsible()</code> 在 standalone&#x2F;distro 关闭时直接返回 true。</li>
+<li>distro 同步最小单元是”一个 client 的全部发布”（<code>ClientSyncData</code> 带 revision），只同步 ephemeral 且本机负责的 client；持久实例走 Raft。</li>
+<li>同步三板斧：变更即时 <code>sync</code>（延迟任务）→ 定期 <code>DistroVerifyTimedTask</code> 发 VERIFY（revision 不符即补发，延迟 0）→ 新节点 <code>DistroLoadDataTask</code> 拉 SNAPSHOT 全量。</li>
+<li>节点间 distro 走 gRPC <code>DistroDataRequest</code>（<code>DistroDataRequestHandler</code> 六种数据操作）；客户端推送走 <code>RpcPushService</code>。</li>
+<li>推送防抖：<code>ServiceChangedEvent</code> → <code>PushDelayTask</code> 默认 500ms 合并 → <code>NamingExecuteTaskDispatcher</code> 按 service 哈希并行执行；新订阅者只推自己。</li>
+<li><strong>3.2.4 已无 UDP 推送</strong>（3.2.0 移除，<code>InstanceOperatorClientImpl.java:201</code> 有 warn），也没有 <code>SocketAddrReplacementTask</code>；旧 HTTP 订阅者收不到推送。</li>
+<li>健康检查三前提：失败计数达 <code>checkTimes</code>、服务&#x2F;实例开关打开、<strong>本节点对该 client 负责</strong>（<code>HealthCheckCommonV2.java:157-159</code>）；地址非法走 <code>checkFailNow</code> 跳过计数。</li>
+</ol>
+<p><strong>config 中心（第三讲）：</strong></p>
+<ol start="19">
+<li>发布三路分流：betaIps 非空 → beta 灰度（优先级 MAX）；tag 非空 → tag 灰度（MAX-1）；其余正式路（支持 casMd5 乐观锁，冲突抛 <code>RESOURCE_CONFLICT</code>）。</li>
+<li><code>ConfigCacheService.CACHE</code> 是 <code>groupKey → CacheItem</code>，<code>dumpWithMd5</code> 写缓存三板斧：时间戳旧则忽略、md5 变则写磁盘+更新+发事件、仅时间戳变则只更新时间。</li>
+<li>md5 是唯一变更标尺：md5 不变不发 <code>LocalDataChangeEvent</code>，没有假变更；磁盘满直接 <code>EnvUtil.systemExit()</code> 保数据。</li>
+<li>长轮询：<code>allSubs</code>（ConcurrentLinkedQueue）持有 in-flight 客户端；立即比对有变秒回（instant），无变挂起至 <code>max(10s, 客户端值-500ms)</code>；超限延迟 1-3s 随机返回 503。</li>
+<li>超时自管理：<code>asyncContext.setTimeout(0L)</code>，到期由 <code>ClientLongPolling.run</code> 移出队列回空响应；<code>DataChangeTask</code> 负责变更唤醒。</li>
+<li>节点间通知 &#x3D; <code>AsyncNotifyService</code> 逐成员 gRPC <code>syncConfigChange</code>，失败平方退避（<code>500 + failCount²×1000</code>，failCount 封顶 6）；内嵌存储+集群直接不发通知。</li>
+<li>最终一致靠 <code>DumpChangeConfigWorker</code> 定时扫 DB（删除&#x2F;变更两路游标分页）补偿本地缓存，finally 自调度下一轮。</li>
+<li>gRPC 客户端：<code>ConfigChangeBatchListenRequestHandler</code> 顺手做一次性 md5 比对直接返回不一致项；<code>ConfigChangeListenContext</code> 维护 connectionId↔groupKey 双向索引；<code>RpcConfigChangeNotifier</code> 推送只带 key。</li>
+<li>旧版 <code>ConfigChangeNotifier</code> 已不存在，职责由 <code>AsyncNotifyService</code> + <code>RpcConfigChangeNotifier</code> 分担。</li>
+</ol>
+<p><strong>一致性协议（第四讲）：</strong></p>
+<ol start="28">
+<li><code>ProtocolManager</code> 双检锁懒加载 AP&#x2F;CP；成员变更经 <code>ProtocolExecutor</code> 单线程串行分发，AP 用 <code>ip:port</code>、CP 用 <code>ip:raftPort</code> 两套成员视图。</li>
+<li>AP（distro）：无 leader 无日志，本机写即成功 + 延迟广播 + 定期校验 + 快照补齐 &#x3D; 最终一致。</li>
+<li>CP（JRaft）：<code>write</code> 经 leader 复制、多数派提交才返回（同步最长等 10s，读等 5s）；<code>NacosStateMachine.onApply</code> 按 <code>DataOperation</code> 顺序回放到本机。</li>
+<li><code>PersistentClientOperationServiceImpl</code> 一身三职（ClientOperationService + RequestProcessor4CP + 状态机回调）；持久实例无订阅概念（<code>subscribeService</code> 抛 UnsupportedOperation）。</li>
+<li>Raft 事件驱动元数据更新：leader&#x2F;term&#x2F;组成员变化写进协议 metadata 并同步到成员列表，是控制台 raft 角色的数据源。</li>
+</ol>
+<p><strong>客户端 SDK（第五讲）：</strong></p>
+<ol start="33">
+<li>Naming 门面极薄，逻辑在 <code>NamingClientProxyDelegate</code> → gRPC 代理；注册先 <code>cacheInstanceForRedo</code> 缓存意图再发请求。</li>
+<li>断线即重放：<code>NamingGrpcRedoService.onDisConnect</code> 把全部注册&#x2F;订阅标记 <code>registered=false</code>，<code>RedoScheduledTask</code> 重连后重发；服务端 <code>addServiceInstance</code> 幂等使重放安全。</li>
+<li><code>FailoverReactor</code> 每 5s 读 failover 开关：开 → 用文件数据 diff 后发事件；关 → 用 <code>ServiceInfoHolder</code> 真实数据 diff 回切。</li>
+<li>Config 监听三速引擎：bell 敲铃（即时）+ 5s 轮询 + 3min 全量同步；<code>checkListenCache</code> 分组发 <code>ConfigBatchListenRequest</code>，按需 <code>refreshContentAndCheck</code>。</li>
+<li>服务端推送只敲门：<code>ConfigChangeNotifyRequest</code> 只带 key，客户端置 <code>receiveNotifyChanged</code> 后自己拉内容，避免大配置打满双流。</li>
+<li><code>CacheData.checkListenerMd5</code> 按 listener 粒度去重（每个 wrap 记 <code>lastCallMd5</code>），<code>AbstractConfigChangeListener</code> 额外收到 diff 事件。</li>
+<li>本地文件优先级链：failover（运维覆盖）&gt; 服务端；snapshot 仅启动兜底；文件删除自动回切服务端（<code>checkLocalConfig</code>）。</li>
+<li><code>SecurityProxy</code> 登录拿 token 后按请求头携带，过期前定时刷新；auth 关闭时全链路短路。</li>
+</ol>
+<p><strong>跨讲串联：</strong></p>
+<ol start="41">
+<li>三条主线一句话：注册数据 &#x3D; 写 client 发布表 → 事件总线 → distro 广播&#x2F;延迟推送；配置数据 &#x3D; 落库 → dump 三层缓存 → 事件三路通知 + 轮询补偿；故障恢复 &#x3D; 客户端 redo&#x2F;failover + 服务端 verify&#x2F;snapshot&#x2F;dump 轮询。</li>
+<li>责任模型（<code>DistroMapper.responsible</code>）是 naming 集群的总开关：心跳、健康检查、distro 同步都先问它，非责任节点只镜像不决策。</li>
+<li>事件总线（<code>NotifyCenter</code>）是 naming 与 config 共同的中枢：client 事件→distro，service 事件→推送，config 事件→通知&#x2F;唤醒——读源码时先画事件图再读代码会很快。</li>
+<li>3.2.4 三处硬变化：<code>NacosApplication</code>→<code>NacosBootstrap</code>、UDP 推送移除（gRPC 一统）、v2 模型迁入 <code>core/v2/</code>。</li>
+</ol>
+<hr>
+<h2 id="涉及文件索引"><a href="#涉及文件索引" class="headerlink" title="涉及文件索引"></a>涉及文件索引</h2><table>
+<thead>
+<tr>
+<th>主题</th>
+<th>文件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>启动入口</td>
+<td><code>bootstrap/src/main/java/com/alibaba/nacos/bootstrap/NacosBootstrap.java</code>, <code>server/src/main/java/com/alibaba/nacos/NacosServerBasicApplication.java</code>, <code>server/src/main/java/com/alibaba/nacos/NacosServerWebApplication.java</code>, <code>console/src/main/java/com/alibaba/nacos/console/NacosConsole.java</code></td>
+</tr>
+<tr>
+<td>旧入口（已废弃）</td>
+<td><code>console/src/main/java/com/alibaba/nacos/Nacos.java</code></td>
+</tr>
+<tr>
+<td>启动阶段 SPI</td>
+<td><code>core/src/main/java/com/alibaba/nacos/core/listener/startup/&#123;NacosStartUp,NacosStartUpManager,AbstractNacosStartUp,NacosCoreStartUp,NacosWebStartUp&#125;.java</code></td>
+</tr>
+<tr>
+<td>模块开关过滤</td>
+<td><code>sys/src/main/java/com/alibaba/nacos/sys/filter/&#123;NacosTypeExcludeFilter,NacosPackageExcludeFilter&#125;.java</code>, <code>naming/src/main/java/com/alibaba/nacos/naming/config/NamingEnabledFilter.java</code>, <code>config/src/main/java/com/alibaba/nacos/config/server/filter/ConfigEnabledFilter.java</code></td>
+</tr>
+<tr>
+<td>模式判定与寻址</td>
+<td><code>sys/src/main/java/com/alibaba/nacos/sys/env/EnvUtil.java</code>, <code>core/src/main/java/com/alibaba/nacos/core/cluster/lookup/&#123;LookupFactory,StandaloneMemberLookup,FileConfigMemberLookup,AddressServerMemberLookup&#125;.java</code></td>
+</tr>
+<tr>
+<td>naming 数据模型</td>
+<td><code>naming/src/main/java/com/alibaba/nacos/naming/core/v2/&#123;ServiceManager.java,pojo/Service.java,pojo/InstancePublishInfo.java,pojo/BatchInstancePublishInfo.java&#125;</code>, <code>naming/src/main/java/com/alibaba/nacos/naming/core/v2/index/ServiceStorage.java</code>, <code>naming/src/main/java/com/alibaba/nacos/naming/core/v2/client/impl/IpPortBasedClient.java</code></td>
+</tr>
+<tr>
+<td>naming 写路径</td>
+<td><code>naming/src/main/java/com/alibaba/nacos/naming/controllers/v3/InstanceControllerV3.java</code>, <code>naming/src/main/java/com/alibaba/nacos/naming/core/InstanceOperatorClientImpl.java</code>, <code>naming/src/main/java/com/alibaba/nacos/naming/core/v2/service/impl/EphemeralClientOperationServiceImpl.java</code></td>
+</tr>
+<tr>
+<td>naming gRPC 入口</td>
+<td><code>naming/src/main/java/com/alibaba/nacos/naming/remote/rpc/handler/&#123;InstanceRequestHandler,DistroDataRequestHandler,BatchInstanceRequestHandler,SubscribeServiceRequestHandler&#125;.java</code></td>
+</tr>
+<tr>
+<td>distro 路由与同步</td>
+<td><code>naming/src/main/java/com/alibaba/nacos/naming/core/DistroMapper.java</code>, <code>naming/src/main/java/com/alibaba/nacos/naming/consistency/ephemeral/distro/v2/DistroClientDataProcessor.java</code>, <code>core/src/main/java/com/alibaba/nacos/core/distributed/distro/DistroProtocol.java</code>, <code>core/src/main/java/com/alibaba/nacos/core/distributed/distro/task/&#123;delay/DistroDelayTask.java,load/DistroLoadDataTask.java,verify/DistroVerifyTimedTask.java,execute/DistroSyncChangeTask.java&#125;</code></td>
+</tr>
+<tr>
+<td>推送</td>
+<td><code>naming/src/main/java/com/alibaba/nacos/naming/push/v2/&#123;NamingSubscriberServiceV2Impl.java,task/PushDelayTaskExecuteEngine.java,task/PushExecuteTask.java,executor/PushExecutorRpcImpl.java,PushConfig.java&#125;</code>, <code>naming/src/main/java/com/alibaba/nacos/naming/constants/PushConstants.java</code></td>
+</tr>
+<tr>
+<td>健康检查</td>
+<td><code>naming/src/main/java/com/alibaba/nacos/naming/healthcheck/heartbeat/ClientBeatCheckTaskV2.java</code>, <code>naming/src/main/java/com/alibaba/nacos/naming/healthcheck/v2/processor/&#123;HealthCheckProcessorV2Delegate,HealthCheckCommonV2&#125;.java</code>, <code>naming/src/main/java/com/alibaba/nacos/naming/core/v2/client/manager/impl/EphemeralIpPortClientManager.java</code></td>
+</tr>
+<tr>
+<td>config 缓存与发布</td>
+<td><code>config/src/main/java/com/alibaba/nacos/config/server/service/&#123;ConfigCacheService,ConfigOperationService,ConfigChangePublisher&#125;.java</code>, <code>config/src/main/java/com/alibaba/nacos/config/server/controller/v3/ConfigControllerV3.java</code></td>
+</tr>
+<tr>
+<td>config dump</td>
+<td><code>config/src/main/java/com/alibaba/nacos/config/server/service/dump/&#123;DumpService,DumpChangeConfigWorker,EmbeddedDumpService,ExternalDumpService&#125;.java</code></td>
+</tr>
+<tr>
+<td>config 通知</td>
+<td><code>config/src/main/java/com/alibaba/nacos/config/server/service/notify/AsyncNotifyService.java</code>, <code>config/src/main/java/com/alibaba/nacos/config/server/service/LongPollingService.java</code>, <code>config/src/main/java/com/alibaba/nacos/config/server/remote/&#123;ConfigChangeBatchListenRequestHandler,ConfigChangeListenContext,RpcConfigChangeNotifier,ConfigPublishRequestHandler&#125;.java</code></td>
+</tr>
+<tr>
+<td>一致性抽象</td>
+<td><code>consistency/src/main/java/com/alibaba/nacos/consistency/&#123;ConsistencyProtocol,Config,DataOperation,RequestProcessor&#125;.java</code>, <code>consistency/src/main/java/com/alibaba/nacos/consistency/ap/APProtocol.java</code>, <code>consistency/src/main/java/com/alibaba/nacos/consistency/cp/CPProtocol.java</code></td>
+</tr>
+<tr>
+<td>一致性实现</td>
+<td><code>core/src/main/java/com/alibaba/nacos/core/distributed/&#123;ProtocolManager,ProtocolExecutor,AbstractConsistencyProtocol&#125;.java</code>, <code>core/src/main/java/com/alibaba/nacos/core/distributed/raft/&#123;JRaftProtocol,JRaftServer,NacosStateMachine,JRaftMaintainService&#125;.java</code>, <code>naming/src/main/java/com/alibaba/nacos/naming/core/v2/service/impl/PersistentClientOperationServiceImpl.java</code></td>
+</tr>
+<tr>
+<td>客户端 naming</td>
+<td><code>client/src/main/java/com/alibaba/nacos/client/naming/NacosNamingService.java</code>, <code>client/src/main/java/com/alibaba/nacos/client/naming/core/ServiceInfoHolder.java</code>, <code>client/src/main/java/com/alibaba/nacos/client/naming/backups/FailoverReactor.java</code>, <code>client/src/main/java/com/alibaba/nacos/client/naming/remote/gprc/&#123;NamingGrpcClientProxy.java,redo/NamingGrpcRedoService.java&#125;</code></td>
+</tr>
+<tr>
+<td>客户端 config</td>
+<td><code>client/src/main/java/com/alibaba/nacos/client/config/NacosConfigService.java</code>, <code>client/src/main/java/com/alibaba/nacos/client/config/impl/&#123;ClientWorker,CacheData,LocalConfigInfoProcessor,ConfigServerListManager&#125;.java</code></td>
+</tr>
+<tr>
+<td>客户端安全</td>
+<td><code>client/src/main/java/com/alibaba/nacos/client/security/SecurityProxy.java</code></td>
+</tr>
+</tbody></table>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%BA%90%E7%A0%81/" rel="tag"># 源码</a>
+              <a href="/tags/Nacos/" rel="tag"># Nacos</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/mysql/" rel="prev" title="MySQL 源码深度学习笔记">
+                  <i class="fa fa-angle-left"></i> MySQL 源码深度学习笔记
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/kafka/" rel="next" title="Kafka 源码深度学习笔记">
+                  Kafka 源码深度学习笔记 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-copyright"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">源码深读笔记 · 基于源码逐行分析的深度学习笔记</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
