@@ -1,26 +1,16 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
-  <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width">
-<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 7.3.0">
-
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/images/logo.svg" color="#222">
-
-<link rel="stylesheet" href="/css/main.css">
-
-
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
-
-<script class="next-config" data-name="main" type="application/json">{"hostname":"gycxxx.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12,"onmobile":true},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"flat","show_result":true},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js" defer></script>
-
-    <meta name="description" content="基于对 src&#x2F;java.base&#x2F;share&#x2F;classes&#x2F;java&#x2F;lang&#x2F; 下 Thread.java、ThreadGroup.java、ThreadLocal.java、VirtualThread.java、InheritableThreadLocal.java、Runnable.java，以及 src&#x2F;hotspot&#x2F;share&#x2F;runtime&#x2F; 下 thread.&#123;hp">
+  <meta charset="utf-8">
+  
+  <title>Java 线程源码深度学习笔记 | 源码深读笔记 | Kafka / Nacos / Spring / Redis / MySQL / ES / Java / JVM / RAG</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  <meta name="theme-color" content="#3F51B5">
+  
+  
+  <meta name="keywords" content="源码,线程">
+  <meta name="description" content="基于对 src&#x2F;java.base&#x2F;share&#x2F;classes&#x2F;java&#x2F;lang&#x2F; 下 Thread.java、ThreadGroup.java、ThreadLocal.java、VirtualThread.java、InheritableThreadLocal.java、Runnable.java，以及 src&#x2F;hotspot&#x2F;share&#x2F;runtime&#x2F; 下 thread.&#123;hp">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Java 线程源码深度学习笔记">
 <meta property="og:url" content="https://gycxxx.github.io/java-thread/index.html">
@@ -33,207 +23,180 @@
 <meta property="article:tag" content="源码">
 <meta property="article:tag" content="线程">
 <meta name="twitter:card" content="summary">
-
-
-<link rel="canonical" href="https://gycxxx.github.io/java-thread/">
-
-
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://gycxxx.github.io/java-thread/","path":"java-thread/","title":"Java 线程源码深度学习笔记"}</script>
-
-<script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>Java 线程源码深度学习笔记 | 源码深读笔记</title>
   
-
-
-
-
-
-
-
-
+    <link rel="alternative" href="/atom.xml" title="源码深读笔记" type="application/atom+xml">
   
-<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
-
+  <meta name="summary" content="主流基础设施、框架与 JDK 的源码级深度学习笔记">
+  <link rel="shortcut icon" href="/img/favicon.ico">
   
+<link rel="stylesheet" href="/css/style.css">
 
-  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.10.1/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
-  <script src="/js/third-party/tags/mermaid.js" defer></script>
+<meta name="generator" content="Hexo 7.3.0"></head>
 
+<body>
+  <div id="loading" class="active"></div>
 
-
-
-
-  
-
-
-
-
-
-  <noscript>
-    <link rel="stylesheet" href="/css/noscript.css">
-  </noscript>
-</head>
-
-<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
-  <div class="headband"></div>
-
-  <main class="main">
-    <div class="column">
-      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
-  <div class="site-nav-toggle">
-    <div class="toggle" aria-label="切换导航栏" role="button">
-        <span class="toggle-line"></span>
-        <span class="toggle-line"></span>
-        <span class="toggle-line"></span>
-    </div>
-  </div>
-
-  <div class="site-meta">
-
-    <a href="/" class="brand" rel="start">
-      <i class="logo-line"></i>
-      <p class="site-title">源码深读笔记</p>
-      <i class="logo-line"></i>
-    </a>
-      <p class="site-subtitle" itemprop="description">Kafka / Nacos / Spring / Redis / MySQL / ES / Java / JVM / RAG</p>
-  </div>
-
-  <div class="site-nav-right">
-    <div class="toggle popup-trigger" aria-label="搜索" role="button">
-    </div>
-  </div>
-</div>
-
-
-
-<nav class="site-nav">
-  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
-  </ul>
-</nav>
-
-
-
-
-</header>
+  <nav id="menu" class="hide" >
+   <div class="inner flex-row-vertical">
+  <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="menu-off">
+      <i class="icon icon-lg icon-close"></i>
+  </a>
+  <div class="brand-wrap">
+    <div class="brand">
+      <a href="/" class="avatar"><img src="/img/avatar.jpg"></a>
+      <hgroup class="introduce">
+        <h5 class="nickname">gyc</h5>
         
-  
-  <aside class="sidebar">
+      </hgroup>
+    </div>
+  </div>
+  <div class="scroll-wrap flex-col">
+    <ul class="nav">
+      
+          <li class="waves-block waves-effect">
+            <a href="/"  >
+              <i class="icon icon-lg icon-home"></i>
+              主页
+            </a>
+          </li>
+      
+          <li class="waves-block waves-effect">
+            <a href="/archives"  >
+              <i class="icon icon-lg icon-archive"></i>
+              归档
+            </a>
+          </li>
+      
+          <li class="waves-block waves-effect">
+            <a href="/categories"  >
+              <i class="icon icon-lg icon-th-list"></i>
+              分类
+            </a>
+          </li>
+      
+          <li class="waves-block waves-effect">
+            <a href="/tags"  >
+              <i class="icon icon-lg icon-tags"></i>
+              标签
+            </a>
+          </li>
+      
+    </ul>
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
-      <ul class="sidebar-nav">
-        <li class="sidebar-nav-toc">
-          文章目录
-        </li>
-        <li class="sidebar-nav-overview">
-          站点概览
-        </li>
-      </ul>
+    <footer class="footer">
+  <p>源码深读笔记 &copy; 2026</p>
+  <p>Power by <a href="http://hexo.io/" target="_blank">Hexo</a> Theme
+  <a href="https://github.com/yscoder/hexo-theme-indigo" target="_blank">indigo</a></p>
+  <a href="/atom.xml" target="_blank" class="rss" title="rss"><i class="icon icon-2x icon-rss-square"></i></a>
+</footer>
 
-      <div class="sidebar-panel-container">
-        <!--noindex-->
-        <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95"><span class="nav-number">1.</span> <span class="nav-text">目录</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E3%80%87%E3%80%81%E5%85%A8%E6%99%AF%E5%9C%B0%E5%9B%BE"><span class="nav-number">2.</span> <span class="nav-text">〇、全景地图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%9F%E8%A7%88%EF%BC%9A%E5%90%84%E8%AE%B2%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88%EF%BC%88%E5%85%88%E7%9C%8B%E8%BF%99%E4%B8%AA%E5%86%8D%E8%BF%9B%E7%BB%86%E8%8A%82%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">速览：各讲做了什么（先看这个再进细节）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9D%A2%E8%AF%95%E9%80%9F%E9%80%9A%EF%BC%9AJava-%E7%BA%BF%E7%A8%8B%E9%AB%98%E9%A2%91%E9%97%AE%E9%A2%98%E4%B8%80%E9%A1%B5%E7%BA%B8"><span class="nav-number">4.</span> <span class="nav-text">面试速通：Java 线程高频问题一页纸</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%AB%98%E9%A2%91-Q-A%EF%BC%88%E5%85%88%E7%BB%93%E8%AE%BA%EF%BC%89"><span class="nav-number">4.1.</span> <span class="nav-text">高频 Q&amp;A（先结论）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%98%93%E9%94%99%E7%82%B9%E4%B8%8E%E9%9D%A2%E8%AF%95%E5%9D%91"><span class="nav-number">4.2.</span> <span class="nav-text">易错点与面试坑</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E6%A6%82%E5%BF%B5%E5%AF%B9%E7%85%A7%E8%A1%A8"><span class="nav-number">4.3.</span> <span class="nav-text">关键概念对照表</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%EF%BC%9AThread-%E5%9F%BA%E7%A1%80%E4%B8%8E%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F-%E2%80%94%E2%80%94-Thread-java"><span class="nav-number">5.</span> <span class="nav-text">第一讲：Thread 基础与生命周期 —— Thread.java</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88"><span class="nav-number">5.1.</span> <span class="nav-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB"><span class="nav-number">5.2.</span> <span class="nav-text">逐文件精读</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1%EF%BC%89%E7%B1%BB%E5%A3%B0%E6%98%8E%E4%B8%8E%E5%AD%97%E6%AE%B5%E5%B8%83%E5%B1%80-%E2%80%94%E2%80%94-Thread-java-219-Thread-java-399"><span class="nav-number">5.2.1.</span> <span class="nav-text">1）类声明与字段布局 —— Thread.java:219~&#96;Thread.java:399&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2%EF%BC%89%E6%9E%84%E9%80%A0%E5%99%A8%E5%AE%B6%E6%97%8F-%E2%80%94%E2%80%94-Thread-java-1143-Thread-java-1480"><span class="nav-number">5.2.2.</span> <span class="nav-text">2）构造器家族 —— Thread.java:1143~&#96;Thread.java:1480&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3%EF%BC%89start-start0-%E2%80%94%E2%80%94-%E4%B8%80%E6%AC%A1%E6%80%A7%E5%90%AF%E5%8A%A8-%E2%80%94%E2%80%94-Thread-java-1521-Thread-java-1563"><span class="nav-number">5.2.3.</span> <span class="nav-text">3）start() &#x2F; start0() —— 一次性启动 —— Thread.java:1521~&#96;Thread.java:1563&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4%EF%BC%89run-%E2%80%94%E2%80%94-%E5%85%A5%E5%8F%A3%E6%96%B9%E6%B3%95-%E2%80%94%E2%80%94-Thread-java-1579-Thread-java-1585"><span class="nav-number">5.2.4.</span> <span class="nav-text">4）run() —— 入口方法 —— Thread.java:1579~&#96;Thread.java:1585&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5%EF%BC%89State-%E6%9E%9A%E4%B8%BE-%E2%80%94%E2%80%94-6-%E6%80%81%E7%8A%B6%E6%80%81%E6%9C%BA-%E2%80%94%E2%80%94-Thread-java-2664-Thread-java-2727"><span class="nav-number">5.2.5.</span> <span class="nav-text">5）State 枚举 —— 6 态状态机 —— Thread.java:2664~&#96;Thread.java:2727&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6%EF%BC%89yield-sleep-%E2%80%94%E2%80%94-%E8%AE%A9%E5%87%BA-CPU-%E2%80%94%E2%80%94-Thread-java-441-Thread-java-516"><span class="nav-number">5.2.6.</span> <span class="nav-text">6）yield &#x2F; sleep —— 让出 CPU —— Thread.java:441~&#96;Thread.java:516&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7%EF%BC%89interrupt-interrupted-isInterrupted-%E2%80%94%E2%80%94-%E5%8D%8F%E4%BD%9C%E5%BC%8F%E4%B8%AD%E6%96%AD-%E2%80%94%E2%80%94-Thread-java-1712-Thread-java-1787"><span class="nav-number">5.2.7.</span> <span class="nav-text">7）interrupt &#x2F; interrupted &#x2F; isInterrupted —— 协作式中断 —— Thread.java:1712~&#96;Thread.java:1787&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#8%EF%BC%89join-%E2%80%94%E2%80%94-%E7%AD%89%E7%BA%BF%E7%A8%8B%E7%BB%88%E6%AD%A2-%E2%80%94%E2%80%94-Thread-java-2054-Thread-java-2155"><span class="nav-number">5.2.8.</span> <span class="nav-text">8）join —— 等线程终止 —— Thread.java:2054~&#96;Thread.java:2155&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#9%EF%BC%89stop-suspend-resume-countStackFrames-%E2%80%94%E2%80%94-%E5%85%A8%E5%BA%9F%E5%BC%83-%E2%80%94%E2%80%94-Thread-java-1665-Thread-java-2028"><span class="nav-number">5.2.9.</span> <span class="nav-text">9）stop&#x2F;suspend&#x2F;resume&#x2F;countStackFrames —— 全废弃 —— Thread.java:1665~&#96;Thread.java:2028&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#10%EF%BC%89%E6%9C%AA%E6%8D%95%E8%8E%B7%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E5%99%A8-%E2%80%94%E2%80%94-Thread-java-2779-Thread-java-2902"><span class="nav-number">5.2.10.</span> <span class="nav-text">10）未捕获异常处理器 —— Thread.java:2779~&#96;Thread.java:2902&#96;</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9AThread-%E6%98%AF%E2%80%9D%E8%BD%BB%E9%87%8F-Java-%E5%AF%B9%E8%B1%A1-%E9%87%8D%E5%9E%8B-VM-%E9%92%89%E5%AD%90%E2%80%9D"><span class="nav-number">6.</span> <span class="nav-text">第一讲小结：Thread 是”轻量 Java 对象 + 重型 VM 钉子”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%EF%BC%9AThreadLocal-%E4%B8%8E%E7%BB%A7%E6%89%BF-%E2%80%94%E2%80%94-ThreadLocal-InheritableThreadLocal"><span class="nav-number">7.</span> <span class="nav-text">第二讲：ThreadLocal 与继承 —— ThreadLocal &#x2F; InheritableThreadLocal</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-1"><span class="nav-number">7.1.</span> <span class="nav-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-1"><span class="nav-number">7.2.</span> <span class="nav-text">逐文件精读</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1%EF%BC%89%E7%B1%BB%E5%A3%B0%E6%98%8E%E4%B8%8E%E5%93%88%E5%B8%8C%E7%A0%81-%E2%80%94%E2%80%94-ThreadLocal-java-81-ThreadLocal-java-115"><span class="nav-number">7.2.1.</span> <span class="nav-text">1）类声明与哈希码 —— ThreadLocal.java:81~&#96;ThreadLocal.java:115&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2%EF%BC%89withInitial-initialValue-%E2%80%94%E2%80%94-%E5%88%9D%E5%A7%8B%E5%80%BC-%E2%80%94%E2%80%94-ThreadLocal-java-138-ThreadLocal-java-154"><span class="nav-number">7.2.2.</span> <span class="nav-text">2）withInitial &#x2F; initialValue —— 初始值 —— ThreadLocal.java:138~&#96;ThreadLocal.java:154&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3%EF%BC%89get-set-remove-%E2%80%94%E2%80%94-%E4%B8%89%E4%B8%AA%E6%A0%B8%E5%BF%83-API-%E2%80%94%E2%80%94-ThreadLocal-java-171-ThreadLocal-java-296"><span class="nav-number">7.2.3.</span> <span class="nav-text">3）get &#x2F; set &#x2F; remove —— 三个核心 API —— ThreadLocal.java:171~&#96;ThreadLocal.java:296&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4%EF%BC%89ThreadLocalMap-%E5%86%85%E9%83%A8-%E2%80%94%E2%80%94-ThreadLocal-java-371-ThreadLocal-java-800"><span class="nav-number">7.2.4.</span> <span class="nav-text">4）ThreadLocalMap 内部 —— ThreadLocal.java:371~&#96;ThreadLocal.java:800&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5%EF%BC%89%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F%E7%9A%84%E6%A0%B9%E5%9B%A0-%E2%80%94%E2%80%94-value-%E5%BC%BA%E5%BC%95%E7%94%A8"><span class="nav-number">7.2.5.</span> <span class="nav-text">5）内存泄漏的根因 —— value 强引用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6%EF%BC%89InheritableThreadLocal-%E2%80%94%E2%80%94-%E5%AD%90%E7%BA%BF%E7%A8%8B%E7%BB%A7%E6%89%BF-%E2%80%94%E2%80%94-InheritableThreadLocal-java-54-96"><span class="nav-number">7.2.6.</span> <span class="nav-text">6）InheritableThreadLocal —— 子线程继承 —— InheritableThreadLocal.java:54~&#96;96&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7%EF%BC%89%E5%85%B3%E4%BA%8E-TransmittableThreadLocal%EF%BC%88%E9%98%BF%E9%87%8C-TTL%EF%BC%8C%E4%B8%8D%E5%9C%A8-JDK-%E4%B8%AD%EF%BC%89"><span class="nav-number">7.2.7.</span> <span class="nav-text">7）关于 TransmittableThreadLocal（阿里 TTL，不在 JDK 中）</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9AThreadLocal-%E6%98%AF%E2%80%9D%E6%8C%82%E5%9C%A8-Thread-%E4%B8%8A%E7%9A%84%E5%BC%B1-key-%E5%BC%BA-value-%E5%93%88%E5%B8%8C%E8%A1%A8%E2%80%9D"><span class="nav-number">8.</span> <span class="nav-text">第二讲小结：ThreadLocal 是”挂在 Thread 上的弱 key 强 value 哈希表”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%EF%BC%9A%E8%99%9A%E6%8B%9F%E7%BA%BF%E7%A8%8B-VirtualThread-%E2%80%94%E2%80%94-VirtualThread-java"><span class="nav-number">9.</span> <span class="nav-text">第三讲：虚拟线程 VirtualThread —— VirtualThread.java</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-2"><span class="nav-number">9.1.</span> <span class="nav-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-2"><span class="nav-number">9.2.</span> <span class="nav-text">逐文件精读</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1%EF%BC%89%E7%B1%BB%E5%A3%B0%E6%98%8E%E4%B8%8E%E6%A0%B8%E5%BF%83%E5%AD%97%E6%AE%B5-%E2%80%94%E2%80%94-VirtualThread-java-70-VirtualThread-java-135"><span class="nav-number">9.2.1.</span> <span class="nav-text">1）类声明与核心字段 —— VirtualThread.java:70~&#96;VirtualThread.java:135&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2%EF%BC%89%E7%8A%B6%E6%80%81%E6%9C%BA-%E2%80%94%E2%80%94-VirtualThread-java-90-VirtualThread-java-125"><span class="nav-number">9.2.2.</span> <span class="nav-text">2）状态机 —— VirtualThread.java:90~&#96;VirtualThread.java:125&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3%EF%BC%89%E6%9E%84%E9%80%A0%E5%99%A8-VThreadContinuation-%E2%80%94%E2%80%94-VirtualThread-java-155-VirtualThread-java-196"><span class="nav-number">9.2.3.</span> <span class="nav-text">3）构造器 + VThreadContinuation —— VirtualThread.java:155~&#96;VirtualThread.java:196&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4%EF%BC%89runContinuation-%E2%80%94%E2%80%94-%E6%8E%A5%E7%BB%AD%E5%85%A5%E5%8F%A3-%E2%80%94%E2%80%94-VirtualThread-java-201-VirtualThread-java-231"><span class="nav-number">9.2.4.</span> <span class="nav-text">4）runContinuation() —— 接续入口 —— VirtualThread.java:201~&#96;VirtualThread.java:231&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5%EF%BC%89run-task-%E2%80%94%E2%80%94-%E7%94%A8%E6%88%B7%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C-%E2%80%94%E2%80%94-VirtualThread-java-295-VirtualThread-java-335"><span class="nav-number">9.2.5.</span> <span class="nav-text">5）run(task) —— 用户代码执行 —— VirtualThread.java:295~&#96;VirtualThread.java:335&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6%EF%BC%89yieldContinuation-%E2%80%94%E2%80%94-%E9%AD%94%E6%B3%95%E6%A0%B8%E5%BF%83-%E2%80%94%E2%80%94-VirtualThread-java-436-VirtualThread-java-447"><span class="nav-number">9.2.6.</span> <span class="nav-text">6）yieldContinuation() —— 魔法核心 —— VirtualThread.java:436~&#96;VirtualThread.java:447&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7%EF%BC%89park-parkNanos-unpark-%E2%80%94%E2%80%94-%E8%AE%A9%E5%87%BA-%E6%81%A2%E5%A4%8D-%E2%80%94%E2%80%94-VirtualThread-java-581-VirtualThread-java-758"><span class="nav-number">9.2.7.</span> <span class="nav-text">7）park &#x2F; parkNanos &#x2F; unpark —— 让出&#x2F;恢复 —— VirtualThread.java:581~&#96;VirtualThread.java:758&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#8%EF%BC%89threadState-%E2%80%94%E2%80%94-%E6%98%A0%E5%B0%84%E5%9B%9E-Thread-State-%E2%80%94%E2%80%94-VirtualThread-java-887-VirtualThread-java-925"><span class="nav-number">9.2.8.</span> <span class="nav-text">8）threadState() —— 映射回 Thread.State —— VirtualThread.java:887~&#96;VirtualThread.java:925&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#9%EF%BC%89interrupt-%E2%80%94%E2%80%94-%E4%B8%AD%E6%96%AD%E4%B8%8E-carrier-%E5%8D%8F%E4%BD%9C-%E2%80%94%E2%80%94-VirtualThread-java-848-VirtualThread-java-884"><span class="nav-number">9.2.9.</span> <span class="nav-text">9）interrupt —— 中断与 carrier 协作 —— VirtualThread.java:848~&#96;VirtualThread.java:884&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#10%EF%BC%89createDefaultScheduler-%E2%80%94%E2%80%94-%E9%BB%98%E8%AE%A4%E8%B0%83%E5%BA%A6%E5%99%A8-%E2%80%94%E2%80%94-VirtualThread-java-1113-VirtualThread-java-1145"><span class="nav-number">9.2.10.</span> <span class="nav-text">10）createDefaultScheduler() —— 默认调度器 —— VirtualThread.java:1113~&#96;VirtualThread.java:1145&#96;</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E8%99%9A%E6%8B%9F%E7%BA%BF%E7%A8%8B%E6%98%AF%E2%80%9Dcontinuation-ForkJoinPool-9-%E6%80%81%E7%8A%B6%E6%80%81%E6%9C%BA%E2%80%9D"><span class="nav-number">10.</span> <span class="nav-text">第三讲小结：虚拟线程是”continuation + ForkJoinPool + 9 态状态机”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%EF%BC%9AThreadGroup-%E4%B8%8E%E6%9C%AA%E6%8D%95%E8%8E%B7%E5%BC%82%E5%B8%B8-%E2%80%94%E2%80%94-ThreadGroup-java"><span class="nav-number">11.</span> <span class="nav-text">第四讲：ThreadGroup 与未捕获异常 —— ThreadGroup.java</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-3"><span class="nav-number">11.1.</span> <span class="nav-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-3"><span class="nav-number">11.2.</span> <span class="nav-text">逐文件精读</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1%EF%BC%89%E7%B1%BB%E5%A3%B0%E6%98%8E%E4%B8%8E%E5%AD%97%E6%AE%B5-%E2%80%94%E2%80%94-ThreadGroup-java-77-ThreadGroup-java-96"><span class="nav-number">11.2.1.</span> <span class="nav-text">1）类声明与字段 —— ThreadGroup.java:77~&#96;ThreadGroup.java:96&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2%EF%BC%89%E4%B8%89%E4%B8%AA%E6%9E%84%E9%80%A0%E5%99%A8-%E2%80%94%E2%80%94-ThreadGroup-java-102-ThreadGroup-java-129"><span class="nav-number">11.2.2.</span> <span class="nav-text">2）三个构造器 —— ThreadGroup.java:102~&#96;ThreadGroup.java:129&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3%EF%BC%89setMaxPriority-%E2%80%94%E2%80%94-%E4%BC%98%E5%85%88%E7%BA%A7%E7%BA%A6%E6%9D%9F-%E2%80%94%E2%80%94-ThreadGroup-java-300-ThreadGroup-java-312"><span class="nav-number">11.2.3.</span> <span class="nav-text">3）setMaxPriority —— 优先级约束 —— ThreadGroup.java:300~&#96;ThreadGroup.java:312&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4%EF%BC%89activeCount-enumerate-%E2%80%94%E2%80%94-%E5%85%A8%E5%B1%80%E5%BF%AB%E7%85%A7%E9%81%8D%E5%8E%86-%E2%80%94%E2%80%94-ThreadGroup-java-375-ThreadGroup-java-459"><span class="nav-number">11.2.4.</span> <span class="nav-text">4）activeCount &#x2F; enumerate —— 全局快照遍历 —— ThreadGroup.java:375~&#96;ThreadGroup.java:459&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5%EF%BC%89interrupt-%E2%80%94%E2%80%94-%E6%89%B9%E9%87%8F%E4%B8%AD%E6%96%AD-%E2%80%94%E2%80%94-ThreadGroup-java-580-ThreadGroup-java-588"><span class="nav-number">11.2.5.</span> <span class="nav-text">5）interrupt —— 批量中断 —— ThreadGroup.java:580~&#96;ThreadGroup.java:588&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6%EF%BC%89destroy-%E2%80%94%E2%80%94-%E7%A9%BA%E6%96%B9%E6%B3%95-%E2%80%94%E2%80%94-ThreadGroup-java-622-ThreadGroup-java-623"><span class="nav-number">11.2.6.</span> <span class="nav-text">6）destroy —— 空方法 —— ThreadGroup.java:622~&#96;ThreadGroup.java:623&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7%EF%BC%89uncaughtException-%E2%80%94%E2%80%94-%E5%BC%82%E5%B8%B8%E6%B4%BE%E5%8F%91%E9%93%BE-%E2%80%94%E2%80%94-ThreadGroup-java-688-ThreadGroup-java-701"><span class="nav-number">11.2.7.</span> <span class="nav-text">7）uncaughtException —— 异常派发链 —— ThreadGroup.java:688~&#96;ThreadGroup.java:701&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#8%EF%BC%89%E5%AD%90%E7%BB%84%E7%AE%A1%E7%90%86-%E2%80%94%E2%80%94-ThreadGroup-java-718-ThreadGroup-java-805"><span class="nav-number">11.2.8.</span> <span class="nav-text">8）子组管理 —— ThreadGroup.java:718~&#96;ThreadGroup.java:805&#96;</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9AThreadGroup-%E5%9C%A8-JDK-21-%E5%B7%B2%E9%80%80%E5%8C%96%E4%B8%BA%E2%80%9D%E9%80%BB%E8%BE%91%E5%88%86%E7%BB%84-%E5%BC%82%E5%B8%B8%E6%B4%BE%E5%8F%91%E9%93%BE%E2%80%9D"><span class="nav-number">12.</span> <span class="nav-text">第四讲小结：ThreadGroup 在 JDK 21 已退化为”逻辑分组 + 异常派发链”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%EF%BC%9AHotSpot-%E7%BA%BF%E7%A8%8B%E5%AE%9E%E7%8E%B0%E6%A6%82%E8%A7%88-%E2%80%94%E2%80%94-thread-hpp-cpp-javaThread-hpp-cpp-osThread-hpp"><span class="nav-number">13.</span> <span class="nav-text">第五讲：HotSpot 线程实现概览 —— thread.{hpp,cpp} &#x2F; javaThread.{hpp,cpp} &#x2F; osThread.hpp</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-4"><span class="nav-number">13.1.</span> <span class="nav-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-4"><span class="nav-number">13.2.</span> <span class="nav-text">逐文件精读</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1%EF%BC%89Thread-%E6%8A%BD%E8%B1%A1%E5%9F%BA%E7%B1%BB-%E2%80%94%E2%80%94-thread-hpp-107-thread-hpp-684%E3%80%81thread-cpp"><span class="nav-number">13.2.1.</span> <span class="nav-text">1）Thread 抽象基类 —— thread.hpp:107~&#96;thread.hpp:684、thread.cpp&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2%EF%BC%89JavaThread-%E2%80%94%E2%80%94-%E8%B7%91-Java-%E4%BB%A3%E7%A0%81%E7%9A%84%E5%AD%90%E7%B1%BB-%E2%80%94%E2%80%94-javaThread-hpp-78%E3%80%81javaThread-cpp-401-javaThread-cpp-725"><span class="nav-number">13.2.2.</span> <span class="nav-text">2）JavaThread —— 跑 Java 代码的子类 —— javaThread.hpp:78、javaThread.cpp:401~&#96;javaThread.cpp:725&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3%EF%BC%89OSThread-%E2%80%94%E2%80%94-%E5%B9%B3%E5%8F%B0%E5%B1%82%E8%96%84%E5%A3%B3-%E2%80%94%E2%80%94-osThread-hpp-65-osThread-hpp-97"><span class="nav-number">13.2.3.</span> <span class="nav-text">3）OSThread —— 平台层薄壳 —— osThread.hpp:65~&#96;osThread.hpp:97&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4%EF%BC%89SafepointSynchronize-ThreadSafepointState-%E2%80%94%E2%80%94-%E5%85%A8%E5%B1%80-safepoint-%E2%80%94%E2%80%94-safepoint-hpp-96-safepoint-hpp-288"><span class="nav-number">13.2.4.</span> <span class="nav-text">4）SafepointSynchronize + ThreadSafepointState —— 全局 safepoint —— safepoint.hpp:96~&#96;safepoint.hpp:288&#96;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5%EF%BC%89Thread-SMR-%E2%80%94%E2%80%94-%E5%AE%89%E5%85%A8%E5%86%85%E5%AD%98%E5%9B%9E%E6%94%B6-%E2%80%94%E2%80%94-thread-hpp-162thread-hpp-196%E3%80%81thread-cpp-283thread-cpp-340"><span class="nav-number">13.2.5.</span> <span class="nav-text">5）Thread-SMR —— 安全内存回收 —— thread.hpp:162thread.hpp:196、thread.cpp:283thread.cpp:340</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9AHotSpot-%E7%BA%BF%E7%A8%8B%E6%98%AF%E2%80%9D%E6%8A%BD%E8%B1%A1%E5%9F%BA%E7%B1%BB%E7%BB%9F%E4%B8%80%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F-JavaThread-%E5%8F%8D%E5%B0%84%E8%B0%83-Java-OSThread-%E8%96%84%E5%A3%B3-SMR-%E5%AE%89%E5%85%A8%E5%9B%9E%E6%94%B6%E2%80%9D"><span class="nav-number">14.</span> <span class="nav-text">第五讲小结：HotSpot 线程是”抽象基类统一生命周期 + JavaThread 反射调 Java + OSThread 薄壳 + SMR 安全回收”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%BC%94%E7%AE%97"><span class="nav-number">15.</span> <span class="nav-text">端到端演算</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%94%E7%AE%97-1%EF%BC%9A%E4%B8%80%E6%AC%A1-new-Thread-start-%E4%BB%8E-Java-%E5%88%B0-OS-%E7%BA%BF%E7%A8%8B%E8%B7%91%E8%B5%B7%E6%9D%A5"><span class="nav-number">15.1.</span> <span class="nav-text">演算 1：一次 new Thread().start() 从 Java 到 OS 线程跑起来</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%94%E7%AE%97-2%EF%BC%9A%E4%B8%80%E6%AC%A1-Thread-startVirtualThread-task-%E5%9C%A8-IO-%E9%98%BB%E5%A1%9E%E6%97%B6-yield-%E5%87%BA-carrier"><span class="nav-number">15.2.</span> <span class="nav-text">演算 2：一次 Thread.startVirtualThread(task) 在 IO 阻塞时 yield 出 carrier</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%99%84%EF%BC%9A%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E4%B8%8E%E5%A4%8D%E4%B9%A0%E5%8D%A1%E6%B1%87%E6%80%BB"><span class="nav-number">16.</span> <span class="nav-text">附：学习路线与复习卡汇总</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%EF%BC%88%E6%8C%89%E6%8E%A8%E8%8D%90%E9%A1%BA%E5%BA%8F%EF%BC%89"><span class="nav-number">16.1.</span> <span class="nav-text">学习路线（按推荐顺序）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%8D%E4%B9%A0%E5%8D%A1%E6%B1%87%E6%80%BB"><span class="nav-number">16.2.</span> <span class="nav-text">复习卡汇总</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%8D%E4%B9%A0%E5%8D%A1-1%EF%BC%9AThread-%E7%9A%84-6-%E6%80%81%E7%8A%B6%E6%80%81%E6%9C%BA"><span class="nav-number">16.2.1.</span> <span class="nav-text">复习卡 1：Thread 的 6 态状态机</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%8D%E4%B9%A0%E5%8D%A1-2%EF%BC%9AThreadLocal-%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F%E5%85%A8%E6%99%AF"><span class="nav-number">16.2.2.</span> <span class="nav-text">复习卡 2：ThreadLocal 内存泄漏全景</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%8D%E4%B9%A0%E5%8D%A1-3%EF%BC%9A%E8%99%9A%E6%8B%9F%E7%BA%BF%E7%A8%8B%E7%9A%84-9-%E6%80%81"><span class="nav-number">16.2.3.</span> <span class="nav-text">复习卡 3：虚拟线程的 9 态</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%8D%E4%B9%A0%E5%8D%A1-4%EF%BC%9A%E6%9C%AA%E6%8D%95%E8%8E%B7%E5%BC%82%E5%B8%B8%E6%B4%BE%E5%8F%91%E9%93%BE"><span class="nav-number">16.2.4.</span> <span class="nav-text">复习卡 4：未捕获异常派发链</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%8D%E4%B9%A0%E5%8D%A1-5%EF%BC%9AHotSpot-JavaThread-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E4%B8%89%E6%AE%B5%E5%BC%8F"><span class="nav-number">16.2.5.</span> <span class="nav-text">复习卡 5：HotSpot JavaThread 生命周期三段式</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B6%89%E5%8F%8A%E6%96%87%E4%BB%B6%E7%B4%A2%E5%BC%95"><span class="nav-number">17.</span> <span class="nav-text">涉及文件索引</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Java-%E5%B1%82%EF%BC%88src-java-base-share-classes-java-lang-%EF%BC%89"><span class="nav-number">17.1.</span> <span class="nav-text">Java 层（src&#x2F;java.base&#x2F;share&#x2F;classes&#x2F;java&#x2F;lang&#x2F;）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#HotSpot-%E5%B1%82%EF%BC%88src-hotspot-share-runtime-%EF%BC%89"><span class="nav-number">17.2.</span> <span class="nav-text">HotSpot 层（src&#x2F;hotspot&#x2F;share&#x2F;runtime&#x2F;）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%B8%E5%85%B3%E6%9C%AA%E7%B2%BE%E8%AF%BB%E4%BD%86%E8%A2%AB%E5%BC%95%E7%94%A8%E7%9A%84%E6%96%87%E4%BB%B6"><span class="nav-number">17.3.</span> <span class="nav-text">相关未精读但被引用的文件</span></a></li></ol></li></ol></div>
-        </div>
-        <!--/noindex-->
-
-        <div class="site-overview-wrap sidebar-panel">
-          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
-  <p class="site-author-name" itemprop="name">gyc</p>
-  <div class="site-description" itemprop="description">主流基础设施、框架与 JDK 的源码级深度学习笔记</div>
+  </div>
 </div>
-<div class="site-state-wrap animated">
-  <nav class="site-state">
-      <div class="site-state-item site-state-posts">
-        <a href="/archives/">
-          <span class="site-state-item-count">19</span>
-          <span class="site-state-item-name">日志</span>
-        </a>
-      </div>
-      <div class="site-state-item site-state-categories">
-          <a href="/categories/">
-        <span class="site-state-item-count">5</span>
-        <span class="site-state-item-name">分类</span></a>
-      </div>
-      <div class="site-state-item site-state-tags">
-          <a href="/tags/">
-        <span class="site-state-item-count">26</span>
-        <span class="site-state-item-name">标签</span></a>
-      </div>
+
   </nav>
-</div>
-
+  <main id="main">
+    <header class="top-header" id="header">
+    <div class="flex-row">
+        <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light on" id="menu-toggle">
+          <i class="icon icon-lg icon-navicon"></i>
+        </a>
+        <div class="flex-col header-title ellipsis">Java 线程源码深度学习笔记</div>
+        
+        <div class="search-wrap" id="search-wrap">
+            <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="back">
+                <i class="icon icon-lg icon-chevron-left"></i>
+            </a>
+            <input type="text" id="key" class="search-input " autocomplete="off" placeholder="输入感兴趣的关键字">
+            <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="search">
+                <i class="icon icon-lg icon-search"></i>
+            </a>
         </div>
-      </div>
+        
+        
+        <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="menu-share">
+            <i class="icon icon-lg icon-share-alt"></i>
+        </a>
+        
     </div>
+</header>
+<header class="content-header">
+  <div class="container">
+    <h1 class="author">Java 线程源码深度学习笔记</h1>
+    <h5 class="subtitle">
+        
+            <time datetime="2026-10-14T16:00:00.000Z" itemprop="datePublished" class="page-time">
+  2026-10-15
+</time>
 
-    
-  </aside>
 
+	<ul class="article-category-list"><li class="article-category-list-item"><a class="article-category-list-link" href="/categories/Java/">Java</a></li></ul>
+
+        
+    </h5>
+  </div>
+</header>
+
+    <div class="container body-wrap">
+      <article id="post-java-thread" 
+  class="article article-type-post" itemprop="blogPost">
+    <div class="post-meta flex-row">
+        
+	<ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%BA%90%E7%A0%81/" rel="tag">源码</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E7%BA%BF%E7%A8%8B/" rel="tag">线程</a></li></ul>
 
     </div>
+    <div class="post-body">
+        <aside class="post-widget" id="post-widget">
 
-    <div class="main-inner post posts-expand">
+            
+            <div class="post-share" id="post-share">
+    <div class="tit">分享到：</div>
+    <ul class="reset share-icons">
+      <li>
+        <a class="weibo share-sns" href="javascript:;" data-title="微博" data-service="tsina">
+          <i class="icon icon-weibo"></i>
+        </a>
+      </li>
+      <li>
+        <a class="weixin share-sns" href="javascript:;" data-title="微信" data-service="weixin">
+          <i class="icon icon-weixin"></i>
+        </a>
+      </li>
+      <li>
+        <a class="qq share-sns" href="javascript:;" data-title=" QQ" data-service="cqq">
+          <i class="icon icon-qq"></i>
+        </a>
+      </li>
+      <li>
+        <a class="facebook share-sns" href="javascript:;" data-title=" Facebook" data-service="fb">
+          <i class="icon icon-facebook"></i>
+        </a>
+      </li>
+      <li>
+        <a class="twitter share-sns" href="javascript:;" data-title=" Twitter" data-service="twitter">
+          <i class="icon icon-twitter"></i>
+        </a>
+      </li>
+      <li>
+        <a class="douban share-sns" href="javascript:;" data-title="豆瓣" data-service="douban">
+          豆
+        </a>
+      </li>
+    </ul>
+ </div>
 
+            
 
-  
+            
+            <nav class="post-toc-wrap" id="post-toc">
+            <ol class="post-toc"><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%9B%AE%E5%BD%95"><span class="post-toc-number">1.</span> <span class="post-toc-text">目录</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E3%80%87%E3%80%81%E5%85%A8%E6%99%AF%E5%9C%B0%E5%9B%BE"><span class="post-toc-number">2.</span> <span class="post-toc-text">〇、全景地图</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%80%9F%E8%A7%88%EF%BC%9A%E5%90%84%E8%AE%B2%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88%EF%BC%88%E5%85%88%E7%9C%8B%E8%BF%99%E4%B8%AA%E5%86%8D%E8%BF%9B%E7%BB%86%E8%8A%82%EF%BC%89"><span class="post-toc-number">3.</span> <span class="post-toc-text">速览：各讲做了什么（先看这个再进细节）</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%9D%A2%E8%AF%95%E9%80%9F%E9%80%9A%EF%BC%9AJava-%E7%BA%BF%E7%A8%8B%E9%AB%98%E9%A2%91%E9%97%AE%E9%A2%98%E4%B8%80%E9%A1%B5%E7%BA%B8"><span class="post-toc-number">4.</span> <span class="post-toc-text">面试速通：Java 线程高频问题一页纸</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%AB%98%E9%A2%91-Q-A%EF%BC%88%E5%85%88%E7%BB%93%E8%AE%BA%EF%BC%89"><span class="post-toc-number">4.1.</span> <span class="post-toc-text">高频 Q&amp;A（先结论）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E6%98%93%E9%94%99%E7%82%B9%E4%B8%8E%E9%9D%A2%E8%AF%95%E5%9D%91"><span class="post-toc-number">4.2.</span> <span class="post-toc-text">易错点与面试坑</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%B3%E9%94%AE%E6%A6%82%E5%BF%B5%E5%AF%B9%E7%85%A7%E8%A1%A8"><span class="post-toc-number">4.3.</span> <span class="post-toc-text">关键概念对照表</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%EF%BC%9AThread-%E5%9F%BA%E7%A1%80%E4%B8%8E%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F-%E2%80%94%E2%80%94-Thread-java"><span class="post-toc-number">5.</span> <span class="post-toc-text">第一讲：Thread 基础与生命周期 —— Thread.java</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88"><span class="post-toc-number">5.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB"><span class="post-toc-number">5.2.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89%E7%B1%BB%E5%A3%B0%E6%98%8E%E4%B8%8E%E5%AD%97%E6%AE%B5%E5%B8%83%E5%B1%80-%E2%80%94%E2%80%94-Thread-java-219-Thread-java-399"><span class="post-toc-number">5.2.1.</span> <span class="post-toc-text">1）类声明与字段布局 —— Thread.java:219~&#96;Thread.java:399&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89%E6%9E%84%E9%80%A0%E5%99%A8%E5%AE%B6%E6%97%8F-%E2%80%94%E2%80%94-Thread-java-1143-Thread-java-1480"><span class="post-toc-number">5.2.2.</span> <span class="post-toc-text">2）构造器家族 —— Thread.java:1143~&#96;Thread.java:1480&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89start-start0-%E2%80%94%E2%80%94-%E4%B8%80%E6%AC%A1%E6%80%A7%E5%90%AF%E5%8A%A8-%E2%80%94%E2%80%94-Thread-java-1521-Thread-java-1563"><span class="post-toc-number">5.2.3.</span> <span class="post-toc-text">3）start() &#x2F; start0() —— 一次性启动 —— Thread.java:1521~&#96;Thread.java:1563&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89run-%E2%80%94%E2%80%94-%E5%85%A5%E5%8F%A3%E6%96%B9%E6%B3%95-%E2%80%94%E2%80%94-Thread-java-1579-Thread-java-1585"><span class="post-toc-number">5.2.4.</span> <span class="post-toc-text">4）run() —— 入口方法 —— Thread.java:1579~&#96;Thread.java:1585&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#5%EF%BC%89State-%E6%9E%9A%E4%B8%BE-%E2%80%94%E2%80%94-6-%E6%80%81%E7%8A%B6%E6%80%81%E6%9C%BA-%E2%80%94%E2%80%94-Thread-java-2664-Thread-java-2727"><span class="post-toc-number">5.2.5.</span> <span class="post-toc-text">5）State 枚举 —— 6 态状态机 —— Thread.java:2664~&#96;Thread.java:2727&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#6%EF%BC%89yield-sleep-%E2%80%94%E2%80%94-%E8%AE%A9%E5%87%BA-CPU-%E2%80%94%E2%80%94-Thread-java-441-Thread-java-516"><span class="post-toc-number">5.2.6.</span> <span class="post-toc-text">6）yield &#x2F; sleep —— 让出 CPU —— Thread.java:441~&#96;Thread.java:516&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#7%EF%BC%89interrupt-interrupted-isInterrupted-%E2%80%94%E2%80%94-%E5%8D%8F%E4%BD%9C%E5%BC%8F%E4%B8%AD%E6%96%AD-%E2%80%94%E2%80%94-Thread-java-1712-Thread-java-1787"><span class="post-toc-number">5.2.7.</span> <span class="post-toc-text">7）interrupt &#x2F; interrupted &#x2F; isInterrupted —— 协作式中断 —— Thread.java:1712~&#96;Thread.java:1787&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#8%EF%BC%89join-%E2%80%94%E2%80%94-%E7%AD%89%E7%BA%BF%E7%A8%8B%E7%BB%88%E6%AD%A2-%E2%80%94%E2%80%94-Thread-java-2054-Thread-java-2155"><span class="post-toc-number">5.2.8.</span> <span class="post-toc-text">8）join —— 等线程终止 —— Thread.java:2054~&#96;Thread.java:2155&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#9%EF%BC%89stop-suspend-resume-countStackFrames-%E2%80%94%E2%80%94-%E5%85%A8%E5%BA%9F%E5%BC%83-%E2%80%94%E2%80%94-Thread-java-1665-Thread-java-2028"><span class="post-toc-number">5.2.9.</span> <span class="post-toc-text">9）stop&#x2F;suspend&#x2F;resume&#x2F;countStackFrames —— 全废弃 —— Thread.java:1665~&#96;Thread.java:2028&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#10%EF%BC%89%E6%9C%AA%E6%8D%95%E8%8E%B7%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E5%99%A8-%E2%80%94%E2%80%94-Thread-java-2779-Thread-java-2902"><span class="post-toc-number">5.2.10.</span> <span class="post-toc-text">10）未捕获异常处理器 —— Thread.java:2779~&#96;Thread.java:2902&#96;</span></a></li></ol></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9AThread-%E6%98%AF%E2%80%9D%E8%BD%BB%E9%87%8F-Java-%E5%AF%B9%E8%B1%A1-%E9%87%8D%E5%9E%8B-VM-%E9%92%89%E5%AD%90%E2%80%9D"><span class="post-toc-number">6.</span> <span class="post-toc-text">第一讲小结：Thread 是”轻量 Java 对象 + 重型 VM 钉子”</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%EF%BC%9AThreadLocal-%E4%B8%8E%E7%BB%A7%E6%89%BF-%E2%80%94%E2%80%94-ThreadLocal-InheritableThreadLocal"><span class="post-toc-number">7.</span> <span class="post-toc-text">第二讲：ThreadLocal 与继承 —— ThreadLocal &#x2F; InheritableThreadLocal</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-1"><span class="post-toc-number">7.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-1"><span class="post-toc-number">7.2.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89%E7%B1%BB%E5%A3%B0%E6%98%8E%E4%B8%8E%E5%93%88%E5%B8%8C%E7%A0%81-%E2%80%94%E2%80%94-ThreadLocal-java-81-ThreadLocal-java-115"><span class="post-toc-number">7.2.1.</span> <span class="post-toc-text">1）类声明与哈希码 —— ThreadLocal.java:81~&#96;ThreadLocal.java:115&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89withInitial-initialValue-%E2%80%94%E2%80%94-%E5%88%9D%E5%A7%8B%E5%80%BC-%E2%80%94%E2%80%94-ThreadLocal-java-138-ThreadLocal-java-154"><span class="post-toc-number">7.2.2.</span> <span class="post-toc-text">2）withInitial &#x2F; initialValue —— 初始值 —— ThreadLocal.java:138~&#96;ThreadLocal.java:154&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89get-set-remove-%E2%80%94%E2%80%94-%E4%B8%89%E4%B8%AA%E6%A0%B8%E5%BF%83-API-%E2%80%94%E2%80%94-ThreadLocal-java-171-ThreadLocal-java-296"><span class="post-toc-number">7.2.3.</span> <span class="post-toc-text">3）get &#x2F; set &#x2F; remove —— 三个核心 API —— ThreadLocal.java:171~&#96;ThreadLocal.java:296&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89ThreadLocalMap-%E5%86%85%E9%83%A8-%E2%80%94%E2%80%94-ThreadLocal-java-371-ThreadLocal-java-800"><span class="post-toc-number">7.2.4.</span> <span class="post-toc-text">4）ThreadLocalMap 内部 —— ThreadLocal.java:371~&#96;ThreadLocal.java:800&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#5%EF%BC%89%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F%E7%9A%84%E6%A0%B9%E5%9B%A0-%E2%80%94%E2%80%94-value-%E5%BC%BA%E5%BC%95%E7%94%A8"><span class="post-toc-number">7.2.5.</span> <span class="post-toc-text">5）内存泄漏的根因 —— value 强引用</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#6%EF%BC%89InheritableThreadLocal-%E2%80%94%E2%80%94-%E5%AD%90%E7%BA%BF%E7%A8%8B%E7%BB%A7%E6%89%BF-%E2%80%94%E2%80%94-InheritableThreadLocal-java-54-96"><span class="post-toc-number">7.2.6.</span> <span class="post-toc-text">6）InheritableThreadLocal —— 子线程继承 —— InheritableThreadLocal.java:54~&#96;96&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#7%EF%BC%89%E5%85%B3%E4%BA%8E-TransmittableThreadLocal%EF%BC%88%E9%98%BF%E9%87%8C-TTL%EF%BC%8C%E4%B8%8D%E5%9C%A8-JDK-%E4%B8%AD%EF%BC%89"><span class="post-toc-number">7.2.7.</span> <span class="post-toc-text">7）关于 TransmittableThreadLocal（阿里 TTL，不在 JDK 中）</span></a></li></ol></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9AThreadLocal-%E6%98%AF%E2%80%9D%E6%8C%82%E5%9C%A8-Thread-%E4%B8%8A%E7%9A%84%E5%BC%B1-key-%E5%BC%BA-value-%E5%93%88%E5%B8%8C%E8%A1%A8%E2%80%9D"><span class="post-toc-number">8.</span> <span class="post-toc-text">第二讲小结：ThreadLocal 是”挂在 Thread 上的弱 key 强 value 哈希表”</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%EF%BC%9A%E8%99%9A%E6%8B%9F%E7%BA%BF%E7%A8%8B-VirtualThread-%E2%80%94%E2%80%94-VirtualThread-java"><span class="post-toc-number">9.</span> <span class="post-toc-text">第三讲：虚拟线程 VirtualThread —— VirtualThread.java</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-2"><span class="post-toc-number">9.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-2"><span class="post-toc-number">9.2.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89%E7%B1%BB%E5%A3%B0%E6%98%8E%E4%B8%8E%E6%A0%B8%E5%BF%83%E5%AD%97%E6%AE%B5-%E2%80%94%E2%80%94-VirtualThread-java-70-VirtualThread-java-135"><span class="post-toc-number">9.2.1.</span> <span class="post-toc-text">1）类声明与核心字段 —— VirtualThread.java:70~&#96;VirtualThread.java:135&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89%E7%8A%B6%E6%80%81%E6%9C%BA-%E2%80%94%E2%80%94-VirtualThread-java-90-VirtualThread-java-125"><span class="post-toc-number">9.2.2.</span> <span class="post-toc-text">2）状态机 —— VirtualThread.java:90~&#96;VirtualThread.java:125&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89%E6%9E%84%E9%80%A0%E5%99%A8-VThreadContinuation-%E2%80%94%E2%80%94-VirtualThread-java-155-VirtualThread-java-196"><span class="post-toc-number">9.2.3.</span> <span class="post-toc-text">3）构造器 + VThreadContinuation —— VirtualThread.java:155~&#96;VirtualThread.java:196&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89runContinuation-%E2%80%94%E2%80%94-%E6%8E%A5%E7%BB%AD%E5%85%A5%E5%8F%A3-%E2%80%94%E2%80%94-VirtualThread-java-201-VirtualThread-java-231"><span class="post-toc-number">9.2.4.</span> <span class="post-toc-text">4）runContinuation() —— 接续入口 —— VirtualThread.java:201~&#96;VirtualThread.java:231&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#5%EF%BC%89run-task-%E2%80%94%E2%80%94-%E7%94%A8%E6%88%B7%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C-%E2%80%94%E2%80%94-VirtualThread-java-295-VirtualThread-java-335"><span class="post-toc-number">9.2.5.</span> <span class="post-toc-text">5）run(task) —— 用户代码执行 —— VirtualThread.java:295~&#96;VirtualThread.java:335&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#6%EF%BC%89yieldContinuation-%E2%80%94%E2%80%94-%E9%AD%94%E6%B3%95%E6%A0%B8%E5%BF%83-%E2%80%94%E2%80%94-VirtualThread-java-436-VirtualThread-java-447"><span class="post-toc-number">9.2.6.</span> <span class="post-toc-text">6）yieldContinuation() —— 魔法核心 —— VirtualThread.java:436~&#96;VirtualThread.java:447&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#7%EF%BC%89park-parkNanos-unpark-%E2%80%94%E2%80%94-%E8%AE%A9%E5%87%BA-%E6%81%A2%E5%A4%8D-%E2%80%94%E2%80%94-VirtualThread-java-581-VirtualThread-java-758"><span class="post-toc-number">9.2.7.</span> <span class="post-toc-text">7）park &#x2F; parkNanos &#x2F; unpark —— 让出&#x2F;恢复 —— VirtualThread.java:581~&#96;VirtualThread.java:758&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#8%EF%BC%89threadState-%E2%80%94%E2%80%94-%E6%98%A0%E5%B0%84%E5%9B%9E-Thread-State-%E2%80%94%E2%80%94-VirtualThread-java-887-VirtualThread-java-925"><span class="post-toc-number">9.2.8.</span> <span class="post-toc-text">8）threadState() —— 映射回 Thread.State —— VirtualThread.java:887~&#96;VirtualThread.java:925&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#9%EF%BC%89interrupt-%E2%80%94%E2%80%94-%E4%B8%AD%E6%96%AD%E4%B8%8E-carrier-%E5%8D%8F%E4%BD%9C-%E2%80%94%E2%80%94-VirtualThread-java-848-VirtualThread-java-884"><span class="post-toc-number">9.2.9.</span> <span class="post-toc-text">9）interrupt —— 中断与 carrier 协作 —— VirtualThread.java:848~&#96;VirtualThread.java:884&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#10%EF%BC%89createDefaultScheduler-%E2%80%94%E2%80%94-%E9%BB%98%E8%AE%A4%E8%B0%83%E5%BA%A6%E5%99%A8-%E2%80%94%E2%80%94-VirtualThread-java-1113-VirtualThread-java-1145"><span class="post-toc-number">9.2.10.</span> <span class="post-toc-text">10）createDefaultScheduler() —— 默认调度器 —— VirtualThread.java:1113~&#96;VirtualThread.java:1145&#96;</span></a></li></ol></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E8%99%9A%E6%8B%9F%E7%BA%BF%E7%A8%8B%E6%98%AF%E2%80%9Dcontinuation-ForkJoinPool-9-%E6%80%81%E7%8A%B6%E6%80%81%E6%9C%BA%E2%80%9D"><span class="post-toc-number">10.</span> <span class="post-toc-text">第三讲小结：虚拟线程是”continuation + ForkJoinPool + 9 态状态机”</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%EF%BC%9AThreadGroup-%E4%B8%8E%E6%9C%AA%E6%8D%95%E8%8E%B7%E5%BC%82%E5%B8%B8-%E2%80%94%E2%80%94-ThreadGroup-java"><span class="post-toc-number">11.</span> <span class="post-toc-text">第四讲：ThreadGroup 与未捕获异常 —— ThreadGroup.java</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-3"><span class="post-toc-number">11.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-3"><span class="post-toc-number">11.2.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89%E7%B1%BB%E5%A3%B0%E6%98%8E%E4%B8%8E%E5%AD%97%E6%AE%B5-%E2%80%94%E2%80%94-ThreadGroup-java-77-ThreadGroup-java-96"><span class="post-toc-number">11.2.1.</span> <span class="post-toc-text">1）类声明与字段 —— ThreadGroup.java:77~&#96;ThreadGroup.java:96&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89%E4%B8%89%E4%B8%AA%E6%9E%84%E9%80%A0%E5%99%A8-%E2%80%94%E2%80%94-ThreadGroup-java-102-ThreadGroup-java-129"><span class="post-toc-number">11.2.2.</span> <span class="post-toc-text">2）三个构造器 —— ThreadGroup.java:102~&#96;ThreadGroup.java:129&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89setMaxPriority-%E2%80%94%E2%80%94-%E4%BC%98%E5%85%88%E7%BA%A7%E7%BA%A6%E6%9D%9F-%E2%80%94%E2%80%94-ThreadGroup-java-300-ThreadGroup-java-312"><span class="post-toc-number">11.2.3.</span> <span class="post-toc-text">3）setMaxPriority —— 优先级约束 —— ThreadGroup.java:300~&#96;ThreadGroup.java:312&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89activeCount-enumerate-%E2%80%94%E2%80%94-%E5%85%A8%E5%B1%80%E5%BF%AB%E7%85%A7%E9%81%8D%E5%8E%86-%E2%80%94%E2%80%94-ThreadGroup-java-375-ThreadGroup-java-459"><span class="post-toc-number">11.2.4.</span> <span class="post-toc-text">4）activeCount &#x2F; enumerate —— 全局快照遍历 —— ThreadGroup.java:375~&#96;ThreadGroup.java:459&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#5%EF%BC%89interrupt-%E2%80%94%E2%80%94-%E6%89%B9%E9%87%8F%E4%B8%AD%E6%96%AD-%E2%80%94%E2%80%94-ThreadGroup-java-580-ThreadGroup-java-588"><span class="post-toc-number">11.2.5.</span> <span class="post-toc-text">5）interrupt —— 批量中断 —— ThreadGroup.java:580~&#96;ThreadGroup.java:588&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#6%EF%BC%89destroy-%E2%80%94%E2%80%94-%E7%A9%BA%E6%96%B9%E6%B3%95-%E2%80%94%E2%80%94-ThreadGroup-java-622-ThreadGroup-java-623"><span class="post-toc-number">11.2.6.</span> <span class="post-toc-text">6）destroy —— 空方法 —— ThreadGroup.java:622~&#96;ThreadGroup.java:623&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#7%EF%BC%89uncaughtException-%E2%80%94%E2%80%94-%E5%BC%82%E5%B8%B8%E6%B4%BE%E5%8F%91%E9%93%BE-%E2%80%94%E2%80%94-ThreadGroup-java-688-ThreadGroup-java-701"><span class="post-toc-number">11.2.7.</span> <span class="post-toc-text">7）uncaughtException —— 异常派发链 —— ThreadGroup.java:688~&#96;ThreadGroup.java:701&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#8%EF%BC%89%E5%AD%90%E7%BB%84%E7%AE%A1%E7%90%86-%E2%80%94%E2%80%94-ThreadGroup-java-718-ThreadGroup-java-805"><span class="post-toc-number">11.2.8.</span> <span class="post-toc-text">8）子组管理 —— ThreadGroup.java:718~&#96;ThreadGroup.java:805&#96;</span></a></li></ol></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9AThreadGroup-%E5%9C%A8-JDK-21-%E5%B7%B2%E9%80%80%E5%8C%96%E4%B8%BA%E2%80%9D%E9%80%BB%E8%BE%91%E5%88%86%E7%BB%84-%E5%BC%82%E5%B8%B8%E6%B4%BE%E5%8F%91%E9%93%BE%E2%80%9D"><span class="post-toc-number">12.</span> <span class="post-toc-text">第四讲小结：ThreadGroup 在 JDK 21 已退化为”逻辑分组 + 异常派发链”</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%EF%BC%9AHotSpot-%E7%BA%BF%E7%A8%8B%E5%AE%9E%E7%8E%B0%E6%A6%82%E8%A7%88-%E2%80%94%E2%80%94-thread-hpp-cpp-javaThread-hpp-cpp-osThread-hpp"><span class="post-toc-number">13.</span> <span class="post-toc-text">第五讲：HotSpot 线程实现概览 —— thread.{hpp,cpp} &#x2F; javaThread.{hpp,cpp} &#x2F; osThread.hpp</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-4"><span class="post-toc-number">13.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-4"><span class="post-toc-number">13.2.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89Thread-%E6%8A%BD%E8%B1%A1%E5%9F%BA%E7%B1%BB-%E2%80%94%E2%80%94-thread-hpp-107-thread-hpp-684%E3%80%81thread-cpp"><span class="post-toc-number">13.2.1.</span> <span class="post-toc-text">1）Thread 抽象基类 —— thread.hpp:107~&#96;thread.hpp:684、thread.cpp&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89JavaThread-%E2%80%94%E2%80%94-%E8%B7%91-Java-%E4%BB%A3%E7%A0%81%E7%9A%84%E5%AD%90%E7%B1%BB-%E2%80%94%E2%80%94-javaThread-hpp-78%E3%80%81javaThread-cpp-401-javaThread-cpp-725"><span class="post-toc-number">13.2.2.</span> <span class="post-toc-text">2）JavaThread —— 跑 Java 代码的子类 —— javaThread.hpp:78、javaThread.cpp:401~&#96;javaThread.cpp:725&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89OSThread-%E2%80%94%E2%80%94-%E5%B9%B3%E5%8F%B0%E5%B1%82%E8%96%84%E5%A3%B3-%E2%80%94%E2%80%94-osThread-hpp-65-osThread-hpp-97"><span class="post-toc-number">13.2.3.</span> <span class="post-toc-text">3）OSThread —— 平台层薄壳 —— osThread.hpp:65~&#96;osThread.hpp:97&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89SafepointSynchronize-ThreadSafepointState-%E2%80%94%E2%80%94-%E5%85%A8%E5%B1%80-safepoint-%E2%80%94%E2%80%94-safepoint-hpp-96-safepoint-hpp-288"><span class="post-toc-number">13.2.4.</span> <span class="post-toc-text">4）SafepointSynchronize + ThreadSafepointState —— 全局 safepoint —— safepoint.hpp:96~&#96;safepoint.hpp:288&#96;</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#5%EF%BC%89Thread-SMR-%E2%80%94%E2%80%94-%E5%AE%89%E5%85%A8%E5%86%85%E5%AD%98%E5%9B%9E%E6%94%B6-%E2%80%94%E2%80%94-thread-hpp-162thread-hpp-196%E3%80%81thread-cpp-283thread-cpp-340"><span class="post-toc-number">13.2.5.</span> <span class="post-toc-text">5）Thread-SMR —— 安全内存回收 —— thread.hpp:162thread.hpp:196、thread.cpp:283thread.cpp:340</span></a></li></ol></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9AHotSpot-%E7%BA%BF%E7%A8%8B%E6%98%AF%E2%80%9D%E6%8A%BD%E8%B1%A1%E5%9F%BA%E7%B1%BB%E7%BB%9F%E4%B8%80%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F-JavaThread-%E5%8F%8D%E5%B0%84%E8%B0%83-Java-OSThread-%E8%96%84%E5%A3%B3-SMR-%E5%AE%89%E5%85%A8%E5%9B%9E%E6%94%B6%E2%80%9D"><span class="post-toc-number">14.</span> <span class="post-toc-text">第五讲小结：HotSpot 线程是”抽象基类统一生命周期 + JavaThread 反射调 Java + OSThread 薄壳 + SMR 安全回收”</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%BC%94%E7%AE%97"><span class="post-toc-number">15.</span> <span class="post-toc-text">端到端演算</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E6%BC%94%E7%AE%97-1%EF%BC%9A%E4%B8%80%E6%AC%A1-new-Thread-start-%E4%BB%8E-Java-%E5%88%B0-OS-%E7%BA%BF%E7%A8%8B%E8%B7%91%E8%B5%B7%E6%9D%A5"><span class="post-toc-number">15.1.</span> <span class="post-toc-text">演算 1：一次 new Thread().start() 从 Java 到 OS 线程跑起来</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E6%BC%94%E7%AE%97-2%EF%BC%9A%E4%B8%80%E6%AC%A1-Thread-startVirtualThread-task-%E5%9C%A8-IO-%E9%98%BB%E5%A1%9E%E6%97%B6-yield-%E5%87%BA-carrier"><span class="post-toc-number">15.2.</span> <span class="post-toc-text">演算 2：一次 Thread.startVirtualThread(task) 在 IO 阻塞时 yield 出 carrier</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%99%84%EF%BC%9A%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E4%B8%8E%E5%A4%8D%E4%B9%A0%E5%8D%A1%E6%B1%87%E6%80%BB"><span class="post-toc-number">16.</span> <span class="post-toc-text">附：学习路线与复习卡汇总</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%EF%BC%88%E6%8C%89%E6%8E%A8%E8%8D%90%E9%A1%BA%E5%BA%8F%EF%BC%89"><span class="post-toc-number">16.1.</span> <span class="post-toc-text">学习路线（按推荐顺序）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%A4%8D%E4%B9%A0%E5%8D%A1%E6%B1%87%E6%80%BB"><span class="post-toc-number">16.2.</span> <span class="post-toc-text">复习卡汇总</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#%E5%A4%8D%E4%B9%A0%E5%8D%A1-1%EF%BC%9AThread-%E7%9A%84-6-%E6%80%81%E7%8A%B6%E6%80%81%E6%9C%BA"><span class="post-toc-number">16.2.1.</span> <span class="post-toc-text">复习卡 1：Thread 的 6 态状态机</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#%E5%A4%8D%E4%B9%A0%E5%8D%A1-2%EF%BC%9AThreadLocal-%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F%E5%85%A8%E6%99%AF"><span class="post-toc-number">16.2.2.</span> <span class="post-toc-text">复习卡 2：ThreadLocal 内存泄漏全景</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#%E5%A4%8D%E4%B9%A0%E5%8D%A1-3%EF%BC%9A%E8%99%9A%E6%8B%9F%E7%BA%BF%E7%A8%8B%E7%9A%84-9-%E6%80%81"><span class="post-toc-number">16.2.3.</span> <span class="post-toc-text">复习卡 3：虚拟线程的 9 态</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#%E5%A4%8D%E4%B9%A0%E5%8D%A1-4%EF%BC%9A%E6%9C%AA%E6%8D%95%E8%8E%B7%E5%BC%82%E5%B8%B8%E6%B4%BE%E5%8F%91%E9%93%BE"><span class="post-toc-number">16.2.4.</span> <span class="post-toc-text">复习卡 4：未捕获异常派发链</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#%E5%A4%8D%E4%B9%A0%E5%8D%A1-5%EF%BC%9AHotSpot-JavaThread-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E4%B8%89%E6%AE%B5%E5%BC%8F"><span class="post-toc-number">16.2.5.</span> <span class="post-toc-text">复习卡 5：HotSpot JavaThread 生命周期三段式</span></a></li></ol></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E6%B6%89%E5%8F%8A%E6%96%87%E4%BB%B6%E7%B4%A2%E5%BC%95"><span class="post-toc-number">17.</span> <span class="post-toc-text">涉及文件索引</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#Java-%E5%B1%82%EF%BC%88src-java-base-share-classes-java-lang-%EF%BC%89"><span class="post-toc-number">17.1.</span> <span class="post-toc-text">Java 层（src&#x2F;java.base&#x2F;share&#x2F;classes&#x2F;java&#x2F;lang&#x2F;）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#HotSpot-%E5%B1%82%EF%BC%88src-hotspot-share-runtime-%EF%BC%89"><span class="post-toc-number">17.2.</span> <span class="post-toc-text">HotSpot 层（src&#x2F;hotspot&#x2F;share&#x2F;runtime&#x2F;）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%9B%B8%E5%85%B3%E6%9C%AA%E7%B2%BE%E8%AF%BB%E4%BD%86%E8%A2%AB%E5%BC%95%E7%94%A8%E7%9A%84%E6%96%87%E4%BB%B6"><span class="post-toc-number">17.3.</span> <span class="post-toc-text">相关未精读但被引用的文件</span></a></li></ol></li></ol>
+            </nav>
+            
+        </aside>
 
+        <div class="post-main">
 
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://gycxxx.github.io/java-thread/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="gyc">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="源码深读笔记">
-      <meta itemprop="description" content="主流基础设施、框架与 JDK 的源码级深度学习笔记">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="Java 线程源码深度学习笔记 | 源码深读笔记">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          Java 线程源码深度学习笔记
-        </h1>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2026-10-15 00:00:00" itemprop="dateCreated datePublished" datetime="2026-10-15T00:00:00+08:00">2026-10-15</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody"><blockquote>
+            <div class="post-content" id="post-content" itemprop="postContent">
+            <blockquote>
 <p>基于对 <code>src/java.base/share/classes/java/lang/</code> 下 <code>Thread.java</code>、<code>ThreadGroup.java</code>、<code>ThreadLocal.java</code>、<code>VirtualThread.java</code>、<code>InheritableThreadLocal.java</code>、<code>Runnable.java</code>，以及 <code>src/hotspot/share/runtime/</code> 下 <code>thread.&#123;hpp,cpp&#125;</code>、<code>javaThread.&#123;hpp,cpp&#125;</code>、<code>osThread.hpp</code>、<code>safepoint.&#123;hpp,cpp&#125;</code> 的逐文件精读整理而成。</p>
 <p>阅读顺序即学习顺序：Thread 基础与生命周期 → ThreadLocal 与继承 → 虚拟线程 VirtualThread → ThreadGroup 与未捕获异常 → HotSpot 线程实现概览 → 端到端演算。</p>
 <p>所有结论均标注了源文件位置（格式 <code>相对路径:行号</code>），建议对照代码阅读。行号均经 <code>Read</code>&#x2F;<code>Grep</code> 实际核对。</p>
@@ -2366,77 +2329,178 @@
 </tr>
 </tbody></table>
 
-    </div>
 
-    
-    
-    
-
-    <footer class="post-footer">
-          <div class="post-tags">
-              <a href="/tags/%E6%BA%90%E7%A0%81/" rel="tag"># 源码</a>
-              <a href="/tags/%E7%BA%BF%E7%A8%8B/" rel="tag"># 线程</a>
-          </div>
-
-        
-
-          <div class="post-nav">
-            <div class="post-nav-item">
-                <a href="/kafka/" rel="prev" title="Kafka 源码深度学习笔记">
-                  <i class="fa fa-angle-left"></i> Kafka 源码深度学习笔记
-                </a>
+            
+            
+            <blockquote>
+                <p>
+                本文地址：
+                <a href="https://gycxxx.github.io/java-thread/" target="_blank" rel="external">https://gycxxx.github.io/java-thread/</a>
+                </p>
+                <footer><cite><a href="https://gycxxx.github.io">@源码深读笔记</a></cite></footer>
+            </blockquote>
             </div>
-            <div class="post-nav-item">
-                <a href="/java-concurrent/" rel="next" title="Java 并发库（JUC）源码深度学习笔记">
-                  Java 并发库（JUC）源码深度学习笔记 <i class="fa fa-angle-right"></i>
-                </a>
-            </div>
-          </div>
-    </footer>
-  </article>
-</div>
-
-
-
-
-
-
-</div>
-  </main>
-
-  <footer class="footer">
-    <div class="footer-inner">
-
-  <div class="copyright">
-    &copy; 
-    <span itemprop="copyrightYear">2026</span>
-    <span class="with-love">
-      <i class="fa fa-copyright"></i>
-    </span>
-    <span class="author" itemprop="copyrightHolder">源码深读笔记 · 基于源码逐行分析的深度学习笔记</span>
-  </div>
-  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
-  </div>
-
+            
+<nav class="post-nav">
+  
+    <div class="waves-block waves-effect prev fl">
+      <a href="/jdk/" id="post-prev" class="post-nav-link">
+        <div class="tips"><i class="icon icon-angle-left icon-lg icon-pr"></i> Prev</div>
+        <h4 class="title">JVM 源码深度学习笔记</h4>
+      </a>
     </div>
-  </footer>
+  
 
   
-  <div class="toggle sidebar-toggle" role="button">
-    <span class="toggle-line"></span>
-    <span class="toggle-line"></span>
-    <span class="toggle-line"></span>
-  </div>
-  <div class="sidebar-dimmer"></div>
-  <div class="back-to-top" role="button" aria-label="返回顶部">
-    <i class="fa fa-arrow-up fa-lg"></i>
-    <span>0%</span>
-  </div>
-  <div class="reading-progress-bar"></div>
+    <div class="waves-block waves-effect next fr">
+      <a href="/kafka/" id="post-next" class="post-nav-link">
+        <div class="tips">Next <i class="icon icon-angle-right icon-lg icon-pl"></i></div>
+        <h4 class="title">Kafka 源码深度学习笔记</h4>
+      </a>
+    </div>
+  
+</nav>
 
-<noscript>
-  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
-</noscript>
 
-</body>
+            
+            
+
+
+
+        </div>
+    </div>
+</article>
+
+    </div>
+  </main>
+<div class="mask" id="mask"></div>
+<a href="javascript:;" id="gotop" class="waves-effect waves-circle waves-light"><span class="icon icon-lg icon-chevron-up"></span></a>
+
+<script>
+var BLOG_SHARE = {
+    title: "Java 线程源码深度学习笔记",
+    pic: "/img/avatar.jpg",
+    summary: document.getElementsByName('summary')[0].content,
+    url: "https://gycxxx.github.io/java-thread/index.html"
+};
+</script>
+<div class="global-share" id="global-share">
+    <div class="tit">分享到：</div>
+    <ul class="reset share-icons">
+      <li>
+        <a class="weibo share-sns" href="javascript:;" data-title="微博" data-service="tsina">
+          <i class="icon icon-weibo"></i>
+        </a>
+      </li>
+      <li>
+        <a class="weixin share-sns" href="javascript:;" data-title="微信" data-service="weixin">
+          <i class="icon icon-weixin"></i>
+        </a>
+      </li>
+      <li>
+        <a class="qq share-sns" href="javascript:;" data-title=" QQ" data-service="cqq">
+          <i class="icon icon-qq"></i>
+        </a>
+      </li>
+      <li>
+        <a class="facebook share-sns" href="javascript:;" data-title=" Facebook" data-service="fb">
+          <i class="icon icon-facebook"></i>
+        </a>
+      </li>
+      <li>
+        <a class="twitter share-sns" href="javascript:;" data-title=" Twitter" data-service="twitter">
+          <i class="icon icon-twitter"></i>
+        </a>
+      </li>
+      <li>
+        <a class="douban share-sns" href="javascript:;" data-title="豆瓣" data-service="douban">
+          豆
+        </a>
+      </li>
+    </ul>
+ </div>
+
+
+<script src="/js/waves.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+
+
+<div class="search-panel" id="search-panel">
+    <ul class="search-result" id="search-result"></ul>
+</div>
+<script type="text/template" id="search-tpl">
+<li class="item">
+    <a href="/{path}" class="waves-block waves-effect">
+        <div class="title ellipsis" title="{title}">{title}</div>
+        <div class="flex-row flex-middle">
+            <div class="tags ellipsis">
+                {tags}
+            </div>
+            <time class="flex-col time">{date}</time>
+        </div>
+    </a>
+</li>
+</script>
+
+
+<script src="/js/search.js"></script>
+
+
+
+
+
+
+
+
+
+
+<!-- hexo injector body_end start --><script src="/js/mermaid.min.js"></script>
+<script>(function () {
+  function restore(node) {
+    var raw = node.getAttribute("data-mermaid-source");
+    if (raw != null) { node.textContent = raw; }
+  }
+  function render() {
+    var codes = document.querySelectorAll("pre > code.highlight.mermaid, pre > code.mermaid");
+    for (var i = 0; i < codes.length; i++) {
+      var code = codes[i];
+      var pre = code.parentNode;
+      var box = document.createElement("div");
+      box.className = "mermaid";
+      box.setAttribute("data-mermaid-source", code.textContent);
+      box.textContent = code.textContent;
+      pre.parentNode.replaceChild(box, pre);
+    }
+    var nodes = document.querySelectorAll(".mermaid");
+    if (!window.mermaid || !nodes.length) { return; }
+    window.mermaid.initialize({
+      startOnLoad: false,
+      theme: "default",
+      logLevel: 4,
+      securityLevel: "loose",
+      flowchart: { curve: "linear" },
+      gantt: { axisFormat: "%m/%d/%Y" },
+      sequence: { actorMargin: 50 }
+    });
+    window.mermaid.run({ nodes: nodes, suppressErrors: true })
+      .then(function () {
+        for (var j = 0; j < nodes.length; j++) {
+          if (!nodes[j].querySelector("svg")) { restore(nodes[j]); }
+        }
+      })
+      .catch(function (err) {
+        if (window.console && console.error) { console.error(err); }
+        for (var k = 0; k < nodes.length; k++) { restore(nodes[k]); }
+      });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", render);
+  } else {
+    render();
+  }
+})();</script><!-- hexo injector body_end end --></body>
 </html>

@@ -1,26 +1,16 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
-  <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width">
-<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 7.3.0">
-
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/images/logo.svg" color="#222">
-
-<link rel="stylesheet" href="/css/main.css">
-
-
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
-
-<script class="next-config" data-name="main" type="application/json">{"hostname":"gycxxx.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12,"onmobile":true},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"flat","show_result":true},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js" defer></script>
-
-    <meta name="description" content="基于对 OpenJDK 21（jdk-21-ga）锁相关源码的逐文件精读整理而成。 源码位于 src&#x2F;java.base&#x2F;share&#x2F;classes&#x2F;java&#x2F;util&#x2F;concurrent&#x2F;locks&#x2F;（AQS、ReentrantLock、ReentrantReadWriteLock、StampedLock、Condition、LockSupport、AbstractOwnableSynchr">
+  <meta charset="utf-8">
+  
+  <title>Java 锁源码深度学习笔记 | 源码深读笔记 | Kafka / Nacos / Spring / Redis / MySQL / ES / Java / JVM / RAG</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  <meta name="theme-color" content="#3F51B5">
+  
+  
+  <meta name="keywords" content="源码,锁">
+  <meta name="description" content="基于对 OpenJDK 21（jdk-21-ga）锁相关源码的逐文件精读整理而成。 源码位于 src&#x2F;java.base&#x2F;share&#x2F;classes&#x2F;java&#x2F;util&#x2F;concurrent&#x2F;locks&#x2F;（AQS、ReentrantLock、ReentrantReadWriteLock、StampedLock、Condition、LockSupport、AbstractOwnableSynchr">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Java 锁源码深度学习笔记">
 <meta property="og:url" content="https://gycxxx.github.io/java-lock/index.html">
@@ -33,207 +23,180 @@
 <meta property="article:tag" content="源码">
 <meta property="article:tag" content="锁">
 <meta name="twitter:card" content="summary">
-
-
-<link rel="canonical" href="https://gycxxx.github.io/java-lock/">
-
-
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://gycxxx.github.io/java-lock/","path":"java-lock/","title":"Java 锁源码深度学习笔记"}</script>
-
-<script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>Java 锁源码深度学习笔记 | 源码深读笔记</title>
   
-
-
-
-
-
-
-
-
+    <link rel="alternative" href="/atom.xml" title="源码深读笔记" type="application/atom+xml">
   
-<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
-
+  <meta name="summary" content="主流基础设施、框架与 JDK 的源码级深度学习笔记">
+  <link rel="shortcut icon" href="/img/favicon.ico">
   
+<link rel="stylesheet" href="/css/style.css">
 
-  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.10.1/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
-  <script src="/js/third-party/tags/mermaid.js" defer></script>
+<meta name="generator" content="Hexo 7.3.0"></head>
 
+<body>
+  <div id="loading" class="active"></div>
 
-
-
-
-  
-
-
-
-
-
-  <noscript>
-    <link rel="stylesheet" href="/css/noscript.css">
-  </noscript>
-</head>
-
-<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
-  <div class="headband"></div>
-
-  <main class="main">
-    <div class="column">
-      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
-  <div class="site-nav-toggle">
-    <div class="toggle" aria-label="切换导航栏" role="button">
-        <span class="toggle-line"></span>
-        <span class="toggle-line"></span>
-        <span class="toggle-line"></span>
-    </div>
-  </div>
-
-  <div class="site-meta">
-
-    <a href="/" class="brand" rel="start">
-      <i class="logo-line"></i>
-      <p class="site-title">源码深读笔记</p>
-      <i class="logo-line"></i>
-    </a>
-      <p class="site-subtitle" itemprop="description">Kafka / Nacos / Spring / Redis / MySQL / ES / Java / JVM / RAG</p>
-  </div>
-
-  <div class="site-nav-right">
-    <div class="toggle popup-trigger" aria-label="搜索" role="button">
-    </div>
-  </div>
-</div>
-
-
-
-<nav class="site-nav">
-  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
-  </ul>
-</nav>
-
-
-
-
-</header>
+  <nav id="menu" class="hide" >
+   <div class="inner flex-row-vertical">
+  <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="menu-off">
+      <i class="icon icon-lg icon-close"></i>
+  </a>
+  <div class="brand-wrap">
+    <div class="brand">
+      <a href="/" class="avatar"><img src="/img/avatar.jpg"></a>
+      <hgroup class="introduce">
+        <h5 class="nickname">gyc</h5>
         
-  
-  <aside class="sidebar">
+      </hgroup>
+    </div>
+  </div>
+  <div class="scroll-wrap flex-col">
+    <ul class="nav">
+      
+          <li class="waves-block waves-effect">
+            <a href="/"  >
+              <i class="icon icon-lg icon-home"></i>
+              主页
+            </a>
+          </li>
+      
+          <li class="waves-block waves-effect">
+            <a href="/archives"  >
+              <i class="icon icon-lg icon-archive"></i>
+              归档
+            </a>
+          </li>
+      
+          <li class="waves-block waves-effect">
+            <a href="/categories"  >
+              <i class="icon icon-lg icon-th-list"></i>
+              分类
+            </a>
+          </li>
+      
+          <li class="waves-block waves-effect">
+            <a href="/tags"  >
+              <i class="icon icon-lg icon-tags"></i>
+              标签
+            </a>
+          </li>
+      
+    </ul>
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
-      <ul class="sidebar-nav">
-        <li class="sidebar-nav-toc">
-          文章目录
-        </li>
-        <li class="sidebar-nav-overview">
-          站点概览
-        </li>
-      </ul>
+    <footer class="footer">
+  <p>源码深读笔记 &copy; 2026</p>
+  <p>Power by <a href="http://hexo.io/" target="_blank">Hexo</a> Theme
+  <a href="https://github.com/yscoder/hexo-theme-indigo" target="_blank">indigo</a></p>
+  <a href="/atom.xml" target="_blank" class="rss" title="rss"><i class="icon icon-2x icon-rss-square"></i></a>
+</footer>
 
-      <div class="sidebar-panel-container">
-        <!--noindex-->
-        <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95"><span class="nav-number">1.</span> <span class="nav-text">目录</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E3%80%87%E3%80%81%E5%85%A8%E6%99%AF%E5%9C%B0%E5%9B%BE"><span class="nav-number">2.</span> <span class="nav-text">〇、全景地图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%9F%E8%A7%88%EF%BC%9A%E5%90%84%E8%AE%B2%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88%EF%BC%88%E5%85%88%E7%9C%8B%E8%BF%99%E4%B8%AA%E5%86%8D%E8%BF%9B%E7%BB%86%E8%8A%82%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">速览：各讲做了什么（先看这个再进细节）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9D%A2%E8%AF%95%E9%80%9F%E9%80%9A%EF%BC%9AJava-%E9%94%81%E9%AB%98%E9%A2%91%E9%97%AE%E9%A2%98%E4%B8%80%E9%A1%B5%E7%BA%B8"><span class="nav-number">4.</span> <span class="nav-text">面试速通：Java 锁高频问题一页纸</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%AB%98%E9%A2%91-Q-A%EF%BC%88%E5%85%88%E7%BB%93%E8%AE%BA%EF%BC%89"><span class="nav-number">4.1.</span> <span class="nav-text">高频 Q&amp;A（先结论）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%98%93%E9%94%99%E7%82%B9%E4%B8%8E%E9%9D%A2%E8%AF%95%E5%9D%91"><span class="nav-number">4.2.</span> <span class="nav-text">易错点与面试坑</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E6%A6%82%E5%BF%B5%E5%AF%B9%E7%85%A7%E8%A1%A8"><span class="nav-number">4.3.</span> <span class="nav-text">关键概念对照表</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%EF%BC%9Asynchronized-%E4%B8%8E%E9%94%81%E5%8D%87%E7%BA%A7-%E2%80%94%E2%80%94-ObjectMonitor-%E4%B8%8E-ObjectSynchronizer"><span class="nav-number">5.</span> <span class="nav-text">第一讲：synchronized 与锁升级 —— ObjectMonitor 与 ObjectSynchronizer</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88"><span class="nav-number">5.1.</span> <span class="nav-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-mark-word-%E4%B8%8E%E9%94%81%E7%8A%B6%E6%80%81"><span class="nav-number">5.2.</span> <span class="nav-text">1.1 mark word 与锁状态</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-LockingMode-%E4%B8%8E%E5%BF%AB%E9%80%9F%E8%B7%AF%E5%BE%84%E9%80%89%E6%8B%A9"><span class="nav-number">5.3.</span> <span class="nav-text">1.2 LockingMode 与快速路径选择</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#LM-LEGACY-%E5%BF%AB%E9%80%9F%E8%B7%AF%E5%BE%84%EF%BC%88synchronizer-cpp-528-551%EF%BC%89"><span class="nav-number">5.3.1.</span> <span class="nav-text">LM_LEGACY 快速路径（synchronizer.cpp:528-551）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#LM-LIGHTWEIGHT-%E5%BF%AB%E9%80%9F%E8%B7%AF%E5%BE%84%EF%BC%88synchronizer-cpp-510-526%EF%BC%89"><span class="nav-number">5.3.2.</span> <span class="nav-text">LM_LIGHTWEIGHT 快速路径（synchronizer.cpp:510-526）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-inflate%EF%BC%9A%E4%BB%8E%E8%BD%BB%E9%87%8F%E7%BA%A7%E5%88%B0%E9%87%8D%E9%87%8F%E7%BA%A7"><span class="nav-number">5.4.</span> <span class="nav-text">1.3 inflate：从轻量级到重量级</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-4-ObjectMonitor-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="nav-number">5.5.</span> <span class="nav-text">1.4 ObjectMonitor 数据结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-5-ObjectMonitor-enter-%E2%80%94%E2%80%94-%E9%87%8D%E9%87%8F%E7%BA%A7%E5%8A%A0%E9%94%81"><span class="nav-number">5.6.</span> <span class="nav-text">1.5 ObjectMonitor::enter —— 重量级加锁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-6-ObjectMonitor-exit-%E2%80%94%E2%80%94-%E9%87%8D%E9%87%8F%E7%BA%A7%E8%A7%A3%E9%94%81"><span class="nav-number">5.7.</span> <span class="nav-text">1.6 ObjectMonitor::exit —— 重量级解锁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-7-Object-wait-notify-%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-number">5.8.</span> <span class="nav-text">1.7 Object.wait() &#x2F; notify() 的实现</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#wait-%EF%BC%88objectMonitor-cpp-1440%EF%BC%89"><span class="nav-number">5.8.1.</span> <span class="nav-text">wait()（objectMonitor.cpp:1440）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#notify-%E4%B8%8E-INotify-%EF%BC%88objectMonitor-cpp-1724-1662%EF%BC%89"><span class="nav-number">5.8.2.</span> <span class="nav-text">notify() 与 INotify()（objectMonitor.cpp:1724, 1662）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-8-%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%BC%94%E6%BC%94%E7%AE%97%EF%BC%9Asynchronized-%E4%BB%8E%E6%97%A0%E9%94%81%E5%88%B0%E9%87%8D%E9%87%8F%E7%BA%A7%E9%94%81%E7%9A%84%E5%8D%87%E7%BA%A7"><span class="nav-number">5.9.</span> <span class="nav-text">1.8 端到端演演算：synchronized 从无锁到重量级锁的升级</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-9-%E7%AC%AC%E4%B8%80%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9Asynchronized-%E6%98%AF%E2%80%9D%E8%87%AA%E5%8A%A8%E5%8D%87%E9%99%8D%E5%8F%98%E9%80%9F%E7%AE%B1%E2%80%9D%EF%BC%8CObjectMonitor-%E6%98%AF%E2%80%9D%E9%87%8D%E8%BD%BD%E6%A1%A3%E2%80%9D"><span class="nav-number">5.10.</span> <span class="nav-text">1.9 第一讲小结：synchronized 是”自动升降变速箱”，ObjectMonitor 是”重载档”</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%EF%BC%9AAQS-%E6%A0%B8%E5%BF%83-%E2%80%94%E2%80%94-AbstractQueuedSynchronizer"><span class="nav-number">6.</span> <span class="nav-text">第二讲：AQS 核心 —— AbstractQueuedSynchronizer</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-1"><span class="nav-number">6.1.</span> <span class="nav-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-Node-%E7%BB%93%E6%9E%84%E4%B8%8E%E9%98%9F%E5%88%97%E5%B8%83%E5%B1%80"><span class="nav-number">6.2.</span> <span class="nav-text">2.1 Node 结构与队列布局</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-state-%E4%B8%8E-CAS"><span class="nav-number">6.3.</span> <span class="nav-text">2.2 state 与 CAS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-acquire-%E2%80%94%E2%80%94-%E6%A0%B8%E5%BF%83%E5%8A%A0%E9%94%81%E6%96%B9%E6%B3%95"><span class="nav-number">6.4.</span> <span class="nav-text">2.3 acquire —— 核心加锁方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-release-%E2%80%94%E2%80%94-%E6%A0%B8%E5%BF%83%E8%A7%A3%E9%94%81%E6%96%B9%E6%B3%95"><span class="nav-number">6.5.</span> <span class="nav-text">2.4 release —— 核心解锁方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-5-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%BC%8F"><span class="nav-number">6.6.</span> <span class="nav-text">2.5 共享模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-6-%E9%98%9F%E5%88%97%E7%BB%B4%E6%8A%A4%EF%BC%9AcleanQueue-%E4%B8%8E-cancelAcquire"><span class="nav-number">6.7.</span> <span class="nav-text">2.6 队列维护：cleanQueue 与 cancelAcquire</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-7-hasQueuedPredecessors-%E2%80%94%E2%80%94-%E5%85%AC%E5%B9%B3%E6%80%A7%E5%88%A4%E6%96%AD"><span class="nav-number">6.8.</span> <span class="nav-text">2.7 hasQueuedPredecessors —— 公平性判断</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-8-%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%BC%94%E7%AE%97%EF%BC%9AReentrantLock-lock-%E9%9D%9E%E5%85%AC%E5%B9%B3%E6%A8%A1%E5%BC%8F"><span class="nav-number">6.9.</span> <span class="nav-text">2.8 端到端演算：ReentrantLock.lock() 非公平模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-9-%E7%AC%AC%E4%BA%8C%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9AAQS-%E6%98%AF%E2%80%9D%E5%8F%96%E5%8F%B7%E6%8E%92%E9%98%9F%E6%9C%BA%E2%80%9D%EF%BC%8Cacquire-%E6%98%AF%E4%B8%80%E4%B8%AA%E5%A4%A7-for-%E5%BE%AA%E7%8E%AF"><span class="nav-number">6.10.</span> <span class="nav-text">2.9 第二讲小结：AQS 是”取号排队机”，acquire 是一个大 for 循环</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%EF%BC%9AReentrantLock-%E2%80%94%E2%80%94-%E5%85%AC%E5%B9%B3%E4%B8%8E%E9%9D%9E%E5%85%AC%E5%B9%B3%E7%9A%84%E5%B7%AE%E5%88%AB"><span class="nav-number">7.</span> <span class="nav-text">第三讲：ReentrantLock —— 公平与非公平的差别</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-2"><span class="nav-number">7.1.</span> <span class="nav-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E7%B1%BB%E5%B1%82%E6%AC%A1%E7%BB%93%E6%9E%84"><span class="nav-number">7.2.</span> <span class="nav-text">3.1 类层次结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-Sync-%E5%9F%BA%E7%B1%BB"><span class="nav-number">7.3.</span> <span class="nav-text">3.2 Sync 基类</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#lock-%E4%B8%8E-initialTryLock"><span class="nav-number">7.3.1.</span> <span class="nav-text">lock 与 initialTryLock</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#tryLock%EF%BC%88%E9%9D%9E%E5%85%AC%E5%B9%B3%E5%BF%AB%E9%80%9F%E8%AF%95%E9%94%81%EF%BC%89"><span class="nav-number">7.3.2.</span> <span class="nav-text">tryLock（非公平快速试锁）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#tryRelease"><span class="nav-number">7.3.3.</span> <span class="nav-text">tryRelease</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-NonfairSync-%E2%80%94%E2%80%94-%E9%9D%9E%E5%85%AC%E5%B9%B3%E9%94%81"><span class="nav-number">7.4.</span> <span class="nav-text">3.3 NonfairSync —— 非公平锁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-FairSync-%E2%80%94%E2%80%94-%E5%85%AC%E5%B9%B3%E9%94%81"><span class="nav-number">7.5.</span> <span class="nav-text">3.4 FairSync —— 公平锁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-%E5%85%AC%E5%85%B1%E6%96%B9%E6%B3%95"><span class="nav-number">7.6.</span> <span class="nav-text">3.5 公共方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-6-%E7%AC%AC%E4%B8%89%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E5%85%AC%E5%B9%B3%E4%B8%8E%E9%9D%9E%E5%85%AC%E5%B9%B3%E5%8F%AA%E5%B7%AE%E4%B8%80%E8%A1%8C-hasQueuedPredecessors"><span class="nav-number">7.7.</span> <span class="nav-text">3.6 第三讲小结：公平与非公平只差一行 hasQueuedPredecessors</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%EF%BC%9A%E8%AF%BB%E5%86%99%E9%94%81-%E2%80%94%E2%80%94-ReentrantReadWriteLock-%E4%B8%8E-StampedLock"><span class="nav-number">8.</span> <span class="nav-text">第四讲：读写锁 —— ReentrantReadWriteLock 与 StampedLock</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-3"><span class="nav-number">8.1.</span> <span class="nav-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-ReentrantReadWriteLock-%E7%9A%84-state-%E5%B8%83%E5%B1%80"><span class="nav-number">8.2.</span> <span class="nav-text">4.1 ReentrantReadWriteLock 的 state 布局</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E6%AF%8F%E7%BA%BF%E7%A8%8B%E8%AF%BB%E8%AE%A1%E6%95%B0%EF%BC%9AHoldCounter-%E4%B8%8E-ThreadLocal"><span class="nav-number">8.3.</span> <span class="nav-text">4.2 每线程读计数：HoldCounter 与 ThreadLocal</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-%E5%86%99%E9%94%81%EF%BC%9AtryAcquire-%E4%B8%8E-tryRelease"><span class="nav-number">8.4.</span> <span class="nav-text">4.3 写锁：tryAcquire 与 tryRelease</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-4-%E8%AF%BB%E9%94%81%EF%BC%9AtryAcquireShared-%E4%B8%8E-tryReleaseShared"><span class="nav-number">8.5.</span> <span class="nav-text">4.4 读锁：tryAcquireShared 与 tryReleaseShared</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-5-%E5%85%AC%E5%B9%B3%E4%B8%8E%E9%9D%9E%E5%85%AC%E5%B9%B3"><span class="nav-number">8.6.</span> <span class="nav-text">4.5 公平与非公平</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-6-%E5%86%99%E9%94%81%E9%99%8D%E7%BA%A7"><span class="nav-number">8.7.</span> <span class="nav-text">4.6 写锁降级</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-7-StampedLock-%E2%80%94%E2%80%94-%E4%B9%90%E8%A7%82%E8%AF%BB%E9%94%81"><span class="nav-number">8.8.</span> <span class="nav-text">4.7 StampedLock —— 乐观读锁</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#state-%E5%B8%83%E5%B1%80"><span class="nav-number">8.8.1.</span> <span class="nav-text">state 布局</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#tryOptimisticRead"><span class="nav-number">8.8.2.</span> <span class="nav-text">tryOptimisticRead</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#validate"><span class="nav-number">8.8.3.</span> <span class="nav-text">validate</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#writeLock"><span class="nav-number">8.8.4.</span> <span class="nav-text">writeLock</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#readLock"><span class="nav-number">8.8.5.</span> <span class="nav-text">readLock</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%89%E7%A7%8D%E6%A8%A1%E5%BC%8F"><span class="nav-number">8.8.6.</span> <span class="nav-text">三种模式</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-8-%E7%AC%AC%E5%9B%9B%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E8%AF%BB%E5%86%99%E9%94%81%E6%98%AF%E2%80%9D%E4%B8%80%E5%88%86%E4%B8%BA%E4%BA%8C%E7%9A%84-state%E2%80%9D%EF%BC%8CStampedLock-%E6%98%AF%E2%80%9D%E5%BA%8F%E5%8F%B7%E4%B9%90%E8%A7%82%E8%AF%BB%E2%80%9D"><span class="nav-number">8.9.</span> <span class="nav-text">4.8 第四讲小结：读写锁是”一分为二的 state”，StampedLock 是”序号乐观读”</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%EF%BC%9ACondition-%E4%B8%8E-LockSupport-%E2%80%94%E2%80%94-%E7%AD%89%E5%BE%85%E4%B8%8E%E5%94%A4%E9%86%92%E7%9A%84%E5%BA%95%E5%B1%82"><span class="nav-number">9.</span> <span class="nav-text">第五讲：Condition 与 LockSupport —— 等待与唤醒的底层</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-4"><span class="nav-number">9.1.</span> <span class="nav-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-ConditionObject-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="nav-number">9.2.</span> <span class="nav-text">5.1 ConditionObject 数据结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-await-%E2%80%94%E2%80%94-%E7%AD%89%E5%BE%85"><span class="nav-number">9.3.</span> <span class="nav-text">5.2 await —— 等待</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-signal-%E2%80%94%E2%80%94-%E5%94%A4%E9%86%92"><span class="nav-number">9.4.</span> <span class="nav-text">5.3 signal —— 唤醒</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-4-LockSupport-%E2%80%94%E2%80%94-%E5%BA%95%E5%B1%82%E9%98%BB%E5%A1%9E%E5%8E%9F%E8%AF%AD"><span class="nav-number">9.5.</span> <span class="nav-text">5.4 LockSupport —— 底层阻塞原语</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#permit-%E8%AF%AD%E4%B9%89"><span class="nav-number">9.5.1.</span> <span class="nav-text">permit 语义</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#park"><span class="nav-number">9.5.2.</span> <span class="nav-text">park</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#unpark"><span class="nav-number">9.5.3.</span> <span class="nav-text">unpark</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#parkBlocker"><span class="nav-number">9.5.4.</span> <span class="nav-text">parkBlocker</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%99%9A%E6%8B%9F%E7%BA%BF%E7%A8%8B%E6%94%AF%E6%8C%81"><span class="nav-number">9.5.5.</span> <span class="nav-text">虚拟线程支持</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-5-AbstractOwnableSynchronizer-%E2%80%94%E2%80%94-%E7%8B%AC%E5%8D%A0%E9%94%81%E6%8C%81%E6%9C%89%E8%80%85%E8%AE%B0%E5%BD%95"><span class="nav-number">9.6.</span> <span class="nav-text">5.5 AbstractOwnableSynchronizer —— 独占锁持有者记录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-6-%E7%AC%AC%E4%BA%94%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9ACondition-%E6%98%AF%E2%80%9D%E7%AC%AC%E4%BA%8C%E6%9D%A1%E9%98%9F%E4%BC%8D%E2%80%9D%EF%BC%8CLockSupport-%E6%98%AF%E2%80%9Dpermit-%E9%97%A8%E9%93%83%E2%80%9D"><span class="nav-number">9.7.</span> <span class="nav-text">5.6 第五讲小结：Condition 是”第二条队伍”，LockSupport 是”permit 门铃”</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%99%84%EF%BC%9A%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E4%B8%8E%E5%A4%8D%E4%B9%A0%E5%8D%A1%E6%B1%87%E6%80%BB"><span class="nav-number">10.</span> <span class="nav-text">附：学习路线与复习卡汇总</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BB%BA%E8%AE%AE%E9%98%85%E8%AF%BB%E9%A1%BA%E5%BA%8F"><span class="nav-number">10.1.</span> <span class="nav-text">建议阅读顺序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%8D%E4%B9%A0%E5%8D%A1%EF%BC%88%E6%8C%89%E8%AE%B2%E6%AC%A1%E7%BC%96%E5%8F%B7%EF%BC%8C%E4%BE%BF%E4%BA%8E%E5%9B%9E%E6%9F%A5%EF%BC%89"><span class="nav-number">10.2.</span> <span class="nav-text">复习卡（按讲次编号，便于回查）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B6%89%E5%8F%8A%E6%96%87%E4%BB%B6%E7%B4%A2%E5%BC%95"><span class="nav-number">11.</span> <span class="nav-text">涉及文件索引</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#JVM-%E5%86%85%E7%BD%AE%E9%94%81%EF%BC%88HotSpot-C-%EF%BC%89"><span class="nav-number">11.1.</span> <span class="nav-text">JVM 内置锁（HotSpot C++）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#JUC-%E6%98%BE%E5%BC%8F%E9%94%81%EF%BC%88Java%EF%BC%89"><span class="nav-number">11.2.</span> <span class="nav-text">JUC 显式锁（Java）</span></a></li></ol></li></ol></div>
-        </div>
-        <!--/noindex-->
-
-        <div class="site-overview-wrap sidebar-panel">
-          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
-  <p class="site-author-name" itemprop="name">gyc</p>
-  <div class="site-description" itemprop="description">主流基础设施、框架与 JDK 的源码级深度学习笔记</div>
+  </div>
 </div>
-<div class="site-state-wrap animated">
-  <nav class="site-state">
-      <div class="site-state-item site-state-posts">
-        <a href="/archives/">
-          <span class="site-state-item-count">19</span>
-          <span class="site-state-item-name">日志</span>
-        </a>
-      </div>
-      <div class="site-state-item site-state-categories">
-          <a href="/categories/">
-        <span class="site-state-item-count">5</span>
-        <span class="site-state-item-name">分类</span></a>
-      </div>
-      <div class="site-state-item site-state-tags">
-          <a href="/tags/">
-        <span class="site-state-item-count">26</span>
-        <span class="site-state-item-name">标签</span></a>
-      </div>
+
   </nav>
-</div>
-
+  <main id="main">
+    <header class="top-header" id="header">
+    <div class="flex-row">
+        <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light on" id="menu-toggle">
+          <i class="icon icon-lg icon-navicon"></i>
+        </a>
+        <div class="flex-col header-title ellipsis">Java 锁源码深度学习笔记</div>
+        
+        <div class="search-wrap" id="search-wrap">
+            <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="back">
+                <i class="icon icon-lg icon-chevron-left"></i>
+            </a>
+            <input type="text" id="key" class="search-input " autocomplete="off" placeholder="输入感兴趣的关键字">
+            <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="search">
+                <i class="icon icon-lg icon-search"></i>
+            </a>
         </div>
-      </div>
+        
+        
+        <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="menu-share">
+            <i class="icon icon-lg icon-share-alt"></i>
+        </a>
+        
     </div>
+</header>
+<header class="content-header">
+  <div class="container">
+    <h1 class="author">Java 锁源码深度学习笔记</h1>
+    <h5 class="subtitle">
+        
+            <time datetime="2026-10-14T16:00:00.000Z" itemprop="datePublished" class="page-time">
+  2026-10-15
+</time>
 
-    
-  </aside>
 
+	<ul class="article-category-list"><li class="article-category-list-item"><a class="article-category-list-link" href="/categories/Java/">Java</a></li></ul>
+
+        
+    </h5>
+  </div>
+</header>
+
+    <div class="container body-wrap">
+      <article id="post-java-lock" 
+  class="article article-type-post" itemprop="blogPost">
+    <div class="post-meta flex-row">
+        
+	<ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%BA%90%E7%A0%81/" rel="tag">源码</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E9%94%81/" rel="tag">锁</a></li></ul>
 
     </div>
+    <div class="post-body">
+        <aside class="post-widget" id="post-widget">
 
-    <div class="main-inner post posts-expand">
+            
+            <div class="post-share" id="post-share">
+    <div class="tit">分享到：</div>
+    <ul class="reset share-icons">
+      <li>
+        <a class="weibo share-sns" href="javascript:;" data-title="微博" data-service="tsina">
+          <i class="icon icon-weibo"></i>
+        </a>
+      </li>
+      <li>
+        <a class="weixin share-sns" href="javascript:;" data-title="微信" data-service="weixin">
+          <i class="icon icon-weixin"></i>
+        </a>
+      </li>
+      <li>
+        <a class="qq share-sns" href="javascript:;" data-title=" QQ" data-service="cqq">
+          <i class="icon icon-qq"></i>
+        </a>
+      </li>
+      <li>
+        <a class="facebook share-sns" href="javascript:;" data-title=" Facebook" data-service="fb">
+          <i class="icon icon-facebook"></i>
+        </a>
+      </li>
+      <li>
+        <a class="twitter share-sns" href="javascript:;" data-title=" Twitter" data-service="twitter">
+          <i class="icon icon-twitter"></i>
+        </a>
+      </li>
+      <li>
+        <a class="douban share-sns" href="javascript:;" data-title="豆瓣" data-service="douban">
+          豆
+        </a>
+      </li>
+    </ul>
+ </div>
 
+            
 
-  
+            
+            <nav class="post-toc-wrap" id="post-toc">
+            <ol class="post-toc"><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%9B%AE%E5%BD%95"><span class="post-toc-number">1.</span> <span class="post-toc-text">目录</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E3%80%87%E3%80%81%E5%85%A8%E6%99%AF%E5%9C%B0%E5%9B%BE"><span class="post-toc-number">2.</span> <span class="post-toc-text">〇、全景地图</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%80%9F%E8%A7%88%EF%BC%9A%E5%90%84%E8%AE%B2%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88%EF%BC%88%E5%85%88%E7%9C%8B%E8%BF%99%E4%B8%AA%E5%86%8D%E8%BF%9B%E7%BB%86%E8%8A%82%EF%BC%89"><span class="post-toc-number">3.</span> <span class="post-toc-text">速览：各讲做了什么（先看这个再进细节）</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%9D%A2%E8%AF%95%E9%80%9F%E9%80%9A%EF%BC%9AJava-%E9%94%81%E9%AB%98%E9%A2%91%E9%97%AE%E9%A2%98%E4%B8%80%E9%A1%B5%E7%BA%B8"><span class="post-toc-number">4.</span> <span class="post-toc-text">面试速通：Java 锁高频问题一页纸</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%AB%98%E9%A2%91-Q-A%EF%BC%88%E5%85%88%E7%BB%93%E8%AE%BA%EF%BC%89"><span class="post-toc-number">4.1.</span> <span class="post-toc-text">高频 Q&amp;A（先结论）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E6%98%93%E9%94%99%E7%82%B9%E4%B8%8E%E9%9D%A2%E8%AF%95%E5%9D%91"><span class="post-toc-number">4.2.</span> <span class="post-toc-text">易错点与面试坑</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%B3%E9%94%AE%E6%A6%82%E5%BF%B5%E5%AF%B9%E7%85%A7%E8%A1%A8"><span class="post-toc-number">4.3.</span> <span class="post-toc-text">关键概念对照表</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%EF%BC%9Asynchronized-%E4%B8%8E%E9%94%81%E5%8D%87%E7%BA%A7-%E2%80%94%E2%80%94-ObjectMonitor-%E4%B8%8E-ObjectSynchronizer"><span class="post-toc-number">5.</span> <span class="post-toc-text">第一讲：synchronized 与锁升级 —— ObjectMonitor 与 ObjectSynchronizer</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88"><span class="post-toc-number">5.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#1-1-mark-word-%E4%B8%8E%E9%94%81%E7%8A%B6%E6%80%81"><span class="post-toc-number">5.2.</span> <span class="post-toc-text">1.1 mark word 与锁状态</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#1-2-LockingMode-%E4%B8%8E%E5%BF%AB%E9%80%9F%E8%B7%AF%E5%BE%84%E9%80%89%E6%8B%A9"><span class="post-toc-number">5.3.</span> <span class="post-toc-text">1.2 LockingMode 与快速路径选择</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#LM-LEGACY-%E5%BF%AB%E9%80%9F%E8%B7%AF%E5%BE%84%EF%BC%88synchronizer-cpp-528-551%EF%BC%89"><span class="post-toc-number">5.3.1.</span> <span class="post-toc-text">LM_LEGACY 快速路径（synchronizer.cpp:528-551）</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#LM-LIGHTWEIGHT-%E5%BF%AB%E9%80%9F%E8%B7%AF%E5%BE%84%EF%BC%88synchronizer-cpp-510-526%EF%BC%89"><span class="post-toc-number">5.3.2.</span> <span class="post-toc-text">LM_LIGHTWEIGHT 快速路径（synchronizer.cpp:510-526）</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#1-3-inflate%EF%BC%9A%E4%BB%8E%E8%BD%BB%E9%87%8F%E7%BA%A7%E5%88%B0%E9%87%8D%E9%87%8F%E7%BA%A7"><span class="post-toc-number">5.4.</span> <span class="post-toc-text">1.3 inflate：从轻量级到重量级</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#1-4-ObjectMonitor-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="post-toc-number">5.5.</span> <span class="post-toc-text">1.4 ObjectMonitor 数据结构</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#1-5-ObjectMonitor-enter-%E2%80%94%E2%80%94-%E9%87%8D%E9%87%8F%E7%BA%A7%E5%8A%A0%E9%94%81"><span class="post-toc-number">5.6.</span> <span class="post-toc-text">1.5 ObjectMonitor::enter —— 重量级加锁</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#1-6-ObjectMonitor-exit-%E2%80%94%E2%80%94-%E9%87%8D%E9%87%8F%E7%BA%A7%E8%A7%A3%E9%94%81"><span class="post-toc-number">5.7.</span> <span class="post-toc-text">1.6 ObjectMonitor::exit —— 重量级解锁</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#1-7-Object-wait-notify-%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="post-toc-number">5.8.</span> <span class="post-toc-text">1.7 Object.wait() &#x2F; notify() 的实现</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#wait-%EF%BC%88objectMonitor-cpp-1440%EF%BC%89"><span class="post-toc-number">5.8.1.</span> <span class="post-toc-text">wait()（objectMonitor.cpp:1440）</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#notify-%E4%B8%8E-INotify-%EF%BC%88objectMonitor-cpp-1724-1662%EF%BC%89"><span class="post-toc-number">5.8.2.</span> <span class="post-toc-text">notify() 与 INotify()（objectMonitor.cpp:1724, 1662）</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#1-8-%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%BC%94%E6%BC%94%E7%AE%97%EF%BC%9Asynchronized-%E4%BB%8E%E6%97%A0%E9%94%81%E5%88%B0%E9%87%8D%E9%87%8F%E7%BA%A7%E9%94%81%E7%9A%84%E5%8D%87%E7%BA%A7"><span class="post-toc-number">5.9.</span> <span class="post-toc-text">1.8 端到端演演算：synchronized 从无锁到重量级锁的升级</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#1-9-%E7%AC%AC%E4%B8%80%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9Asynchronized-%E6%98%AF%E2%80%9D%E8%87%AA%E5%8A%A8%E5%8D%87%E9%99%8D%E5%8F%98%E9%80%9F%E7%AE%B1%E2%80%9D%EF%BC%8CObjectMonitor-%E6%98%AF%E2%80%9D%E9%87%8D%E8%BD%BD%E6%A1%A3%E2%80%9D"><span class="post-toc-number">5.10.</span> <span class="post-toc-text">1.9 第一讲小结：synchronized 是”自动升降变速箱”，ObjectMonitor 是”重载档”</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%EF%BC%9AAQS-%E6%A0%B8%E5%BF%83-%E2%80%94%E2%80%94-AbstractQueuedSynchronizer"><span class="post-toc-number">6.</span> <span class="post-toc-text">第二讲：AQS 核心 —— AbstractQueuedSynchronizer</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-1"><span class="post-toc-number">6.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-1-Node-%E7%BB%93%E6%9E%84%E4%B8%8E%E9%98%9F%E5%88%97%E5%B8%83%E5%B1%80"><span class="post-toc-number">6.2.</span> <span class="post-toc-text">2.1 Node 结构与队列布局</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-2-state-%E4%B8%8E-CAS"><span class="post-toc-number">6.3.</span> <span class="post-toc-text">2.2 state 与 CAS</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-3-acquire-%E2%80%94%E2%80%94-%E6%A0%B8%E5%BF%83%E5%8A%A0%E9%94%81%E6%96%B9%E6%B3%95"><span class="post-toc-number">6.4.</span> <span class="post-toc-text">2.3 acquire —— 核心加锁方法</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-4-release-%E2%80%94%E2%80%94-%E6%A0%B8%E5%BF%83%E8%A7%A3%E9%94%81%E6%96%B9%E6%B3%95"><span class="post-toc-number">6.5.</span> <span class="post-toc-text">2.4 release —— 核心解锁方法</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-5-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%BC%8F"><span class="post-toc-number">6.6.</span> <span class="post-toc-text">2.5 共享模式</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-6-%E9%98%9F%E5%88%97%E7%BB%B4%E6%8A%A4%EF%BC%9AcleanQueue-%E4%B8%8E-cancelAcquire"><span class="post-toc-number">6.7.</span> <span class="post-toc-text">2.6 队列维护：cleanQueue 与 cancelAcquire</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-7-hasQueuedPredecessors-%E2%80%94%E2%80%94-%E5%85%AC%E5%B9%B3%E6%80%A7%E5%88%A4%E6%96%AD"><span class="post-toc-number">6.8.</span> <span class="post-toc-text">2.7 hasQueuedPredecessors —— 公平性判断</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-8-%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%BC%94%E7%AE%97%EF%BC%9AReentrantLock-lock-%E9%9D%9E%E5%85%AC%E5%B9%B3%E6%A8%A1%E5%BC%8F"><span class="post-toc-number">6.9.</span> <span class="post-toc-text">2.8 端到端演算：ReentrantLock.lock() 非公平模式</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-9-%E7%AC%AC%E4%BA%8C%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9AAQS-%E6%98%AF%E2%80%9D%E5%8F%96%E5%8F%B7%E6%8E%92%E9%98%9F%E6%9C%BA%E2%80%9D%EF%BC%8Cacquire-%E6%98%AF%E4%B8%80%E4%B8%AA%E5%A4%A7-for-%E5%BE%AA%E7%8E%AF"><span class="post-toc-number">6.10.</span> <span class="post-toc-text">2.9 第二讲小结：AQS 是”取号排队机”，acquire 是一个大 for 循环</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%EF%BC%9AReentrantLock-%E2%80%94%E2%80%94-%E5%85%AC%E5%B9%B3%E4%B8%8E%E9%9D%9E%E5%85%AC%E5%B9%B3%E7%9A%84%E5%B7%AE%E5%88%AB"><span class="post-toc-number">7.</span> <span class="post-toc-text">第三讲：ReentrantLock —— 公平与非公平的差别</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-2"><span class="post-toc-number">7.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-1-%E7%B1%BB%E5%B1%82%E6%AC%A1%E7%BB%93%E6%9E%84"><span class="post-toc-number">7.2.</span> <span class="post-toc-text">3.1 类层次结构</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-2-Sync-%E5%9F%BA%E7%B1%BB"><span class="post-toc-number">7.3.</span> <span class="post-toc-text">3.2 Sync 基类</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#lock-%E4%B8%8E-initialTryLock"><span class="post-toc-number">7.3.1.</span> <span class="post-toc-text">lock 与 initialTryLock</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#tryLock%EF%BC%88%E9%9D%9E%E5%85%AC%E5%B9%B3%E5%BF%AB%E9%80%9F%E8%AF%95%E9%94%81%EF%BC%89"><span class="post-toc-number">7.3.2.</span> <span class="post-toc-text">tryLock（非公平快速试锁）</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#tryRelease"><span class="post-toc-number">7.3.3.</span> <span class="post-toc-text">tryRelease</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-3-NonfairSync-%E2%80%94%E2%80%94-%E9%9D%9E%E5%85%AC%E5%B9%B3%E9%94%81"><span class="post-toc-number">7.4.</span> <span class="post-toc-text">3.3 NonfairSync —— 非公平锁</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-4-FairSync-%E2%80%94%E2%80%94-%E5%85%AC%E5%B9%B3%E9%94%81"><span class="post-toc-number">7.5.</span> <span class="post-toc-text">3.4 FairSync —— 公平锁</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-5-%E5%85%AC%E5%85%B1%E6%96%B9%E6%B3%95"><span class="post-toc-number">7.6.</span> <span class="post-toc-text">3.5 公共方法</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-6-%E7%AC%AC%E4%B8%89%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E5%85%AC%E5%B9%B3%E4%B8%8E%E9%9D%9E%E5%85%AC%E5%B9%B3%E5%8F%AA%E5%B7%AE%E4%B8%80%E8%A1%8C-hasQueuedPredecessors"><span class="post-toc-number">7.7.</span> <span class="post-toc-text">3.6 第三讲小结：公平与非公平只差一行 hasQueuedPredecessors</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%EF%BC%9A%E8%AF%BB%E5%86%99%E9%94%81-%E2%80%94%E2%80%94-ReentrantReadWriteLock-%E4%B8%8E-StampedLock"><span class="post-toc-number">8.</span> <span class="post-toc-text">第四讲：读写锁 —— ReentrantReadWriteLock 与 StampedLock</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-3"><span class="post-toc-number">8.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#4-1-ReentrantReadWriteLock-%E7%9A%84-state-%E5%B8%83%E5%B1%80"><span class="post-toc-number">8.2.</span> <span class="post-toc-text">4.1 ReentrantReadWriteLock 的 state 布局</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#4-2-%E6%AF%8F%E7%BA%BF%E7%A8%8B%E8%AF%BB%E8%AE%A1%E6%95%B0%EF%BC%9AHoldCounter-%E4%B8%8E-ThreadLocal"><span class="post-toc-number">8.3.</span> <span class="post-toc-text">4.2 每线程读计数：HoldCounter 与 ThreadLocal</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#4-3-%E5%86%99%E9%94%81%EF%BC%9AtryAcquire-%E4%B8%8E-tryRelease"><span class="post-toc-number">8.4.</span> <span class="post-toc-text">4.3 写锁：tryAcquire 与 tryRelease</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#4-4-%E8%AF%BB%E9%94%81%EF%BC%9AtryAcquireShared-%E4%B8%8E-tryReleaseShared"><span class="post-toc-number">8.5.</span> <span class="post-toc-text">4.4 读锁：tryAcquireShared 与 tryReleaseShared</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#4-5-%E5%85%AC%E5%B9%B3%E4%B8%8E%E9%9D%9E%E5%85%AC%E5%B9%B3"><span class="post-toc-number">8.6.</span> <span class="post-toc-text">4.5 公平与非公平</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#4-6-%E5%86%99%E9%94%81%E9%99%8D%E7%BA%A7"><span class="post-toc-number">8.7.</span> <span class="post-toc-text">4.6 写锁降级</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#4-7-StampedLock-%E2%80%94%E2%80%94-%E4%B9%90%E8%A7%82%E8%AF%BB%E9%94%81"><span class="post-toc-number">8.8.</span> <span class="post-toc-text">4.7 StampedLock —— 乐观读锁</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#state-%E5%B8%83%E5%B1%80"><span class="post-toc-number">8.8.1.</span> <span class="post-toc-text">state 布局</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#tryOptimisticRead"><span class="post-toc-number">8.8.2.</span> <span class="post-toc-text">tryOptimisticRead</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#validate"><span class="post-toc-number">8.8.3.</span> <span class="post-toc-text">validate</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#writeLock"><span class="post-toc-number">8.8.4.</span> <span class="post-toc-text">writeLock</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#readLock"><span class="post-toc-number">8.8.5.</span> <span class="post-toc-text">readLock</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#%E4%B8%89%E7%A7%8D%E6%A8%A1%E5%BC%8F"><span class="post-toc-number">8.8.6.</span> <span class="post-toc-text">三种模式</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#4-8-%E7%AC%AC%E5%9B%9B%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E8%AF%BB%E5%86%99%E9%94%81%E6%98%AF%E2%80%9D%E4%B8%80%E5%88%86%E4%B8%BA%E4%BA%8C%E7%9A%84-state%E2%80%9D%EF%BC%8CStampedLock-%E6%98%AF%E2%80%9D%E5%BA%8F%E5%8F%B7%E4%B9%90%E8%A7%82%E8%AF%BB%E2%80%9D"><span class="post-toc-number">8.9.</span> <span class="post-toc-text">4.8 第四讲小结：读写锁是”一分为二的 state”，StampedLock 是”序号乐观读”</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%EF%BC%9ACondition-%E4%B8%8E-LockSupport-%E2%80%94%E2%80%94-%E7%AD%89%E5%BE%85%E4%B8%8E%E5%94%A4%E9%86%92%E7%9A%84%E5%BA%95%E5%B1%82"><span class="post-toc-number">9.</span> <span class="post-toc-text">第五讲：Condition 与 LockSupport —— 等待与唤醒的底层</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-4"><span class="post-toc-number">9.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#5-1-ConditionObject-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="post-toc-number">9.2.</span> <span class="post-toc-text">5.1 ConditionObject 数据结构</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#5-2-await-%E2%80%94%E2%80%94-%E7%AD%89%E5%BE%85"><span class="post-toc-number">9.3.</span> <span class="post-toc-text">5.2 await —— 等待</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#5-3-signal-%E2%80%94%E2%80%94-%E5%94%A4%E9%86%92"><span class="post-toc-number">9.4.</span> <span class="post-toc-text">5.3 signal —— 唤醒</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#5-4-LockSupport-%E2%80%94%E2%80%94-%E5%BA%95%E5%B1%82%E9%98%BB%E5%A1%9E%E5%8E%9F%E8%AF%AD"><span class="post-toc-number">9.5.</span> <span class="post-toc-text">5.4 LockSupport —— 底层阻塞原语</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#permit-%E8%AF%AD%E4%B9%89"><span class="post-toc-number">9.5.1.</span> <span class="post-toc-text">permit 语义</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#park"><span class="post-toc-number">9.5.2.</span> <span class="post-toc-text">park</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#unpark"><span class="post-toc-number">9.5.3.</span> <span class="post-toc-text">unpark</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#parkBlocker"><span class="post-toc-number">9.5.4.</span> <span class="post-toc-text">parkBlocker</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#%E8%99%9A%E6%8B%9F%E7%BA%BF%E7%A8%8B%E6%94%AF%E6%8C%81"><span class="post-toc-number">9.5.5.</span> <span class="post-toc-text">虚拟线程支持</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#5-5-AbstractOwnableSynchronizer-%E2%80%94%E2%80%94-%E7%8B%AC%E5%8D%A0%E9%94%81%E6%8C%81%E6%9C%89%E8%80%85%E8%AE%B0%E5%BD%95"><span class="post-toc-number">9.6.</span> <span class="post-toc-text">5.5 AbstractOwnableSynchronizer —— 独占锁持有者记录</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#5-6-%E7%AC%AC%E4%BA%94%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9ACondition-%E6%98%AF%E2%80%9D%E7%AC%AC%E4%BA%8C%E6%9D%A1%E9%98%9F%E4%BC%8D%E2%80%9D%EF%BC%8CLockSupport-%E6%98%AF%E2%80%9Dpermit-%E9%97%A8%E9%93%83%E2%80%9D"><span class="post-toc-number">9.7.</span> <span class="post-toc-text">5.6 第五讲小结：Condition 是”第二条队伍”，LockSupport 是”permit 门铃”</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%99%84%EF%BC%9A%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E4%B8%8E%E5%A4%8D%E4%B9%A0%E5%8D%A1%E6%B1%87%E6%80%BB"><span class="post-toc-number">10.</span> <span class="post-toc-text">附：学习路线与复习卡汇总</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%BB%BA%E8%AE%AE%E9%98%85%E8%AF%BB%E9%A1%BA%E5%BA%8F"><span class="post-toc-number">10.1.</span> <span class="post-toc-text">建议阅读顺序</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%A4%8D%E4%B9%A0%E5%8D%A1%EF%BC%88%E6%8C%89%E8%AE%B2%E6%AC%A1%E7%BC%96%E5%8F%B7%EF%BC%8C%E4%BE%BF%E4%BA%8E%E5%9B%9E%E6%9F%A5%EF%BC%89"><span class="post-toc-number">10.2.</span> <span class="post-toc-text">复习卡（按讲次编号，便于回查）</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E6%B6%89%E5%8F%8A%E6%96%87%E4%BB%B6%E7%B4%A2%E5%BC%95"><span class="post-toc-number">11.</span> <span class="post-toc-text">涉及文件索引</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#JVM-%E5%86%85%E7%BD%AE%E9%94%81%EF%BC%88HotSpot-C-%EF%BC%89"><span class="post-toc-number">11.1.</span> <span class="post-toc-text">JVM 内置锁（HotSpot C++）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#JUC-%E6%98%BE%E5%BC%8F%E9%94%81%EF%BC%88Java%EF%BC%89"><span class="post-toc-number">11.2.</span> <span class="post-toc-text">JUC 显式锁（Java）</span></a></li></ol></li></ol>
+            </nav>
+            
+        </aside>
 
+        <div class="post-main">
 
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://gycxxx.github.io/java-lock/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="gyc">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="源码深读笔记">
-      <meta itemprop="description" content="主流基础设施、框架与 JDK 的源码级深度学习笔记">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="Java 锁源码深度学习笔记 | 源码深读笔记">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          Java 锁源码深度学习笔记
-        </h1>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2026-10-15 00:00:00" itemprop="dateCreated datePublished" datetime="2026-10-15T00:00:00+08:00">2026-10-15</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody"><blockquote>
+            <div class="post-content" id="post-content" itemprop="postContent">
+            <blockquote>
 <p>基于对 OpenJDK <strong>21</strong>（jdk-21-ga）锁相关源码的逐文件精读整理而成。</p>
 <p>源码位于 <code>src/java.base/share/classes/java/util/concurrent/locks/</code>（AQS、ReentrantLock、ReentrantReadWriteLock、StampedLock、Condition、LockSupport、AbstractOwnableSynchronizer）与 <code>src/hotspot/share/runtime/</code>（ObjectMonitor、ObjectSynchronizer、BasicLock、LockStack、globals）。</p>
 <p>阅读顺序即学习顺序：synchronized 内置锁（JVM 层）→ AQS 框架 → ReentrantLock → 读写锁 → Condition 与 LockSupport。</p>
@@ -2024,77 +1987,178 @@
 </ol>
 </blockquote>
 
-    </div>
 
-    
-    
-    
-
-    <footer class="post-footer">
-          <div class="post-tags">
-              <a href="/tags/%E6%BA%90%E7%A0%81/" rel="tag"># 源码</a>
-              <a href="/tags/%E9%94%81/" rel="tag"># 锁</a>
-          </div>
-
-        
-
-          <div class="post-nav">
-            <div class="post-nav-item">
-                <a href="/nacos/" rel="prev" title="Nacos 源码深度学习笔记">
-                  <i class="fa fa-angle-left"></i> Nacos 源码深度学习笔记
-                </a>
+            
+            
+            <blockquote>
+                <p>
+                本文地址：
+                <a href="https://gycxxx.github.io/java-lock/" target="_blank" rel="external">https://gycxxx.github.io/java-lock/</a>
+                </p>
+                <footer><cite><a href="https://gycxxx.github.io">@源码深读笔记</a></cite></footer>
+            </blockquote>
             </div>
-            <div class="post-nav-item">
-                <a href="/mysql/" rel="next" title="MySQL 源码深度学习笔记">
-                  MySQL 源码深度学习笔记 <i class="fa fa-angle-right"></i>
-                </a>
-            </div>
-          </div>
-    </footer>
-  </article>
-</div>
-
-
-
-
-
-
-</div>
-  </main>
-
-  <footer class="footer">
-    <div class="footer-inner">
-
-  <div class="copyright">
-    &copy; 
-    <span itemprop="copyrightYear">2026</span>
-    <span class="with-love">
-      <i class="fa fa-copyright"></i>
-    </span>
-    <span class="author" itemprop="copyrightHolder">源码深读笔记 · 基于源码逐行分析的深度学习笔记</span>
-  </div>
-  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
-  </div>
-
+            
+<nav class="post-nav">
+  
+    <div class="waves-block waves-effect prev fl">
+      <a href="/java-collections/" id="post-prev" class="post-nav-link">
+        <div class="tips"><i class="icon icon-angle-left icon-lg icon-pr"></i> Prev</div>
+        <h4 class="title">Java 集合框架源码深度学习笔记</h4>
+      </a>
     </div>
-  </footer>
+  
 
   
-  <div class="toggle sidebar-toggle" role="button">
-    <span class="toggle-line"></span>
-    <span class="toggle-line"></span>
-    <span class="toggle-line"></span>
-  </div>
-  <div class="sidebar-dimmer"></div>
-  <div class="back-to-top" role="button" aria-label="返回顶部">
-    <i class="fa fa-arrow-up fa-lg"></i>
-    <span>0%</span>
-  </div>
-  <div class="reading-progress-bar"></div>
+    <div class="waves-block waves-effect next fr">
+      <a href="/java-concurrent/" id="post-next" class="post-nav-link">
+        <div class="tips">Next <i class="icon icon-angle-right icon-lg icon-pl"></i></div>
+        <h4 class="title">Java 并发库（JUC）源码深度学习笔记</h4>
+      </a>
+    </div>
+  
+</nav>
 
-<noscript>
-  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
-</noscript>
 
-</body>
+            
+            
+
+
+
+        </div>
+    </div>
+</article>
+
+    </div>
+  </main>
+<div class="mask" id="mask"></div>
+<a href="javascript:;" id="gotop" class="waves-effect waves-circle waves-light"><span class="icon icon-lg icon-chevron-up"></span></a>
+
+<script>
+var BLOG_SHARE = {
+    title: "Java 锁源码深度学习笔记",
+    pic: "/img/avatar.jpg",
+    summary: document.getElementsByName('summary')[0].content,
+    url: "https://gycxxx.github.io/java-lock/index.html"
+};
+</script>
+<div class="global-share" id="global-share">
+    <div class="tit">分享到：</div>
+    <ul class="reset share-icons">
+      <li>
+        <a class="weibo share-sns" href="javascript:;" data-title="微博" data-service="tsina">
+          <i class="icon icon-weibo"></i>
+        </a>
+      </li>
+      <li>
+        <a class="weixin share-sns" href="javascript:;" data-title="微信" data-service="weixin">
+          <i class="icon icon-weixin"></i>
+        </a>
+      </li>
+      <li>
+        <a class="qq share-sns" href="javascript:;" data-title=" QQ" data-service="cqq">
+          <i class="icon icon-qq"></i>
+        </a>
+      </li>
+      <li>
+        <a class="facebook share-sns" href="javascript:;" data-title=" Facebook" data-service="fb">
+          <i class="icon icon-facebook"></i>
+        </a>
+      </li>
+      <li>
+        <a class="twitter share-sns" href="javascript:;" data-title=" Twitter" data-service="twitter">
+          <i class="icon icon-twitter"></i>
+        </a>
+      </li>
+      <li>
+        <a class="douban share-sns" href="javascript:;" data-title="豆瓣" data-service="douban">
+          豆
+        </a>
+      </li>
+    </ul>
+ </div>
+
+
+<script src="/js/waves.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+
+
+<div class="search-panel" id="search-panel">
+    <ul class="search-result" id="search-result"></ul>
+</div>
+<script type="text/template" id="search-tpl">
+<li class="item">
+    <a href="/{path}" class="waves-block waves-effect">
+        <div class="title ellipsis" title="{title}">{title}</div>
+        <div class="flex-row flex-middle">
+            <div class="tags ellipsis">
+                {tags}
+            </div>
+            <time class="flex-col time">{date}</time>
+        </div>
+    </a>
+</li>
+</script>
+
+
+<script src="/js/search.js"></script>
+
+
+
+
+
+
+
+
+
+
+<!-- hexo injector body_end start --><script src="/js/mermaid.min.js"></script>
+<script>(function () {
+  function restore(node) {
+    var raw = node.getAttribute("data-mermaid-source");
+    if (raw != null) { node.textContent = raw; }
+  }
+  function render() {
+    var codes = document.querySelectorAll("pre > code.highlight.mermaid, pre > code.mermaid");
+    for (var i = 0; i < codes.length; i++) {
+      var code = codes[i];
+      var pre = code.parentNode;
+      var box = document.createElement("div");
+      box.className = "mermaid";
+      box.setAttribute("data-mermaid-source", code.textContent);
+      box.textContent = code.textContent;
+      pre.parentNode.replaceChild(box, pre);
+    }
+    var nodes = document.querySelectorAll(".mermaid");
+    if (!window.mermaid || !nodes.length) { return; }
+    window.mermaid.initialize({
+      startOnLoad: false,
+      theme: "default",
+      logLevel: 4,
+      securityLevel: "loose",
+      flowchart: { curve: "linear" },
+      gantt: { axisFormat: "%m/%d/%Y" },
+      sequence: { actorMargin: 50 }
+    });
+    window.mermaid.run({ nodes: nodes, suppressErrors: true })
+      .then(function () {
+        for (var j = 0; j < nodes.length; j++) {
+          if (!nodes[j].querySelector("svg")) { restore(nodes[j]); }
+        }
+      })
+      .catch(function (err) {
+        if (window.console && console.error) { console.error(err); }
+        for (var k = 0; k < nodes.length; k++) { restore(nodes[k]); }
+      });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", render);
+  } else {
+    render();
+  }
+})();</script><!-- hexo injector body_end end --></body>
 </html>

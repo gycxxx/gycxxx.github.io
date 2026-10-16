@@ -1,26 +1,16 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
-  <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width">
-<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 7.3.0">
-
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/images/logo.svg" color="#222">
-
-<link rel="stylesheet" href="/css/main.css">
-
-
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
-
-<script class="next-config" data-name="main" type="application/json">{"hostname":"gycxxx.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12,"onmobile":true},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":true,"style":"flat","show_result":true},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js" defer></script>
-
-    <meta name="description" content="基于对 server&#x2F;src&#x2F;main&#x2F;java&#x2F;org&#x2F;elasticsearch&#x2F; 下 Java 源码（bootstrap&#x2F;Elasticsearch.java、node&#x2F;Node.java、discovery&#x2F;DiscoveryModule.java、cluster&#x2F;coordination&#x2F;Coordinator.java、cluster&#x2F;coordination&#x2F;Coordinatio">
+  <meta charset="utf-8">
+  
+  <title>Elasticsearch 源码深度学习笔记 | 源码深读笔记 | Kafka / Nacos / Spring / Redis / MySQL / ES / Java / JVM / RAG</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  <meta name="theme-color" content="#3F51B5">
+  
+  
+  <meta name="keywords" content="Elasticsearch,源码">
+  <meta name="description" content="基于对 server&#x2F;src&#x2F;main&#x2F;java&#x2F;org&#x2F;elasticsearch&#x2F; 下 Java 源码（bootstrap&#x2F;Elasticsearch.java、node&#x2F;Node.java、discovery&#x2F;DiscoveryModule.java、cluster&#x2F;coordination&#x2F;Coordinator.java、cluster&#x2F;coordination&#x2F;Coordinatio">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Elasticsearch 源码深度学习笔记">
 <meta property="og:url" content="https://gycxxx.github.io/elasticsearch/index.html">
@@ -30,210 +20,183 @@
 <meta property="article:published_time" content="2026-10-14T16:00:00.000Z">
 <meta property="article:modified_time" content="2026-10-16T02:55:08.153Z">
 <meta property="article:author" content="gyc">
-<meta property="article:tag" content="源码">
 <meta property="article:tag" content="Elasticsearch">
+<meta property="article:tag" content="源码">
 <meta name="twitter:card" content="summary">
-
-
-<link rel="canonical" href="https://gycxxx.github.io/elasticsearch/">
-
-
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://gycxxx.github.io/elasticsearch/","path":"elasticsearch/","title":"Elasticsearch 源码深度学习笔记"}</script>
-
-<script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>Elasticsearch 源码深度学习笔记 | 源码深读笔记</title>
   
-
-
-
-
-
-
-
-
+    <link rel="alternative" href="/atom.xml" title="源码深读笔记" type="application/atom+xml">
   
-<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
-
+  <meta name="summary" content="主流基础设施、框架与 JDK 的源码级深度学习笔记">
+  <link rel="shortcut icon" href="/img/favicon.ico">
   
+<link rel="stylesheet" href="/css/style.css">
 
-  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.10.1/mermaid.min.js","integrity":"sha256-BmQmdWDS8X2OTbrwELWK366LV6escyWhHHe0XCTU/Hk="}}</script>
-  <script src="/js/third-party/tags/mermaid.js" defer></script>
+<meta name="generator" content="Hexo 7.3.0"></head>
 
+<body>
+  <div id="loading" class="active"></div>
 
-
-
-
-  
-
-
-
-
-
-  <noscript>
-    <link rel="stylesheet" href="/css/noscript.css">
-  </noscript>
-</head>
-
-<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
-  <div class="headband"></div>
-
-  <main class="main">
-    <div class="column">
-      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
-  <div class="site-nav-toggle">
-    <div class="toggle" aria-label="切换导航栏" role="button">
-        <span class="toggle-line"></span>
-        <span class="toggle-line"></span>
-        <span class="toggle-line"></span>
-    </div>
-  </div>
-
-  <div class="site-meta">
-
-    <a href="/" class="brand" rel="start">
-      <i class="logo-line"></i>
-      <p class="site-title">源码深读笔记</p>
-      <i class="logo-line"></i>
-    </a>
-      <p class="site-subtitle" itemprop="description">Kafka / Nacos / Spring / Redis / MySQL / ES / Java / JVM / RAG</p>
-  </div>
-
-  <div class="site-nav-right">
-    <div class="toggle popup-trigger" aria-label="搜索" role="button">
-    </div>
-  </div>
-</div>
-
-
-
-<nav class="site-nav">
-  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
-  </ul>
-</nav>
-
-
-
-
-</header>
+  <nav id="menu" class="hide" >
+   <div class="inner flex-row-vertical">
+  <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="menu-off">
+      <i class="icon icon-lg icon-close"></i>
+  </a>
+  <div class="brand-wrap">
+    <div class="brand">
+      <a href="/" class="avatar"><img src="/img/avatar.jpg"></a>
+      <hgroup class="introduce">
+        <h5 class="nickname">gyc</h5>
         
-  
-  <aside class="sidebar">
+      </hgroup>
+    </div>
+  </div>
+  <div class="scroll-wrap flex-col">
+    <ul class="nav">
+      
+          <li class="waves-block waves-effect">
+            <a href="/"  >
+              <i class="icon icon-lg icon-home"></i>
+              主页
+            </a>
+          </li>
+      
+          <li class="waves-block waves-effect">
+            <a href="/archives"  >
+              <i class="icon icon-lg icon-archive"></i>
+              归档
+            </a>
+          </li>
+      
+          <li class="waves-block waves-effect">
+            <a href="/categories"  >
+              <i class="icon icon-lg icon-th-list"></i>
+              分类
+            </a>
+          </li>
+      
+          <li class="waves-block waves-effect">
+            <a href="/tags"  >
+              <i class="icon icon-lg icon-tags"></i>
+              标签
+            </a>
+          </li>
+      
+    </ul>
 
-    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
-      <ul class="sidebar-nav">
-        <li class="sidebar-nav-toc">
-          文章目录
-        </li>
-        <li class="sidebar-nav-overview">
-          站点概览
-        </li>
-      </ul>
+    <footer class="footer">
+  <p>源码深读笔记 &copy; 2026</p>
+  <p>Power by <a href="http://hexo.io/" target="_blank">Hexo</a> Theme
+  <a href="https://github.com/yscoder/hexo-theme-indigo" target="_blank">indigo</a></p>
+  <a href="/atom.xml" target="_blank" class="rss" title="rss"><i class="icon icon-2x icon-rss-square"></i></a>
+</footer>
 
-      <div class="sidebar-panel-container">
-        <!--noindex-->
-        <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95"><span class="nav-number">1.</span> <span class="nav-text">目录</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E3%80%87%E3%80%81%E5%85%A8%E6%99%AF%E5%9C%B0%E5%9B%BE"><span class="nav-number">2.</span> <span class="nav-text">〇、全景地图</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%89%E6%9D%A1%E4%B8%BB%E7%BA%BF"><span class="nav-number">2.1.</span> <span class="nav-text">三条主线</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%9F%E8%A7%88%EF%BC%9A%E5%85%AD%E8%AE%B2%E5%90%84%E8%87%AA%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88%EF%BC%88%E5%85%88%E7%9C%8B%E8%BF%99%E4%B8%AA%E5%86%8D%E8%BF%9B%E7%BB%86%E8%8A%82%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">速览：六讲各自做了什么（先看这个再进细节）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9D%A2%E8%AF%95%E9%80%9F%E9%80%9A%EF%BC%9AES-%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86%E4%B8%80%E9%A1%B5%E7%BA%B8"><span class="nav-number">4.</span> <span class="nav-text">面试速通：ES 核心知识一页纸</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%EF%BC%88%E7%B1%BB%E6%AF%94%E6%95%B0%E6%8D%AE%E5%BA%93%EF%BC%89"><span class="nav-number">4.1.</span> <span class="nav-text">1. 核心概念（类比数据库）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B%EF%BC%88%E7%AC%AC%E4%B8%89%E8%AE%B2-%E7%AC%AC%E4%BA%94%E8%AE%B2%E7%9A%84%E7%B2%BE%E8%AF%BB%E5%9F%BA%E7%A1%80%EF%BC%89"><span class="nav-number">4.2.</span> <span class="nav-text">2. 读写流程（第三讲&#x2F;第五讲的精读基础）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%A0%B8%E5%BF%83%E6%9C%BA%E5%88%B6%E4%B8%8E%E5%88%86%E7%89%87%E7%AD%96%E7%95%A5%EF%BC%88%E7%AC%AC%E4%B8%89%E8%AE%B2-%E7%AC%AC%E5%85%AD%E8%AE%B2%EF%BC%89"><span class="nav-number">4.3.</span> <span class="nav-text">3. 核心机制与分片策略（第三讲&#x2F;第六讲）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E6%9F%A5%E8%AF%A2%E7%B1%BB%E5%9E%8B%EF%BC%88%E7%AC%AC%E5%9B%9B%E8%AE%B2%EF%BC%89"><span class="nav-number">4.4.</span> <span class="nav-text">4. 查询类型（第四讲）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E7%9B%B8%E5%85%B3%E6%80%A7%E8%AF%84%E5%88%86%EF%BC%9ABM25%EF%BC%88%E7%AC%AC%E5%9B%9B%E8%AE%B2%EF%BC%89"><span class="nav-number">4.5.</span> <span class="nav-text">5. 相关性评分：BM25（第四讲）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-%E5%88%86%E8%AF%8D%E5%99%A8%E4%B8%8E-Mapping%EF%BC%88%E7%AC%AC%E4%BA%8C%E8%AE%B2%EF%BC%89"><span class="nav-number">4.6.</span> <span class="nav-text">6. 分词器与 Mapping（第二讲）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-%E4%B8%8E%E5%85%B3%E7%B3%BB%E5%9E%8B%E6%95%B0%E6%8D%AE%E5%BA%93%E9%80%89%E5%9E%8B"><span class="nav-number">4.7.</span> <span class="nav-text">7. 与关系型数据库选型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-%E9%9D%A2%E8%AF%95%E9%80%9F%E6%9F%A5%E4%BA%94%E4%B8%BB%E7%BA%BF"><span class="nav-number">4.8.</span> <span class="nav-text">8. 面试速查五主线</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%88%E5%B9%B6%E5%8B%98%E8%AF%AF%E8%A1%A8%EF%BC%88%E5%8E%9F-es-md-%E2%86%92-%E6%A0%A1%E6%AD%A3%E5%90%8E%EF%BC%89"><span class="nav-number">4.9.</span> <span class="nav-text">合并勘误表（原 es.md → 校正后）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%EF%BC%9A%E8%8A%82%E7%82%B9%E5%90%AF%E5%8A%A8%E4%B8%8E%E9%9B%86%E7%BE%A4%E5%8F%91%E7%8E%B0-%E2%80%94%E2%80%94-Bootstrap-Node-Coordinator"><span class="nav-number">5.</span> <span class="nav-text">第一讲：节点启动与集群发现 —— Bootstrap &#x2F; Node &#x2F; Coordinator</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88"><span class="nav-number">5.1.</span> <span class="nav-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84"><span class="nav-number">5.2.</span> <span class="nav-text">目录结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB"><span class="nav-number">5.3.</span> <span class="nav-text">逐文件精读</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1%EF%BC%89bootstrap-Elasticsearch-java-%E2%80%94%E2%80%94-%E8%BF%9B%E7%A8%8B%E5%85%A5%E5%8F%A3%E4%B8%89%E9%98%B6%E6%AE%B5"><span class="nav-number">5.3.1.</span> <span class="nav-text">1）bootstrap&#x2F;Elasticsearch.java —— 进程入口三阶段</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2%EF%BC%89node-Node-java-%E2%80%94%E2%80%94-%E8%8A%82%E7%82%B9%E7%9A%84%E2%80%9D%E8%A3%85%E9%85%8D-%E5%BC%80%E6%9C%BA%E2%80%9D"><span class="nav-number">5.3.2.</span> <span class="nav-text">2）node&#x2F;Node.java —— 节点的”装配 + 开机”</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3%EF%BC%89discovery-DiscoveryModule-java-%E2%80%94%E2%80%94-%E8%A3%85%E9%85%8D-Coordinator"><span class="nav-number">5.3.3.</span> <span class="nav-text">3）discovery&#x2F;DiscoveryModule.java —— 装配 Coordinator</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4%EF%BC%89cluster-coordination-Coordinator-java-%E2%80%94%E2%80%94-Raft-%E6%94%B9%E8%89%AF%E6%A0%B8%E5%BF%83"><span class="nav-number">5.3.4.</span> <span class="nav-text">4）cluster&#x2F;coordination&#x2F;Coordinator.java —— Raft 改良核心</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5%EF%BC%89cluster-coordination-CoordinationState-java-%E2%80%94%E2%80%94-%E9%80%89%E4%B8%BE%E7%8A%B6%E6%80%81%E6%9C%BA"><span class="nav-number">5.3.5.</span> <span class="nav-text">5）cluster&#x2F;coordination&#x2F;CoordinationState.java —— 选举状态机</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6%EF%BC%89cluster-coordination-CoordinationMetadata-java-%E2%80%94%E2%80%94-%E5%A4%9A%E6%95%B0%E6%B4%BE%E5%88%A4%E5%AE%9A"><span class="nav-number">5.3.6.</span> <span class="nav-text">6）cluster&#x2F;coordination&#x2F;CoordinationMetadata.java —— 多数派判定</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7%EF%BC%89cluster-coordination-ClusterBootstrapService-java-%E2%80%94%E2%80%94-%E9%A6%96%E6%AC%A1%E9%9B%86%E7%BE%A4%E5%BC%95%E5%AF%BC"><span class="nav-number">5.3.7.</span> <span class="nav-text">7）cluster&#x2F;coordination&#x2F;ClusterBootstrapService.java —— 首次集群引导</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#8%EF%BC%89cluster-service-ClusterService-java-MasterService-ClusterApplierService"><span class="nav-number">5.3.8.</span> <span class="nav-text">8）cluster&#x2F;service&#x2F;ClusterService.java + MasterService + ClusterApplierService</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#9%EF%BC%89cluster-node-DiscoveryNode-java-DiscoveryNodeRole-java-%E2%80%94%E2%80%94-%E8%A7%92%E8%89%B2%E5%88%86%E7%A6%BB"><span class="nav-number">5.3.9.</span> <span class="nav-text">9）cluster&#x2F;node&#x2F;DiscoveryNode.java + DiscoveryNodeRole.java —— 角色分离</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#10%EF%BC%89ClusterState-java-%E2%80%94%E2%80%94-%E9%9B%86%E7%BE%A4%E7%8A%B6%E6%80%81%E5%BF%AB%E7%85%A7"><span class="nav-number">5.3.10.</span> <span class="nav-text">10）ClusterState.java —— 集群状态快照</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E4%B8%80%E4%B8%AA%E8%BF%9B%E7%A8%8B%E5%A6%82%E4%BD%95%E5%8F%98%E6%88%90%E2%80%9D%E9%9B%86%E7%BE%A4%E6%88%90%E5%91%98%E2%80%9D%EF%BC%8C%E4%BB%A5%E5%8F%8A-Raft-%E6%94%B9%E8%89%AF%E5%A6%82%E4%BD%95%E9%98%B2%E8%84%91%E8%A3%82"><span class="nav-number">5.4.</span> <span class="nav-text">第一讲小结：一个进程如何变成”集群成员”，以及 Raft 改良如何防脑裂</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%EF%BC%9A%E7%B4%A2%E5%BC%95%E4%B8%8E%E5%88%86%E7%89%87-%E2%80%94%E2%80%94-IndexService-IndexShard-AllocationService"><span class="nav-number">6.</span> <span class="nav-text">第二讲：索引与分片 —— IndexService &#x2F; IndexShard &#x2F; AllocationService</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-1"><span class="nav-number">6.1.</span> <span class="nav-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84-1"><span class="nav-number">6.2.</span> <span class="nav-text">目录结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-1"><span class="nav-number">6.3.</span> <span class="nav-text">逐文件精读</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1%EF%BC%89indices-IndicesService-java-%E2%80%94%E2%80%94-%E7%B4%A2%E5%BC%95%E6%9C%8D%E5%8A%A1%E6%80%BB%E7%AE%A1"><span class="nav-number">6.3.1.</span> <span class="nav-text">1）indices&#x2F;IndicesService.java —— 索引服务总管</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2%EF%BC%89index-IndexService-java-%E2%80%94%E2%80%94-%E5%8D%95%E7%B4%A2%E5%BC%95%E6%9C%8D%E5%8A%A1"><span class="nav-number">6.3.2.</span> <span class="nav-text">2）index&#x2F;IndexService.java —— 单索引服务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3%EF%BC%89index-shard-IndexShard-java-%E2%80%94%E2%80%94-%E5%88%86%E7%89%87%E6%9C%AC%E4%BD%93"><span class="nav-number">6.3.3.</span> <span class="nav-text">3）index&#x2F;shard&#x2F;IndexShard.java —— 分片本体</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4%EF%BC%89cluster-routing-allocation-AllocationService-java-%E2%80%94%E2%80%94-%E5%88%86%E9%85%8D%E5%86%B3%E7%AD%96"><span class="nav-number">6.3.4.</span> <span class="nav-text">4）cluster&#x2F;routing&#x2F;allocation&#x2F;AllocationService.java —— 分配决策</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5%EF%BC%89index-mapper-MapperService-java-%E2%80%94%E2%80%94-mapping-%E8%A7%A3%E6%9E%90"><span class="nav-number">6.3.5.</span> <span class="nav-text">5）index&#x2F;mapper&#x2F;MapperService.java —— mapping 解析</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6%EF%BC%89index-IndexSettings-java-%E2%80%94%E2%80%94-%E7%B4%A2%E5%BC%95%E7%BA%A7-setting-%E7%BC%93%E5%AD%98"><span class="nav-number">6.3.6.</span> <span class="nav-text">6）index&#x2F;IndexSettings.java —— 索引级 setting 缓存</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7%EF%BC%89index-similarity-SimilarityProviders-java-%E2%80%94%E2%80%94-%E9%BB%98%E8%AE%A4%E6%89%93%E5%88%86-BM25"><span class="nav-number">6.3.7.</span> <span class="nav-text">7）index&#x2F;similarity&#x2F;SimilarityProviders.java —— 默认打分 BM25</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E5%88%86%E7%89%87%E6%98%AF%E2%80%9D%E8%A2%AB%E5%88%86%E9%85%8D-%E8%A2%AB%E5%88%9B%E5%BB%BA-%E8%A2%AB%E6%98%A0%E5%B0%84%E2%80%9D%E7%9A%84%E4%B8%89%E6%AE%B5%E5%BC%8F%E8%90%BD%E5%9C%B0"><span class="nav-number">6.4.</span> <span class="nav-text">第二讲小结：分片是”被分配 + 被创建 + 被映射”的三段式落地</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%EF%BC%9A%E5%86%99%E5%85%A5%E8%B7%AF%E5%BE%84-%E2%80%94%E2%80%94-TransportBulkAction-IndexShard-Translog-Refresh"><span class="nav-number">7.</span> <span class="nav-text">第三讲：写入路径 —— TransportBulkAction &#x2F; IndexShard &#x2F; Translog &#x2F; Refresh</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-2"><span class="nav-number">7.1.</span> <span class="nav-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84-2"><span class="nav-number">7.2.</span> <span class="nav-text">目录结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-2"><span class="nav-number">7.3.</span> <span class="nav-text">逐文件精读</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1%EF%BC%89action-bulk-TransportBulkAction-java-%E2%80%94%E2%80%94-bulk-%E5%8D%8F%E8%B0%83%E5%85%A5%E5%8F%A3"><span class="nav-number">7.3.1.</span> <span class="nav-text">1）action&#x2F;bulk&#x2F;TransportBulkAction.java —— bulk 协调入口</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2%EF%BC%89action-bulk-TransportShardBulkAction-java-%E2%80%94%E2%80%94-%E5%88%86%E7%89%87%E7%BA%A7-bulk-%E8%90%BD%E5%9C%B0"><span class="nav-number">7.3.2.</span> <span class="nav-text">2）action&#x2F;bulk&#x2F;TransportShardBulkAction.java —— 分片级 bulk 落地</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3%EF%BC%89action-index-TransportIndexAction-java-%E2%80%94%E2%80%94-%E5%8D%95%E6%96%87%E6%A1%A3-index"><span class="nav-number">7.3.3.</span> <span class="nav-text">3）action&#x2F;index&#x2F;TransportIndexAction.java —— 单文档 index</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4%EF%BC%89action-support-replication-TransportWriteAction-java-%E2%80%94%E2%80%94-%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6%E6%8A%BD%E8%B1%A1"><span class="nav-number">7.3.4.</span> <span class="nav-text">4）action&#x2F;support&#x2F;replication&#x2F;TransportWriteAction.java —— 主从复制抽象</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5%EF%BC%89index-shard-IndexShard-java-%E2%80%94%E2%80%94-%E5%86%99%E5%85%A5%E6%A0%B8%E5%BF%83"><span class="nav-number">7.3.5.</span> <span class="nav-text">5）index&#x2F;shard&#x2F;IndexShard.java —— 写入核心</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6%EF%BC%89index-translog-Translog-java-%E2%80%94%E2%80%94-%E4%BA%8B%E5%8A%A1%E6%97%A5%E5%BF%97"><span class="nav-number">7.3.6.</span> <span class="nav-text">6）index&#x2F;translog&#x2F;Translog.java —— 事务日志</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7%EF%BC%89IndexShard-flush-IndexShard-refresh"><span class="nav-number">7.3.7.</span> <span class="nav-text">7）IndexShard.flush + IndexShard.refresh</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#8%EF%BC%89%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%B5%81%E7%A8%8B%EF%BC%9A%E4%B8%80%E6%9D%A1%E6%96%87%E6%A1%A3%E4%BB%8E-bulk-%E5%88%B0-Lucene-segment"><span class="nav-number">7.3.8.</span> <span class="nav-text">8）端到端流程：一条文档从 bulk 到 Lucene segment</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E5%86%99%E5%85%A5%E6%98%AF%E2%80%9D%E8%B7%AF%E7%94%B1-%E8%90%BD-primary-%E5%A4%8D%E5%88%B6-refresh-flush%E2%80%9D%E4%BA%94%E6%AE%B5%E5%BC%8F"><span class="nav-number">7.4.</span> <span class="nav-text">第三讲小结：写入是”路由 + 落 primary + 复制 + refresh + flush”五段式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%EF%BC%9A%E6%9F%A5%E8%AF%A2%E4%B8%8E%E6%90%9C%E7%B4%A2-%E2%80%94%E2%80%94-SearchService-QueryPhase-Aggregation"><span class="nav-number">8.</span> <span class="nav-text">第四讲：查询与搜索 —— SearchService &#x2F; QueryPhase &#x2F; Aggregation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-3"><span class="nav-number">8.1.</span> <span class="nav-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84-3"><span class="nav-number">8.2.</span> <span class="nav-text">目录结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-3"><span class="nav-number">8.3.</span> <span class="nav-text">逐文件精读</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1%EF%BC%89search-SearchService-java-%E2%80%94%E2%80%94-%E6%90%9C%E7%B4%A2%E6%9C%8D%E5%8A%A1"><span class="nav-number">8.3.1.</span> <span class="nav-text">1）search&#x2F;SearchService.java —— 搜索服务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2%EF%BC%89search-query-QueryPhase-java-%E2%80%94%E2%80%94-query-phase-%E4%B8%BB%E4%BD%93"><span class="nav-number">8.3.2.</span> <span class="nav-text">2）search&#x2F;query&#x2F;QueryPhase.java —— query phase 主体</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3%EF%BC%89search-aggregations-Aggregator-java-%E2%80%94%E2%80%94-%E8%81%9A%E5%90%88%E5%99%A8%E6%8A%BD%E8%B1%A1"><span class="nav-number">8.3.3.</span> <span class="nav-text">3）search&#x2F;aggregations&#x2F;Aggregator.java —— 聚合器抽象</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4%EF%BC%89search-fetch-FetchPhase-java-search-dfs-DfsPhase-java"><span class="nav-number">8.3.4.</span> <span class="nav-text">4）search&#x2F;fetch&#x2F;FetchPhase.java + search&#x2F;dfs&#x2F;DfsPhase.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5%EF%BC%89search-internal-SearchContext-java-%E2%80%94%E2%80%94-%E6%9F%A5%E8%AF%A2%E4%B8%8A%E4%B8%8B%E6%96%87"><span class="nav-number">8.3.5.</span> <span class="nav-text">5）search&#x2F;internal&#x2F;SearchContext.java —— 查询上下文</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6%EF%BC%89action-search-TransportSearchAction-java-%E7%9A%84-doExecute-%E5%85%A5%E5%8F%A3"><span class="nav-number">8.3.6.</span> <span class="nav-text">6）action&#x2F;search&#x2F;TransportSearchAction.java 的 doExecute 入口</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E6%9F%A5%E8%AF%A2%E6%98%AF%E2%80%9DcanMatch-%E7%9F%AD%E8%B7%AF-Lucene-%E4%B8%80%E6%AC%A1-search-aggregator-%E5%90%8C%E8%B7%91-fetch-%E6%8C%89%E9%9C%80%E2%80%9D"><span class="nav-number">8.4.</span> <span class="nav-text">第四讲小结：查询是”canMatch 短路 + Lucene 一次 search + aggregator 同跑 + fetch 按需”</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%EF%BC%9A%E5%88%86%E5%B8%83%E5%BC%8F%E6%89%A7%E8%A1%8C%E4%B8%8E%E5%8D%8F%E8%B0%83-%E2%80%94%E2%80%94-TransportSearchAction-%E4%B8%A4%E9%98%B6%E6%AE%B5-Scroll-Task"><span class="nav-number">9.</span> <span class="nav-text">第五讲：分布式执行与协调 —— TransportSearchAction 两阶段 &#x2F; Scroll &#x2F; Task</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-4"><span class="nav-number">9.1.</span> <span class="nav-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84-4"><span class="nav-number">9.2.</span> <span class="nav-text">目录结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-4"><span class="nav-number">9.3.</span> <span class="nav-text">逐文件精读</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1%EF%BC%89action-search-TransportSearchAction-java-%E2%80%94%E2%80%94-%E5%8D%8F%E8%B0%83%E8%8A%82%E7%82%B9%E5%85%A5%E5%8F%A3"><span class="nav-number">9.3.1.</span> <span class="nav-text">1）action&#x2F;search&#x2F;TransportSearchAction.java —— 协调节点入口</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2%EF%BC%89action-search-AbstractSearchAsyncAction-java-%E2%80%94%E2%80%94-%E5%BC%82%E6%AD%A5%E5%8A%A8%E4%BD%9C%E5%9F%BA%E7%B1%BB"><span class="nav-number">9.3.2.</span> <span class="nav-text">2）action&#x2F;search&#x2F;AbstractSearchAsyncAction.java —— 异步动作基类</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3%EF%BC%89action-search-SearchQueryThenFetchAsyncAction-java-FetchSearchPhase-java"><span class="nav-number">9.3.3.</span> <span class="nav-text">3）action&#x2F;search&#x2F;SearchQueryThenFetchAsyncAction.java + FetchSearchPhase.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4%EF%BC%89action-search-SearchDfsQueryThenFetchAsyncAction-java"><span class="nav-number">9.3.4.</span> <span class="nav-text">4）action&#x2F;search&#x2F;SearchDfsQueryThenFetchAsyncAction.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5%EF%BC%89scroll-%E2%80%94%E2%80%94-%E6%B7%B1%E7%BF%BB%E9%A1%B5"><span class="nav-number">9.3.5.</span> <span class="nav-text">5）scroll —— 深翻页</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6%EF%BC%89tasks-Task-java-%E2%80%94%E2%80%94-%E4%BB%BB%E5%8A%A1%E8%BF%BD%E8%B8%AA"><span class="nav-number">9.3.6.</span> <span class="nav-text">6）tasks&#x2F;Task.java —— 任务追踪</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7%EF%BC%89%E5%88%86%E7%89%87%E7%BA%A7%E8%AF%B7%E6%B1%82-TransportShardAction"><span class="nav-number">9.3.7.</span> <span class="nav-text">7）分片级请求 TransportShardAction</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E5%88%86%E5%B8%83%E5%BC%8F%E6%90%9C%E7%B4%A2%E6%98%AF%E2%80%9Dscatter-query-%E2%86%92-gather-%E5%BD%92%E5%B9%B6-%E2%86%92-scatter-fetch%E2%80%9D"><span class="nav-number">9.4.</span> <span class="nav-text">第五讲小结：分布式搜索是”scatter-query → gather-归并 → scatter-fetch”</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E5%85%AD%E8%AE%B2%EF%BC%9Arecovery-%E4%B8%8E%E6%95%85%E9%9A%9C%E8%BD%AC%E7%A7%BB-%E2%80%94%E2%80%94-PeerRecovery-SeqNo-Snapshot"><span class="nav-number">10.</span> <span class="nav-text">第六讲：recovery 与故障转移 —— PeerRecovery &#x2F; SeqNo &#x2F; Snapshot</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-5"><span class="nav-number">10.1.</span> <span class="nav-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84-5"><span class="nav-number">10.2.</span> <span class="nav-text">目录结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-5"><span class="nav-number">10.3.</span> <span class="nav-text">逐文件精读</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1%EF%BC%89indices-recovery-PeerRecoverySourceService-java-%E2%80%94%E2%80%94-%E6%BA%90%E7%AB%AF%E6%9C%8D%E5%8A%A1"><span class="nav-number">10.3.1.</span> <span class="nav-text">1）indices&#x2F;recovery&#x2F;PeerRecoverySourceService.java —— 源端服务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2%EF%BC%89indices-recovery-PeerRecoveryTargetService-java-%E2%80%94%E2%80%94-%E7%9B%AE%E6%A0%87%E7%AB%AF%E6%9C%8D%E5%8A%A1"><span class="nav-number">10.3.2.</span> <span class="nav-text">2）indices&#x2F;recovery&#x2F;PeerRecoveryTargetService.java —— 目标端服务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3%EF%BC%89indices-recovery-RecoverySourceHandler-java-%E2%80%94%E2%80%94-recovery-%E4%B8%BB%E4%BD%93"><span class="nav-number">10.3.3.</span> <span class="nav-text">3）indices&#x2F;recovery&#x2F;RecoverySourceHandler.java —— recovery 主体</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4%EF%BC%89index-seqno-ReplicationTracker-java-SequenceNumbers-java-%E2%80%94%E2%80%94-seqNo-%E4%BD%93%E7%B3%BB"><span class="nav-number">10.3.4.</span> <span class="nav-text">4）index&#x2F;seqno&#x2F;ReplicationTracker.java + SequenceNumbers.java —— seqNo 体系</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5%EF%BC%89RetentionLease-%E2%80%94%E2%80%94-%E9%98%B2%E6%AD%A2%E4%B8%BB%E5%88%86%E7%89%87%E8%BF%87%E6%97%A9%E6%B8%85%E7%90%86"><span class="nav-number">10.3.5.</span> <span class="nav-text">5）RetentionLease —— 防止主分片过早清理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6%EF%BC%89snapshots-SnapshotsService-java-%E2%80%94%E2%80%94-%E5%BF%AB%E7%85%A7%E4%B8%BB%E6%9C%8D%E5%8A%A1"><span class="nav-number">10.3.6.</span> <span class="nav-text">6）snapshots&#x2F;SnapshotsService.java —— 快照主服务</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E5%85%AD%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9Arecovery-%E6%98%AF%E2%80%9Dphase1-%E6%AE%B5-phase2-translog-seqNo-%E7%BB%AD%E4%BC%A0-finalize-%E5%90%8C%E6%AD%A5-checkpoint%E2%80%9D"><span class="nav-number">10.4.</span> <span class="nav-text">第六讲小结：recovery 是”phase1 段 + phase2 translog + seqNo 续传 + finalize 同步 checkpoint”</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%BC%94%E7%AE%97"><span class="nav-number">11.</span> <span class="nav-text">端到端演算</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%94%E7%AE%97-1%EF%BC%9A%E4%B8%80%E4%B8%AA%E6%96%87%E6%A1%A3%E4%BB%8E-bulk-API-%E5%88%B0-lucene-segment-%E8%90%BD%E7%9B%98"><span class="nav-number">11.1.</span> <span class="nav-text">演算 1：一个文档从 bulk API 到 lucene segment 落盘</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%94%E7%AE%97-2%EF%BC%9A%E4%B8%80%E4%B8%AA%E6%90%9C%E7%B4%A2%E8%AF%B7%E6%B1%82%E7%9A%84%E4%B8%A4%E9%98%B6%E6%AE%B5%EF%BC%88query-then-fetch%EF%BC%89%E5%88%86%E5%B8%83%E5%BC%8F%E6%89%A7%E8%A1%8C"><span class="nav-number">11.2.</span> <span class="nav-text">演算 2：一个搜索请求的两阶段（query then fetch）分布式执行</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%99%84%EF%BC%9A%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E4%B8%8E%E5%A4%8D%E4%B9%A0%E5%8D%A1%E6%B1%87%E6%80%BB"><span class="nav-number">12.</span> <span class="nav-text">附：学习路线与复习卡汇总</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BB%BA%E8%AE%AE%E9%98%85%E8%AF%BB%E9%A1%BA%E5%BA%8F"><span class="nav-number">12.1.</span> <span class="nav-text">建议阅读顺序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%8D%E4%B9%A0%E5%8D%A1%EF%BC%88%E6%8C%89%E8%AE%B2%E6%AC%A1%E7%BC%96%E5%8F%B7%EF%BC%8C%E4%BE%BF%E4%BA%8E%E5%9B%9E%E6%9F%A5%EF%BC%89"><span class="nav-number">12.2.</span> <span class="nav-text">复习卡（按讲次编号，便于回查）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%97%A0%E6%B3%95%E6%A0%B8%E5%AF%B9-%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E8%AF%B4%E6%98%8E"><span class="nav-number">12.3.</span> <span class="nav-text">无法核对 &#x2F; 需注意的说明</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B6%89%E5%8F%8A%E6%96%87%E4%BB%B6%E7%B4%A2%E5%BC%95"><span class="nav-number">13.</span> <span class="nav-text">涉及文件索引</span></a></li></ol></div>
-        </div>
-        <!--/noindex-->
-
-        <div class="site-overview-wrap sidebar-panel">
-          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
-  <p class="site-author-name" itemprop="name">gyc</p>
-  <div class="site-description" itemprop="description">主流基础设施、框架与 JDK 的源码级深度学习笔记</div>
+  </div>
 </div>
-<div class="site-state-wrap animated">
-  <nav class="site-state">
-      <div class="site-state-item site-state-posts">
-        <a href="/archives/">
-          <span class="site-state-item-count">19</span>
-          <span class="site-state-item-name">日志</span>
-        </a>
-      </div>
-      <div class="site-state-item site-state-categories">
-          <a href="/categories/">
-        <span class="site-state-item-count">5</span>
-        <span class="site-state-item-name">分类</span></a>
-      </div>
-      <div class="site-state-item site-state-tags">
-          <a href="/tags/">
-        <span class="site-state-item-count">26</span>
-        <span class="site-state-item-name">标签</span></a>
-      </div>
+
   </nav>
-</div>
-
+  <main id="main">
+    <header class="top-header" id="header">
+    <div class="flex-row">
+        <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light on" id="menu-toggle">
+          <i class="icon icon-lg icon-navicon"></i>
+        </a>
+        <div class="flex-col header-title ellipsis">Elasticsearch 源码深度学习笔记</div>
+        
+        <div class="search-wrap" id="search-wrap">
+            <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="back">
+                <i class="icon icon-lg icon-chevron-left"></i>
+            </a>
+            <input type="text" id="key" class="search-input " autocomplete="off" placeholder="输入感兴趣的关键字">
+            <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="search">
+                <i class="icon icon-lg icon-search"></i>
+            </a>
         </div>
-      </div>
+        
+        
+        <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="menu-share">
+            <i class="icon icon-lg icon-share-alt"></i>
+        </a>
+        
     </div>
+</header>
+<header class="content-header">
+  <div class="container">
+    <h1 class="author">Elasticsearch 源码深度学习笔记</h1>
+    <h5 class="subtitle">
+        
+            <time datetime="2026-10-14T16:00:00.000Z" itemprop="datePublished" class="page-time">
+  2026-10-15
+</time>
 
-    
-  </aside>
 
+	<ul class="article-category-list"><li class="article-category-list-item"><a class="article-category-list-link" href="/categories/%E5%AD%98%E5%82%A8%E4%B8%8E%E7%BC%93%E5%AD%98/">存储与缓存</a></li></ul>
+
+        
+    </h5>
+  </div>
+</header>
+
+    <div class="container body-wrap">
+      <article id="post-elasticsearch" 
+  class="article article-type-post" itemprop="blogPost">
+    <div class="post-meta flex-row">
+        
+	<ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Elasticsearch/" rel="tag">Elasticsearch</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%BA%90%E7%A0%81/" rel="tag">源码</a></li></ul>
 
     </div>
+    <div class="post-body">
+        <aside class="post-widget" id="post-widget">
 
-    <div class="main-inner post posts-expand">
+            
+            <div class="post-share" id="post-share">
+    <div class="tit">分享到：</div>
+    <ul class="reset share-icons">
+      <li>
+        <a class="weibo share-sns" href="javascript:;" data-title="微博" data-service="tsina">
+          <i class="icon icon-weibo"></i>
+        </a>
+      </li>
+      <li>
+        <a class="weixin share-sns" href="javascript:;" data-title="微信" data-service="weixin">
+          <i class="icon icon-weixin"></i>
+        </a>
+      </li>
+      <li>
+        <a class="qq share-sns" href="javascript:;" data-title=" QQ" data-service="cqq">
+          <i class="icon icon-qq"></i>
+        </a>
+      </li>
+      <li>
+        <a class="facebook share-sns" href="javascript:;" data-title=" Facebook" data-service="fb">
+          <i class="icon icon-facebook"></i>
+        </a>
+      </li>
+      <li>
+        <a class="twitter share-sns" href="javascript:;" data-title=" Twitter" data-service="twitter">
+          <i class="icon icon-twitter"></i>
+        </a>
+      </li>
+      <li>
+        <a class="douban share-sns" href="javascript:;" data-title="豆瓣" data-service="douban">
+          豆
+        </a>
+      </li>
+    </ul>
+ </div>
 
+            
 
-  
+            
+            <nav class="post-toc-wrap" id="post-toc">
+            <ol class="post-toc"><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%9B%AE%E5%BD%95"><span class="post-toc-number">1.</span> <span class="post-toc-text">目录</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E3%80%87%E3%80%81%E5%85%A8%E6%99%AF%E5%9C%B0%E5%9B%BE"><span class="post-toc-number">2.</span> <span class="post-toc-text">〇、全景地图</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E4%B8%89%E6%9D%A1%E4%B8%BB%E7%BA%BF"><span class="post-toc-number">2.1.</span> <span class="post-toc-text">三条主线</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%80%9F%E8%A7%88%EF%BC%9A%E5%85%AD%E8%AE%B2%E5%90%84%E8%87%AA%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88%EF%BC%88%E5%85%88%E7%9C%8B%E8%BF%99%E4%B8%AA%E5%86%8D%E8%BF%9B%E7%BB%86%E8%8A%82%EF%BC%89"><span class="post-toc-number">3.</span> <span class="post-toc-text">速览：六讲各自做了什么（先看这个再进细节）</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%9D%A2%E8%AF%95%E9%80%9F%E9%80%9A%EF%BC%9AES-%E6%A0%B8%E5%BF%83%E7%9F%A5%E8%AF%86%E4%B8%80%E9%A1%B5%E7%BA%B8"><span class="post-toc-number">4.</span> <span class="post-toc-text">面试速通：ES 核心知识一页纸</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%EF%BC%88%E7%B1%BB%E6%AF%94%E6%95%B0%E6%8D%AE%E5%BA%93%EF%BC%89"><span class="post-toc-number">4.1.</span> <span class="post-toc-text">1. 核心概念（类比数据库）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B%EF%BC%88%E7%AC%AC%E4%B8%89%E8%AE%B2-%E7%AC%AC%E4%BA%94%E8%AE%B2%E7%9A%84%E7%B2%BE%E8%AF%BB%E5%9F%BA%E7%A1%80%EF%BC%89"><span class="post-toc-number">4.2.</span> <span class="post-toc-text">2. 读写流程（第三讲&#x2F;第五讲的精读基础）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-%E6%A0%B8%E5%BF%83%E6%9C%BA%E5%88%B6%E4%B8%8E%E5%88%86%E7%89%87%E7%AD%96%E7%95%A5%EF%BC%88%E7%AC%AC%E4%B8%89%E8%AE%B2-%E7%AC%AC%E5%85%AD%E8%AE%B2%EF%BC%89"><span class="post-toc-number">4.3.</span> <span class="post-toc-text">3. 核心机制与分片策略（第三讲&#x2F;第六讲）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#4-%E6%9F%A5%E8%AF%A2%E7%B1%BB%E5%9E%8B%EF%BC%88%E7%AC%AC%E5%9B%9B%E8%AE%B2%EF%BC%89"><span class="post-toc-number">4.4.</span> <span class="post-toc-text">4. 查询类型（第四讲）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#5-%E7%9B%B8%E5%85%B3%E6%80%A7%E8%AF%84%E5%88%86%EF%BC%9ABM25%EF%BC%88%E7%AC%AC%E5%9B%9B%E8%AE%B2%EF%BC%89"><span class="post-toc-number">4.5.</span> <span class="post-toc-text">5. 相关性评分：BM25（第四讲）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-%E5%88%86%E8%AF%8D%E5%99%A8%E4%B8%8E-Mapping%EF%BC%88%E7%AC%AC%E4%BA%8C%E8%AE%B2%EF%BC%89"><span class="post-toc-number">4.6.</span> <span class="post-toc-text">6. 分词器与 Mapping（第二讲）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#7-%E4%B8%8E%E5%85%B3%E7%B3%BB%E5%9E%8B%E6%95%B0%E6%8D%AE%E5%BA%93%E9%80%89%E5%9E%8B"><span class="post-toc-number">4.7.</span> <span class="post-toc-text">7. 与关系型数据库选型</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#8-%E9%9D%A2%E8%AF%95%E9%80%9F%E6%9F%A5%E4%BA%94%E4%B8%BB%E7%BA%BF"><span class="post-toc-number">4.8.</span> <span class="post-toc-text">8. 面试速查五主线</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%90%88%E5%B9%B6%E5%8B%98%E8%AF%AF%E8%A1%A8%EF%BC%88%E5%8E%9F-es-md-%E2%86%92-%E6%A0%A1%E6%AD%A3%E5%90%8E%EF%BC%89"><span class="post-toc-number">4.9.</span> <span class="post-toc-text">合并勘误表（原 es.md → 校正后）</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%EF%BC%9A%E8%8A%82%E7%82%B9%E5%90%AF%E5%8A%A8%E4%B8%8E%E9%9B%86%E7%BE%A4%E5%8F%91%E7%8E%B0-%E2%80%94%E2%80%94-Bootstrap-Node-Coordinator"><span class="post-toc-number">5.</span> <span class="post-toc-text">第一讲：节点启动与集群发现 —— Bootstrap &#x2F; Node &#x2F; Coordinator</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88"><span class="post-toc-number">5.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84"><span class="post-toc-number">5.2.</span> <span class="post-toc-text">目录结构</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB"><span class="post-toc-number">5.3.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89bootstrap-Elasticsearch-java-%E2%80%94%E2%80%94-%E8%BF%9B%E7%A8%8B%E5%85%A5%E5%8F%A3%E4%B8%89%E9%98%B6%E6%AE%B5"><span class="post-toc-number">5.3.1.</span> <span class="post-toc-text">1）bootstrap&#x2F;Elasticsearch.java —— 进程入口三阶段</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89node-Node-java-%E2%80%94%E2%80%94-%E8%8A%82%E7%82%B9%E7%9A%84%E2%80%9D%E8%A3%85%E9%85%8D-%E5%BC%80%E6%9C%BA%E2%80%9D"><span class="post-toc-number">5.3.2.</span> <span class="post-toc-text">2）node&#x2F;Node.java —— 节点的”装配 + 开机”</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89discovery-DiscoveryModule-java-%E2%80%94%E2%80%94-%E8%A3%85%E9%85%8D-Coordinator"><span class="post-toc-number">5.3.3.</span> <span class="post-toc-text">3）discovery&#x2F;DiscoveryModule.java —— 装配 Coordinator</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89cluster-coordination-Coordinator-java-%E2%80%94%E2%80%94-Raft-%E6%94%B9%E8%89%AF%E6%A0%B8%E5%BF%83"><span class="post-toc-number">5.3.4.</span> <span class="post-toc-text">4）cluster&#x2F;coordination&#x2F;Coordinator.java —— Raft 改良核心</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#5%EF%BC%89cluster-coordination-CoordinationState-java-%E2%80%94%E2%80%94-%E9%80%89%E4%B8%BE%E7%8A%B6%E6%80%81%E6%9C%BA"><span class="post-toc-number">5.3.5.</span> <span class="post-toc-text">5）cluster&#x2F;coordination&#x2F;CoordinationState.java —— 选举状态机</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#6%EF%BC%89cluster-coordination-CoordinationMetadata-java-%E2%80%94%E2%80%94-%E5%A4%9A%E6%95%B0%E6%B4%BE%E5%88%A4%E5%AE%9A"><span class="post-toc-number">5.3.6.</span> <span class="post-toc-text">6）cluster&#x2F;coordination&#x2F;CoordinationMetadata.java —— 多数派判定</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#7%EF%BC%89cluster-coordination-ClusterBootstrapService-java-%E2%80%94%E2%80%94-%E9%A6%96%E6%AC%A1%E9%9B%86%E7%BE%A4%E5%BC%95%E5%AF%BC"><span class="post-toc-number">5.3.7.</span> <span class="post-toc-text">7）cluster&#x2F;coordination&#x2F;ClusterBootstrapService.java —— 首次集群引导</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#8%EF%BC%89cluster-service-ClusterService-java-MasterService-ClusterApplierService"><span class="post-toc-number">5.3.8.</span> <span class="post-toc-text">8）cluster&#x2F;service&#x2F;ClusterService.java + MasterService + ClusterApplierService</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#9%EF%BC%89cluster-node-DiscoveryNode-java-DiscoveryNodeRole-java-%E2%80%94%E2%80%94-%E8%A7%92%E8%89%B2%E5%88%86%E7%A6%BB"><span class="post-toc-number">5.3.9.</span> <span class="post-toc-text">9）cluster&#x2F;node&#x2F;DiscoveryNode.java + DiscoveryNodeRole.java —— 角色分离</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#10%EF%BC%89ClusterState-java-%E2%80%94%E2%80%94-%E9%9B%86%E7%BE%A4%E7%8A%B6%E6%80%81%E5%BF%AB%E7%85%A7"><span class="post-toc-number">5.3.10.</span> <span class="post-toc-text">10）ClusterState.java —— 集群状态快照</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E4%B8%80%E4%B8%AA%E8%BF%9B%E7%A8%8B%E5%A6%82%E4%BD%95%E5%8F%98%E6%88%90%E2%80%9D%E9%9B%86%E7%BE%A4%E6%88%90%E5%91%98%E2%80%9D%EF%BC%8C%E4%BB%A5%E5%8F%8A-Raft-%E6%94%B9%E8%89%AF%E5%A6%82%E4%BD%95%E9%98%B2%E8%84%91%E8%A3%82"><span class="post-toc-number">5.4.</span> <span class="post-toc-text">第一讲小结：一个进程如何变成”集群成员”，以及 Raft 改良如何防脑裂</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%EF%BC%9A%E7%B4%A2%E5%BC%95%E4%B8%8E%E5%88%86%E7%89%87-%E2%80%94%E2%80%94-IndexService-IndexShard-AllocationService"><span class="post-toc-number">6.</span> <span class="post-toc-text">第二讲：索引与分片 —— IndexService &#x2F; IndexShard &#x2F; AllocationService</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-1"><span class="post-toc-number">6.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84-1"><span class="post-toc-number">6.2.</span> <span class="post-toc-text">目录结构</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-1"><span class="post-toc-number">6.3.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89indices-IndicesService-java-%E2%80%94%E2%80%94-%E7%B4%A2%E5%BC%95%E6%9C%8D%E5%8A%A1%E6%80%BB%E7%AE%A1"><span class="post-toc-number">6.3.1.</span> <span class="post-toc-text">1）indices&#x2F;IndicesService.java —— 索引服务总管</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89index-IndexService-java-%E2%80%94%E2%80%94-%E5%8D%95%E7%B4%A2%E5%BC%95%E6%9C%8D%E5%8A%A1"><span class="post-toc-number">6.3.2.</span> <span class="post-toc-text">2）index&#x2F;IndexService.java —— 单索引服务</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89index-shard-IndexShard-java-%E2%80%94%E2%80%94-%E5%88%86%E7%89%87%E6%9C%AC%E4%BD%93"><span class="post-toc-number">6.3.3.</span> <span class="post-toc-text">3）index&#x2F;shard&#x2F;IndexShard.java —— 分片本体</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89cluster-routing-allocation-AllocationService-java-%E2%80%94%E2%80%94-%E5%88%86%E9%85%8D%E5%86%B3%E7%AD%96"><span class="post-toc-number">6.3.4.</span> <span class="post-toc-text">4）cluster&#x2F;routing&#x2F;allocation&#x2F;AllocationService.java —— 分配决策</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#5%EF%BC%89index-mapper-MapperService-java-%E2%80%94%E2%80%94-mapping-%E8%A7%A3%E6%9E%90"><span class="post-toc-number">6.3.5.</span> <span class="post-toc-text">5）index&#x2F;mapper&#x2F;MapperService.java —— mapping 解析</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#6%EF%BC%89index-IndexSettings-java-%E2%80%94%E2%80%94-%E7%B4%A2%E5%BC%95%E7%BA%A7-setting-%E7%BC%93%E5%AD%98"><span class="post-toc-number">6.3.6.</span> <span class="post-toc-text">6）index&#x2F;IndexSettings.java —— 索引级 setting 缓存</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#7%EF%BC%89index-similarity-SimilarityProviders-java-%E2%80%94%E2%80%94-%E9%BB%98%E8%AE%A4%E6%89%93%E5%88%86-BM25"><span class="post-toc-number">6.3.7.</span> <span class="post-toc-text">7）index&#x2F;similarity&#x2F;SimilarityProviders.java —— 默认打分 BM25</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E5%88%86%E7%89%87%E6%98%AF%E2%80%9D%E8%A2%AB%E5%88%86%E9%85%8D-%E8%A2%AB%E5%88%9B%E5%BB%BA-%E8%A2%AB%E6%98%A0%E5%B0%84%E2%80%9D%E7%9A%84%E4%B8%89%E6%AE%B5%E5%BC%8F%E8%90%BD%E5%9C%B0"><span class="post-toc-number">6.4.</span> <span class="post-toc-text">第二讲小结：分片是”被分配 + 被创建 + 被映射”的三段式落地</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%EF%BC%9A%E5%86%99%E5%85%A5%E8%B7%AF%E5%BE%84-%E2%80%94%E2%80%94-TransportBulkAction-IndexShard-Translog-Refresh"><span class="post-toc-number">7.</span> <span class="post-toc-text">第三讲：写入路径 —— TransportBulkAction &#x2F; IndexShard &#x2F; Translog &#x2F; Refresh</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-2"><span class="post-toc-number">7.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84-2"><span class="post-toc-number">7.2.</span> <span class="post-toc-text">目录结构</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-2"><span class="post-toc-number">7.3.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89action-bulk-TransportBulkAction-java-%E2%80%94%E2%80%94-bulk-%E5%8D%8F%E8%B0%83%E5%85%A5%E5%8F%A3"><span class="post-toc-number">7.3.1.</span> <span class="post-toc-text">1）action&#x2F;bulk&#x2F;TransportBulkAction.java —— bulk 协调入口</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89action-bulk-TransportShardBulkAction-java-%E2%80%94%E2%80%94-%E5%88%86%E7%89%87%E7%BA%A7-bulk-%E8%90%BD%E5%9C%B0"><span class="post-toc-number">7.3.2.</span> <span class="post-toc-text">2）action&#x2F;bulk&#x2F;TransportShardBulkAction.java —— 分片级 bulk 落地</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89action-index-TransportIndexAction-java-%E2%80%94%E2%80%94-%E5%8D%95%E6%96%87%E6%A1%A3-index"><span class="post-toc-number">7.3.3.</span> <span class="post-toc-text">3）action&#x2F;index&#x2F;TransportIndexAction.java —— 单文档 index</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89action-support-replication-TransportWriteAction-java-%E2%80%94%E2%80%94-%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6%E6%8A%BD%E8%B1%A1"><span class="post-toc-number">7.3.4.</span> <span class="post-toc-text">4）action&#x2F;support&#x2F;replication&#x2F;TransportWriteAction.java —— 主从复制抽象</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#5%EF%BC%89index-shard-IndexShard-java-%E2%80%94%E2%80%94-%E5%86%99%E5%85%A5%E6%A0%B8%E5%BF%83"><span class="post-toc-number">7.3.5.</span> <span class="post-toc-text">5）index&#x2F;shard&#x2F;IndexShard.java —— 写入核心</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#6%EF%BC%89index-translog-Translog-java-%E2%80%94%E2%80%94-%E4%BA%8B%E5%8A%A1%E6%97%A5%E5%BF%97"><span class="post-toc-number">7.3.6.</span> <span class="post-toc-text">6）index&#x2F;translog&#x2F;Translog.java —— 事务日志</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#7%EF%BC%89IndexShard-flush-IndexShard-refresh"><span class="post-toc-number">7.3.7.</span> <span class="post-toc-text">7）IndexShard.flush + IndexShard.refresh</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#8%EF%BC%89%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%B5%81%E7%A8%8B%EF%BC%9A%E4%B8%80%E6%9D%A1%E6%96%87%E6%A1%A3%E4%BB%8E-bulk-%E5%88%B0-Lucene-segment"><span class="post-toc-number">7.3.8.</span> <span class="post-toc-text">8）端到端流程：一条文档从 bulk 到 Lucene segment</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E5%86%99%E5%85%A5%E6%98%AF%E2%80%9D%E8%B7%AF%E7%94%B1-%E8%90%BD-primary-%E5%A4%8D%E5%88%B6-refresh-flush%E2%80%9D%E4%BA%94%E6%AE%B5%E5%BC%8F"><span class="post-toc-number">7.4.</span> <span class="post-toc-text">第三讲小结：写入是”路由 + 落 primary + 复制 + refresh + flush”五段式</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%EF%BC%9A%E6%9F%A5%E8%AF%A2%E4%B8%8E%E6%90%9C%E7%B4%A2-%E2%80%94%E2%80%94-SearchService-QueryPhase-Aggregation"><span class="post-toc-number">8.</span> <span class="post-toc-text">第四讲：查询与搜索 —— SearchService &#x2F; QueryPhase &#x2F; Aggregation</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-3"><span class="post-toc-number">8.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84-3"><span class="post-toc-number">8.2.</span> <span class="post-toc-text">目录结构</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-3"><span class="post-toc-number">8.3.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89search-SearchService-java-%E2%80%94%E2%80%94-%E6%90%9C%E7%B4%A2%E6%9C%8D%E5%8A%A1"><span class="post-toc-number">8.3.1.</span> <span class="post-toc-text">1）search&#x2F;SearchService.java —— 搜索服务</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89search-query-QueryPhase-java-%E2%80%94%E2%80%94-query-phase-%E4%B8%BB%E4%BD%93"><span class="post-toc-number">8.3.2.</span> <span class="post-toc-text">2）search&#x2F;query&#x2F;QueryPhase.java —— query phase 主体</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89search-aggregations-Aggregator-java-%E2%80%94%E2%80%94-%E8%81%9A%E5%90%88%E5%99%A8%E6%8A%BD%E8%B1%A1"><span class="post-toc-number">8.3.3.</span> <span class="post-toc-text">3）search&#x2F;aggregations&#x2F;Aggregator.java —— 聚合器抽象</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89search-fetch-FetchPhase-java-search-dfs-DfsPhase-java"><span class="post-toc-number">8.3.4.</span> <span class="post-toc-text">4）search&#x2F;fetch&#x2F;FetchPhase.java + search&#x2F;dfs&#x2F;DfsPhase.java</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#5%EF%BC%89search-internal-SearchContext-java-%E2%80%94%E2%80%94-%E6%9F%A5%E8%AF%A2%E4%B8%8A%E4%B8%8B%E6%96%87"><span class="post-toc-number">8.3.5.</span> <span class="post-toc-text">5）search&#x2F;internal&#x2F;SearchContext.java —— 查询上下文</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#6%EF%BC%89action-search-TransportSearchAction-java-%E7%9A%84-doExecute-%E5%85%A5%E5%8F%A3"><span class="post-toc-number">8.3.6.</span> <span class="post-toc-text">6）action&#x2F;search&#x2F;TransportSearchAction.java 的 doExecute 入口</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E6%9F%A5%E8%AF%A2%E6%98%AF%E2%80%9DcanMatch-%E7%9F%AD%E8%B7%AF-Lucene-%E4%B8%80%E6%AC%A1-search-aggregator-%E5%90%8C%E8%B7%91-fetch-%E6%8C%89%E9%9C%80%E2%80%9D"><span class="post-toc-number">8.4.</span> <span class="post-toc-text">第四讲小结：查询是”canMatch 短路 + Lucene 一次 search + aggregator 同跑 + fetch 按需”</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%EF%BC%9A%E5%88%86%E5%B8%83%E5%BC%8F%E6%89%A7%E8%A1%8C%E4%B8%8E%E5%8D%8F%E8%B0%83-%E2%80%94%E2%80%94-TransportSearchAction-%E4%B8%A4%E9%98%B6%E6%AE%B5-Scroll-Task"><span class="post-toc-number">9.</span> <span class="post-toc-text">第五讲：分布式执行与协调 —— TransportSearchAction 两阶段 &#x2F; Scroll &#x2F; Task</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-4"><span class="post-toc-number">9.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84-4"><span class="post-toc-number">9.2.</span> <span class="post-toc-text">目录结构</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-4"><span class="post-toc-number">9.3.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89action-search-TransportSearchAction-java-%E2%80%94%E2%80%94-%E5%8D%8F%E8%B0%83%E8%8A%82%E7%82%B9%E5%85%A5%E5%8F%A3"><span class="post-toc-number">9.3.1.</span> <span class="post-toc-text">1）action&#x2F;search&#x2F;TransportSearchAction.java —— 协调节点入口</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89action-search-AbstractSearchAsyncAction-java-%E2%80%94%E2%80%94-%E5%BC%82%E6%AD%A5%E5%8A%A8%E4%BD%9C%E5%9F%BA%E7%B1%BB"><span class="post-toc-number">9.3.2.</span> <span class="post-toc-text">2）action&#x2F;search&#x2F;AbstractSearchAsyncAction.java —— 异步动作基类</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89action-search-SearchQueryThenFetchAsyncAction-java-FetchSearchPhase-java"><span class="post-toc-number">9.3.3.</span> <span class="post-toc-text">3）action&#x2F;search&#x2F;SearchQueryThenFetchAsyncAction.java + FetchSearchPhase.java</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89action-search-SearchDfsQueryThenFetchAsyncAction-java"><span class="post-toc-number">9.3.4.</span> <span class="post-toc-text">4）action&#x2F;search&#x2F;SearchDfsQueryThenFetchAsyncAction.java</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#5%EF%BC%89scroll-%E2%80%94%E2%80%94-%E6%B7%B1%E7%BF%BB%E9%A1%B5"><span class="post-toc-number">9.3.5.</span> <span class="post-toc-text">5）scroll —— 深翻页</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#6%EF%BC%89tasks-Task-java-%E2%80%94%E2%80%94-%E4%BB%BB%E5%8A%A1%E8%BF%BD%E8%B8%AA"><span class="post-toc-number">9.3.6.</span> <span class="post-toc-text">6）tasks&#x2F;Task.java —— 任务追踪</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#7%EF%BC%89%E5%88%86%E7%89%87%E7%BA%A7%E8%AF%B7%E6%B1%82-TransportShardAction"><span class="post-toc-number">9.3.7.</span> <span class="post-toc-text">7）分片级请求 TransportShardAction</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E5%88%86%E5%B8%83%E5%BC%8F%E6%90%9C%E7%B4%A2%E6%98%AF%E2%80%9Dscatter-query-%E2%86%92-gather-%E5%BD%92%E5%B9%B6-%E2%86%92-scatter-fetch%E2%80%9D"><span class="post-toc-number">9.4.</span> <span class="post-toc-text">第五讲小结：分布式搜索是”scatter-query → gather-归并 → scatter-fetch”</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E5%85%AD%E8%AE%B2%EF%BC%9Arecovery-%E4%B8%8E%E6%95%85%E9%9A%9C%E8%BD%AC%E7%A7%BB-%E2%80%94%E2%80%94-PeerRecovery-SeqNo-Snapshot"><span class="post-toc-number">10.</span> <span class="post-toc-text">第六讲：recovery 与故障转移 —— PeerRecovery &#x2F; SeqNo &#x2F; Snapshot</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-5"><span class="post-toc-number">10.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84-5"><span class="post-toc-number">10.2.</span> <span class="post-toc-text">目录结构</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-5"><span class="post-toc-number">10.3.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89indices-recovery-PeerRecoverySourceService-java-%E2%80%94%E2%80%94-%E6%BA%90%E7%AB%AF%E6%9C%8D%E5%8A%A1"><span class="post-toc-number">10.3.1.</span> <span class="post-toc-text">1）indices&#x2F;recovery&#x2F;PeerRecoverySourceService.java —— 源端服务</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89indices-recovery-PeerRecoveryTargetService-java-%E2%80%94%E2%80%94-%E7%9B%AE%E6%A0%87%E7%AB%AF%E6%9C%8D%E5%8A%A1"><span class="post-toc-number">10.3.2.</span> <span class="post-toc-text">2）indices&#x2F;recovery&#x2F;PeerRecoveryTargetService.java —— 目标端服务</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89indices-recovery-RecoverySourceHandler-java-%E2%80%94%E2%80%94-recovery-%E4%B8%BB%E4%BD%93"><span class="post-toc-number">10.3.3.</span> <span class="post-toc-text">3）indices&#x2F;recovery&#x2F;RecoverySourceHandler.java —— recovery 主体</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89index-seqno-ReplicationTracker-java-SequenceNumbers-java-%E2%80%94%E2%80%94-seqNo-%E4%BD%93%E7%B3%BB"><span class="post-toc-number">10.3.4.</span> <span class="post-toc-text">4）index&#x2F;seqno&#x2F;ReplicationTracker.java + SequenceNumbers.java —— seqNo 体系</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#5%EF%BC%89RetentionLease-%E2%80%94%E2%80%94-%E9%98%B2%E6%AD%A2%E4%B8%BB%E5%88%86%E7%89%87%E8%BF%87%E6%97%A9%E6%B8%85%E7%90%86"><span class="post-toc-number">10.3.5.</span> <span class="post-toc-text">5）RetentionLease —— 防止主分片过早清理</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#6%EF%BC%89snapshots-SnapshotsService-java-%E2%80%94%E2%80%94-%E5%BF%AB%E7%85%A7%E4%B8%BB%E6%9C%8D%E5%8A%A1"><span class="post-toc-number">10.3.6.</span> <span class="post-toc-text">6）snapshots&#x2F;SnapshotsService.java —— 快照主服务</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E5%85%AD%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9Arecovery-%E6%98%AF%E2%80%9Dphase1-%E6%AE%B5-phase2-translog-seqNo-%E7%BB%AD%E4%BC%A0-finalize-%E5%90%8C%E6%AD%A5-checkpoint%E2%80%9D"><span class="post-toc-number">10.4.</span> <span class="post-toc-text">第六讲小结：recovery 是”phase1 段 + phase2 translog + seqNo 续传 + finalize 同步 checkpoint”</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%BC%94%E7%AE%97"><span class="post-toc-number">11.</span> <span class="post-toc-text">端到端演算</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E6%BC%94%E7%AE%97-1%EF%BC%9A%E4%B8%80%E4%B8%AA%E6%96%87%E6%A1%A3%E4%BB%8E-bulk-API-%E5%88%B0-lucene-segment-%E8%90%BD%E7%9B%98"><span class="post-toc-number">11.1.</span> <span class="post-toc-text">演算 1：一个文档从 bulk API 到 lucene segment 落盘</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E6%BC%94%E7%AE%97-2%EF%BC%9A%E4%B8%80%E4%B8%AA%E6%90%9C%E7%B4%A2%E8%AF%B7%E6%B1%82%E7%9A%84%E4%B8%A4%E9%98%B6%E6%AE%B5%EF%BC%88query-then-fetch%EF%BC%89%E5%88%86%E5%B8%83%E5%BC%8F%E6%89%A7%E8%A1%8C"><span class="post-toc-number">11.2.</span> <span class="post-toc-text">演算 2：一个搜索请求的两阶段（query then fetch）分布式执行</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%99%84%EF%BC%9A%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E4%B8%8E%E5%A4%8D%E4%B9%A0%E5%8D%A1%E6%B1%87%E6%80%BB"><span class="post-toc-number">12.</span> <span class="post-toc-text">附：学习路线与复习卡汇总</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%BB%BA%E8%AE%AE%E9%98%85%E8%AF%BB%E9%A1%BA%E5%BA%8F"><span class="post-toc-number">12.1.</span> <span class="post-toc-text">建议阅读顺序</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%A4%8D%E4%B9%A0%E5%8D%A1%EF%BC%88%E6%8C%89%E8%AE%B2%E6%AC%A1%E7%BC%96%E5%8F%B7%EF%BC%8C%E4%BE%BF%E4%BA%8E%E5%9B%9E%E6%9F%A5%EF%BC%89"><span class="post-toc-number">12.2.</span> <span class="post-toc-text">复习卡（按讲次编号，便于回查）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E6%97%A0%E6%B3%95%E6%A0%B8%E5%AF%B9-%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E8%AF%B4%E6%98%8E"><span class="post-toc-number">12.3.</span> <span class="post-toc-text">无法核对 &#x2F; 需注意的说明</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E6%B6%89%E5%8F%8A%E6%96%87%E4%BB%B6%E7%B4%A2%E5%BC%95"><span class="post-toc-number">13.</span> <span class="post-toc-text">涉及文件索引</span></a></li></ol>
+            </nav>
+            
+        </aside>
 
+        <div class="post-main">
 
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://gycxxx.github.io/elasticsearch/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="gyc">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="源码深读笔记">
-      <meta itemprop="description" content="主流基础设施、框架与 JDK 的源码级深度学习笔记">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="Elasticsearch 源码深度学习笔记 | 源码深读笔记">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          Elasticsearch 源码深度学习笔记
-        </h1>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2026-10-15 00:00:00" itemprop="dateCreated datePublished" datetime="2026-10-15T00:00:00+08:00">2026-10-15</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/%E5%AD%98%E5%82%A8%E4%B8%8E%E7%BC%93%E5%AD%98/" itemprop="url" rel="index"><span itemprop="name">存储与缓存</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody"><blockquote>
+            <div class="post-content" id="post-content" itemprop="postContent">
+            <blockquote>
 <p>基于对 <code>server/src/main/java/org/elasticsearch/</code> 下 Java 源码（<code>bootstrap/Elasticsearch.java</code>、<code>node/Node.java</code>、<code>discovery/DiscoveryModule.java</code>、<code>cluster/coordination/Coordinator.java</code>、<code>cluster/coordination/CoordinationState.java</code>、<code>cluster/coordination/ClusterBootstrapService.java</code>、<code>cluster/service/ClusterService.java</code>、<code>indices/*</code>、<code>index/*</code>、<code>action/*</code>、<code>search/*</code>、<code>indices/recovery/*</code>、<code>snapshots/*</code> 等）的逐文件精读整理而成。</p>
 <p>阅读顺序即学习顺序：节点启动与集群发现 → 索引与分片 → 写入路径 → 查询与搜索 → 分布式协调 → recovery 与故障转移。</p>
 <p>所有结论均标注了源文件位置（格式 <code>server/src/main/java/org/elasticsearch/xxx.java:行号</code>），建议对照代码阅读。</p>
@@ -2532,77 +2495,178 @@
 </tr>
 </tbody></table>
 
-    </div>
 
-    
-    
-    
-
-    <footer class="post-footer">
-          <div class="post-tags">
-              <a href="/tags/%E6%BA%90%E7%A0%81/" rel="tag"># 源码</a>
-              <a href="/tags/Elasticsearch/" rel="tag"># Elasticsearch</a>
-          </div>
-
-        
-
-          <div class="post-nav">
-            <div class="post-nav-item">
-                <a href="/java-concurrent/" rel="prev" title="Java 并发库（JUC）源码深度学习笔记">
-                  <i class="fa fa-angle-left"></i> Java 并发库（JUC）源码深度学习笔记
-                </a>
+            
+            
+            <blockquote>
+                <p>
+                本文地址：
+                <a href="https://gycxxx.github.io/elasticsearch/" target="_blank" rel="external">https://gycxxx.github.io/elasticsearch/</a>
+                </p>
+                <footer><cite><a href="https://gycxxx.github.io">@源码深读笔记</a></cite></footer>
+            </blockquote>
             </div>
-            <div class="post-nav-item">
-                <a href="/java-collections/" rel="next" title="Java 集合框架源码深度学习笔记">
-                  Java 集合框架源码深度学习笔记 <i class="fa fa-angle-right"></i>
-                </a>
-            </div>
-          </div>
-    </footer>
-  </article>
-</div>
-
-
-
-
-
-
-</div>
-  </main>
-
-  <footer class="footer">
-    <div class="footer-inner">
-
-  <div class="copyright">
-    &copy; 
-    <span itemprop="copyrightYear">2026</span>
-    <span class="with-love">
-      <i class="fa fa-copyright"></i>
-    </span>
-    <span class="author" itemprop="copyrightHolder">源码深读笔记 · 基于源码逐行分析的深度学习笔记</span>
-  </div>
-  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
-  </div>
-
+            
+<nav class="post-nav">
+  
+    <div class="waves-block waves-effect prev fl">
+      <a href="/mybatis/" id="post-prev" class="post-nav-link">
+        <div class="tips"><i class="icon icon-angle-left icon-lg icon-pr"></i> Prev</div>
+        <h4 class="title">MyBatis 源码深度学习笔记</h4>
+      </a>
     </div>
-  </footer>
+  
 
   
-  <div class="toggle sidebar-toggle" role="button">
-    <span class="toggle-line"></span>
-    <span class="toggle-line"></span>
-    <span class="toggle-line"></span>
-  </div>
-  <div class="sidebar-dimmer"></div>
-  <div class="back-to-top" role="button" aria-label="返回顶部">
-    <i class="fa fa-arrow-up fa-lg"></i>
-    <span>0%</span>
-  </div>
-  <div class="reading-progress-bar"></div>
+    <div class="waves-block waves-effect next fr">
+      <a href="/java-collections/" id="post-next" class="post-nav-link">
+        <div class="tips">Next <i class="icon icon-angle-right icon-lg icon-pl"></i></div>
+        <h4 class="title">Java 集合框架源码深度学习笔记</h4>
+      </a>
+    </div>
+  
+</nav>
 
-<noscript>
-  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
-</noscript>
 
-</body>
+            
+            
+
+
+
+        </div>
+    </div>
+</article>
+
+    </div>
+  </main>
+<div class="mask" id="mask"></div>
+<a href="javascript:;" id="gotop" class="waves-effect waves-circle waves-light"><span class="icon icon-lg icon-chevron-up"></span></a>
+
+<script>
+var BLOG_SHARE = {
+    title: "Elasticsearch 源码深度学习笔记",
+    pic: "/img/avatar.jpg",
+    summary: document.getElementsByName('summary')[0].content,
+    url: "https://gycxxx.github.io/elasticsearch/index.html"
+};
+</script>
+<div class="global-share" id="global-share">
+    <div class="tit">分享到：</div>
+    <ul class="reset share-icons">
+      <li>
+        <a class="weibo share-sns" href="javascript:;" data-title="微博" data-service="tsina">
+          <i class="icon icon-weibo"></i>
+        </a>
+      </li>
+      <li>
+        <a class="weixin share-sns" href="javascript:;" data-title="微信" data-service="weixin">
+          <i class="icon icon-weixin"></i>
+        </a>
+      </li>
+      <li>
+        <a class="qq share-sns" href="javascript:;" data-title=" QQ" data-service="cqq">
+          <i class="icon icon-qq"></i>
+        </a>
+      </li>
+      <li>
+        <a class="facebook share-sns" href="javascript:;" data-title=" Facebook" data-service="fb">
+          <i class="icon icon-facebook"></i>
+        </a>
+      </li>
+      <li>
+        <a class="twitter share-sns" href="javascript:;" data-title=" Twitter" data-service="twitter">
+          <i class="icon icon-twitter"></i>
+        </a>
+      </li>
+      <li>
+        <a class="douban share-sns" href="javascript:;" data-title="豆瓣" data-service="douban">
+          豆
+        </a>
+      </li>
+    </ul>
+ </div>
+
+
+<script src="/js/waves.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+
+
+<div class="search-panel" id="search-panel">
+    <ul class="search-result" id="search-result"></ul>
+</div>
+<script type="text/template" id="search-tpl">
+<li class="item">
+    <a href="/{path}" class="waves-block waves-effect">
+        <div class="title ellipsis" title="{title}">{title}</div>
+        <div class="flex-row flex-middle">
+            <div class="tags ellipsis">
+                {tags}
+            </div>
+            <time class="flex-col time">{date}</time>
+        </div>
+    </a>
+</li>
+</script>
+
+
+<script src="/js/search.js"></script>
+
+
+
+
+
+
+
+
+
+
+<!-- hexo injector body_end start --><script src="/js/mermaid.min.js"></script>
+<script>(function () {
+  function restore(node) {
+    var raw = node.getAttribute("data-mermaid-source");
+    if (raw != null) { node.textContent = raw; }
+  }
+  function render() {
+    var codes = document.querySelectorAll("pre > code.highlight.mermaid, pre > code.mermaid");
+    for (var i = 0; i < codes.length; i++) {
+      var code = codes[i];
+      var pre = code.parentNode;
+      var box = document.createElement("div");
+      box.className = "mermaid";
+      box.setAttribute("data-mermaid-source", code.textContent);
+      box.textContent = code.textContent;
+      pre.parentNode.replaceChild(box, pre);
+    }
+    var nodes = document.querySelectorAll(".mermaid");
+    if (!window.mermaid || !nodes.length) { return; }
+    window.mermaid.initialize({
+      startOnLoad: false,
+      theme: "default",
+      logLevel: 4,
+      securityLevel: "loose",
+      flowchart: { curve: "linear" },
+      gantt: { axisFormat: "%m/%d/%Y" },
+      sequence: { actorMargin: 50 }
+    });
+    window.mermaid.run({ nodes: nodes, suppressErrors: true })
+      .then(function () {
+        for (var j = 0; j < nodes.length; j++) {
+          if (!nodes[j].querySelector("svg")) { restore(nodes[j]); }
+        }
+      })
+      .catch(function (err) {
+        if (window.console && console.error) { console.error(err); }
+        for (var k = 0; k < nodes.length; k++) { restore(nodes[k]); }
+      });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", render);
+  } else {
+    render();
+  }
+})();</script><!-- hexo injector body_end end --></body>
 </html>
