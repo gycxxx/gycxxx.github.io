@@ -1,0 +1,1916 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Open Match 2 源码深读笔记 | 源码深读笔记 | Kafka / Nacos / Spring / Redis / MySQL / ES / Java / JVM / RAG</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  <meta name="theme-color" content="#3F51B5">
+  
+  
+  <meta name="keywords" content="源码,Open Match,匹配">
+  <meta name="description" content="对象：Open Match 2（github.com&#x2F;googleforgames&#x2F;open-match2）—— 开源游戏匹配框架的第二代精简实现版本：commit ac392a0576ea65a73d17aa07090519efcdba99cd（2026-01-05）代码规模：22 个 .go 文件，合计约 8597 行（另有 proto &#x2F; docs &#x2F; deploy 若">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Open Match 2 源码深读笔记">
+<meta property="og:url" content="https://gycxxx.github.io/open-match/index.html">
+<meta property="og:site_name" content="源码深读笔记">
+<meta property="og:description" content="对象：Open Match 2（github.com&#x2F;googleforgames&#x2F;open-match2）—— 开源游戏匹配框架的第二代精简实现版本：commit ac392a0576ea65a73d17aa07090519efcdba99cd（2026-01-05）代码规模：22 个 .go 文件，合计约 8597 行（另有 proto &#x2F; docs &#x2F; deploy 若">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-10-16T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-16T07:29:40.770Z">
+<meta property="article:author" content="gyc">
+<meta property="article:tag" content="源码">
+<meta property="article:tag" content="Open Match">
+<meta property="article:tag" content="匹配">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternative" href="/atom.xml" title="源码深读笔记" type="application/atom+xml">
+  
+  <meta name="summary" content="主流基础设施、框架与 JDK 的源码级深度学习笔记">
+  <link rel="shortcut icon" href="/img/favicon.ico">
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="loading" class="active"></div>
+
+  <nav id="menu" class="hide" >
+   <div class="inner flex-row-vertical">
+  <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="menu-off">
+      <i class="icon icon-lg icon-close"></i>
+  </a>
+  <div class="brand-wrap">
+    <div class="brand">
+      <a href="/" class="avatar"><img src="/img/avatar.jpg"></a>
+      <hgroup class="introduce">
+        <h5 class="nickname">gyc</h5>
+        
+      </hgroup>
+    </div>
+  </div>
+  <div class="scroll-wrap flex-col">
+    <ul class="nav">
+      
+          <li class="waves-block waves-effect">
+            <a href="/"  >
+              <i class="icon icon-lg icon-home"></i>
+              主页
+            </a>
+          </li>
+      
+          <li class="waves-block waves-effect">
+            <a href="/archives"  >
+              <i class="icon icon-lg icon-archive"></i>
+              归档
+            </a>
+          </li>
+      
+          <li class="waves-block waves-effect">
+            <a href="/categories"  >
+              <i class="icon icon-lg icon-th-list"></i>
+              分类
+            </a>
+          </li>
+      
+          <li class="waves-block waves-effect">
+            <a href="/tags"  >
+              <i class="icon icon-lg icon-tags"></i>
+              标签
+            </a>
+          </li>
+      
+    </ul>
+
+    <footer class="footer">
+  <p>源码深读笔记 &copy; 2026</p>
+  <p>Power by <a href="http://hexo.io/" target="_blank">Hexo</a> Theme
+  <a href="https://github.com/yscoder/hexo-theme-indigo" target="_blank">indigo</a></p>
+  <a href="/atom.xml" target="_blank" class="rss" title="rss"><i class="icon icon-2x icon-rss-square"></i></a>
+</footer>
+
+  </div>
+</div>
+
+  </nav>
+  <main id="main">
+    <header class="top-header" id="header">
+    <div class="flex-row">
+        <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light on" id="menu-toggle">
+          <i class="icon icon-lg icon-navicon"></i>
+        </a>
+        <div class="flex-col header-title ellipsis">Open Match 2 源码深读笔记</div>
+        
+        <div class="search-wrap" id="search-wrap">
+            <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="back">
+                <i class="icon icon-lg icon-chevron-left"></i>
+            </a>
+            <input type="text" id="key" class="search-input " autocomplete="off" placeholder="输入感兴趣的关键字">
+            <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="search">
+                <i class="icon icon-lg icon-search"></i>
+            </a>
+        </div>
+        
+        
+        <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="menu-share">
+            <i class="icon icon-lg icon-share-alt"></i>
+        </a>
+        
+    </div>
+</header>
+<header class="content-header">
+  <div class="container">
+    <h1 class="author">Open Match 2 源码深读笔记</h1>
+    <h5 class="subtitle">
+        
+            <time datetime="2026-10-16T16:00:00.000Z" itemprop="datePublished" class="page-time">
+  2026-10-17
+</time>
+
+
+	<ul class="article-category-list"><li class="article-category-list-item"><a class="article-category-list-link" href="/categories/%E6%B8%B8%E6%88%8F%E4%B8%8E%E4%BA%91%E5%8E%9F%E7%94%9F/">游戏与云原生</a></li></ul>
+
+        
+    </h5>
+  </div>
+</header>
+
+    <div class="container body-wrap">
+      <article id="post-open-match" 
+  class="article article-type-post" itemprop="blogPost">
+    <div class="post-meta flex-row">
+        
+	<ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Open-Match/" rel="tag">Open Match</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%8C%B9%E9%85%8D/" rel="tag">匹配</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%BA%90%E7%A0%81/" rel="tag">源码</a></li></ul>
+
+    </div>
+    <div class="post-body">
+        <aside class="post-widget" id="post-widget">
+
+            
+            <div class="post-share" id="post-share">
+    <div class="tit">分享到：</div>
+    <ul class="reset share-icons">
+      <li>
+        <a class="weibo share-sns" href="javascript:;" data-title="微博" data-service="tsina">
+          <i class="icon icon-weibo"></i>
+        </a>
+      </li>
+      <li>
+        <a class="weixin share-sns" href="javascript:;" data-title="微信" data-service="weixin">
+          <i class="icon icon-weixin"></i>
+        </a>
+      </li>
+      <li>
+        <a class="qq share-sns" href="javascript:;" data-title=" QQ" data-service="cqq">
+          <i class="icon icon-qq"></i>
+        </a>
+      </li>
+      <li>
+        <a class="facebook share-sns" href="javascript:;" data-title=" Facebook" data-service="fb">
+          <i class="icon icon-facebook"></i>
+        </a>
+      </li>
+      <li>
+        <a class="twitter share-sns" href="javascript:;" data-title=" Twitter" data-service="twitter">
+          <i class="icon icon-twitter"></i>
+        </a>
+      </li>
+      <li>
+        <a class="douban share-sns" href="javascript:;" data-title="豆瓣" data-service="douban">
+          豆
+        </a>
+      </li>
+    </ul>
+ </div>
+
+            
+
+            
+            <nav class="post-toc-wrap" id="post-toc">
+            <ol class="post-toc"><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%9B%AE%E5%BD%95"><span class="post-toc-number">1.</span> <span class="post-toc-text">目录</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E3%80%87%E3%80%81%E5%85%A8%E6%99%AF%E5%9C%B0%E5%9B%BE"><span class="post-toc-number">2.</span> <span class="post-toc-text">〇、全景地图</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9AOpen-Match-%E6%98%AF%E5%B9%B2%E4%BB%80%E4%B9%88%E7%9A%84"><span class="post-toc-number">2.1.</span> <span class="post-toc-text">先说人话：Open Match 是干什么的</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#ASCII-%E5%85%A8%E6%99%AF%E5%9B%BE"><span class="post-toc-number">2.2.</span> <span class="post-toc-text">ASCII 全景图</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#mermaid-%E5%85%A8%E6%99%AF%E5%9B%BE"><span class="post-toc-number">2.3.</span> <span class="post-toc-text">mermaid 全景图</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%80%9F%E8%A7%88%EF%BC%9A%E5%90%84%E8%AE%B2%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88%EF%BC%88%E5%85%88%E7%9C%8B%E8%BF%99%E4%B8%AA%E5%86%8D%E8%BF%9B%E7%BB%86%E8%8A%82%EF%BC%89"><span class="post-toc-number">3.</span> <span class="post-toc-text">速览：各讲做了什么（先看这个再进细节）</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%A8%E6%B5%81%E7%A8%8B%E5%9B%BE%EF%BC%9A%E4%B8%80%E6%AC%A1%E5%AE%8C%E6%95%B4%E5%8C%B9%E9%85%8D"><span class="post-toc-number">3.1.</span> <span class="post-toc-text">全流程图：一次完整匹配</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%9D%A2%E8%AF%95%E9%80%9F%E9%80%9A%EF%BC%9AOpen-Match-%E9%AB%98%E9%A2%91%E9%97%AE%E9%A2%98%E4%B8%80%E9%A1%B5%E7%BA%B8"><span class="post-toc-number">4.</span> <span class="post-toc-text">面试速通：Open Match 高频问题一页纸</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%AB%98%E9%A2%91-Q-A%EF%BC%88%E5%85%88%E7%BB%93%E8%AE%BA%EF%BC%89"><span class="post-toc-number">4.1.</span> <span class="post-toc-text">高频 Q&amp;A（先结论）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E6%98%93%E9%94%99%E7%82%B9%E4%B8%8E%E9%9D%A2%E8%AF%95%E5%9D%91"><span class="post-toc-number">4.2.</span> <span class="post-toc-text">易错点与面试坑</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%B3%E9%94%AE%E6%95%B0%E5%80%BC%E9%80%9F%E8%AE%B0"><span class="post-toc-number">4.3.</span> <span class="post-toc-text">关键数值速记</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%EF%BC%9A%E7%BB%84%E4%BB%B6%E6%8B%93%E6%89%91%E4%B8%8E%E8%BF%9B%E7%A8%8B%E6%A8%A1%E5%9E%8B-%E2%80%94%E2%80%94-v2-%E5%88%B0%E5%BA%95%E7%A0%8D%E4%BA%86%E4%BB%80%E4%B9%88"><span class="post-toc-number">5.</span> <span class="post-toc-text">第一讲：组件拓扑与进程模型 —— v2 到底砍了什么</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88"><span class="post-toc-number">5.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB"><span class="post-toc-number">5.2.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89v2-%E5%8F%AA%E6%9C%89%E4%B8%80%E4%B8%AA%E4%BA%8C%E8%BF%9B%E5%88%B6%EF%BC%9Aom-core"><span class="post-toc-number">5.2.1.</span> <span class="post-toc-text">1）v2 只有一个二进制：om-core</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89%E5%94%AF%E4%B8%80%E5%AF%B9%E5%A4%96%E6%9C%8D%E5%8A%A1%EF%BC%9AOpenMatchService%EF%BC%886-%E4%B8%AA-RPC%EF%BC%89"><span class="post-toc-number">5.2.2.</span> <span class="post-toc-text">2）唯一对外服务：OpenMatchService（6 个 RPC）</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89MMF-%E5%A5%91%E7%BA%A6%EF%BC%9Aom-core-%E6%98%AF%E5%AE%A2%E6%88%B7%E7%AB%AF%EF%BC%8C%E4%B8%8D%E6%98%AF%E6%9C%8D%E5%8A%A1%E7%AB%AF"><span class="post-toc-number">5.2.3.</span> <span class="post-toc-text">3）MMF 契约：om-core 是客户端，不是服务端</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89%E7%A0%8D%E6%8E%89%E4%BA%86%E4%BB%80%E4%B9%88%EF%BC%9Aevaluator-%E4%B8%8E-synchronizer"><span class="post-toc-number">5.2.4.</span> <span class="post-toc-text">4）砍掉了什么：evaluator 与 synchronizer</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#5%EF%BC%89%E8%BF%9B%E7%A8%8B%E5%90%AF%E5%8A%A8%E9%93%BE%EF%BC%9Amain-%E2%86%92-start"><span class="post-toc-number">5.2.5.</span> <span class="post-toc-text">5）进程启动链：main() → start()</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#6%EF%BC%89%E9%83%A8%E7%BD%B2%E6%8B%93%E6%89%91"><span class="post-toc-number">5.2.6.</span> <span class="post-toc-text">6）部署拓扑</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#v1-vs-v2-%E7%BB%84%E4%BB%B6%E5%AF%B9%E7%85%A7%EF%BC%88%E6%9C%AC%E8%AE%B2%E6%A0%B8%E5%BF%83%E8%A1%A8%EF%BC%89"><span class="post-toc-number">5.3.</span> <span class="post-toc-text">v1 vs v2 组件对照（本讲核心表）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9Av2-%E6%98%AF%E2%80%9D%E6%8A%8A%E8%A3%81%E5%86%B3%E6%9D%83%E8%BF%98%E7%BB%99%E5%BC%80%E5%8F%91%E8%80%85%EF%BC%8C%E6%8A%8A%E7%8A%B6%E6%80%81%E6%94%B6%E6%95%9B%E5%88%B0%E4%B8%80%E4%B8%AA%E8%BF%9B%E7%A8%8B%E2%80%9D"><span class="post-toc-number">5.4.</span> <span class="post-toc-text">第一讲小结：v2 是”把裁决权还给开发者，把状态收敛到一个进程”</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%EF%BC%9ATicket-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F-%E2%80%94%E2%80%94-%E4%BB%8E%E5%88%9B%E5%BB%BA%E5%88%B0%E6%BF%80%E6%B4%BB"><span class="post-toc-number">6.</span> <span class="post-toc-text">第二讲：Ticket 生命周期 —— 从创建到激活</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-1"><span class="post-toc-number">6.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-1"><span class="post-toc-number">6.2.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89Ticket-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="post-toc-number">6.2.1.</span> <span class="post-toc-text">1）Ticket 数据结构</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89CreateTicket%EF%BC%9A%E4%B8%8D%E5%86%99%E5%AD%98%E5%82%A8%EF%BC%8C%E5%8F%AA%E6%8A%95%E9%80%92%E6%9B%B4%E6%96%B0"><span class="post-toc-number">6.2.2.</span> <span class="post-toc-text">2）CreateTicket：不写存储，只投递更新</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89Ticket-ID-%E7%94%B1%E5%AD%98%E5%82%A8%E5%B1%82%E7%94%9F%E6%88%90%EF%BC%9A%E4%B8%80%E6%9D%A1%E4%B8%8D%E5%8F%98%E5%BC%8F%E4%B8%B2%E8%B5%B7%E4%BA%94%E5%A4%84%E8%AE%BE%E8%AE%A1"><span class="post-toc-number">6.2.3.</span> <span class="post-toc-text">3）Ticket ID 由存储层生成：一条不变式串起五处设计</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89%E6%97%B6%E9%97%B4%E6%88%B3%E6%A0%A1%E9%AA%8C%EF%BC%9AvalidateAndMarshalIncomingTicket"><span class="post-toc-number">6.2.4.</span> <span class="post-toc-text">4）时间戳校验：validateAndMarshalIncomingTicket</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#5%EF%BC%89%E2%80%9D%E6%96%B0%E7%A5%A8%E4%B8%80%E5%BE%8B-inactive%E2%80%9D%E7%9A%84%E5%AE%98%E6%96%B9%E8%A1%A8%E8%BF%B0"><span class="post-toc-number">6.2.5.</span> <span class="post-toc-text">5）”新票一律 inactive”的官方表述</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#6%EF%BC%89Activate-Deactivate%EF%BC%9A%E5%AF%B9%E7%A7%B0%E4%B8%89%E6%AD%A5-%E4%B8%A4%E4%B8%AA%E8%AE%BE%E8%AE%A1%E7%BB%86%E8%8A%82"><span class="post-toc-number">6.2.6.</span> <span class="post-toc-text">6）Activate &#x2F; Deactivate：对称三步 + 两个设计细节</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#7%EF%BC%89Ticket-ID-%E5%90%88%E6%B3%95%E6%80%A7%E6%A0%A1%E9%AA%8C"><span class="post-toc-number">6.2.7.</span> <span class="post-toc-text">7）Ticket ID 合法性校验</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%BC%94%E7%AE%97-%E2%91%A0%EF%BC%9A%E4%B8%80%E6%AC%A1-CreateTicket-ActivateTickets-%E7%9A%84%E5%AE%8C%E6%95%B4%E9%93%BE%E8%B7%AF"><span class="post-toc-number">6.3.</span> <span class="post-toc-text">端到端演算 ①：一次 CreateTicket + ActivateTickets 的完整链路</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9ATicket-ID-%E5%B0%B1%E6%98%AF-Redis-Stream-%E7%9A%84-entry-ID"><span class="post-toc-number">6.4.</span> <span class="post-toc-text">第二讲小结：Ticket ID 就是 Redis Stream 的 entry ID</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%EF%BC%9A%E7%8A%B6%E6%80%81%E5%AD%98%E5%82%A8%E6%8A%BD%E8%B1%A1-%E2%80%94%E2%80%94-Redis-Streams-%E6%98%AF%E5%94%AF%E4%B8%80%E7%9A%84%E7%9C%9F%E7%9B%B8"><span class="post-toc-number">7.</span> <span class="post-toc-text">第三讲：状态存储抽象 —— Redis Streams 是唯一的真相</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-2"><span class="post-toc-number">7.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-2"><span class="post-toc-number">7.2.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89%E6%8E%A5%E5%8F%A3%E5%8F%AA%E6%9C%89%E4%B8%89%E4%B8%AA%E6%96%B9%E6%B3%95"><span class="post-toc-number">7.2.1.</span> <span class="post-toc-text">1）接口只有三个方法</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89Redis-%E5%AE%9E%E7%8E%B0%EF%BC%9AStreams%EF%BC%8C%E4%B8%8D%E6%98%AF-sorted-set-Lua"><span class="post-toc-number">7.2.2.</span> <span class="post-toc-text">2）Redis 实现：Streams，不是 sorted set + Lua</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89Memory-%E5%AE%9E%E7%8E%B0%EF%BC%9A%E5%88%BB%E6%84%8F%E6%A8%A1%E4%BB%BF-entry-ID"><span class="post-toc-number">7.2.3.</span> <span class="post-toc-text">3）Memory 实现：刻意模仿 entry ID</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9ARedis-%E4%BB%8E%E2%80%9D%E6%95%B0%E6%8D%AE%E5%BA%93%E2%80%9D%E9%99%8D%E7%BA%A7%E4%B8%BA%E2%80%9D%E5%A4%8D%E5%88%B6%E6%80%BB%E7%BA%BF%E2%80%9D"><span class="post-toc-number">7.3.</span> <span class="post-toc-text">第三讲小结：Redis 从”数据库”降级为”复制总线”</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#v1-vs-v2-%E7%8A%B6%E6%80%81%E5%AD%98%E5%82%A8%E5%AF%B9%E7%85%A7"><span class="post-toc-number">7.4.</span> <span class="post-toc-text">v1 vs v2 状态存储对照</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%EF%BC%9AReplicatedTicketCache-%E2%80%94%E2%80%94-%E6%8A%8A%E8%AF%BB%E8%B7%AF%E5%BE%84%E6%95%B4%E4%B8%AA%E4%B8%8B%E6%B2%89%E5%88%B0%E5%86%85%E5%AD%98"><span class="post-toc-number">8.</span> <span class="post-toc-text">第四讲：ReplicatedTicketCache —— 把读路径整个下沉到内存</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-3"><span class="post-toc-number">8.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-3"><span class="post-toc-number">8.2.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%EF%BC%9A%E4%B8%89%E4%B8%AA-sync-Map"><span class="post-toc-number">8.2.1.</span> <span class="post-toc-text">1）数据结构：三个 sync.Map</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89%E5%87%BA%E5%90%91%E9%98%9F%E5%88%97%EF%BC%9A%E6%94%92%E6%89%B9%E5%86%99-Redis"><span class="post-toc-number">8.2.2.</span> <span class="post-toc-text">2）出向队列：攒批写 Redis</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89%E5%85%A5%E5%90%91%E9%98%9F%E5%88%97%EF%BC%9A%E5%BA%94%E7%94%A8%E5%9B%9B%E7%A7%8D-Cmd-%E4%B8%89%E5%B1%82%E8%BF%87%E6%9C%9F%E6%B8%85%E7%90%86"><span class="post-toc-number">8.2.3.</span> <span class="post-toc-text">3）入向队列：应用四种 Cmd + 三层过期清理</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%80%A7%E7%9A%84%E4%BB%A3%E4%BB%B7%EF%BC%9A%E6%BA%90%E7%A0%81%E9%87%8C%E7%9A%84%E4%B8%89%E5%A4%84%E2%80%9D%E8%87%AA%E7%99%BD%E2%80%9D"><span class="post-toc-number">8.2.4.</span> <span class="post-toc-text">4）最终一致性的代价：源码里的三处”自白”</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E8%AF%BB%E5%85%A8%E5%9C%A8%E5%86%85%E5%AD%98%EF%BC%8CRedis-%E5%8F%AA%E5%81%9A%E6%80%BB%E7%BA%BF"><span class="post-toc-number">8.3.</span> <span class="post-toc-text">第四讲小结：读全在内存，Redis 只做总线</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%EF%BC%9A%E8%BF%87%E6%BB%A4%E4%B8%8E%E5%8C%B9%E9%85%8D%E7%BC%96%E6%8E%92-%E2%80%94%E2%80%94-InvokeMatchmakingFunctions-%E5%85%A8%E6%99%AF"><span class="post-toc-number">9.</span> <span class="post-toc-text">第五讲：过滤与匹配编排 —— InvokeMatchmakingFunctions 全景</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-4"><span class="post-toc-number">9.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-4"><span class="post-toc-number">9.2.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89%E4%B8%8A%E4%B8%8B%E6%96%87%E7%AD%96%E7%95%A5%EF%BC%9A%E8%B0%83%E7%94%A8%E6%96%B9%E6%96%AD%E8%BF%9E%E4%B8%8D%E5%8F%96%E6%B6%88-MMF"><span class="post-toc-number">9.2.1.</span> <span class="post-toc-text">1）上下文策略：调用方断连不取消 MMF</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89%E5%BF%AB%E7%85%A7-%E8%BF%87%E6%BB%A4"><span class="post-toc-number">9.2.2.</span> <span class="post-toc-text">2）快照 + 过滤</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89%E8%BF%87%E6%BB%A4%E5%99%A8%EF%BC%9A%E8%87%AA%E7%A0%94%E5%9B%9B%E7%B1%BB%E6%B1%82%E4%BA%A4%EF%BC%8C%E4%B8%8D%E6%98%AF-CEL"><span class="post-toc-number">9.2.3.</span> <span class="post-toc-text">3）过滤器：自研四类求交，不是 CEL</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%894MB-%E5%88%86%E5%9D%97%EF%BC%9Av2-%E7%9B%B8%E5%AF%B9-v1-%E6%96%B0%E5%A2%9E%E7%9A%84%E6%9C%BA%E5%88%B6"><span class="post-toc-number">9.2.4.</span> <span class="post-toc-text">4）4MB 分块：v2 相对 v1 新增的机制</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#5%EF%BC%89%E4%B8%89%E9%87%8D-goroutine%EF%BC%9Afan-in-fan-out-per-match"><span class="post-toc-number">9.2.5.</span> <span class="post-toc-text">5）三重 goroutine：fan-in &#x2F; fan-out &#x2F; per-match</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#6%EF%BC%89OM-MATCH-TICKET-DEACTIVATION-WAIT%EF%BC%9A%E4%B8%A4%E6%9D%A1%E5%88%86%E6%94%AF"><span class="post-toc-number">9.2.6.</span> <span class="post-toc-text">6）OM_MATCH_TICKET_DEACTIVATION_WAIT：两条分支</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#7%EF%BC%89%E6%94%B6%E5%B0%BE"><span class="post-toc-number">9.2.7.</span> <span class="post-toc-text">7）收尾</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%BC%94%E7%AE%97-%E2%91%A1%EF%BC%9A%E4%B8%80%E6%AC%A1-InvokeMatchmakingFunctions-%E7%9A%84%E5%AE%8C%E6%95%B4%E9%93%BE%E8%B7%AF"><span class="post-toc-number">9.3.</span> <span class="post-toc-text">端到端演算 ②：一次 InvokeMatchmakingFunctions 的完整链路</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9AOM-%E5%8F%AA%E8%B4%9F%E8%B4%A3%E2%80%9D%E5%96%82%E7%A5%A8-%E6%91%98%E7%A5%A8-%E5%9B%9E%E4%BC%A0%E2%80%9D%EF%BC%8C%E4%B8%8D%E8%A3%81%E5%86%B3"><span class="post-toc-number">9.4.</span> <span class="post-toc-text">第五讲小结：OM 只负责”喂票 + 摘票 + 回传”，不裁决</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E5%85%AD%E8%AE%B2%EF%BC%9AAssignment-%E4%B8%8B%E5%8F%91%E3%80%81%E9%85%8D%E7%BD%AE%E4%B8%8E%E5%8F%AF%E8%A7%82%E6%B5%8B%E6%80%A7"><span class="post-toc-number">10.</span> <span class="post-toc-text">第六讲：Assignment 下发、配置与可观测性</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-5"><span class="post-toc-number">10.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-5"><span class="post-toc-number">10.2.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89%E6%8E%A8%E8%8D%90%E8%B7%AF%E5%BE%84%EF%BC%9AAssignment-%E4%B8%8D%E8%B5%B0-OM"><span class="post-toc-number">10.2.1.</span> <span class="post-toc-text">1）推荐路径：Assignment 不走 OM</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89%E5%86%99%EF%BC%9ACreateAssignments"><span class="post-toc-number">10.2.2.</span> <span class="post-toc-text">2）写：CreateAssignments</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89%E8%AF%BB%EF%BC%9AWatchAssignments-%E2%80%94%E2%80%94-%E5%AF%B9%E5%A4%96%E6%98%AF%E6%B5%81%EF%BC%8C%E5%86%85%E9%83%A8%E6%98%AF-1-%E7%A7%92%E8%BD%AE%E8%AF%A2"><span class="post-toc-number">10.2.3.</span> <span class="post-toc-text">3）读：WatchAssignments —— 对外是流，内部是 1 秒轮询</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89%E9%85%8D%E7%BD%AE%EF%BC%9AViper-%E7%9A%84%E4%B8%80%E4%B8%AA%E5%A4%A7%E5%9D%91"><span class="post-toc-number">10.2.4.</span> <span class="post-toc-text">4）配置：Viper 的一个大坑</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#5%EF%BC%89%E6%97%A5%E5%BF%97%E4%B8%8E%E6%8C%87%E6%A0%87"><span class="post-toc-number">10.2.5.</span> <span class="post-toc-text">5）日志与指标</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E5%85%AD%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9AAssignment-%E6%98%AF%E4%BD%A0%E7%9A%84%E4%BA%8B%EF%BC%8COM-%E5%8F%AA%E7%95%99%E4%BA%86%E4%B8%AA%E5%BA%9F%E5%BC%83%E7%AB%AF%E7%82%B9"><span class="post-toc-number">10.3.</span> <span class="post-toc-text">第六讲小结：Assignment 是你的事，OM 只留了个废弃端点</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%99%84%EF%BC%9A%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E4%B8%8E%E5%A4%8D%E4%B9%A0%E5%8D%A1%E6%B1%87%E6%80%BB"><span class="post-toc-number">11.</span> <span class="post-toc-text">附：学习路线与复习卡汇总</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E5%BB%BA%E8%AE%AE"><span class="post-toc-number">11.1.</span> <span class="post-toc-text">学习路线建议</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%A4%8D%E4%B9%A0%E5%8D%A1"><span class="post-toc-number">11.2.</span> <span class="post-toc-text">复习卡</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E6%B6%89%E5%8F%8A%E6%96%87%E4%BB%B6%E7%B4%A2%E5%BC%95"><span class="post-toc-number">12.</span> <span class="post-toc-text">涉及文件索引</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%9D%9E-Go-%E7%B4%A0%E6%9D%90"><span class="post-toc-number">12.1.</span> <span class="post-toc-text">非 Go 素材</span></a></li></ol></li></ol>
+            </nav>
+            
+        </aside>
+
+        <div class="post-main">
+
+            <div class="post-content" id="post-content" itemprop="postContent">
+            <blockquote>
+<p><strong>对象</strong>：Open Match 2（<code>github.com/googleforgames/open-match2</code>）—— 开源游戏匹配框架的第二代精简实现<br><strong>版本</strong>：commit <code>ac392a0576ea65a73d17aa07090519efcdba99cd</code>（2026-01-05）<br><strong>代码规模</strong>：22 个 <code>.go</code> 文件，合计约 <strong>8597 行</strong>（另有 proto &#x2F; docs &#x2F; deploy 若干）<br><strong>文档定位</strong>：面向”要把 Open Match 跑起来并调得动”的工程师。全文逐文件精读，**所有结论标注 <code>路径:行号</code>**，可对照源码复验。</p>
+<p>⚠️ <strong>版本基准声明</strong>：本仓库 HEAD 为 <code>ac392a0</code>，但采样时工作区有 2 个文件存在未提交修改（<code>main.go</code> 1402→1491 行、<code>internal/statestore/cache/replicatedticketcache.go</code> 456→461 行），且工作区版本存在重复声明（<code>MMFConnectionManager</code> 在 <code>main.go</code> 中出现两次）<strong>无法编译</strong>。<br><strong>本文所有行号以 HEAD（<code>ac392a0</code>）为准</strong>。读者若想按行号对照，请先执行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git checkout -- main.go internal/statestore/cache/replicatedticketcache.go</span><br></pre></td></tr></table></figure>
+<p>其余 20 个 <code>.go</code> 文件经确认工作区与 HEAD 完全一致，行号无歧义。</p>
+</blockquote>
+<hr>
+<h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ul>
+<li><a href="#%E3%80%87%E5%85%A8%E6%99%AF%E5%9C%B0%E5%9B%BE">〇、全景地图</a></li>
+<li><a href="#%E9%80%9F%E8%A7%88%E5%90%84%E8%AE%B2%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88%E5%85%88%E7%9C%8B%E8%BF%99%E4%B8%AA%E5%86%8D%E8%BF%9B%E7%BB%86%E8%8A%82">速览：各讲做了什么</a></li>
+<li><a href="#%E9%9D%A2%E8%AF%95%E9%80%9F%E9%80%9Aopen-match-%E9%AB%98%E9%A2%91%E9%97%AE%E9%A2%98%E4%B8%80%E9%A1%B5%E7%BA%B8">面试速通：Open Match 高频问题一页纸</a></li>
+<li><a href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%E7%BB%84%E4%BB%B6%E6%8B%93%E6%89%91%E4%B8%8E%E8%BF%9B%E7%A8%8B%E6%A8%A1%E5%9E%8B--v2-%E5%88%B0%E5%BA%95%E7%A0%8D%E4%BA%86%E4%BB%80%E4%B9%88">第一讲：组件拓扑与进程模型 —— v2 到底砍了什么</a></li>
+<li><a href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2ticket-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F--%E4%BB%8E%E5%88%9B%E5%BB%BA%E5%88%B0%E6%BF%80%E6%B4%BB">第二讲：Ticket 生命周期 —— 从创建到激活</a></li>
+<li><a href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%E7%8A%B6%E6%80%81%E5%AD%98%E5%82%A8%E6%8A%BD%E8%B1%A1--redis-streams-%E6%98%AF%E5%94%AF%E4%B8%80%E7%9A%84%E7%9C%9F%E7%9B%B8">第三讲：状态存储抽象 —— Redis Streams 是唯一的真相</a></li>
+<li><a href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2replicatedticketcache--%E6%8A%8A%E8%AF%BB%E8%B7%AF%E5%BE%84%E6%95%B4%E4%B8%AA%E4%B8%8B%E6%B2%89%E5%88%B0%E5%86%85%E5%AD%98">第四讲：ReplicatedTicketCache —— 把读路径整个下沉到内存</a></li>
+<li><a href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%E8%BF%87%E6%BB%A4%E4%B8%8E%E5%8C%B9%E9%85%8D%E7%BC%96%E6%8E%92--invokematchmakingfunctions-%E5%85%A8%E6%99%AF">第五讲：过滤与匹配编排 —— InvokeMatchmakingFunctions 全景</a></li>
+<li><a href="#%E7%AC%AC%E5%85%AD%E8%AE%B2assignment-%E4%B8%8B%E5%8F%91%E9%85%8D%E7%BD%AE%E4%B8%8E%E5%8F%AF%E8%A7%82%E6%B5%8B%E6%80%A7">第六讲：Assignment 下发、配置与可观测性</a></li>
+<li><a href="#%E9%99%84%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E4%B8%8E%E5%A4%8D%E4%B9%A0%E5%8D%A1%E6%B1%87%E6%80%BB">附：学习路线与复习卡汇总</a></li>
+<li><a href="#%E6%B6%89%E5%8F%8A%E6%96%87%E4%BB%B6%E7%B4%A2%E5%BC%95">涉及文件索引</a></li>
+</ul>
+<hr>
+<h2 id="〇、全景地图"><a href="#〇、全景地图" class="headerlink" title="〇、全景地图"></a>〇、全景地图</h2><h3 id="先说人话：Open-Match-是干什么的"><a href="#先说人话：Open-Match-是干什么的" class="headerlink" title="先说人话：Open Match 是干什么的"></a>先说人话：Open Match 是干什么的</h3><p>多人游戏的服务器有两种：一种是”大厅服”，谁都能进；另一种是”对局服”，需要<strong>把水平相近、延迟可接受、模式一致的玩家凑成一桌</strong>，再给他们开一个专属的房间。</p>
+<p>这个”凑一桌”的过程就叫 <strong>Matchmaking（匹配）</strong>。Open Match 做的事是：</p>
+<ol>
+<li>每个等待匹配的玩家（或队伍）抽象成一张 <strong>Ticket（票）</strong>，票上写着”我是什么段位 &#x2F; 什么模式 &#x2F; 我在哪个区”；</li>
+<li>匹配器告诉 Open Match：”给我找出所有段位在 1500~1600、模式是 3v3 的票”（这叫 <strong>Pool &#x2F; 池</strong>）；</li>
+<li>Open Match 把这些票喂给你写的 <strong>MMF（Match Making Function，匹配函数）</strong>；</li>
+<li>MMF 返回它认为合适的分组（<strong>Match</strong>），Open Match 把这些票从池里摘掉；</li>
+<li>匹配器拿到 Match，去开房间，把连接信息给玩家。</li>
+</ol>
+<p><strong>v1 与 v2 的分水岭</strong>：v1 是”微服务全家桶”（frontend &#x2F; backend &#x2F; query &#x2F; synchronizer &#x2F; evaluator &#x2F; swaggerui &#x2F; scale 七个进程），框架深度参与”谁和谁配”的裁决；<strong>v2 把这些全砍了</strong>，只剩一个二进制 <code>om-core</code>，它的职责止于”编排 MMF 并把结果流式吐回来”——<strong>不再关心票是否被重复分配</strong>。</p>
+<h3 id="ASCII-全景图"><a href="#ASCII-全景图" class="headerlink" title="ASCII 全景图"></a>ASCII 全景图</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">┌──────────────┐        ┌──────────────────────────────────────┐</span><br><span class="line">│  游戏客户端   │        │         Matchmaker（你写的）           │</span><br><span class="line">└──────┬───────┘        └──────┬───────────────────────┬────────┘</span><br><span class="line">       │ 1. 我要匹配            │ 3. 给我配一局           │ 6. 收到 Match</span><br><span class="line">       │                       │                       │</span><br><span class="line">       ▼                       ▼                       ▲</span><br><span class="line">┌────────────────────────────────────────────────────────────────┐</span><br><span class="line">│                      om-core（单二进制）                        │</span><br><span class="line">│                                                                │</span><br><span class="line">│  ┌──────────────┐   ┌──────────────────────────────────────┐   │</span><br><span class="line">│  │ gRPC Server  │   │  ReplicatedTicketCache（本地全量副本） │   │</span><br><span class="line">│  │   :50581     │◄──┤   Tickets / InactiveSet / Assignments │   │</span><br><span class="line">│  ├──────────────┤   └────────▲──────────────┬───────────────┘   │</span><br><span class="line">│  │ grpc-gateway │            │ 入向          │ 出向              │</span><br><span class="line">│  │   :8080      │   ┌────────┴───────┐   ┌──▼───────────────┐   │</span><br><span class="line">│  └──────────────┘   │ IncomingQueue  │   │ OutgoingQueue    │   │</span><br><span class="line">│                     │  (XREAD BLOCK) │   │  (攒批 50/500ms) │   │</span><br><span class="line">│                     └────────▲───────┘   └──┬───────────────┘   │</span><br><span class="line">└──────────────────────────────┼──────────────┼───────────────────┘</span><br><span class="line">                               │              │</span><br><span class="line">                       ┌───────┴──────────────▼───────┐</span><br><span class="line">                       │  Redis Streams               │</span><br><span class="line">                       │  om-replication              │</span><br><span class="line">                       │  XADD / XREAD / XTRIM MINID  │</span><br><span class="line">                       └──────────────────────────────┘</span><br><span class="line">                                    ▲</span><br><span class="line">                                    │ 4. 灌 tickets（4MB 分块双向流）</span><br><span class="line">                                    │ 5. 返回 Match</span><br><span class="line">                               ┌────┴─────┐</span><br><span class="line">                               │   MMF     │（你写的匹配函数）</span><br><span class="line">                               └──────────┘</span><br></pre></td></tr></table></figure>
+
+<h3 id="mermaid-全景图"><a href="#mermaid-全景图" class="headerlink" title="mermaid 全景图"></a>mermaid 全景图</h3><pre><code class="highlight mermaid">flowchart TB
+    Client[&quot;游戏客户端/匹配器&quot;] --&gt;|&quot;HTTP或gRPC&quot;| GW[&quot;grpc-gateway :8080&quot;]
+    GW --&gt; Core[&quot;om-core gRPC :50581&quot;]
+    Client --&gt;|&quot;直连gRPC&quot;| Core
+
+    Core --&gt; CT[&quot;CreateTicket&quot;]:::api
+    Core --&gt; AT[&quot;ActivateTickets&quot;]:::api
+    Core --&gt; DT[&quot;DeactivateTickets&quot;]:::api
+    Core --&gt; IMF[&quot;InvokeMatchmakingFunctions&quot;]:::api
+    Core --&gt; CA[&quot;CreateAssignments 已废弃&quot;]:::dep
+    Core --&gt; WA[&quot;WatchAssignments 已废弃&quot;]:::dep
+
+    CT --&gt; Out[&quot;OutgoingReplicationQueue 攒批&quot;]
+    AT --&gt; Out
+    DT --&gt; Out
+    CA --&gt; Out
+    Out --&gt; Redis[(&quot;Redis Streams&lt;br/&gt;om-replication&quot;)]
+
+    Redis --&gt; In[&quot;IncomingReplicationQueue XREAD BLOCK&quot;]
+    In --&gt; Cache[(&quot;本地 ReplicatedTicketCache&lt;br/&gt;Tickets/InactiveSet/Assignments&quot;)]
+
+    IMF --&gt; Snap[&quot;setDifference 快照活跃票&quot;]
+    Cache --&gt; Snap
+    Snap --&gt; Filter[&quot;filter.In 四类过滤器求交&quot;]
+    Filter --&gt; Chunk[&quot;4MB 分块打包&quot;]
+    Chunk --&gt; MMF[&quot;MMF 双向流&quot;]
+    MMF --&gt; Match[&quot;收到 Match&quot;]
+    Match --&gt; Deact[&quot;对roster票发 Deactivate&quot;]
+    Deact --&gt; Out
+    Match --&gt; Stream[&quot;stream.Send 回匹配器&quot;]
+
+    classDef api fill:&quot;#e3f2fd&quot;,stroke:&quot;#1565c0&quot;,color:&quot;#0d47a1&quot;
+    classDef dep fill:&quot;#fbe9e7&quot;,stroke:&quot;#c62828&quot;,color:&quot;#b71c1c&quot;</code></pre>
+
+<hr>
+<h2 id="速览：各讲做了什么（先看这个再进细节）"><a href="#速览：各讲做了什么（先看这个再进细节）" class="headerlink" title="速览：各讲做了什么（先看这个再进细节）"></a>速览：各讲做了什么（先看这个再进细节）</h2><table>
+<thead>
+<tr>
+<th>讲</th>
+<th>主题</th>
+<th>一句话结论</th>
+<th>关键文件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>一</td>
+<td>组件拓扑与进程模型</td>
+<td>v2 从 7 个微服务收敛成**一个二进制 <code>om-core</code>**，删掉了 synchronizer 与 evaluator，唯一对外服务是 <code>OpenMatchService</code>（6 个 RPC，其中 2 个已废弃）</td>
+<td><code>main.go</code>、<code>server.go</code>、<code>proto/api.proto</code></td>
+</tr>
+<tr>
+<td>二</td>
+<td>Ticket 生命周期</td>
+<td>Ticket <strong>无 <code>assignment</code> 字段</strong>；创建后<strong>一律先 inactive</strong>，必须显式 <code>ActivateTickets</code> 才进池；<strong>Ticket ID &#x3D; Redis Stream entry ID</strong>，由存储层生成</td>
+<td><code>main.go:190</code>、<code>replicatedticketcache.go:254</code></td>
+</tr>
+<tr>
+<td>三</td>
+<td>状态存储抽象</td>
+<td>接口<strong>只有 3 个方法</strong>；v2 从 v1 的”sorted set + Lua”全面改用 <strong>Redis Streams</strong>（<code>XADD</code>&#x2F;<code>XREAD BLOCK</code>&#x2F;<code>XTRIM MINID</code>），源码中<strong>没有任何 <code>EVAL</code>&#x2F;<code>ZADD</code></strong></td>
+<td><code>datatypes/store.go:56</code>、<code>redis/redis.go</code></td>
+</tr>
+<tr>
+<td>四</td>
+<td>ReplicatedTicketCache</td>
+<td>每个实例本地持有<strong>全量副本</strong>，三个 <code>sync.Map</code>；读（尤其过滤）<strong>完全打内存</strong>，Redis 降级为”复制总线”</td>
+<td><code>cache/replicatedticketcache.go:60</code></td>
+</tr>
+<tr>
+<td>五</td>
+<td>过滤与匹配编排</td>
+<td>过滤器是<strong>自研四类硬编码求交</strong>（不是 CEL）；pool 超过 <strong>4MB 就分块</strong>；MMF 结果里的票<strong>自动 Deactivate</strong>，默认要等复制完成才返回 Match</td>
+<td><code>filter/filter.go:52</code>、<code>main.go:665</code></td>
+</tr>
+<tr>
+<td>六</td>
+<td>Assignment &#x2F; 配置 &#x2F; 观测</td>
+<td>Assignment <strong>推荐由 matchmaker 自己做</strong>；OM 提供的两个端点<strong>已废弃</strong>，且 <code>WatchAssignments</code> 内部是 <strong>1 秒 sleep 轮询</strong></td>
+<td><code>main.go:1265</code>、<code>config/config.go</code></td>
+</tr>
+</tbody></table>
+<h3 id="全流程图：一次完整匹配"><a href="#全流程图：一次完整匹配" class="headerlink" title="全流程图：一次完整匹配"></a>全流程图：一次完整匹配</h3><pre><code class="highlight mermaid">sequenceDiagram
+    autonumber
+    participant C as 客户端
+    participant OM as om-core
+    participant RQ as 出向队列
+    participant RD as Redis Streams
+    participant Cache as 本地缓存
+    participant MMF as 你的匹配函数
+
+    C-&gt;&gt;OM: CreateTicket
+    OM-&gt;&gt;RQ: 投递 store.Ticket 更新
+    RQ-&gt;&gt;RD: XADD om-replication ticket
+    RD--&gt;&gt;OM: 返回 stream entry ID
+    OM--&gt;&gt;C: TicketId = 该 ID
+    RD-&gt;&gt;Cache: XREAD 复制回本地
+    Note over Cache: InactiveSet.Store(id, true)&lt;br/&gt;一律先 inactive
+
+    C-&gt;&gt;OM: ActivateTickets(id)
+    OM-&gt;&gt;RQ: 投递 store.Activate
+    RQ-&gt;&gt;RD: XADD activate
+    RD-&gt;&gt;Cache: InactiveSet.Delete(id)
+    Note over Cache: 票进入可见池
+
+    C-&gt;&gt;OM: InvokeMatchmakingFunctions(profile)
+    OM-&gt;&gt;Cache: setDifference 取活跃票快照
+    OM-&gt;&gt;OM: filter.In 过滤 + 4MB 分块
+    OM-&gt;&gt;MMF: 双向流发送 ChunkedMmfRunRequest
+    MMF--&gt;&gt;OM: StreamedMmfResponse(Match)
+    OM-&gt;&gt;RQ: 对 roster 票发 Deactivate
+    Note over OM: OM_MATCH_TICKET_DEACTIVATION_WAIT=true&lt;br/&gt;等最后一张票复制完成
+    OM--&gt;&gt;C: stream.Send(Match)</code></pre>
+
+<hr>
+<h2 id="面试速通：Open-Match-高频问题一页纸"><a href="#面试速通：Open-Match-高频问题一页纸" class="headerlink" title="面试速通：Open Match 高频问题一页纸"></a>面试速通：Open Match 高频问题一页纸</h2><h3 id="高频-Q-A（先结论）"><a href="#高频-Q-A（先结论）" class="headerlink" title="高频 Q&amp;A（先结论）"></a>高频 Q&amp;A（先结论）</h3><table>
+<thead>
+<tr>
+<th>#</th>
+<th>问题</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Open Match v2 和 v1 最大的区别？</td>
+<td><strong>v1 是微服务全家桶 + 框架裁决唯一性；v2 是单二进制 <code>om-core</code> + 不裁决</strong>。v2 删掉了 <code>synchronizer</code> 和 <code>evaluator</code>（<code>docs/MIGRATION.md:45-49</code>），MMF 的产物从”提案”变成”终局 match”。</td>
+</tr>
+<tr>
+<td>2</td>
+<td>v2 还有哪些服务？</td>
+<td>只有<strong>一个</strong> <code>OpenMatchService</code>，6 个 RPC：<code>CreateTicket</code> &#x2F; <code>DeactivateTickets</code> &#x2F; <code>ActivateTickets</code> &#x2F; <code>InvokeMatchmakingFunctions</code> &#x2F; <code>CreateAssignments</code>（废弃）&#x2F; <code>WatchAssignments</code>（废弃）（<code>proto/api.proto:29-82</code>）。</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Ticket ID 谁生成？</td>
+<td><strong>存储层生成</strong>，就是 Redis Stream 的 entry ID。这是贯穿性不变式：<code>replicatedticketcache.go:254</code> 才回填 <code>ticketPb.Id = curUpdate.Key</code>。</td>
+</tr>
+<tr>
+<td>4</td>
+<td>新创建的 Ticket 能立刻被匹配到吗？</td>
+<td><strong>不能。</strong> 一律先进 <code>InactiveSet</code>（<code>replicatedticketcache.go:257</code>），必须 <code>ActivateTickets</code> 才进池。这保证”没成功复制并返回给客户端的票”永不被分配（<code>main.go:176-182</code>）。</td>
+</tr>
+<tr>
+<td>5</td>
+<td>v2 用什么 Redis 数据结构？</td>
+<td><strong>Streams</strong>。命令是 <code>XADD</code> &#x2F; <code>XREAD BLOCK</code> &#x2F; <code>XTRIM MINID</code>（<code>redis.go:365/538/447</code>）。<strong>没有</strong> v1 的 sorted set 和 Lua 脚本。</td>
+</tr>
+<tr>
+<td>6</td>
+<td>过滤器是 CEL 吗？</td>
+<td><strong>不是</strong>。是自研的、基于 protobuf 字段的<strong>四类固定过滤器求交集</strong>：<code>TagPresent</code> &#x2F; <code>StringEquals</code> &#x2F; <code>DoubleRange</code> &#x2F; <code>CreationTimeRange</code>（<code>filter.go:52-139</code>）。go.mod 里没有任何 CEL 依赖。</td>
+</tr>
+<tr>
+<td>7</td>
+<td>一次能过滤多少票？</td>
+<td>gRPC 单消息 4MB 上限，OM <strong>不调大它</strong>，而是把 participants <strong>分块</strong>，每块带完整 Profile、只有票列表不同（<code>main.go:670</code>）。</td>
+</tr>
+<tr>
+<td>8</td>
+<td>两个 MMF 返回了包含同一张票的 Match 会怎样？</td>
+<td><strong>OM 完全不介入</strong>（”OM2 is no longer aware of ticket collisions”，<code>docs/MIGRATION.md:49</code>）。票会被 Deactivate 两次，冲突由开发者自己处理。</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Match 返回前要不要等票下线复制完成？</td>
+<td>默认<strong>要</strong>（<code>OM_MATCH_TICKET_DEACTIVATION_WAIT=true</code>，<code>config.go:57</code>）。关掉会更快但可能重复分配。</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Assignment 怎么给客户端？</td>
+<td><strong>推荐 matchmaker 自己推</strong>。OM 的 <code>CreateAssignments</code>&#x2F;<code>WatchAssignments</code> 都是 DEPRECATED（<code>proto/api.proto:72-81</code>）。</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>WatchAssignments</code> 是长轮询还是事件驱动？</td>
+<td><strong>都不是</strong>——是 server-streaming 接口 + 内部<strong>每票一个 goroutine + <code>time.Sleep(1s)</code> 死循环轮询</strong>（<code>main.go:1282-1298</code>）。代码自己承认 naive（<code>main.go:1318</code>）。</td>
+</tr>
+<tr>
+<td>12</td>
+<td>v2 怎么保证读性能？</td>
+<td>每个实例内存持有<strong>全量</strong> ticket 副本，过滤&#x2F;快照全走内存；Redis 只做复制总线。Redis 读端点还能挂只读副本横向扩展。</td>
+</tr>
+<tr>
+<td>13</td>
+<td>v2 能删 Ticket 吗？</td>
+<td><strong>没有删除 API</strong>。靠 TTL + deactivate 惰性清理（<code>main.go:342-343</code> 注释）。</td>
+</tr>
+<tr>
+<td>14</td>
+<td>本地开发要起 Redis 吗？</td>
+<td>不用。<code>OM_STATE_STORAGE_TYPE=memory</code> 用内存复制器（<code>main.go:143-151</code>），但生产不推荐（<code>main.go:150</code> 有 WARN）。</td>
+</tr>
+<tr>
+<td>15</td>
+<td>支持 Redis Cluster &#x2F; 分片吗？</td>
+<td><strong>明确不支持</strong>（<code>docs/FAQ.md:42</code>），假设单写实例。</td>
+</tr>
+</tbody></table>
+<h3 id="易错点与面试坑"><a href="#易错点与面试坑" class="headerlink" title="易错点与面试坑"></a>易错点与面试坑</h3><ol>
+<li><strong>把 v1 的 <code>FetchMatches</code> &#x2F; <code>ReleaseTickets</code> 套到 v2</strong>：v2 里这两个符号<strong>完全不存在</strong>（全仓库 grep 为 0）。等价物是 <code>InvokeMatchmakingFunctions</code> 与 <code>ActivateTickets</code>。</li>
+<li><strong>以为 Ticket 有 <code>assignment</code> 字段</strong>：v2 删掉了。Ticket 只有 <code>id</code> &#x2F; <code>expiration_time</code> &#x2F; <code>attributes</code> &#x2F; <code>extensions</code>（<code>proto/messages.proto:51-78</code>），<code>create_time</code> 也下沉到了 <code>attributes.creation_time</code>。</li>
+<li><strong>以为过滤器支持表达式</strong>：只有四类固定语义，且<strong>字段缺失即淘汰</strong>（<code>filter.go:90-93</code> 的 <code>!ok → return false</code>）—— 这一点和 SQL 的 <code>NULL</code> 行为完全不同。</li>
+<li><strong>忽略 <code>OM_CACHE_TICKET_TTL_MS</code> 的 clamp 语义</strong>：客户端指定的 <code>expiration_time</code> 只能比默认更短，不能更长，否则 <code>InvalidArgument</code>（<code>main.go:296-321</code>）。</li>
+<li><strong>以为 <code>DeactivateTickets</code> 的部分失败会整体失败</strong>：不会。坏 ID 走 <code>Status.details</code> 的 <code>BadRequest.FieldViolations</code> 返回（<code>main.go:1349-1367</code>）。</li>
+<li><strong>以为 <code>OM_MATCH_TICKET_DEACTIVATION_WAIT=true</code> 就万无一失</strong>：源码明确承认<strong>无法等所有实例</strong>复制完成（<code>main.go:1023-1029</code>），这是最终一致性的固有限制。</li>
+<li><strong><code>WatchAssignments</code> 的性能</strong>：每票一个 goroutine + 1s 轮询，票多时 goroutine 数和 CPU 都是问题（这是它废弃的原因之一）。</li>
+<li><strong>以为 OM 会帮你去重</strong>：不会。要绕开自动 Deactivate，把候选放 <code>Match.extensions</code> 而不是 roster，由 Director 审批后自行 <code>DeactivateTickets</code>（<code>docs/FAQ.md:80-86</code>）。</li>
+</ol>
+<h3 id="关键数值速记"><a href="#关键数值速记" class="headerlink" title="关键数值速记"></a>关键数值速记</h3><table>
+<thead>
+<tr>
+<th>项</th>
+<th>值</th>
+<th>出处</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>gRPC 端口（不对外）</td>
+<td><strong>50581</strong></td>
+<td><code>config.go:146</code></td>
+</tr>
+<tr>
+<td>HTTP gateway 端口</td>
+<td><strong>8080</strong></td>
+<td><code>config.go:138</code></td>
+</tr>
+<tr>
+<td>本地 Prometheus 端口</td>
+<td><strong>2223</strong></td>
+<td><code>metrics.go:151</code></td>
+</tr>
+<tr>
+<td><code>OM_MMF_TIMEOUT_SECS</code></td>
+<td><strong>600</strong>（10 分钟）</td>
+<td><code>config.go:64</code></td>
+</tr>
+<tr>
+<td><code>OM_MAX_STATE_UPDATES_PER_CALL</code></td>
+<td><strong>500</strong></td>
+<td><code>config.go:61</code></td>
+</tr>
+<tr>
+<td><code>OM_CACHE_TICKET_TTL_MS</code></td>
+<td><strong>600000</strong>（10 分钟）</td>
+<td><code>config.go:133</code></td>
+</tr>
+<tr>
+<td><code>OM_CACHE_ASSIGNMENT_ADDITIONAL_TTL_MS</code></td>
+<td>600000，<strong>已废弃</strong></td>
+<td><code>config.go:135</code></td>
+</tr>
+<tr>
+<td><code>OM_CACHE_OUT_MAX_QUEUE_THRESHOLD</code></td>
+<td><strong>50</strong></td>
+<td><code>config.go:131</code></td>
+</tr>
+<tr>
+<td><code>OM_CACHE_OUT_WAIT_TIMEOUT_MS</code></td>
+<td><strong>500</strong></td>
+<td><code>config.go:132</code></td>
+</tr>
+<tr>
+<td><code>OM_CACHE_IN_MAX_UPDATES_PER_POLL</code></td>
+<td><strong>10000</strong></td>
+<td><code>config.go:128</code></td>
+</tr>
+<tr>
+<td><code>OM_CACHE_IN_WAIT_TIMEOUT_MS</code></td>
+<td><strong>1500</strong></td>
+<td><code>config.go:129</code></td>
+</tr>
+<tr>
+<td><code>OM_CACHE_IN_SLEEP_BETWEEN_APPLYING_UPDATES_MS</code></td>
+<td><strong>500</strong></td>
+<td><code>config.go:130</code></td>
+</tr>
+<tr>
+<td><code>OM_MATCH_TICKET_DEACTIVATION_WAIT</code></td>
+<td><strong>true</strong></td>
+<td><code>config.go:57</code></td>
+</tr>
+<tr>
+<td>Ticket ID 正则</td>
+<td><code>^\d&#123;13&#125;-\d+$</code></td>
+<td><code>redis.go:133</code>、<code>memory.go:54</code></td>
+</tr>
+<tr>
+<td>Redis stream 名</td>
+<td><code>om-replication</code></td>
+<td><code>redis.go:378</code></td>
+</tr>
+<tr>
+<td>gRPC 分块阈值</td>
+<td><code>4 * 1000 * 1000</code></td>
+<td><code>main.go:670</code></td>
+</tr>
+<tr>
+<td>入向 update 应用锁超时</td>
+<td>500 ms</td>
+<td><code>replicatedticketcache.go:221</code></td>
+</tr>
+<tr>
+<td>单票下线确认超时&#x2F;间隔</td>
+<td>60 s &#x2F; 100 ms</td>
+<td><code>main.go:1084/1094</code></td>
+</tr>
+<tr>
+<td><code>WatchAssignments</code> 轮询间隔</td>
+<td>1 s</td>
+<td><code>main.go:1296</code></td>
+</tr>
+<tr>
+<td>metrics 前缀</td>
+<td><code>om_core.</code> &#x2F; <code>om_core.cache.</code></td>
+<td><code>metrics.go:33</code>、<code>cache/metrics.go:23</code></td>
+</tr>
+<tr>
+<td>服务名&#x2F;版本</td>
+<td><code>open_match</code> &#x2F; <code>2.0.0</code></td>
+<td><code>metrics.go:85-86</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="第一讲：组件拓扑与进程模型-——-v2-到底砍了什么"><a href="#第一讲：组件拓扑与进程模型-——-v2-到底砍了什么" class="headerlink" title="第一讲：组件拓扑与进程模型 —— v2 到底砍了什么"></a>第一讲：组件拓扑与进程模型 —— v2 到底砍了什么</h2><h3 id="先说人话：本讲每个阶段在干什么"><a href="#先说人话：本讲每个阶段在干什么" class="headerlink" title="先说人话：本讲每个阶段在干什么"></a>先说人话：本讲每个阶段在干什么</h3><p>读 v2 最容易犯的错，是拿着 v1 的架构图去找对应组件。所以第一讲先做一件事：**把 v1 的组件逐一拿来，确认它在 v2 里是”删除”、”改名”还是”保留”**。结论出来之后，剩下五讲才不会走偏。</p>
+<p>第二个目标是看清 <code>om-core</code> 这个进程<strong>启动时要开哪些东西</strong>——因为 v2 的”状态在内存、Redis 只做总线”这个设计，决定了它启动时必须先拉起两条常驻队列，否则整个服务是空的。</p>
+<h3 id="逐文件精读"><a href="#逐文件精读" class="headerlink" title="逐文件精读"></a>逐文件精读</h3><h4 id="1）v2-只有一个二进制：om-core"><a href="#1）v2-只有一个二进制：om-core" class="headerlink" title="1）v2 只有一个二进制：om-core"></a>1）v2 只有一个二进制：<code>om-core</code></h4><p><code>README.md:10</code> 的原话：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">10|* `main.go` (also called `om-core` in places where it may not be obvious that it is part of Open Match) is the core Open Match 2 application. It serves all the Open Match 2 API endpoints from a single horizontally-scalable container image.</span><br></pre></td></tr></table></figure>
+
+<p>关键词是 <strong>single horizontally-scalable</strong>——单进程、可水平扩展。这一点与 v1 的”frontend&#x2F;backend&#x2F;query 各自独立部署”形成根本差异。</p>
+<h4 id="2）唯一对外服务：OpenMatchService（6-个-RPC）"><a href="#2）唯一对外服务：OpenMatchService（6-个-RPC）" class="headerlink" title="2）唯一对外服务：OpenMatchService（6 个 RPC）"></a>2）唯一对外服务：<code>OpenMatchService</code>（6 个 RPC）</h4><p><code>proto/api.proto:29-82</code>：</p>
+<figure class="highlight protobuf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">29</span>	<span class="keyword">service </span><span class="title class_">OpenMatchService</span> &#123;</span><br><span class="line"><span class="number">35</span>	  <span class="function"><span class="keyword">rpc</span> CreateTicket(CreateTicketRequest)             <span class="keyword">returns</span> (CreateTicketResponse) </span>&#123; &#125;</span><br><span class="line"><span class="number">40</span>	  <span class="function"><span class="keyword">rpc</span> DeactivateTickets(DeactivateTicketsRequest)     <span class="keyword">returns</span> (DeactivateTicketsResponse) </span>&#123; &#125;</span><br><span class="line"><span class="number">45</span>	  <span class="function"><span class="keyword">rpc</span> ActivateTickets(ActivateTicketsRequest)       <span class="keyword">returns</span> (ActivateTicketResponse) </span>&#123; &#125;</span><br><span class="line"><span class="number">70</span>	  <span class="function"><span class="keyword">rpc</span> InvokeMatchmakingFunctions(MmfRequest)        <span class="keyword">returns</span> (stream StreamedMmfResponse) </span>&#123; &#125;</span><br><span class="line"><span class="number">72</span>	  <span class="comment">// *** <span class="doctag">NOTE:</span> DEPRECATED RPCs BELOW, DO NOT USE IN PRODUCTION ***</span></span><br><span class="line"><span class="number">77</span>	  <span class="function"><span class="keyword">rpc</span> CreateAssignments(CreateAssignmentsRequest)   <span class="keyword">returns</span> (CreateAssignmentsResponse) </span>&#123; &#125;</span><br><span class="line"><span class="number">81</span>	  <span class="function"><span class="keyword">rpc</span> WatchAssignments(WatchAssignmentsRequest)     <span class="keyword">returns</span> (stream StreamedWatchAssignmentsResponse) </span>&#123; &#125;</span><br><span class="line"><span class="number">82</span>	&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>只有两个是流式的</strong>：<code>InvokeMatchmakingFunctions</code>（server-streaming）与 <code>WatchAssignments</code>（server-streaming）。生成的 FullMethodName 在 <code>pkg/pb/api_grpc.pb.go:43-48</code>。</p>
+<p><strong>v1 的 <code>FrontendService</code> &#x2F; <code>BackendService</code> &#x2F; <code>QueryService</code> &#x2F; <code>MatchFunctionService</code> 全部消失</strong>。这一点做过全仓库验证：在 <code>*.go</code> 与 <code>*.proto</code> 中 grep <code>Frontend|Backend|QueryService|FetchMatches|ReleaseTickets|GetAssignments|Evaluator|Synchronizer</code>，除 <code>metrics.go:66</code> 注释里一句 “observability backend” 外，<strong>零命中</strong>。</p>
+<h4 id="3）MMF-契约：om-core-是客户端，不是服务端"><a href="#3）MMF-契约：om-core-是客户端，不是服务端" class="headerlink" title="3）MMF 契约：om-core 是客户端，不是服务端"></a>3）MMF 契约：om-core 是<strong>客户端</strong>，不是服务端</h4><p><code>proto/mmf.proto:23-29</code>：</p>
+<figure class="highlight protobuf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">23</span>	<span class="keyword">service </span><span class="title class_">MatchMakingFunctionService</span> &#123;</span><br><span class="line"><span class="number">28</span>	  <span class="function"><span class="keyword">rpc</span> Run(stream ChunkedMmfRunRequest) <span class="keyword">returns</span> (stream StreamedMmfResponse) </span>&#123; &#125;</span><br><span class="line"><span class="number">29</span>	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意方向：这是 <strong>om-core 调你的 MMF</strong> 用的契约，OM 自己不实现它（生成代码里的 <code>Unimplemented</code> 版本直接返回 <code>codes.Unimplemented</code>，<code>pkg/pb/mmf_grpc.pb.go:106-108</code>）。<strong>双向流</strong>——OM 流式灌票，MMF 流式回 Match。</p>
+<blockquote>
+<p>这是与 v1 的另一处关键差异：v1 的 MMF 要<strong>主动调 query service 拉 pool</strong>，v2 是 <strong>OM 主动把票喂过去</strong>（<code>docs/MIGRATION.md:171-175</code>）。MMF 因此变成了一个纯粹的无状态函数，非常容易测试和水平扩展。</p>
+</blockquote>
+<h4 id="4）砍掉了什么：evaluator-与-synchronizer"><a href="#4）砍掉了什么：evaluator-与-synchronizer" class="headerlink" title="4）砍掉了什么：evaluator 与 synchronizer"></a>4）砍掉了什么：evaluator 与 synchronizer</h4><p>源码中无任何 trace。<code>docs/MIGRATION.md:45-49</code> 把这件事讲得最透：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">45	In Open Match 1, the framework was deeply involved in ensuring match uniqueness through a multi-stage process involving a <span class="code">`synchronizer`</span> and an <span class="code">`evaluator`</span>. Matchmaking Functions (MMFs) did not produce final matches; they produced <span class="emphasis">*match proposals*</span>. ...</span><br><span class="line">49	Open Match 2 solves this by removing the <span class="code">`synchronizer`</span> and <span class="code">`evaluator`</span> entirely. Its responsibility now ends with orchestrating MMFs and streaming their results back to the client. OM2 is no longer aware of ticket collisions; if two MMFs return matches with an overlapping ticket, it will not intervene.</span><br></pre></td></tr></table></figure>
+
+<p><strong>这是 v2 最重要的哲学转变</strong>：唯一性保证从”框架责任”变成”开发者责任”。代价是你要自己处理冲突；收益是砍掉了两个最难运维的有状态组件。</p>
+<h4 id="5）进程启动链：main-→-start"><a href="#5）进程启动链：main-→-start" class="headerlink" title="5）进程启动链：main() → start()"></a>5）进程启动链：<code>main()</code> → <code>start()</code></h4><p><code>main.go:98-170</code>。按顺序做五件事：</p>
+<p><strong>① 读配置 + 配日志</strong>（<code>main.go:100-101</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">100</span>		cfg = config.Read()</span><br><span class="line"><span class="number">101</span>		logging.ConfigureLogging(cfg)</span><br></pre></td></tr></table></figure>
+
+<p><strong>② TLS 根证书</strong>（<code>main.go:109-119</code>）：给调用 https MMF 时用。</p>
+<p><strong>③ 可观测性二选一</strong>（<code>main.go:122-129</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">122</span>	<span class="keyword">if</span> cfg.GetBool(<span class="string">&quot;OM_OTEL_SIDECAR&quot;</span>) &#123;</span><br><span class="line"><span class="number">123</span>		meter, otelShutdownFunc = initializeOtel()</span><br><span class="line"><span class="number">124</span>	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line"><span class="number">125</span>		meter, otelShutdownFunc = initializeOtelWithLocalProm()</span><br><span class="line"><span class="number">126</span>	&#125;</span><br><span class="line"><span class="number">127</span>	<span class="keyword">defer</span> otelShutdownFunc(ctx) <span class="comment">//nolint:errcheck</span></span><br><span class="line"><span class="number">128</span>	registerMetrics(meter)</span><br><span class="line"><span class="number">129</span>	cache.RegisterMetrics(meter)</span><br></pre></td></tr></table></figure>
+<p>默认走 OTLP sidecar（<code>OM_OTEL_SIDECAR=true</code>，<code>config.go:46</code>）；关掉则起本地 Prometheus。</p>
+<p><strong>④ 选复制器并拉起两条常驻队列</strong>（<code>main.go:131-156</code>）——<strong>这是本讲最关键的一段</strong>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">131</span>	<span class="comment">// Set up the replicated ticket cache.</span></span><br><span class="line"><span class="number">133</span>	tc.Cfg = cfg</span><br><span class="line"><span class="number">134</span>	tc.UpRequests = <span class="built_in">make</span>(<span class="keyword">chan</span> *cache.UpdateRequest)</span><br><span class="line"><span class="number">135</span>	<span class="keyword">switch</span> cfg.GetString(<span class="string">&quot;OM_STATE_STORAGE_TYPE&quot;</span>) &#123;</span><br><span class="line"><span class="number">136</span>	<span class="keyword">case</span> <span class="string">&quot;redis&quot;</span>:</span><br><span class="line"><span class="number">138</span>		rr, err := redisReplicator.New(cfg)</span><br><span class="line"><span class="number">142</span>		tc.Replicator = rr</span><br><span class="line"><span class="number">143</span>	<span class="keyword">case</span> <span class="string">&quot;memory&quot;</span>:</span><br><span class="line"><span class="number">150</span>		logger.Warnf(<span class="string">&quot;OM_STATE_STORAGE_TYPE configuration variable set to &#x27;memory&#x27;. NOT RECOMMENDED FOR PRODUCTION&quot;</span>)</span><br><span class="line"><span class="number">151</span>		tc.Replicator = memoryReplicator.New(cfg)</span><br><span class="line"><span class="number">152</span>	&#125;</span><br><span class="line"><span class="number">155</span>	<span class="keyword">go</span> tc.OutgoingReplicationQueue(ctx)</span><br><span class="line"><span class="number">156</span>	<span class="keyword">go</span> tc.IncomingReplicationQueue(ctx)</span><br><span class="line"><span class="number">159</span>	start(cfg)</span><br></pre></td></tr></table></figure>
+
+<p><strong>注意顺序</strong>：两条 goroutine 必须在 <code>start()</code>（开始接受请求）<strong>之前</strong>拉起来。否则请求进来时本地缓存是空的，过滤不到任何票。</p>
+<p><strong>⑤ <code>start()</code> 起双端口</strong>（<code>server.go:43-98</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">55</span>	logger.Infof(<span class="string">&quot;Open Match Server starting unexposed gRPC server on port %v&quot;</span>, cfg.GetString(<span class="string">&quot;OM_GRPC_PORT&quot;</span>))</span><br><span class="line"><span class="number">56</span>	lis, err := net.Listen(<span class="string">&quot;tcp&quot;</span>, <span class="string">&quot;:&quot;</span>+cfg.GetString(<span class="string">&quot;OM_GRPC_PORT&quot;</span>))</span><br><span class="line"><span class="number">61</span>	opts = <span class="built_in">append</span>(opts, grpc.StatsHandler(&amp;Handler&#123;&#125;))</span><br><span class="line"><span class="number">62</span>	omServer := grpc.NewServer(opts...)</span><br><span class="line"><span class="number">63</span>	pb.RegisterOpenMatchServiceServer(omServer, &amp;grpcServer&#123;&#125;)</span><br><span class="line"><span class="number">72</span>	logger.Infof(<span class="string">&quot;Open Match Server starting HTTP gRPC proxy on port %v&quot;</span>, cfg.GetString(<span class="string">&quot;PORT&quot;</span>))</span><br><span class="line"><span class="number">74</span>	err = gw.RegisterOpenMatchServiceHandlerFromEndpoint(</span><br><span class="line"><span class="number">77</span>		<span class="string">&quot;localhost:&quot;</span>+cfg.GetString(<span class="string">&quot;OM_GRPC_PORT&quot;</span>),</span><br></pre></td></tr></table></figure>
+
+<p>即：<strong>gRPC 在 50581（不对外暴露），HTTP gateway 在 8080，gateway 再反向拨到本地 gRPC 端口</strong>。所有 RPC 的指标由 <code>server.go:61</code> 注入的 <code>stats.Handler</code> <strong>零侵入</strong>采集。</p>
+<h4 id="6）部署拓扑"><a href="#6）部署拓扑" class="headerlink" title="6）部署拓扑"></a>6）部署拓扑</h4><table>
+<thead>
+<tr>
+<th>环境</th>
+<th>清单</th>
+<th>结构</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Cloud Run</td>
+<td><code>deploy/cloud_run/service.yaml:36-50</code></td>
+<td>单 Service，<code>om-core</code> + <code>otel-collector-sidecar</code> 两个容器；<code>containerConcurrency: 1000</code>（<code>:35</code>），maxScale 100（<code>:29</code>）</td>
+</tr>
+<tr>
+<td>GKE</td>
+<td><code>deploy/gke/om.yaml:24-60</code></td>
+<td>单 Deployment（replicas 1）+ otel sidecar</td>
+</tr>
+</tbody></table>
+<p>两处都把 Redis <strong>读写端点分离</strong>（<code>deploy/cloud_run/service.yaml:44-47</code>、<code>deploy/gke/om.yaml:48-51</code>），这是”读走只读副本、写走主库”的支撑。</p>
+<p>REST 路由（grpc-gateway 的 http rules）在 <code>proto/api.yaml:22-44</code>：<code>/tickets</code>(POST)、<code>/tickets:deactivate</code>(DELETE)、<code>/tickets:activate</code>(POST)、<code>/matches:fetch</code>(POST)、<code>/assignments:create</code>(POST)、<code>/assignments:watch</code>(POST)。</p>
+<blockquote>
+<p>⚠️ 使用 gateway 时响应会被包在 <code>&quot;result&quot;</code> 键里，客户端要先解一层（<code>docs/FAQ.md:96-98</code>）。</p>
+</blockquote>
+<h3 id="v1-vs-v2-组件对照（本讲核心表）"><a href="#v1-vs-v2-组件对照（本讲核心表）" class="headerlink" title="v1 vs v2 组件对照（本讲核心表）"></a>v1 vs v2 组件对照（本讲核心表）</h3><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>v1</th>
+<th>v2（源码事实）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>进程数</td>
+<td>多微服务（frontend&#x2F;backend&#x2F;query&#x2F;synchronizer&#x2F;evaluator&#x2F;swaggerui&#x2F;scale）</td>
+<td>**单二进制 <code>om-core</code>**（<code>README.md:10</code>）</td>
+</tr>
+<tr>
+<td>对外服务</td>
+<td>4 个 Service</td>
+<td>**1 个 <code>OpenMatchService</code>**（<code>proto/api.proto:29</code>）</td>
+</tr>
+<tr>
+<td>evaluator</td>
+<td>必需</td>
+<td><strong>删除</strong>（<code>docs/MIGRATION.md:49</code>）</td>
+</tr>
+<tr>
+<td>synchronizer</td>
+<td>必需（同步窗口）</td>
+<td><strong>删除</strong>（同上）</td>
+</tr>
+<tr>
+<td>MMF 取票</td>
+<td>MMF 主动调 query service 拉</td>
+<td><strong>OM 主动灌双向流</strong>（<code>main.go:980-986</code>）</td>
+</tr>
+<tr>
+<td>MMF 产物</td>
+<td>提案（需 evaluator 裁决）</td>
+<td><strong>终局 Match</strong>（<code>docs/MIGRATION.md:183</code>）</td>
+</tr>
+<tr>
+<td>REST MMF</td>
+<td>支持</td>
+<td><strong>不支持</strong>，硬报错（<code>main.go:826-835</code>）</td>
+</tr>
+<tr>
+<td>构建</td>
+<td>1000+ 行 Makefile</td>
+<td>CNCF Buildpacks（<code>docs/MIGRATION.md:17-19</code>）</td>
+</tr>
+</tbody></table>
+<h3 id="第一讲小结：v2-是”把裁决权还给开发者，把状态收敛到一个进程”"><a href="#第一讲小结：v2-是”把裁决权还给开发者，把状态收敛到一个进程”" class="headerlink" title="第一讲小结：v2 是”把裁决权还给开发者，把状态收敛到一个进程”"></a>第一讲小结：v2 是”把裁决权还给开发者，把状态收敛到一个进程”</h3><table>
+<thead>
+<tr>
+<th>项</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>一句话定位</strong></td>
+<td>v1 → v2 不是优化，是<strong>职责重划</strong>：框架从”匹配裁决者”退回到”MMF 编排器 + 状态复制器”</td>
+</tr>
+<tr>
+<td><strong>输入</strong></td>
+<td>Redis Streams 复制来的状态 + 客户端请求</td>
+</tr>
+<tr>
+<td><strong>输出</strong></td>
+<td>6 个 RPC 响应（其中 2 个废弃）+ 流式 Match + OTel 指标</td>
+</tr>
+<tr>
+<td><strong>三个最值得记住的点</strong></td>
+<td>① <strong>删掉了 synchronizer&#x2F;evaluator</strong>，唯一性由开发者负责；② 唯一服务 <code>OpenMatchService</code>，<code>FetchMatches</code>&#x2F;<code>ReleaseTickets</code> 已不存在；③ 启动顺序是<strong>先拉两条复制队列、再 <code>start()</code></strong></td>
+</tr>
+</tbody></table>
+<pre><code class="highlight mermaid">flowchart LR
+    subgraph v1[&quot;Open Match 1&quot;]
+        F1[&quot;Frontend&quot;] --&gt; Q1[&quot;Query&quot;]
+        B1[&quot;Backend&quot;] --&gt; S1[&quot;Synchronizer&quot;]
+        S1 --&gt; E1[&quot;Evaluator&quot;]
+        E1 --&gt; B1
+        Q1 --&gt; MMF1[&quot;MMF 拉票&quot;]
+    end
+    subgraph v2[&quot;Open Match 2&quot;]
+        Core[&quot;om-core 单二进制&quot;] --&gt;|&quot;双向流灌票&quot;| MMF2[&quot;MMF&quot;]
+        MMF2 --&gt;|&quot;终局 Match&quot;| Core
+    end
+    v1 --&gt;|&quot;删除 synchronizer + evaluator&quot;| v2</code></pre>
+
+<hr>
+<h2 id="第二讲：Ticket-生命周期-——-从创建到激活"><a href="#第二讲：Ticket-生命周期-——-从创建到激活" class="headerlink" title="第二讲：Ticket 生命周期 —— 从创建到激活"></a>第二讲：Ticket 生命周期 —— 从创建到激活</h2><h3 id="先说人话：本讲每个阶段在干什么-1"><a href="#先说人话：本讲每个阶段在干什么-1" class="headerlink" title="先说人话：本讲每个阶段在干什么"></a>先说人话：本讲每个阶段在干什么</h3><p>一张 Ticket 的一生只有四件事：<strong>被创建 →（必须）被激活 → 被某个 MMF 选中 → 被摘出池子</strong>。听起来简单，但 v2 在这条链上埋了三个反直觉的设计：</p>
+<ol>
+<li>Ticket <strong>没有 ID 字段</strong>——ID 是存储层（Redis Stream）给的；</li>
+<li>创建出来的票<strong>默认不参与匹配</strong>，必须显式激活；</li>
+<li>没有”删除 Ticket”这个 API，票只会因为过期而消失。</li>
+</ol>
+<p>这三个设计其实由<strong>同一个不变式</strong>串起来：<strong>Ticket ID ≡ Redis Stream entry ID</strong>。本讲会看到它如何同时决定了 ID 回填时机、初始 inactive、以及过期为什么能直接解析 ID 前 13 位当时间戳。</p>
+<h3 id="逐文件精读-1"><a href="#逐文件精读-1" class="headerlink" title="逐文件精读"></a>逐文件精读</h3><h4 id="1）Ticket-数据结构"><a href="#1）Ticket-数据结构" class="headerlink" title="1）Ticket 数据结构"></a>1）Ticket 数据结构</h4><p><code>proto/messages.proto:51-78</code>：</p>
+<figure class="highlight protobuf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">51</span>	<span class="keyword">message </span><span class="title class_">Ticket</span> &#123;</span><br><span class="line"><span class="number">53</span>	  <span class="type">string</span> id = <span class="number">1</span>;</span><br><span class="line"><span class="number">55</span>	  google.protobuf.Timestamp expiration_time = <span class="number">2</span>;</span><br><span class="line"><span class="number">64</span>	  <span class="keyword">message </span><span class="title class_">FilterableData</span> &#123;</span><br><span class="line"><span class="number">65</span>	    <span class="keyword">repeated</span> <span class="type">string</span> tags = <span class="number">1</span>;               <span class="comment">// Strings, filterable on presence of tag.</span></span><br><span class="line"><span class="number">66</span>	    map&lt;<span class="type">string</span>, <span class="type">string</span>&gt; string_args = <span class="number">2</span>;    <span class="comment">// key+value pairs, string values filterable on equality.</span></span><br><span class="line"><span class="number">67</span>	    map&lt;<span class="type">string</span>, <span class="type">double</span>&gt; double_args = <span class="number">3</span>;    <span class="comment">// key+value pairs, float values filterable on ranges.</span></span><br><span class="line"><span class="number">72</span>	    google.protobuf.Timestamp creation_time = <span class="number">4</span>;</span><br><span class="line"><span class="number">73</span>	  &#125;</span><br><span class="line"><span class="number">74</span>	  FilterableData attributes = <span class="number">3</span>;</span><br><span class="line"><span class="number">77</span>	  map&lt;<span class="type">string</span>, google.protobuf.Any&gt; extensions = <span class="number">4</span>;</span><br><span class="line"><span class="number">78</span>	&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>与 v1 的字段差异</strong>（<code>docs/MIGRATION.md:83-87</code>）：</p>
+<table>
+<thead>
+<tr>
+<th>v1</th>
+<th>v2</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Assignment assignment</code></td>
+<td><strong>删除</strong></td>
+<td>Ticket 不再持有 assignment</td>
+</tr>
+<tr>
+<td><code>SearchFields search_fields</code></td>
+<td><code>Ticket_FilterableData attributes</code></td>
+<td>重命名</td>
+</tr>
+<tr>
+<td><code>google.protobuf.Timestamp create_time</code></td>
+<td><strong>删除顶层</strong> → <code>attributes.creation_time</code></td>
+<td>由存储层生成并 augment</td>
+</tr>
+<tr>
+<td>—</td>
+<td><strong><code>expiration_time</code>（新增）</strong></td>
+<td>开发者可控 TTL</td>
+</tr>
+</tbody></table>
+<h4 id="2）CreateTicket：不写存储，只投递更新"><a href="#2）CreateTicket：不写存储，只投递更新" class="headerlink" title="2）CreateTicket：不写存储，只投递更新"></a>2）<code>CreateTicket</code>：不写存储，只投递更新</h4><p>gRPC 入口是薄转发（<code>main.go:183-185</code>），真正的实现在 <code>createTicket</code>（<code>main.go:190-235</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">190</span>	<span class="function"><span class="keyword">func</span> <span class="title">createTicket</span><span class="params">(parentCtx context.Context, tc *cache.ReplicatedTicketCache, req *pb.CreateTicketRequest)</span></span> (*pb.CreateTicketResponse, <span class="type">error</span>) &#123;</span><br><span class="line"><span class="number">201</span>		ticketPb, err := validateAndMarshalIncomingTicket(req)</span><br><span class="line"><span class="number">210</span>		otelTicketSize.Record(parentCtx, <span class="type">float64</span>(<span class="built_in">len</span>(ticketPb))/<span class="number">1024.0</span>)</span><br><span class="line"><span class="number">213</span>		rChan := <span class="built_in">make</span>(<span class="keyword">chan</span> *store.StateResponse)</span><br><span class="line"><span class="number">217</span>		tc.UpRequests &lt;- &amp;cache.UpdateRequest&#123;</span><br><span class="line"><span class="number">223</span>			ResultsChan: rChan,</span><br><span class="line"><span class="number">224</span>			Ctx:         parentCtx,</span><br><span class="line"><span class="number">225</span>			Update: store.StateUpdate&#123;</span><br><span class="line"><span class="number">226</span>				Cmd:   store.Ticket,</span><br><span class="line"><span class="number">227</span>				Value: <span class="type">string</span>(ticketPb[:]),</span><br><span class="line"><span class="number">228</span>			&#125;,</span><br><span class="line"><span class="number">229</span>		&#125;</span><br><span class="line"><span class="number">232</span>		results := &lt;-rChan</span><br><span class="line"><span class="number">234</span>		<span class="keyword">return</span> &amp;pb.CreateTicketResponse&#123;TicketId: results.Result&#125;, results.Err</span><br><span class="line"><span class="number">235</span>	&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>读法</strong>：handler 根本不碰存储。它往 <code>tc.UpRequests</code> 投递一条 <code>store.Ticket</code> 更新，然后<strong>阻塞等</strong>异步 pipeline 回传的 <code>StateResponse.Result</code>——那个值就是 Ticket ID。</p>
+<h4 id="3）Ticket-ID-由存储层生成：一条不变式串起五处设计"><a href="#3）Ticket-ID-由存储层生成：一条不变式串起五处设计" class="headerlink" title="3）Ticket ID 由存储层生成：一条不变式串起五处设计"></a>3）Ticket ID 由存储层生成：一条不变式串起五处设计</h4><p><code>replicatedticketcache.go:251-258</code> 把这件事讲得很清楚：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">251</span>					<span class="comment">// Set TicketID. Must do it post-replication since</span></span><br><span class="line"><span class="number">252</span>					<span class="comment">// TicketID /is/ the Replication ID</span></span><br><span class="line"><span class="number">253</span>					<span class="comment">// (e.g. redis stream entry id)</span></span><br><span class="line"><span class="number">254</span>					ticketPb.Id = curUpdate.Key</span><br><span class="line"><span class="number">255</span></span><br><span class="line"><span class="number">256</span>					<span class="comment">// All tickets begin inactive</span></span><br><span class="line"><span class="number">257</span>					tc.InactiveSet.Store(curUpdate.Key, <span class="literal">true</span>)</span><br><span class="line"><span class="number">258</span>					tc.Tickets.Store(curUpdate.Key, ticketPb)</span><br></pre></td></tr></table></figure>
+
+<p>Redis 侧的对应代码是 <code>redis.go:594</code>：<code>thisUpdate.Key = replId</code>（replId 即 stream entry ID）。</p>
+<p><strong>这条不变式解释了五个看似无关的地方</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>位置</th>
+<th>为什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ID 在 cache 层才回填，不在 handler 里</td>
+<td><code>replicatedticketcache.go:254</code></td>
+<td>ID 就是复制 ID，只有复制完才有</td>
+</tr>
+<tr>
+<td>新票一律先进 <code>InactiveSet</code></td>
+<td><code>replicatedticketcache.go:257</code></td>
+<td>拿到 ID 才证明已复制；未复制的票不许进池</td>
+</tr>
+<tr>
+<td>过期可以直接 <code>strings.Split(id,&quot;-&quot;)[0]</code> 取毫秒时间戳</td>
+<td><code>replicatedticketcache.go:369</code></td>
+<td>entry ID 前 13 位就是毫秒时间戳</td>
+</tr>
+<tr>
+<td><code>WatchAssignments</code> 能凭 ticket id 反推创建时间算超时</td>
+<td><code>main.go:1301-1305</code></td>
+<td>同上</td>
+</tr>
+<tr>
+<td>ID 校验正则是 <code>^\d&#123;13&#125;-\d+$</code></td>
+<td><code>redis.go:133</code>、<code>memory.go:54</code></td>
+<td>就是 entry ID 的格式</td>
+</tr>
+</tbody></table>
+<h4 id="4）时间戳校验：validateAndMarshalIncomingTicket"><a href="#4）时间戳校验：validateAndMarshalIncomingTicket" class="headerlink" title="4）时间戳校验：validateAndMarshalIncomingTicket"></a>4）时间戳校验：<code>validateAndMarshalIncomingTicket</code></h4><p><code>main.go:255-335</code> 做三件事：</p>
+<p><strong>① 自带 ID 就警告</strong>（<code>main.go:264-269</code>）：OM 自己生成，客户端传了也白传。</p>
+<p><strong>② creation time 归一化</strong>（<code>main.go:277-292</code>）：空 &#x2F; 非法 &#x2F; 未来 → 一律替换为 <code>timestamppb.Now()</code>。</p>
+<p><strong>③ expiration time 归一化</strong>（<code>main.go:299-321</code>）——注意这里是<strong>硬 clamp</strong>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">299</span>	exTime := req.GetTicket().GetExpirationTime()</span><br><span class="line"><span class="number">300</span>	maxExTime := time.Now().Add(time.Millisecond *</span><br><span class="line"><span class="number">301</span>		time.Duration(cfg.GetInt(<span class="string">&quot;OM_CACHE_TICKET_TTL_MS&quot;</span>)))</span><br><span class="line"><span class="number">303</span>	<span class="keyword">switch</span> &#123;</span><br><span class="line"><span class="number">304</span>	<span class="keyword">case</span> exTime == <span class="literal">nil</span>:</span><br><span class="line"><span class="number">311</span>		exTime = timestamppb.New(maxExTime)</span><br><span class="line"><span class="number">312</span>	<span class="keyword">case</span> !exTime.IsValid():</span><br><span class="line"><span class="number">313</span>		<span class="keyword">fallthrough</span></span><br><span class="line"><span class="number">314</span>	<span class="keyword">case</span> exTime.AsTime().After(maxExTime):</span><br><span class="line"><span class="number">315</span>		<span class="keyword">fallthrough</span></span><br><span class="line"><span class="number">316</span>	<span class="keyword">case</span> exTime.AsTime().Before(time.Now()):</span><br><span class="line"><span class="number">318</span>		<span class="keyword">return</span> <span class="literal">nil</span>, fmt.Errorf(<span class="string">&quot;%w&quot;</span>, status.Error(codes.InvalidArgument,</span><br><span class="line"><span class="number">319</span>			fmt.Sprintf(<span class="string">&quot;specified expiration time not between (now, now + %v)&quot;</span>,</span><br><span class="line"><span class="number">320</span>				cfg.GetInt(<span class="string">&quot;OM_CACHE_TICKET_TTL_MS&quot;</span>))))</span><br><span class="line"><span class="number">321</span>	&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>匹配器只能要求比默认 TTL 更短的过期，不能更长</strong>（注释在 <code>main.go:296-298</code>）。这是防止单个客户端拖垮全局缓存的设计。</p>
+<p>最后 marshal 成只带 4 个字段的 Ticket（<code>main.go:324-333</code>），<strong>Id 不写入存储</strong>。</p>
+<h4 id="5）”新票一律-inactive”的官方表述"><a href="#5）”新票一律-inactive”的官方表述" class="headerlink" title="5）”新票一律 inactive”的官方表述"></a>5）”新票一律 inactive”的官方表述</h4><p><code>main.go:176-182</code> 的文档注释：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">176</span>	<span class="comment">// CreateTicket generates an event to update the ticket state storage, adding a</span></span><br><span class="line"><span class="number">177</span>	<span class="comment">// new ticket. The ticket&#x27;s id will be generated by the state storage and</span></span><br><span class="line"><span class="number">178</span>	<span class="comment">// returned asynchronously.  This request hangs until it can return the ticket</span></span><br><span class="line"><span class="number">179</span>	<span class="comment">// id. When a ticket is created, it starts off as inactive and must be</span></span><br><span class="line"><span class="number">180</span>	<span class="comment">// activated with the ActivateTickets call. This ensures that no ticket that</span></span><br><span class="line"><span class="number">181</span>	<span class="comment">// was not successfully replicated and returned to the om-core client is ever</span></span><br><span class="line"><span class="number">182</span>	<span class="comment">// put in the pool.</span></span><br></pre></td></tr></table></figure>
+
+<p>最后一句是设计意图：<strong>保证”没有成功复制并返回给客户端的票”永远不会被分配出去</strong>。</p>
+<h4 id="6）Activate-Deactivate：对称三步-两个设计细节"><a href="#6）Activate-Deactivate：对称三步-两个设计细节" class="headerlink" title="6）Activate &#x2F; Deactivate：对称三步 + 两个设计细节"></a>6）Activate &#x2F; Deactivate：对称三步 + 两个设计细节</h4><ul>
+<li>gRPC 壳：<code>main.go:349-354</code>（Deactivate）、<code>main.go:402-408</code>（Activate）</li>
+<li>实现：<code>main.go:359-393</code>、<code>main.go:413-447</code></li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">368</span>		validTicketIds, invalidIdErrorDetails, err := validateTicketStateUpdates(logger,</span><br><span class="line"><span class="number">369</span>			tc.Replicator.GetReplIdValidator(), req.GetTicketIds())</span><br><span class="line"><span class="number">376</span>		updateStateErrDetails := updateTicketsActiveState(ctx, logger, tc, validTicketIds, store.Deactivate)</span><br><span class="line"><span class="number">380</span>		maps.Copy(updateStateErrDetails, invalidIdErrorDetails)</span><br><span class="line"><span class="number">382</span>			err = addErrorDetails(updateStateErrDetails, status.New(codes.InvalidArgument, err.Error()))</span><br></pre></td></tr></table></figure>
+
+<p><strong>细节一：不可取消</strong>（<code>main.go:361-362</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">361</span>		<span class="comment">// This function does not allow for cancelling once the request is received.</span></span><br><span class="line"><span class="number">362</span>		ctx := context.WithoutCancel(parentCtx)</span><br></pre></td></tr></table></figure>
+<p>请求一旦收到就必须走完——否则状态会与客户端认知不一致。</p>
+<p><strong>细节二：部分成功语义</strong>。坏 ID 不中断整批，而是通过 gRPC <code>Status.details</code> 的 <code>errdetails.BadRequest.FieldViolations</code> 返回，字段名格式 <code>ticket_id/&lt;id&gt;</code>（<code>main.go:1349-1367</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1352</span>		deets := &amp;errdetails.BadRequest&#123;&#125;</span><br><span class="line"><span class="number">1353</span>		<span class="keyword">for</span> ticketId, e := <span class="keyword">range</span> errs &#123;</span><br><span class="line"><span class="number">1354</span>			deets.FieldViolations = <span class="built_in">append</span>(deets.FieldViolations, &amp;errdetails.BadRequest_FieldViolation&#123;</span><br><span class="line"><span class="number">1355</span>				Field:       fmt.Sprintf(<span class="string">&quot;ticket_id/%v&quot;</span>, ticketId),</span><br><span class="line"><span class="number">1356</span>				Description: e.Error(),</span><br><span class="line"><span class="number">1357</span>			&#125;)</span><br><span class="line"><span class="number">1358</span>		&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>updateTicketsActiveState</code>（<code>main.go:505-566</code>）里还有一处注释值得记住——<strong>必须读满结果数量，哪怕 ctx 已取消</strong>（<code>main.go:548-555</code>），否则提前关闭 results channel 会让不感知 context 的状态存储层 panic。</p>
+<h4 id="7）Ticket-ID-合法性校验"><a href="#7）Ticket-ID-合法性校验" class="headerlink" title="7）Ticket ID 合法性校验"></a>7）Ticket ID 合法性校验</h4><p><code>main.go:454-499</code>，先卡数量上限再正则校验：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">464</span>		numReqUpdates := <span class="built_in">len</span>(ticketIds)</span><br><span class="line"><span class="number">465</span>		<span class="keyword">if</span> numReqUpdates &gt; cfg.GetInt(<span class="string">&quot;OM_MAX_STATE_UPDATES_PER_CALL&quot;</span>) &#123;</span><br><span class="line"><span class="number">466</span>			<span class="keyword">return</span> <span class="literal">nil</span>, <span class="literal">nil</span>, fmt.Errorf(<span class="string">&quot;%w (configured maximum %v, requested %v)&quot;</span>,</span><br><span class="line"><span class="number">467</span>				TooManyUpdatesErr, cfg.GetInt(<span class="string">&quot;OM_MAX_STATE_UPDATES_PER_CALL&quot;</span>), numReqUpdates)</span><br><span class="line"><span class="number">468</span>		&#125;</span><br><span class="line"><span class="number">477</span>			<span class="keyword">for</span> _, id := <span class="keyword">range</span> ticketIds &#123;</span><br><span class="line"><span class="number">478</span>				<span class="keyword">if</span> idValidator.MatchString(id) &#123;</span><br><span class="line"><span class="number">479</span>					validIds = <span class="built_in">append</span>(validIds, id)</span><br><span class="line"><span class="number">483</span>					invalidIdErrorDetails[id] = InvalidIdErr</span><br></pre></td></tr></table></figure>
+
+<h3 id="端到端演算-①：一次-CreateTicket-ActivateTickets-的完整链路"><a href="#端到端演算-①：一次-CreateTicket-ActivateTickets-的完整链路" class="headerlink" title="端到端演算 ①：一次 CreateTicket + ActivateTickets 的完整链路"></a>端到端演算 ①：一次 <code>CreateTicket</code> + <code>ActivateTickets</code> 的完整链路</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">① grpc-gateway 路由            proto/api.yaml:22-24</span><br><span class="line">② HTTP→gRPC 转发               server.go:89</span><br><span class="line">③ grpcServer.CreateTicket      main.go:183-185</span><br><span class="line">④ createTicket                 main.go:190</span><br><span class="line">   ├ validateAndMarshal        main.go:255-335</span><br><span class="line">   │   ├ creation time 归一     main.go:277-292</span><br><span class="line">   │   ├ expiration time 归一    main.go:299-321  （上限 = now + TTL）</span><br><span class="line">   │   └ proto.Marshal         main.go:324-333   （Id 不落盘）</span><br><span class="line">   ├ otelTicketSize.Record     main.go:210</span><br><span class="line">   └ tc.UpRequests &lt;- Update   main.go:217-229   （Cmd = store.Ticket）</span><br><span class="line">⑤ OutgoingReplicationQueue     replicatedticketcache.go:85   攒批</span><br><span class="line">⑥ Replicator.SendUpdates       redis.go:357     XADD + XTRIM</span><br><span class="line">⑦ 回传 StateResponse&#123;Result&#125;   replicatedticketcache.go:150-152</span><br><span class="line">⑧ createTicket 读 rChan 返回    main.go:232-234   ← TicketId 诞生</span><br><span class="line">———————————— 以下为独立常驻路径 ————————————</span><br><span class="line">⑨ IncomingReplicationQueue     replicatedticketcache.go:157</span><br><span class="line">   ├ GetUpdates (XREAD BLOCK)  redis.go:528</span><br><span class="line">   ├ Id = Key                  replicatedticketcache.go:254</span><br><span class="line">   ├ InactiveSet.Store         replicatedticketcache.go:257  ← 一律先 inactive</span><br><span class="line">   └ Tickets.Store             replicatedticketcache.go:258</span><br><span class="line">———————————— Activate ————————————</span><br><span class="line">⑩ grpcServer.ActivateTickets   main.go:402-408</span><br><span class="line">⑪ validateTicketStateUpdates   main.go:454-499   （数量 + 正则）</span><br><span class="line">⑫ updateTicketsActiveState     main.go:505-566   （Cmd = store.Activate）</span><br><span class="line">⑬ Redis XADD &quot;activate&quot;        redis.go:394-395</span><br><span class="line">⑭ InactiveSet.Delete           replicatedticketcache.go:262  ← 票进入可见池</span><br></pre></td></tr></table></figure>
+
+<h3 id="第二讲小结：Ticket-ID-就是-Redis-Stream-的-entry-ID"><a href="#第二讲小结：Ticket-ID-就是-Redis-Stream-的-entry-ID" class="headerlink" title="第二讲小结：Ticket ID 就是 Redis Stream 的 entry ID"></a>第二讲小结：Ticket ID 就是 Redis Stream 的 entry ID</h3><table>
+<thead>
+<tr>
+<th>项</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>一句话定位</strong></td>
+<td>Ticket 的一生由<strong>一条不变式</strong>驱动：<strong>ID ≡ Stream entry ID</strong>，它同时决定了 ID 回填时机、初始 inactive、以及过期算法</td>
+</tr>
+<tr>
+<td><strong>输入</strong></td>
+<td><code>CreateTicketRequest</code>（含 attributes 与可选 expiration）</td>
+</tr>
+<tr>
+<td><strong>输出</strong></td>
+<td><code>TicketId</code>（由存储层生成）+ 一张默认 inactive 的票</td>
+</tr>
+<tr>
+<td><strong>三个最值得记住的点</strong></td>
+<td>① 新票<strong>必须显式 Activate</strong> 才进池，这是”未复制不分配”的保证；② <code>expiration_time</code> <strong>只能比 TTL 短不能长</strong>；③ 没有删除 API，票只因过期而消失</td>
+</tr>
+</tbody></table>
+<pre><code class="highlight mermaid">stateDiagram-v2
+    [*] --&gt; PortAllocation: createTicket
+    PortAllocation --&gt; inactive: InactiveSet.Store
+    inactive --&gt; active: ActivateTickets
+    active --&gt; inactive: DeactivateTickets
+    active --&gt; inactive: MMF返回的Match自动Deactivate
+    inactive --&gt; [*]: TTL过期清理
+    active --&gt; [*]: expiration_time到期清理</code></pre>
+
+<hr>
+<h2 id="第三讲：状态存储抽象-——-Redis-Streams-是唯一的真相"><a href="#第三讲：状态存储抽象-——-Redis-Streams-是唯一的真相" class="headerlink" title="第三讲：状态存储抽象 —— Redis Streams 是唯一的真相"></a>第三讲：状态存储抽象 —— Redis Streams 是唯一的真相</h2><h3 id="先说人话：本讲每个阶段在干什么-2"><a href="#先说人话：本讲每个阶段在干什么-2" class="headerlink" title="先说人话：本讲每个阶段在干什么"></a>先说人话：本讲每个阶段在干什么</h3><p>如果只能记住 v2 的一个技术决策，那就是：<strong>用 Redis Streams 当复制日志，而不是当数据库</strong>。</p>
+<p>v1 把 Redis 当查询引擎（sorted set 索引 + Lua 脚本做过期扫描）；v2 把它当<strong>只追加的复制总线</strong>：写是 <code>XADD</code> 一条记录，读是 <code>XREAD BLOCK</code> 从游标往后拉，过期是 <code>XTRIM MINID</code> 按时间点裁掉。真正的”查询”发生在每个实例的内存里。</p>
+<p>本讲先看接口有多薄（<strong>3 个方法</strong>），再看 Redis 实现怎么把四种操作映射成 stream fields，最后看 memory 实现为什么要刻意模仿 entry ID 的格式。</p>
+<h3 id="逐文件精读-2"><a href="#逐文件精读-2" class="headerlink" title="逐文件精读"></a>逐文件精读</h3><h4 id="1）接口只有三个方法"><a href="#1）接口只有三个方法" class="headerlink" title="1）接口只有三个方法"></a>1）接口只有三个方法</h4><p><code>internal/statestore/datatypes/store.go:56-60</code>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">56</span>	<span class="keyword">type</span> StateReplicator <span class="keyword">interface</span> &#123;</span><br><span class="line"><span class="number">57</span>		GetUpdates() []*StateUpdate</span><br><span class="line"><span class="number">58</span>		SendUpdates([]*StateUpdate) []*StateResponse</span><br><span class="line"><span class="number">59</span>		GetReplIdValidator() *regexp.Regexp</span><br><span class="line"><span class="number">60</span>	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>配套的 4 种操作枚举（<code>datatypes/store.go:19-24</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">19</span>	<span class="keyword">const</span> (</span><br><span class="line"><span class="number">20</span>		Ticket = <span class="literal">iota</span></span><br><span class="line"><span class="number">21</span>		Activate</span><br><span class="line"><span class="number">22</span>		Deactivate</span><br><span class="line"><span class="number">23</span>		Assign</span><br><span class="line"><span class="number">24</span>	)</span><br></pre></td></tr></table></figure>
+
+<p>更新与响应载体（<code>datatypes/store.go:27-31</code>、<code>:48-51</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">27</span>	<span class="keyword">type</span> StateUpdate <span class="keyword">struct</span> &#123;</span><br><span class="line"><span class="number">28</span>		Cmd   <span class="type">int</span>    <span class="comment">// The operation this update contains</span></span><br><span class="line"><span class="number">29</span>		Key   <span class="type">string</span> <span class="comment">// The key to update</span></span><br><span class="line"><span class="number">30</span>		Value <span class="type">string</span> <span class="comment">// The value to associate with this key (if applicable)</span></span><br><span class="line"><span class="number">31</span>	&#125;</span><br><span class="line"><span class="number">48</span>	<span class="keyword">type</span> StateResponse <span class="keyword">struct</span> &#123;</span><br><span class="line"><span class="number">49</span>		Result <span class="type">string</span></span><br><span class="line"><span class="number">50</span>		Err    <span class="type">error</span></span><br><span class="line"><span class="number">51</span>	&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>三方法接口是整个 v2 状态层的收敛点</strong>——v1 那个多方法的 <code>StateStore</code> 被彻底砍掉了。</p>
+<h4 id="2）Redis-实现：Streams，不是-sorted-set-Lua"><a href="#2）Redis-实现：Streams，不是-sorted-set-Lua" class="headerlink" title="2）Redis 实现：Streams，不是 sorted set + Lua"></a>2）Redis 实现：Streams，不是 sorted set + Lua</h4><blockquote>
+<p><strong>重要更正</strong>：<code>redis.go</code> 里<strong>没有任何 <code>EVAL</code> &#x2F; Lua 脚本，也没有 <code>ZADD</code> &#x2F; 有序集合</strong>。这是 v1→v2 最大的变化之一。</p>
+</blockquote>
+<p>**写：<code>SendUpdates</code>**（<code>redis.go:357-519</code>）</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">365</span>		<span class="keyword">const</span> redisCmd = <span class="string">&quot;XADD&quot;</span></span><br><span class="line"><span class="number">366</span>		out := <span class="built_in">make</span>([]*store.StateResponse, <span class="built_in">len</span>(updates))</span><br><span class="line"><span class="number">369</span>		rConn := rr.wConnPool.Get()</span><br><span class="line"><span class="number">378</span>			redisArgs = <span class="built_in">append</span>(redisArgs, <span class="string">&quot;om-replication&quot;</span>, <span class="string">&quot;*&quot;</span>)</span><br><span class="line"><span class="number">379</span>			<span class="keyword">switch</span> update.Cmd &#123;</span><br><span class="line"><span class="number">380</span>			<span class="keyword">case</span> store.Ticket:</span><br><span class="line"><span class="number">382</span>				<span class="keyword">if</span> update.Value == <span class="string">&quot;&quot;</span> &#123;</span><br><span class="line"><span class="number">383</span>					out[i].Err = NoTicketDataErr</span><br><span class="line"><span class="number">386</span>				redisArgs = <span class="built_in">append</span>(redisArgs, <span class="string">&quot;ticket&quot;</span>)</span><br><span class="line"><span class="number">387</span>				redisArgs = <span class="built_in">append</span>(redisArgs, update.Value)</span><br></pre></td></tr></table></figure>
+
+<p>四种 Cmd → stream fields 的映射：</p>
+<table>
+<thead>
+<tr>
+<th>Cmd</th>
+<th>stream fields</th>
+<th>行号</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>store.Ticket</code></td>
+<td><code>ticket &lt;pb bytes&gt;</code></td>
+<td><code>redis.go:386-387</code></td>
+</tr>
+<tr>
+<td><code>store.Activate</code></td>
+<td><code>activate &lt;id&gt;</code></td>
+<td><code>redis.go:394-395</code></td>
+</tr>
+<tr>
+<td><code>store.Deactivate</code></td>
+<td><code>deactivate &lt;id&gt;</code></td>
+<td><code>redis.go:402-403</code></td>
+</tr>
+<tr>
+<td><code>store.Assign</code></td>
+<td><code>assign &lt;id&gt; connection &lt;pb bytes&gt;</code></td>
+<td><code>redis.go:421-424</code></td>
+</tr>
+</tbody></table>
+<p>所有 <code>XADD</code> 走 pipeline 攒批（<code>redis.go:435</code>），批尾追加一条 XTRIM 做过期（<code>redis.go:443-452</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">443</span>		<span class="comment">// Append one additional command to the pipeline to remove expired entries.</span></span><br><span class="line"><span class="number">444</span>		expirationThresh := strconv.FormatInt(time.Now().UnixMilli()-rr.cfg.GetInt64(<span class="string">&quot;OM_CACHE_TICKET_TTL_MS&quot;</span>), <span class="number">10</span>)</span><br><span class="line"><span class="number">445</span>		redisCmdWithArgs := fmt.Sprintf(<span class="string">&quot;XTRIM om-replication MINID %v&quot;</span>, expirationThresh)</span><br><span class="line"><span class="number">447</span>		err = rConn.Send(<span class="string">&quot;XTRIM&quot;</span>, <span class="string">&quot;om-replication&quot;</span>, <span class="string">&quot;MINID&quot;</span>, expirationThresh)</span><br></pre></td></tr></table></figure>
+
+<p>真正的 flush 是 <code>rConn.Do(&quot;&quot;)</code>（<code>redis.go:455</code>）。</p>
+<p>**读：<code>GetUpdates</code>**（<code>redis.go:528-617</code>）</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">538</span>		redisCmd := <span class="string">&quot;XREAD&quot;</span></span><br><span class="line"><span class="number">541</span>		redisArgs = <span class="built_in">append</span>(redisArgs, <span class="string">&quot;COUNT&quot;</span>, rr.cfg.GetString(<span class="string">&quot;OM_CACHE_IN_MAX_UPDATES_PER_POLL&quot;</span>))</span><br><span class="line"><span class="number">544</span>		redisArgs = <span class="built_in">append</span>(redisArgs, <span class="string">&quot;BLOCK&quot;</span>, rr.cfg.GetString(<span class="string">&quot;OM_CACHE_IN_WAIT_TIMEOUT_MS&quot;</span>))</span><br><span class="line"><span class="number">546</span>		redisArgs = <span class="built_in">append</span>(redisArgs, <span class="string">&quot;STREAMS&quot;</span>, <span class="string">&quot;om-replication&quot;</span>)</span><br><span class="line"><span class="number">548</span>		redisArgs = <span class="built_in">append</span>(redisArgs, rr.replId)</span><br><span class="line"><span class="number">558</span>		data, err := rConn.Do(redisCmd, redisArgs...)</span><br></pre></td></tr></table></figure>
+
+<p>**阻塞式 XREAD，游标是上一次读到的 <code>replId</code>**。解析时把 stream fields 还原成 <code>StateUpdate</code>（<code>redis.go:591-606</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">591</span>				<span class="keyword">switch</span> y[<span class="number">0</span>] &#123;</span><br><span class="line"><span class="number">592</span>				<span class="keyword">case</span> <span class="string">&quot;ticket&quot;</span>:</span><br><span class="line"><span class="number">593</span>					thisUpdate.Cmd = store.Ticket</span><br><span class="line"><span class="number">594</span>					thisUpdate.Key = replId</span><br><span class="line"><span class="number">595</span>					thisUpdate.Value = y[<span class="number">1</span>] <span class="comment">// Only argument for a ticket is the ticket PB</span></span><br><span class="line"><span class="number">596</span>				<span class="keyword">case</span> <span class="string">&quot;activate&quot;</span>:</span><br><span class="line"><span class="number">597</span>					thisUpdate.Cmd = store.Activate</span><br><span class="line"><span class="number">598</span>					thisUpdate.Key = y[<span class="number">1</span>] <span class="comment">// Only argument for a ticket activation is the ticket&#x27;s ID</span></span><br><span class="line"><span class="number">602</span>				<span class="keyword">case</span> <span class="string">&quot;assign&quot;</span>:</span><br><span class="line"><span class="number">603</span>					thisUpdate.Cmd = store.Assign</span><br><span class="line"><span class="number">604</span>					thisUpdate.Key = y[<span class="number">1</span>]   <span class="comment">// ticket&#x27;s ID</span></span><br><span class="line"><span class="number">605</span>					thisUpdate.Value = y[<span class="number">3</span>] <span class="comment">// assignment</span></span><br></pre></td></tr></table></figure>
+
+<p><strong><code>redis.go:594</code> 的 <code>thisUpdate.Key = replId</code> 就是”Ticket ID ≡ entry ID”的源头。</strong></p>
+<p>其他要点：</p>
+<ul>
+<li><strong>读写连接池分离</strong>：<code>redis.go:136-226</code>（read）与 <code>redis.go:227-309</code>（write），分别走 <code>OM_REDIS_READ_*</code> &#x2F; <code>OM_REDIS_WRITE_*</code></li>
+<li>连接建立用 <code>backoff.RetryNotify</code> 指数退避 + jitter，且能被 SIGTERM&#x2F;SIGINT 打断（<code>redis.go:164-223</code>、<code>:246-306</code>）</li>
+<li>启动时的初始游标往前回溯 <code>TTL + assignment TTL</code>（<code>redis.go:86-88</code>）</li>
+<li>哨兵错误在 <code>redis.go:56-59</code>（<code>NoTicketKeyErr</code> &#x2F; <code>NoTicketDataErr</code> &#x2F; <code>NoAssignmentErr</code> &#x2F; <code>InvalidInputErr</code>）</li>
+</ul>
+<h4 id="3）Memory-实现：刻意模仿-entry-ID"><a href="#3）Memory-实现：刻意模仿-entry-ID" class="headerlink" title="3）Memory 实现：刻意模仿 entry ID"></a>3）Memory 实现：刻意模仿 entry ID</h4><p><code>memory.go:38-44</code>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">38</span>	<span class="keyword">type</span> memoryReplicator <span class="keyword">struct</span> &#123;</span><br><span class="line"><span class="number">39</span>		cfg             *viper.Viper</span><br><span class="line"><span class="number">40</span>		replChan        <span class="keyword">chan</span> *store.StateUpdate</span><br><span class="line"><span class="number">41</span>		replTS          time.Time</span><br><span class="line"><span class="number">42</span>		replCount       <span class="type">int</span></span><br><span class="line"><span class="number">43</span>		replIdValidator *regexp.Regexp</span><br><span class="line"><span class="number">44</span>	&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>replChan</code> 是<strong>无缓冲</strong> channel（<code>memory.go:55</code>）。<code>SendUpdates</code>（<code>memory.go:103-122</code>）为 <code>store.Ticket</code> 生成 replId 并写回 <code>up.Key</code>（<code>memory.go:113-115</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">113</span>			<span class="keyword">if</span> up.Cmd == store.Ticket &#123;</span><br><span class="line"><span class="number">114</span>				up.Key = replId</span><br><span class="line"><span class="number">115</span>			&#125;</span><br><span class="line"><span class="number">116</span>			rc.replChan &lt;- up</span><br><span class="line"><span class="number">117</span>			out = <span class="built_in">append</span>(out, &amp;store.StateResponse&#123;Result: replId, Err: <span class="literal">nil</span>&#125;)</span><br></pre></td></tr></table></figure>
+
+<p><code>getReplId</code>（<code>memory.go:126-135</code>）手工拼 <code>&lt;unixMs&gt;-&lt;count&gt;</code>，<strong>刻意模仿 Redis entry ID 格式</strong>，同毫秒内计数递增：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">127</span>		<span class="keyword">if</span> time.Now().UnixMilli() == rc.replTS.UnixMilli() &#123;</span><br><span class="line"><span class="number">128</span>			rc.replCount += <span class="number">1</span></span><br><span class="line"><span class="number">129</span>		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line"><span class="number">130</span>			rc.replTS = time.Now()</span><br><span class="line"><span class="number">131</span>			rc.replCount = <span class="number">0</span></span><br><span class="line"><span class="number">132</span>		&#125;</span><br><span class="line"><span class="number">133</span>		id := fmt.Sprintf(<span class="string">&quot;%v-%v&quot;</span>, strconv.FormatInt(rc.replTS.UnixMilli(), <span class="number">10</span>), rc.replCount)</span><br></pre></td></tr></table></figure>
+
+<p><strong>为什么必须模仿？</strong> 因为上层 cache 的过期逻辑、WatchAssignments 的超时计算都直接 <code>strings.Split(id,&quot;-&quot;)[0]</code> 解析时间戳（<code>replicatedticketcache.go:369</code>、<code>main.go:1301</code>）。格式不一致就会全线崩溃。</p>
+<p><strong>memory 实现没有真正的过期</strong>：TTL 清理由上层 cache 统一负责。生产环境有明确 WARN（<code>main.go:150</code>）。</p>
+<h3 id="第三讲小结：Redis-从”数据库”降级为”复制总线”"><a href="#第三讲小结：Redis-从”数据库”降级为”复制总线”" class="headerlink" title="第三讲小结：Redis 从”数据库”降级为”复制总线”"></a>第三讲小结：Redis 从”数据库”降级为”复制总线”</h3><table>
+<thead>
+<tr>
+<th>项</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>一句话定位</strong></td>
+<td>三方法接口 + Redis Streams，把状态层从”查询引擎”改造成”只追加复制日志”</td>
+</tr>
+<tr>
+<td><strong>输入</strong></td>
+<td><code>[]*StateUpdate</code>（4 种 Cmd）</td>
+</tr>
+<tr>
+<td><strong>输出</strong></td>
+<td><code>[]*StateResponse</code>（Result 即新 Ticket ID）</td>
+</tr>
+<tr>
+<td><strong>三个最值得记住的点</strong></td>
+<td>① 接口<strong>只有 3 个方法</strong>；② 命令只有 <code>XADD</code>&#x2F;<code>XREAD BLOCK</code>&#x2F;<code>XTRIM MINID</code>，<strong>没有 Lua 和 sorted set</strong>；③ memory 实现<strong>必须模仿 entry ID 格式</strong>，否则上层过期&#x2F;超时逻辑失效</td>
+</tr>
+</tbody></table>
+<pre><code class="highlight mermaid">flowchart LR
+    App[&quot;om-core handler&quot;] --&gt;|&quot;SendUpdates&quot;| XADD[&quot;XADD om-replication&lt;br/&gt;ticket/activate/deactivate/assign&quot;]
+    XADD --&gt;|&quot;pipeline + XTRIM MINID&quot;| Stream[(&quot;Redis Stream&lt;br/&gt;om-replication&quot;)]
+    Stream --&gt;|&quot;XREAD BLOCK 游标=replId&quot;| GetUp[&quot;GetUpdates&quot;]
+    GetUp --&gt; Cache[&quot;本地缓存应用&quot;]</code></pre>
+
+<h3 id="v1-vs-v2-状态存储对照"><a href="#v1-vs-v2-状态存储对照" class="headerlink" title="v1 vs v2 状态存储对照"></a>v1 vs v2 状态存储对照</h3><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>v1</th>
+<th>v2</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>引擎</td>
+<td>Redis sorted sets + Lua</td>
+<td><strong>Redis Streams</strong></td>
+</tr>
+<tr>
+<td>接口方法数</td>
+<td>多</td>
+<td><strong>3 个</strong></td>
+</tr>
+<tr>
+<td>读模型</td>
+<td>每次查询打 Redis</td>
+<td><strong>本地全量副本</strong></td>
+</tr>
+<tr>
+<td>Redis 端点</td>
+<td>单实例</td>
+<td><strong>读写分离</strong></td>
+</tr>
+<tr>
+<td>Ticket ID</td>
+<td>客户端&#x2F;框架生成</td>
+<td><strong>存储层生成 &#x3D; entry ID</strong></td>
+</tr>
+<tr>
+<td>删除</td>
+<td><code>DeleteTicket</code></td>
+<td><strong>无删除 API</strong>，靠 TTL</td>
+</tr>
+<tr>
+<td>分片</td>
+<td>—</td>
+<td>明确不支持（<code>docs/FAQ.md:42</code>）</td>
+</tr>
+<tr>
+<td>本地开发</td>
+<td>需 Redis</td>
+<td><code>memory</code> 模式</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="第四讲：ReplicatedTicketCache-——-把读路径整个下沉到内存"><a href="#第四讲：ReplicatedTicketCache-——-把读路径整个下沉到内存" class="headerlink" title="第四讲：ReplicatedTicketCache —— 把读路径整个下沉到内存"></a>第四讲：ReplicatedTicketCache —— 把读路径整个下沉到内存</h2><h3 id="先说人话：本讲每个阶段在干什么-3"><a href="#先说人话：本讲每个阶段在干什么-3" class="headerlink" title="先说人话：本讲每个阶段在干什么"></a>先说人话：本讲每个阶段在干什么</h3><p>这是 v2 性能故事的<strong>全部答案</strong>。</p>
+<p>传统做法是”要过滤就去 Redis 查”；v2 反过来：<strong>每个 om-core 实例在内存里持有全量 ticket 副本</strong>，过滤、快照、选票全部打内存，Redis 只负责把变更复制过来。好处是读操作完全无网络开销、且读端点可以挂只读副本横向扩展；代价是<strong>最终一致</strong>——你看到的永远是一份可能滞后几百毫秒的快照。</p>
+<p>理解本讲只需要抓住三个 <code>sync.Map</code> + 两条队列。</p>
+<h3 id="逐文件精读-3"><a href="#逐文件精读-3" class="headerlink" title="逐文件精读"></a>逐文件精读</h3><h4 id="1）数据结构：三个-sync-Map"><a href="#1）数据结构：三个-sync-Map" class="headerlink" title="1）数据结构：三个 sync.Map"></a>1）数据结构：三个 sync.Map</h4><p><code>replicatedticketcache.go:60-76</code>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">60</span>	<span class="keyword">type</span> ReplicatedTicketCache <span class="keyword">struct</span> &#123;</span><br><span class="line"><span class="number">61</span>		<span class="comment">// Local copies of all the state data.</span></span><br><span class="line"><span class="number">62</span>		Tickets     sync.Map</span><br><span class="line"><span class="number">63</span>		InactiveSet sync.Map</span><br><span class="line"><span class="number">64</span>		Assignments sync.Map</span><br><span class="line"><span class="number">66</span>		<span class="comment">// How this replicatedTicketCache is replicated.</span></span><br><span class="line"><span class="number">67</span>		Replicator store.StateReplicator</span><br><span class="line"><span class="number">68</span>		<span class="comment">// The queue of cache updates</span></span><br><span class="line"><span class="number">69</span>		UpRequests <span class="keyword">chan</span> *UpdateRequest</span><br><span class="line"><span class="number">71</span>		<span class="comment">//</span></span><br><span class="line"><span class="number">72</span>		IdValidator *regexp.Regexp</span><br><span class="line"><span class="number">74</span>		<span class="comment">// Application config</span></span><br><span class="line"><span class="number">75</span>		Cfg *viper.Viper</span><br><span class="line"><span class="number">76</span>	&#125;</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>Map</th>
+<th>内容</th>
+<th>语义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Tickets</code></td>
+<td>id → <code>*pb.Ticket</code></td>
+<td>全量票</td>
+</tr>
+<tr>
+<td><code>InactiveSet</code></td>
+<td>id → bool</td>
+<td><strong>存在即 inactive</strong></td>
+</tr>
+<tr>
+<td><code>Assignments</code></td>
+<td>id → <code>*pb.Assignment</code></td>
+<td>已下发的分配</td>
+</tr>
+</tbody></table>
+<p><strong>“活跃”的定义是差集</strong>：不在 <code>InactiveSet</code> 里就算活跃。<code>main.go:1390-1402</code>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1390</span>	<span class="function"><span class="keyword">func</span> <span class="title">setDifference</span><span class="params">(tix *sync.Map, inactiveSet *sync.Map)</span></span> (activeTickets []any) &#123;</span><br><span class="line"><span class="number">1391</span>		inactiveTicketIds := syncMapDump(inactiveSet)</span><br><span class="line"><span class="number">1393</span>		tix.Range(<span class="function"><span class="keyword">func</span><span class="params">(id, ticket any)</span></span> <span class="type">bool</span> &#123;</span><br><span class="line"><span class="number">1396</span>			<span class="keyword">if</span> _, ok := inactiveTicketIds[id.(<span class="type">string</span>)]; !ok &#123;</span><br><span class="line"><span class="number">1397</span>				activeTickets = <span class="built_in">append</span>(activeTickets, ticket)</span><br><span class="line"><span class="number">1398</span>			&#125;</span><br><span class="line"><span class="number">1399</span>			<span class="keyword">return</span> <span class="literal">true</span></span><br><span class="line"><span class="number">1400</span>		&#125;)</span><br><span class="line"><span class="number">1401</span>		<span class="keyword">return</span></span><br><span class="line"><span class="number">1402</span>	&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="2）出向队列：攒批写-Redis"><a href="#2）出向队列：攒批写-Redis" class="headerlink" title="2）出向队列：攒批写 Redis"></a>2）出向队列：攒批写 Redis</h4><p><code>replicatedticketcache.go:85-133</code>。攒批由<strong>两个条件</strong>触发——达到 <code>OM_CACHE_OUT_MAX_QUEUE_THRESHOLD</code>（50）条，或 <code>OM_CACHE_OUT_WAIT_TIMEOUT_MS</code>（500ms）到期：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"> <span class="number">95</span>		maxBatchSize := tc.Cfg.GetInt(<span class="string">&quot;OM_CACHE_OUT_MAX_QUEUE_THRESHOLD&quot;</span>)</span><br><span class="line"> <span class="number">96</span>		pipelineRequests := <span class="built_in">make</span>([]*UpdateRequest, <span class="number">0</span>, maxBatchSize)</span><br><span class="line"> <span class="number">97</span>		pipeline := <span class="built_in">make</span>([]*store.StateUpdate, <span class="number">0</span>, maxBatchSize)</span><br><span class="line"> <span class="number">99</span>		timeoutMs := time.Duration(tc.Cfg.GetInt(<span class="string">&quot;OM_CACHE_OUT_WAIT_TIMEOUT_MS&quot;</span>))</span><br><span class="line"><span class="number">100</span>		timer := time.NewTimer(timeoutMs)</span><br><span class="line"><span class="number">113</span>			<span class="keyword">for</span> !batchComplete &#123;</span><br><span class="line"><span class="number">114</span>				<span class="keyword">select</span> &#123;</span><br><span class="line"><span class="number">115</span>				<span class="keyword">case</span> req := &lt;-tc.UpRequests:</span><br><span class="line"><span class="number">116</span>					pipelineRequests = <span class="built_in">append</span>(pipelineRequests, req)</span><br><span class="line"><span class="number">117</span>					pipeline = <span class="built_in">append</span>(pipeline, &amp;req.Update)</span><br><span class="line"><span class="number">120</span>					<span class="keyword">if</span> <span class="built_in">len</span>(pipelineRequests) &gt;= maxBatchSize &#123;</span><br><span class="line"><span class="number">121</span>						otelCacheOutgoingThresholdReachedCount.Add(ctx, <span class="number">1</span>)</span><br><span class="line"><span class="number">123</span>						batchComplete = <span class="literal">true</span></span><br><span class="line"><span class="number">124</span>					&#125;</span><br><span class="line"><span class="number">126</span>				<span class="keyword">case</span> &lt;-timer.C:</span><br><span class="line"><span class="number">127</span>					otelCacheOutgoingQueueTimeouts.Add(ctx, <span class="number">1</span>)</span><br><span class="line"><span class="number">129</span>					batchComplete = <span class="literal">true</span></span><br><span class="line"><span class="number">130</span>				&#125;</span><br><span class="line"><span class="number">131</span>			&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>这是典型的”<strong>攒批换吞吐</strong>“：把 N 次 Redis 往返压成 1 次 pipeline。代价是单次请求的延迟至少多等一个攒批窗口（默认最多 500ms）。</p>
+</blockquote>
+<h4 id="3）入向队列：应用四种-Cmd-三层过期清理"><a href="#3）入向队列：应用四种-Cmd-三层过期清理" class="headerlink" title="3）入向队列：应用四种 Cmd + 三层过期清理"></a>3）入向队列：应用四种 Cmd + 三层过期清理</h4><p><code>replicatedticketcache.go:157-456</code>，是本文件最核心的部分。</p>
+<p><strong>内层 goroutine</strong> 轮询 <code>GetUpdates()</code>，塞进带缓冲的 <code>replStream</code>（<code>:167</code>），并被 <code>deadline</code> 限流到至少 <code>OM_CACHE_IN_WAIT_TIMEOUT_MS</code> 一轮（<code>:177</code>、<code>:185</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">167</span>		replStream := <span class="built_in">make</span>(<span class="keyword">chan</span> store.StateUpdate, tc.Cfg.GetInt(<span class="string">&quot;OM_CACHE_IN_MAX_UPDATES_PER_POLL&quot;</span>))</span><br><span class="line"><span class="number">177</span>			deadline := time.After(time.Millisecond * time.Duration(tc.Cfg.GetInt(<span class="string">&quot;OM_CACHE_IN_WAIT_TIMEOUT_MS&quot;</span>)))</span><br><span class="line"><span class="number">185</span>			results := tc.Replicator.GetUpdates()</span><br></pre></td></tr></table></figure>
+
+<p><strong>外层主循环</strong>每轮先强制 sleep <code>OM_CACHE_IN_SLEEP_BETWEEN_APPLYING_UPDATES_MS</code>（<code>:213</code>），再带 <strong>500ms 硬上限</strong>地消费（<code>:221</code>、<code>:226</code>、<code>:279</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">213</span>		time.Sleep(time.Millisecond * time.Duration(tc.Cfg.GetInt(<span class="string">&quot;OM_CACHE_IN_SLEEP_BETWEEN_APPLYING_UPDATES_MS&quot;</span>)))</span><br><span class="line"><span class="number">221</span>			updateTimeout := time.After(time.Millisecond * <span class="number">500</span>)</span><br><span class="line"><span class="number">226</span>			<span class="keyword">case</span> curUpdate := &lt;-replStream:</span><br><span class="line"><span class="number">279</span>			<span class="keyword">case</span> &lt;-updateTimeout:</span><br></pre></td></tr></table></figure>
+
+<p><strong>四种 Cmd 的应用</strong>（<code>:228-278</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">229</span>				<span class="keyword">case</span> store.Ticket:</span><br><span class="line"><span class="number">249</span>					err = proto.Unmarshal([]<span class="type">byte</span>(curUpdate.Value), ticketPb)</span><br><span class="line"><span class="number">254</span>					ticketPb.Id = curUpdate.Key</span><br><span class="line"><span class="number">257</span>					tc.InactiveSet.Store(curUpdate.Key, <span class="literal">true</span>)</span><br><span class="line"><span class="number">258</span>					tc.Tickets.Store(curUpdate.Key, ticketPb)</span><br><span class="line"><span class="number">261</span>				<span class="keyword">case</span> store.Activate:</span><br><span class="line"><span class="number">262</span>					tc.InactiveSet.Delete(curUpdate.Key)</span><br><span class="line"><span class="number">265</span>				<span class="keyword">case</span> store.Deactivate:</span><br><span class="line"><span class="number">266</span>					tc.InactiveSet.Store(curUpdate.Key, <span class="literal">true</span>)</span><br><span class="line"><span class="number">269</span>				<span class="keyword">case</span> store.Assign:</span><br><span class="line"><span class="number">276</span>					tc.Assignments.Store(curUpdate.Key, assignmentPb)</span><br></pre></td></tr></table></figure>
+
+<p><strong>三层过期清理</strong>（每轮更新后立刻执行，<code>:334-455</code>）：</p>
+<p><strong>① InactiveSet 清理</strong>（按 ID 前 13 位时间戳 + TTL），且<strong>连带删 Ticket</strong>（<code>:360-392</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">360</span>			tc.InactiveSet.Range(<span class="function"><span class="keyword">func</span><span class="params">(id, _ any)</span></span> <span class="type">bool</span> &#123;</span><br><span class="line"><span class="number">369</span>				ticketCreationTime, err := strconv.ParseInt(strings.Split(id.(<span class="type">string</span>), <span class="string">&quot;-&quot;</span>)[<span class="number">0</span>], <span class="number">10</span>, <span class="number">64</span>)</span><br><span class="line"><span class="number">372</span>				<span class="keyword">if</span> (time.Now().UnixMilli() - ticketCreationTime) &gt; <span class="type">int64</span>(tc.Cfg.GetInt(<span class="string">&quot;OM_CACHE_TICKET_TTL_MS&quot;</span>)) &#123;</span><br><span class="line"><span class="number">378</span>					<span class="comment">// Ensure that when expiring a ticket from the inactive set, the ticket is always deleted as well.</span></span><br><span class="line"><span class="number">379</span>					_, existed := tc.Tickets.LoadAndDelete(id)</span><br><span class="line"><span class="number">386</span>					tc.InactiveSet.Delete(id)</span><br></pre></td></tr></table></figure>
+
+<p><strong>② 按 ticket 自带 <code>expiration_time</code> 清理</strong>（<code>:390-403</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">390</span>			tc.Tickets.Range(<span class="function"><span class="keyword">func</span><span class="params">(id, ticket any)</span></span> <span class="type">bool</span> &#123;</span><br><span class="line"><span class="number">391</span>				<span class="keyword">if</span> time.Now().After(ticket.(*pb.Ticket).GetExpirationTime().AsTime()) &#123;</span><br><span class="line"><span class="number">392</span>					tc.Tickets.Delete(id)</span><br></pre></td></tr></table></figure>
+
+<p><strong>③ Assignments 清理</strong>（Ticket TTL + Assignment 附加 TTL，<code>:410-429</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">410</span>			tc.Assignments.Range(<span class="function"><span class="keyword">func</span><span class="params">(id, _ any)</span></span> <span class="type">bool</span> &#123;</span><br><span class="line"><span class="number">417</span>					<span class="type">int64</span>(tc.Cfg.GetInt(<span class="string">&quot;OM_CACHE_TICKET_TTL_MS&quot;</span>)+tc.Cfg.GetInt(<span class="string">&quot;OM_CACHE_ASSIGNMENT_ADDITIONAL_TTL_MS&quot;</span>)) &#123;</span><br><span class="line"><span class="number">418</span>						tc.Assignments.Delete(id)</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>一处值得讨论的实现缝隙</strong>：Redis 侧的 <code>XTRIM</code> 只用 <code>OM_CACHE_TICKET_TTL_MS</code>（<code>redis.go:444</code>），<strong>没有</strong>加 <code>OM_CACHE_ASSIGNMENT_ADDITIONAL_TTL_MS</code>；但本地 cache 清理 assignments 却用了两者之和（<code>replicatedticketcache.go:417</code>）。而 <code>OM_CACHE_ASSIGNMENT_ADDITIONAL_TTL_MS</code> 在 config 里已被标 DEPRECATED（<code>config.go:135</code>）。两者不一致。</p>
+</blockquote>
+<h4 id="4）最终一致性的代价：源码里的三处”自白”"><a href="#4）最终一致性的代价：源码里的三处”自白”" class="headerlink" title="4）最终一致性的代价：源码里的三处”自白”"></a>4）最终一致性的代价：源码里的三处”自白”</h4><p>v2 的代码里有大量坦率的注释，是理解设计取舍的最好素材：</p>
+<table>
+<thead>
+<tr>
+<th>位置</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>main.go:1023-1029</code></td>
+<td>承认即使等了也无法保证<strong>所有实例</strong>复制完成</td>
+</tr>
+<tr>
+<td><code>main.go:626-632</code></td>
+<td>承认 pool 快照<strong>不反映</strong>此后的 cache 更新</td>
+</tr>
+<tr>
+<td><code>replicatedticketcache.go:329-333</code></td>
+<td>承认时间戳解析<strong>直接耦合</strong> Redis ID 格式（抽象泄漏）</td>
+</tr>
+</tbody></table>
+<h3 id="第四讲小结：读全在内存，Redis-只做总线"><a href="#第四讲小结：读全在内存，Redis-只做总线" class="headerlink" title="第四讲小结：读全在内存，Redis 只做总线"></a>第四讲小结：读全在内存，Redis 只做总线</h3><table>
+<thead>
+<tr>
+<th>项</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>一句话定位</strong></td>
+<td>三个 <code>sync.Map</code> + 出&#x2F;入向两条队列，把 v2 的读路径从 Redis 完全搬进内存</td>
+</tr>
+<tr>
+<td><strong>输入</strong></td>
+<td>出向：<code>UpdateRequest</code>；入向：<code>Replicator.GetUpdates()</code></td>
+</tr>
+<tr>
+<td><strong>输出</strong></td>
+<td>内存中的 <code>Tickets</code>&#x2F;<code>InactiveSet</code>&#x2F;<code>Assignments</code>，供过滤与快照直接读</td>
+</tr>
+<tr>
+<td><strong>三个最值得记住的点</strong></td>
+<td>① “活跃”&#x3D; <code>Tickets</code> 减 <code>InactiveSet</code> 的<strong>差集</strong>；② 出向攒批 50 条&#x2F;500ms，换吞吐牺牲单请求延迟；③ 三层过期清理，且 Redis 侧 XTRIM 与本地 assignment 清理的 TTL 口径<strong>不一致</strong></td>
+</tr>
+</tbody></table>
+<pre><code class="highlight mermaid">flowchart TB
+    Handler[&quot;gRPC handler&quot;] --&gt;|&quot;UpdateRequest&quot;| Up[&quot;UpRequests chan&quot;]
+    Up --&gt; OutQ[&quot;OutgoingReplicationQueue&lt;br/&gt;攒批 50 条或 500ms&quot;]
+    OutQ --&gt; Rep[&quot;Replicator.SendUpdates&lt;br/&gt;XADD&quot;]
+
+    Rep2[&quot;Replicator.GetUpdates&lt;br/&gt;XREAD BLOCK&quot;] --&gt; InQ[&quot;IncomingReplicationQueue&quot;]
+    InQ --&gt; Apply[&quot;应用四种 Cmd&quot;]
+    Apply --&gt; T[&quot;Tickets&quot;]
+    Apply --&gt; I[&quot;InactiveSet&quot;]
+    Apply --&gt; A[&quot;Assignments&quot;]
+    Apply --&gt; Exp[&quot;三层过期清理&quot;]
+    Exp --&gt; T
+    Exp --&gt; I
+    Exp --&gt; A</code></pre>
+
+<hr>
+<h2 id="第五讲：过滤与匹配编排-——-InvokeMatchmakingFunctions-全景"><a href="#第五讲：过滤与匹配编排-——-InvokeMatchmakingFunctions-全景" class="headerlink" title="第五讲：过滤与匹配编排 —— InvokeMatchmakingFunctions 全景"></a>第五讲：过滤与匹配编排 —— InvokeMatchmakingFunctions 全景</h2><h3 id="先说人话：本讲每个阶段在干什么-4"><a href="#先说人话：本讲每个阶段在干什么-4" class="headerlink" title="先说人话：本讲每个阶段在干什么"></a>先说人话：本讲每个阶段在干什么</h3><p>这是全篇最长、也最有意思的一讲。一次匹配请求的完整流程是：</p>
+<ol>
+<li>拿一份<strong>活跃票快照</strong>（不是实时查询）；</li>
+<li>用<strong>四类过滤器</strong>把票分到各个 pool；</li>
+<li>把 pool 打包成请求，<strong>超过 4MB 就切块</strong>；</li>
+<li><strong>并发调用</strong>你注册的所有 MMF（双向流）；</li>
+<li>MMF 每返回一个 Match，就把 Match 里的票<strong>摘出池子</strong>，并把 Match 流式推回调用方。</li>
+</ol>
+<p>三个反直觉点：过滤器<strong>不是</strong> CEL；MMF <strong>不会被调用方断连取消</strong>；默认要<strong>等票下线复制完</strong>才把 Match 返回。</p>
+<h3 id="逐文件精读-4"><a href="#逐文件精读-4" class="headerlink" title="逐文件精读"></a>逐文件精读</h3><h4 id="1）上下文策略：调用方断连不取消-MMF"><a href="#1）上下文策略：调用方断连不取消-MMF" class="headerlink" title="1）上下文策略：调用方断连不取消 MMF"></a>1）上下文策略：调用方断连不取消 MMF</h4><p><code>main.go:589-600</code>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">589</span>		<span class="comment">// Set a timeout for this API call, but ignore context cancellations from</span></span><br><span class="line"><span class="number">590</span>		<span class="comment">// the  background context. It is fully intended that MMFs can run longer</span></span><br><span class="line"><span class="number">591</span>		<span class="comment">// than the matchmaker is willing to wait, so we want them not to get</span></span><br><span class="line"><span class="number">592</span>		<span class="comment">// cancelled when the calling matchmaker cancels its context. However, best</span></span><br><span class="line"><span class="number">593</span>		<span class="comment">// practices dictate that we define /some/ timeout (default: 10 mins)</span></span><br><span class="line"><span class="number">594</span>		mmfTimeout := time.Duration(cfg.GetInt(<span class="string">&quot;OM_MMF_TIMEOUT_SECS&quot;</span>)) * time.Second</span><br><span class="line"><span class="number">595</span>		ctx, cancel := context.WithCancelCause(context.WithoutCancel(context.Background())) <span class="comment">// ignore cancellation from parent context</span></span><br><span class="line"><span class="number">596</span>		ctx, _ = context.WithTimeoutCause(ctx, mmfTimeout, MMFTimeoutError)</span><br><span class="line"><span class="number">597</span>		<span class="keyword">defer</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line"><span class="number">598</span>			logger.Debugf(<span class="string">&quot;MMFs complete, sending context cancellation after %04d ms&quot;</span>, time.Since(startTime).Milliseconds())</span><br><span class="line"><span class="number">599</span>			cancel(MMFsComplete)</span><br><span class="line"><span class="number">600</span>		&#125;()</span><br></pre></td></tr></table></figure>
+
+<p><strong>一句话</strong>：调用方断连<strong>不会</strong>取消 MMF（<code>WithoutCancel</code>），但 OM 自己有 <code>OM_MMF_TIMEOUT_SECS</code>（默认 600s）硬上限。</p>
+<h4 id="2）快照-过滤"><a href="#2）快照-过滤" class="headerlink" title="2）快照 + 过滤"></a>2）快照 + 过滤</h4><p>先做快照再过滤，避免长时间持有 contention（<code>main.go:626-635</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">634</span>		<span class="comment">// Copy the ticket cache, leaving out inactive tickets.</span></span><br><span class="line"><span class="number">635</span>		activeTickets := setDifference(&amp;tc.Tickets, &amp;tc.InactiveSet)</span><br></pre></td></tr></table></figure>
+
+<p>Profile 名按最后一段反 DNS 截断，是为了压指标基数（<code>main.go:610-619</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">615</span>		profileName := req.GetProfile().GetName()</span><br><span class="line"><span class="number">616</span>		i := strings.LastIndex(profileName, <span class="string">&quot;.&quot;</span>)</span><br><span class="line"><span class="number">617</span>		<span class="keyword">if</span> i &gt; <span class="number">0</span> &#123;</span><br><span class="line"><span class="number">618</span>			profileName = profileName[<span class="number">0</span>:i]</span><br><span class="line"><span class="number">619</span>		&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="3）过滤器：自研四类求交，不是-CEL"><a href="#3）过滤器：自研四类求交，不是-CEL" class="headerlink" title="3）过滤器：自研四类求交，不是 CEL"></a>3）过滤器：自研四类求交，不是 CEL</h4><p><strong>结论：既不是 CEL 也不是任何 DSL。</strong> 两条佐证：</p>
+<ul>
+<li><code>go.mod</code> 中不存在任何 <code>cel</code> &#x2F; <code>cel-go</code> &#x2F; <code>expr</code> 依赖；</li>
+<li><code>filter.go</code> 全文 139 行，全是 switch&#x2F;range。</li>
+</ul>
+<p>四类过滤器对应 <code>proto/messages.proto:114-139</code>。Pool 是<strong>集合交</strong>（<code>proto/messages.proto:113</code>），且注释明写”Filters only access data in the Ticket’s <code>attributes</code> field”。</p>
+<p>**<code>In()</code>**（<code>filter.go:52-139</code>）：</p>
+<p><strong>(a) CreationTimeRangeFilter（含边界开关）</strong> <code>filter.go:60-88</code>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">69</span>			<span class="comment">// Created before the filter Start time</span></span><br><span class="line"><span class="number">70</span>			<span class="keyword">if</span> crTime.Before(crTimeFilterStart) &#123;</span><br><span class="line"><span class="number">71</span>				<span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line"><span class="number">72</span>			&#125;</span><br><span class="line"><span class="number">73</span>			<span class="comment">// Created after the filter End time</span></span><br><span class="line"><span class="number">74</span>			<span class="keyword">if</span> crTime.After(crTimeFilterEnd) &#123;</span><br><span class="line"><span class="number">75</span>				<span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line"><span class="number">77</span>			<span class="comment">// Created on the filter Start timestamp</span></span><br><span class="line"><span class="number">78</span>			<span class="keyword">if</span> crTimeFilter.GetBounds() == pb.Pool_EXCLUDE_START || crTimeFilter.GetBounds() == pb.Pool_EXCLUDE_BOTH &#123;</span><br><span class="line"><span class="number">79</span>				<span class="keyword">if</span> crTime == crTimeFilterStart &#123;</span><br><span class="line"><span class="number">80</span>					<span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line"><span class="number">81</span>				&#125;</span><br><span class="line"><span class="number">82</span>			&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>(b) DoubleRangeFilter（字段缺失即淘汰）</strong> <code>filter.go:90-115</code>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">90</span>		<span class="keyword">for</span> _, filter := <span class="keyword">range</span> pool.GetDoubleRangeFilters() &#123;</span><br><span class="line"><span class="number">91</span>			v, ok := filterableFields.GetDoubleArgs()[filter.GetDoubleArg()]</span><br><span class="line"><span class="number">92</span>			<span class="keyword">if</span> !ok &#123;</span><br><span class="line">				<span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line"><span class="number">94</span>			&#125;</span><br><span class="line"><span class="number">96</span>			<span class="keyword">switch</span> filter.GetBounds() &#123;</span><br><span class="line"><span class="number">97</span>			<span class="keyword">case</span> pb.Pool_EXCLUDE_NONE:</span><br><span class="line"><span class="number">98</span>				<span class="keyword">if</span> !(v &gt;= filter.GetMinimum() &amp;&amp; v &lt;= filter.GetMaximum()) &#123;</span><br><span class="line"><span class="number">99</span>					<span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line"><span class="number">100</span>				&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>(c) StringEqualsFilter</strong> <code>filter.go:117-125</code>——同样缺 key 即淘汰，且<strong>大小写敏感</strong>。</p>
+<p><strong>(d) TagPresentFilter</strong> <code>filter.go:127-136</code>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">127</span>		ticketTags := filterableFields.GetTags()</span><br><span class="line"><span class="number">128</span>	tagFilterTest:</span><br><span class="line"><span class="number">129</span>		<span class="keyword">for</span> _, f := <span class="keyword">range</span> pool.GetTagPresentFilters() &#123;</span><br><span class="line"><span class="number">130</span>			<span class="keyword">for</span> _, v := <span class="keyword">range</span> ticketTags &#123;</span><br><span class="line"><span class="number">131</span>				<span class="keyword">if</span> v == f.GetTag() &#123;</span><br><span class="line"><span class="number">132</span>					<span class="keyword">continue</span> tagFilterTest</span><br><span class="line"><span class="number">133</span>				&#125;</span><br><span class="line"><span class="number">134</span>			&#125;</span><br><span class="line"><span class="number">135</span>			<span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line"><span class="number">136</span>		&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>花絮：第 128 行 <code>tagFilterTest:</code> 标签没有缩进（其他行都有 tab），是文件里唯一的格式异常。</p>
+</blockquote>
+<p><strong>NaN 行为</strong>：没有专门处理，靠 IEEE754 比较天然返回 false——testcases 里有 24 个 NaN 用例验证这点（<code>testcases.go:200-234</code>）。</p>
+<p><strong>校验</strong>：<code>ValidatePoolFilters</code>（<code>filter.go:32-47</code>）只校验 CreationTimeRangeFilter 的时间戳合法性；校验不通过的 pool 被<strong>直接丢弃</strong>（<code>main.go:651-658</code>），不会让整个 InvokeMMF 失败。</p>
+<h4 id="4）4MB-分块：v2-相对-v1-新增的机制"><a href="#4）4MB-分块：v2-相对-v1-新增的机制" class="headerlink" title="4）4MB 分块：v2 相对 v1 新增的机制"></a>4）4MB 分块：v2 相对 v1 新增的机制</h4><p>gRPC 默认 4MB 上限，OM <strong>不调大它</strong>，而是把 pool 的 participants 切块；每块带完整 Profile，只有票列表不同（<code>main.go:665-738</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">670</span>		maxPbSize := <span class="number">4</span> * <span class="number">1000</span> * <span class="number">1000</span></span><br><span class="line"><span class="number">672</span>		emptyChunkSize := proto.Size(&amp;pb.ChunkedMmfRunRequest&#123;Profile: req.GetProfile(), NumChunks: math.MaxInt32&#125;)</span><br><span class="line"><span class="number">681</span>		<span class="keyword">for</span> _, ticket := <span class="keyword">range</span> activeTickets &#123;</span><br><span class="line"><span class="number">682</span>			<span class="keyword">for</span> name, _ := <span class="keyword">range</span> validPools &#123;</span><br><span class="line"><span class="number">684</span>				<span class="keyword">if</span> filter.In(req.GetProfile().GetPools()[name], ticket.(*pb.Ticket)) &#123;</span><br><span class="line"><span class="number">685</span>					ticketSize := proto.Size(ticket.(*pb.Ticket))</span><br><span class="line"><span class="number">687</span>					<span class="keyword">if</span> (curChunkSize + ticketSize) &gt;= maxPbSize &#123;</span><br><span class="line"><span class="number">689</span>						curChunkSize = emptyChunkSize</span><br><span class="line"><span class="number">690</span>						chunkCount++</span><br><span class="line"><span class="number">691</span>						chunkedPools = <span class="built_in">append</span>(chunkedPools, <span class="keyword">map</span>[<span class="type">string</span>][]*pb.Ticket&#123;&#125;)</span><br><span class="line"><span class="number">692</span>					&#125;</span><br><span class="line"><span class="number">693</span>					chunkedPools[chunkCount][name] = <span class="built_in">append</span>(chunkedPools[chunkCount][name], ticket.(*pb.Ticket))</span><br><span class="line"><span class="number">694</span>					curChunkSize += ticketSize</span><br></pre></td></tr></table></figure>
+
+<p>roster 名固定为 <code>&lt;poolname&gt;_roster</code>（<code>main.go:723-733</code>）。<strong>MMF 侧要按 pool 名 concat 还原</strong>（<code>proto/messages.proto:207-211</code>、<code>docs/MIGRATION.md:175</code>）——这是写 MMF 时最容易漏的一步。</p>
+<h4 id="5）三重-goroutine：fan-in-fan-out-per-match"><a href="#5）三重-goroutine：fan-in-fan-out-per-match" class="headerlink" title="5）三重 goroutine：fan-in &#x2F; fan-out &#x2F; per-match"></a>5）三重 goroutine：fan-in &#x2F; fan-out &#x2F; per-match</h4><p><strong>(a) fan-in</strong>（<code>main.go:740-773</code>）：从 <code>matchChan</code> 读 match 并 <code>stream.Send</code>。<strong>不重试</strong>，发送失败就丢弃剩余结果：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">754</span>			<span class="keyword">for</span> match := <span class="keyword">range</span> matchChan &#123;</span><br><span class="line"><span class="number">761</span>				err := stream.Send(&amp;pb.StreamedMmfResponse&#123;Match: match&#125;)</span><br><span class="line"><span class="number">762</span>				<span class="comment">// om-core doesn&#x27;t retry sending MMF results; if your matchmaker cancels the</span></span><br><span class="line"><span class="number">763</span>				<span class="comment">// context or stops responding, om-core drops the rest of the match results.</span></span><br><span class="line"><span class="number">764</span>				<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line"><span class="number">765</span>					logger.Errorf(<span class="string">&quot;Unable to stream match result back to matchmaker, dropping %v matches: %v, %v&quot;</span>, <span class="built_in">len</span>(matchChan)+<span class="number">1</span>, err, context.Cause(ctx))</span><br><span class="line"><span class="number">766</span>					logger.Errorf(<span class="string">&quot;dropped: %v&quot;</span>, match.GetId())</span><br><span class="line"><span class="number">767</span>				<span class="keyword">return</span></span><br><span class="line"><span class="number">768</span>				&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>(b) fan-out</strong>（<code>main.go:798-1164</code>）：每个 MMF 一个 goroutine。要点：</p>
+<ul>
+<li><strong>REST 类型 MMF 明确不支持</strong>（<code>main.go:825-836</code>）：<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">825</span>			<span class="comment">// Legacy REST is not implemented in OM2; error.</span></span><br><span class="line"><span class="number">826</span>			<span class="keyword">if</span> mmf.GetType() == pb.MatchmakingFunctionSpec_REST &#123;</span><br><span class="line"><span class="number">834</span>				<span class="keyword">return</span> status.Error(codes.Internal, fmt.Errorf(<span class="string">&quot;REST Mmf invocation NYI %v: %w&quot;</span>, mmfUrl.Host, err).Error())</span><br><span class="line"><span class="number">835</span>			&#125; <span class="comment">// pb.MatchmakingFunctionSpec_gRPC is default.</span></span><br></pre></td></tr></table></figure></li>
+<li>https 走 Google IAM ID token，token 按 audience 缓存（<code>main.go:792-793</code>、<code>852-928</code>）；</li>
+<li>每次调用<strong>新建</strong> client conn，<strong>故意不做连接池</strong>，为了让多实例 MMF 能被负载均衡（<code>main.go:948-955</code> 注释）；</li>
+<li>所有 chunk 依次 <code>Send</code>（<code>main.go:980-986</code>），然后进 Recv 循环。</li>
+</ul>
+<p><strong>(c) per-match</strong>（<code>main.go:1032-1136</code>）：每个 match 提取所有 roster 的 ticket id 做 Deactivate（<code>main.go:1046-1051</code>），空 match 跳过（<code>main.go:1053-1060</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1046</span>				ticketIdsToDeactivate := []<span class="type">string</span>&#123;&#125;</span><br><span class="line"><span class="number">1047</span>				<span class="keyword">for</span> _, roster := <span class="keyword">range</span> res.GetRosters() &#123;</span><br><span class="line"><span class="number">1048</span>					<span class="keyword">for</span> _, ticket := <span class="keyword">range</span> roster.GetTickets() &#123;</span><br><span class="line"><span class="number">1049</span>						ticketIdsToDeactivate = <span class="built_in">append</span>(ticketIdsToDeactivate, ticket.GetId())</span><br><span class="line"><span class="number">1050</span>					&#125;</span><br><span class="line"><span class="number">1051</span>				&#125;</span><br><span class="line"><span class="number">1064</span>				errs := updateTicketsActiveState(ctx, logger, &amp;tc, ticketIdsToDeactivate, store.Deactivate)</span><br></pre></td></tr></table></figure>
+
+<h4 id="6）OM-MATCH-TICKET-DEACTIVATION-WAIT：两条分支"><a href="#6）OM-MATCH-TICKET-DEACTIVATION-WAIT：两条分支" class="headerlink" title="6）OM_MATCH_TICKET_DEACTIVATION_WAIT：两条分支"></a>6）<code>OM_MATCH_TICKET_DEACTIVATION_WAIT</code>：两条分支</h4><p>等待函数 <code>deactivationCheck</code>（<code>main.go:1080-1101</code>）轮询本地 <code>InactiveSet</code>，每 100ms 一次，60s 硬超时：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1084</span>					timeout := time.After(time.Second * <span class="number">60</span>)</span><br><span class="line"><span class="number">1091</span>					<span class="keyword">default</span>:</span><br><span class="line"><span class="number">1094</span>						time.Sleep(<span class="number">100</span> * time.Millisecond)</span><br><span class="line"><span class="number">1095</span>						<span class="keyword">if</span> _, replComplete := tc.InactiveSet.Load(ticketId); replComplete == <span class="literal">true</span> &#123;</span><br><span class="line"><span class="number">1096</span>							logger.Tracef(<span class="string">&quot;deactivation of ticket %v replicated to local cache&quot;</span>, ticketId)</span><br><span class="line"><span class="number">1097</span>							<span class="keyword">return</span></span><br><span class="line"><span class="number">1098</span>						&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>只等最后一个 ticket 的下线</strong>（<code>main.go:1106</code>）——因为 replication 是按序的，最后一条到位即代表前面都已到位：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1103</span>				<span class="comment">// Option 1 (default): Wait for deactivation to complete</span></span><br><span class="line"><span class="number">1104</span>				<span class="comment">// BEFORE returning the match.</span></span><br><span class="line"><span class="number">1105</span>				<span class="keyword">if</span> cfg.GetBool(<span class="string">&quot;OM_MATCH_TICKET_DEACTIVATION_WAIT&quot;</span>) &#123;</span><br><span class="line"><span class="number">1106</span>					deactivationCheck(ticketIdsToDeactivate[<span class="built_in">len</span>(ticketIdsToDeactivate)<span class="number">-1</span>])</span><br><span class="line"><span class="number">1107</span>					logger.Trace(<span class="string">&quot;ticket deactivations complete, returning match&quot;</span>)</span><br><span class="line"><span class="number">1108</span>				&#125;</span><br><span class="line"><span class="number">1125</span>				matchChan &lt;- res</span><br><span class="line"><span class="number">1127</span>				<span class="comment">// Option 2 (dangerous!): Match already returned; clean up</span></span><br><span class="line"><span class="number">1129</span>				<span class="comment">// goroutine when deactivation is complete.</span></span><br><span class="line"><span class="number">1131</span>				<span class="keyword">if</span> !cfg.GetBool(<span class="string">&quot;OM_MATCH_TICKET_DEACTIVATION_WAIT&quot;</span>) &#123;</span><br><span class="line"><span class="number">1132</span>					deactivationCheck(ticketIdsToDeactivate[<span class="built_in">len</span>(ticketIdsToDeactivate)<span class="number">-1</span>])</span><br><span class="line"><span class="number">1133</span>				&#125;</span><br></pre></td></tr></table></figure>
+
+<p>源码注释直接把 option 2 标为 <strong>dangerous</strong>。</p>
+<h4 id="7）收尾"><a href="#7）收尾" class="headerlink" title="7）收尾"></a>7）收尾</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1169</span>		mmfwg.Wait()</span><br><span class="line"><span class="number">1173</span>		<span class="built_in">close</span>(matchChan) <span class="comment">// tell the fan-in goroutine that we&#x27;re done sending</span></span><br><span class="line"><span class="number">1174</span>		fanwg.Wait()     <span class="comment">// wait for the fan-in goroutine to finish anything left in the channel</span></span><br><span class="line"><span class="number">1176</span>		<span class="keyword">return</span> <span class="literal">nil</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>值得注意：<code>mmfwg.Wait()</code>（<code>:1169</code>）与 <code>fanwg.Add(1)</code>（<code>:750</code>）分别在 goroutine 外&#x2F;内调用，而 fan-in 若在 <code>:767</code> 那个 Send 失败分支过早 <code>return</code>，<code>fanwg.Done()</code> 不会被调用。是否真实悬挂取决于时序，标注为”值得注意”而非确证缺陷。</p>
+</blockquote>
+<h3 id="端到端演算-②：一次-InvokeMatchmakingFunctions-的完整链路"><a href="#端到端演算-②：一次-InvokeMatchmakingFunctions-的完整链路" class="headerlink" title="端到端演算 ②：一次 InvokeMatchmakingFunctions 的完整链路"></a>端到端演算 ②：一次 <code>InvokeMatchmakingFunctions</code> 的完整链路</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">① grpcServer.InvokeMMF              main.go:585</span><br><span class="line">② ctx 策略(WithoutCancel+timeout)    main.go:594-600</span><br><span class="line">③ profile 名截断（降指标基数）        main.go:615-619</span><br><span class="line">④ 快照活跃票 setDifference           main.go:635 → main.go:1390-1402</span><br><span class="line">⑤ ValidatePoolFilters               main.go:651-658 → filter.go:32-47</span><br><span class="line">⑥ 过滤 + 4MB 分块                    main.go:681-697 → filter.go:52-139</span><br><span class="line">⑦ 组装 ChunkedMmfRunRequest         main.go:712-738</span><br><span class="line">⑧ fan-out: 每个 MMF 一个 goroutine   main.go:806</span><br><span class="line">   ├ REST → 报错                     main.go:826-835</span><br><span class="line">   ├ https → IAM ID token            main.go:852-928</span><br><span class="line">   ├ grpc.NewClient（不复用连接）     main.go:936</span><br><span class="line">   └ 逐 chunk Send                   main.go:980-986</span><br><span class="line">⑨ MMF 返回 Match → per-match goroutine  main.go:1032</span><br><span class="line">   ├ 收集 roster ticket ids          main.go:1046-1051</span><br><span class="line">   ├ updateTicketsActiveState(Deactivate) main.go:1064</span><br><span class="line">   ├ [默认] deactivationCheck         main.go:1105-1106</span><br><span class="line">   └ matchChan &lt;- res                main.go:1125</span><br><span class="line">⑩ fan-in: stream.Send 回客户端       main.go:754/761</span><br><span class="line">⑪ mmfwg.Wait → close → fanwg.Wait    main.go:1169-1174</span><br></pre></td></tr></table></figure>
+
+<h3 id="第五讲小结：OM-只负责”喂票-摘票-回传”，不裁决"><a href="#第五讲小结：OM-只负责”喂票-摘票-回传”，不裁决" class="headerlink" title="第五讲小结：OM 只负责”喂票 + 摘票 + 回传”，不裁决"></a>第五讲小结：OM 只负责”喂票 + 摘票 + 回传”，不裁决</h3><table>
+<thead>
+<tr>
+<th>项</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>一句话定位</strong></td>
+<td>快照 → 四类硬编码过滤 → 4MB 分块 → 并发调 MMF → 自动摘票 → 流式回传</td>
+</tr>
+<tr>
+<td><strong>输入</strong></td>
+<td><code>MmfRequest</code>（Profile + Pools + MMF 列表）</td>
+</tr>
+<tr>
+<td><strong>输出</strong></td>
+<td><code>stream StreamedMmfResponse</code>（Match 流）+ 被自动 Deactivate 的票</td>
+</tr>
+<tr>
+<td><strong>三个最值得记住的点</strong></td>
+<td>① 过滤器<strong>不是 CEL</strong>，是四类硬编码求交，<strong>字段缺失即淘汰</strong>；② MMF <strong>不受调用方断连影响</strong>，但有 600s 硬超时；③ 默认<strong>等票下线复制完</strong>才返回 Match（关掉会更快但可能重复分配）</td>
+</tr>
+</tbody></table>
+<pre><code class="highlight mermaid">flowchart TB
+    Req[&quot;MmfRequest&quot;] --&gt; Snap[&quot;快照活跃票&quot;]
+    Snap --&gt; F[&quot;filter.In 四类求交&quot;]
+    F --&gt; Chunk&#123;&quot;超过4MB?&quot;&#125;
+    Chunk --&gt;|&quot;是&quot;| Split[&quot;切块 每块含完整Profile&quot;]
+    Chunk --&gt;|&quot;否&quot;| Pack[&quot;单块&quot;]
+    Split --&gt; Send[&quot;双向流 Send&quot;]
+    Pack --&gt; Send
+    Send --&gt; MMF[&quot;MMF 计算&quot;]
+    MMF --&gt; Match[&quot;StreamedMmfResponse&quot;]
+    Match --&gt; Deact[&quot;对roster票 Deactivate&quot;]
+    Deact --&gt; Wait&#123;&quot;DEACTIVATION_WAIT?&quot;&#125;
+    Wait --&gt;|&quot;true 默认&quot;| W1[&quot;等待复制完成&quot;]
+    Wait --&gt;|&quot;false 危险&quot;| W2[&quot;直接返回后再清理&quot;]
+    W1 --&gt; Out[&quot;stream.Send&quot;]
+    W2 --&gt; Out</code></pre>
+
+<hr>
+<h2 id="第六讲：Assignment-下发、配置与可观测性"><a href="#第六讲：Assignment-下发、配置与可观测性" class="headerlink" title="第六讲：Assignment 下发、配置与可观测性"></a>第六讲：Assignment 下发、配置与可观测性</h2><h3 id="先说人话：本讲每个阶段在干什么-5"><a href="#先说人话：本讲每个阶段在干什么-5" class="headerlink" title="先说人话：本讲每个阶段在干什么"></a>先说人话：本讲每个阶段在干什么</h3><p>匹配完之后，玩家还需要知道”去哪个 IP:端口”。这个信息叫 <strong>Assignment</strong>。</p>
+<p>v2 的态度很明确：<strong>这件事不该由 OM 做</strong>。OM 只保留两个 DEPRECATED 端点做兼容，且其中一个（<code>WatchAssignments</code>）的实现相当朴素。本讲最后一节把配置项和指标清点一遍，方便你上线后调参和排障。</p>
+<h3 id="逐文件精读-5"><a href="#逐文件精读-5" class="headerlink" title="逐文件精读"></a>逐文件精读</h3><h4 id="1）推荐路径：Assignment-不走-OM"><a href="#1）推荐路径：Assignment-不走-OM" class="headerlink" title="1）推荐路径：Assignment 不走 OM"></a>1）推荐路径：Assignment 不走 OM</h4><p><code>main.go:1179-1182</code> 的分区注释与 <code>main.go:1257-1264</code>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1257</span>	<span class="comment">// WatchAssignments should be considered deprecated, and is only provided for</span></span><br><span class="line"><span class="number">1258</span>	<span class="comment">// use by developers when programming against om-core. In production, having</span></span><br><span class="line"><span class="number">1259</span>	<span class="comment">// the matchmaker handle this functionality doesn&#x27;t make for clean failure</span></span><br><span class="line"><span class="number">1260</span>	<span class="comment">// domains and introduces unnecessary load on the matchmaker.</span></span><br><span class="line"><span class="number">1261</span>	<span class="comment">// Functionally, it asynchronously watches for exactly one replication update</span></span><br><span class="line"><span class="number">1262</span>	<span class="comment">// containing an assignment for each of the provided ticket ids, and streams</span></span><br><span class="line"><span class="number">1263</span>	<span class="comment">// those assignments back to the caller.  This is rather limited functionality</span></span><br><span class="line"><span class="number">1264</span>	<span class="comment">// as reflected by this function&#x27;s deprecated status.</span></span><br></pre></td></tr></table></figure>
+
+<p>v1 的 <code>Frontend.GetAssignments</code>（长轮询）<strong>已不存在</strong>，只在 <code>docs/MIGRATION.md:55,77</code> 作为历史被提及。</p>
+<h4 id="2）写：CreateAssignments"><a href="#2）写：CreateAssignments" class="headerlink" title="2）写：CreateAssignments"></a>2）写：<code>CreateAssignments</code></h4><p><code>main.go:1191-1255</code>，普通一元 RPC（<strong>不是流</strong>）。为 roster 里每个 ticket 发一条 <code>store.Assign</code>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1213</span>			tc.UpRequests &lt;- &amp;cache.UpdateRequest&#123;</span><br><span class="line"><span class="number">1219</span>				Update: store.StateUpdate&#123;</span><br><span class="line"><span class="number">1220</span>					Cmd:   store.Assign,</span><br><span class="line"><span class="number">1221</span>					Key:   ticket.GetId(),</span><br><span class="line"><span class="number">1222</span>					Value: <span class="type">string</span>(assignmentPb[:]),</span><br><span class="line"><span class="number">1223</span>				&#125;,</span><br><span class="line"><span class="number">1224</span>				ResultsChan: rChan,</span><br><span class="line"><span class="number">1225</span>				Ctx:         parentCtx,</span><br><span class="line"><span class="number">1226</span>			&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="3）读：WatchAssignments-——-对外是流，内部是-1-秒轮询"><a href="#3）读：WatchAssignments-——-对外是流，内部是-1-秒轮询" class="headerlink" title="3）读：WatchAssignments —— 对外是流，内部是 1 秒轮询"></a>3）读：<code>WatchAssignments</code> —— 对外是流，内部是 1 秒轮询</h4><p><strong>本节最反直觉的一段</strong>（<code>main.go:1265-1336</code>）：对外是 server-streaming RPC，内部却是个 <strong>1 秒 sleep 轮询</strong>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1275</span>		updateChan := <span class="built_in">make</span>(<span class="keyword">chan</span> *pb.StreamedWatchAssignmentsResponse)</span><br><span class="line"><span class="number">1276</span>		<span class="keyword">defer</span> <span class="built_in">close</span>(updateChan)</span><br><span class="line"><span class="number">1278</span>		<span class="keyword">for</span> _, id := <span class="keyword">range</span> req.GetTicketIds() &#123;</span><br><span class="line"><span class="number">1282</span>			<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">(ticketId <span class="type">string</span>)</span></span> &#123;</span><br><span class="line"><span class="number">1283</span>				<span class="keyword">for</span> &#123;</span><br><span class="line"><span class="number">1284</span>					<span class="keyword">if</span> value, ok := tc.Assignments.Load(ticketId); ok &#123;</span><br><span class="line"><span class="number">1285</span>						assignment := value.(*pb.Assignment)</span><br><span class="line"><span class="number">1288</span>						updateChan &lt;- &amp;pb.StreamedWatchAssignmentsResponse&#123;</span><br><span class="line"><span class="number">1289</span>							Assignment: assignment,</span><br><span class="line"><span class="number">1290</span>							Id:         ticketId,</span><br><span class="line"><span class="number">1291</span>						&#125;</span><br><span class="line"><span class="number">1292</span>						<span class="keyword">return</span></span><br><span class="line"><span class="number">1293</span>					&#125;</span><br><span class="line"><span class="number">1294</span>					<span class="comment">// TODO exp bo + jitter. Not a priority since this API is</span></span><br><span class="line"><span class="number">1295</span>					<span class="comment">// marked as deprecated.</span></span><br><span class="line"><span class="number">1296</span>					time.Sleep(<span class="number">1</span> * time.Second)</span><br><span class="line"><span class="number">1297</span>				&#125;</span><br><span class="line"><span class="number">1298</span>			&#125;(id)</span><br></pre></td></tr></table></figure>
+
+<p>**每个 ticket ID 一个 goroutine + 死循环 + <code>time.Sleep(1s)</code>**，命中一次就 return。代码自己承认这是 naive 实现（<code>main.go:1318</code>）。</p>
+<p>超时计算取请求里最新 ticket 的创建时间 + TTL（<code>main.go:1300-1319</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1300</span>			<span class="comment">// Get creation timestamp from ID</span></span><br><span class="line"><span class="number">1301</span>			x, err := strconv.ParseInt(strings.Split(id, <span class="string">&quot;-&quot;</span>)[<span class="number">0</span>], <span class="number">0</span>, <span class="number">64</span>)</span><br><span class="line"><span class="number">1305</span>			ticketCtime := time.UnixMilli(x)</span><br><span class="line"><span class="number">1308</span>			<span class="keyword">if</span> ticketCtime.After(newestTicketCtime) &#123;</span><br><span class="line"><span class="number">1309</span>				newestTicketCtime = ticketCtime</span><br><span class="line"><span class="number">1310</span>			&#125;</span><br><span class="line"><span class="number">1319</span>		timeout := time.After(time.Until(newestTicketCtime.Add(time.Millisecond * time.Duration(cfg.GetInt(<span class="string">&quot;OM_CACHE_TICKET_TTL_MS&quot;</span>)))))</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注意这里又是”从 Ticket ID 前 13 位取创建时间”——第三讲那条不变式的又一次应用。</p>
+</blockquote>
+<p><strong>Assignment 全链路无推送</strong>：写入 Redis → XREAD 复制 → <code>tc.Assignments.Store</code>（<code>replicatedticketcache.go:276</code>）→ 被轮询 goroutine 看到。</p>
+<h4 id="4）配置：Viper-的一个大坑"><a href="#4）配置：Viper-的一个大坑" class="headerlink" title="4）配置：Viper 的一个大坑"></a>4）配置：Viper 的一个大坑</h4><p><code>internal/config/config.go:38-152</code> 是单一入口。注释里点出了 Viper 的行为（<code>config.go:26-37</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">26</span>	<span class="comment">// readConfig reads Open Match configuration from the environment.</span></span><br><span class="line"><span class="number">29</span>	<span class="comment">// The AutomaticEnv function of Viper reads values from env vars, but critically,</span></span><br><span class="line"><span class="number">30</span>	<span class="comment">// ONLY FOR KEYS IT ALREADY HAS A DEFAULT VALUE FOR. If you&#x27;ve defined a new env var and you&#x27;re</span></span><br><span class="line"><span class="number">31</span>	<span class="comment">// trying to access it as a config value in OM, you MUST specify a default for it here, or</span></span><br><span class="line"><span class="number">32</span>	<span class="comment">// Viper will NOT read the value you set in the env var!</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>新增环境变量必须在这里 <code>SetDefault</code>，否则 Viper 不会读</strong>。命名约定：全大写、<code>OM_</code> 前缀、时长带单位后缀（<code>_SECS</code> &#x2F; <code>_MS</code>）。</p>
+<p>另外：只有 <code>AutomaticEnv()</code>（<code>config.go:149</code>），<strong>没有读取 YAML 配置文件</strong>的能力。</p>
+<h4 id="5）日志与指标"><a href="#5）日志与指标" class="headerlink" title="5）日志与指标"></a>5）日志与指标</h4><p><code>internal/logging/logging.go:30-48</code>：debug 及以上会把<strong>全部配置</strong> dump 出来（<code>logging.go:42-47</code>）。只有 <code>json</code> 走 JSONFormatter（<code>:53-60</code>），其余一律 TextFormatter；<code>stackdriver</code> 在注释里提到（<code>logging.go:28</code>）但<strong>代码中未实现</strong>。</p>
+<p><strong>两套指标出口</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>分支</th>
+<th>条件</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>initializeOtel()</code></td>
+<td><code>OM_OTEL_SIDECAR=true</code>（默认）</td>
+<td>OTLP gRPC exporter，<strong>insecure</strong>（<code>metrics.go:101</code>），配 GCP resource detector</td>
+</tr>
+<tr>
+<td><code>initializeOtelWithLocalProm()</code></td>
+<td><code>OM_OTEL_SIDECAR=false</code></td>
+<td><code>promhttp</code> 在 <code>:2223/metrics</code>（<code>metrics.go:150-151</code>）</td>
+</tr>
+</tbody></table>
+<p>核心指标（前缀 <code>om_core.</code>，<code>metrics.go:33</code>）：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>类型</th>
+<th>注册行</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>om_core.ticket.size</code></td>
+<td>Float64Histogram (kb)</td>
+<td><code>metrics.go:171</code></td>
+</tr>
+<tr>
+<td><code>om_core.rpc.duration</code></td>
+<td>Float64Histogram (ms)</td>
+<td><code>metrics.go:180</code></td>
+</tr>
+<tr>
+<td><code>om_core.rpc.errors</code></td>
+<td>Int64Counter</td>
+<td><code>metrics.go:189</code></td>
+</tr>
+<tr>
+<td><code>om_core.ticket.activation.requests</code></td>
+<td>Int64Histogram</td>
+<td><code>metrics.go:197</code></td>
+</tr>
+<tr>
+<td><code>om_core.profile.chunks</code></td>
+<td>Int64Histogram</td>
+<td><code>metrics.go:262</code></td>
+</tr>
+<tr>
+<td><code>om_core.cache.tickets.available</code></td>
+<td>Int64Histogram</td>
+<td><code>metrics.go:270</code></td>
+</tr>
+<tr>
+<td><code>om_core.mmf.failures</code></td>
+<td>Int64Counter</td>
+<td><code>metrics.go:286</code></td>
+</tr>
+<tr>
+<td><code>om_core.match.received</code></td>
+<td>Int64Counter</td>
+<td><code>metrics.go:302</code></td>
+</tr>
+<tr>
+<td><code>om_core.ticket.assigment.watch</code></td>
+<td>Int64UpDownCounter</td>
+<td><code>metrics.go:254</code> ⚠️ <strong>拼写错误：assigment</strong></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><code>metrics.go:255</code> 的 <code>assigment</code> 漏了一个 <code>n</code>，是源码里真实的拼写 bug。</p>
+</blockquote>
+<p>缓存指标（前缀 <code>om_core.cache.</code>，<code>cache/metrics.go:23</code>）中三个 Observable 计数器走 callback 采样，<strong>活跃数用 <code>TicketCount - InactiveCount</code> 现算</strong>（<code>cache/metrics.go:173-183</code>）。</p>
+<p><strong>RPC 指标零侵入采集</strong>：<code>server.go:129-166</code> 的 <code>HandleRPC</code> 只在 <code>*stats.End</code> 时记录 duration 与 error，业务代码不需要埋点。</p>
+<h3 id="第六讲小结：Assignment-是你的事，OM-只留了个废弃端点"><a href="#第六讲小结：Assignment-是你的事，OM-只留了个废弃端点" class="headerlink" title="第六讲小结：Assignment 是你的事，OM 只留了个废弃端点"></a>第六讲小结：Assignment 是你的事，OM 只留了个废弃端点</h3><table>
+<thead>
+<tr>
+<th>项</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>一句话定位</strong></td>
+<td>Assignment 推荐由 matchmaker 自己推；OM 的两个端点已废弃，<code>WatchAssignments</code> 内部是 1s 轮询</td>
+</tr>
+<tr>
+<td><strong>输入</strong></td>
+<td><code>CreateAssignmentsRequest</code> &#x2F; <code>WatchAssignmentsRequest</code></td>
+</tr>
+<tr>
+<td><strong>输出</strong></td>
+<td>Assignment（经 Redis 复制到本地缓存后被轮询到）</td>
+</tr>
+<tr>
+<td><strong>三个最值得记住的点</strong></td>
+<td>① <code>WatchAssignments</code> 是<strong>每票一个 goroutine + 1s sleep</strong>，票多时有资源压力；② 新增环境变量**必须在 <code>config.go</code> 里 <code>SetDefault</code>**；③ 默认走 <strong>OTLP sidecar</strong>，本地 Prometheus 要显式关掉 <code>OM_OTEL_SIDECAR</code></td>
+</tr>
+</tbody></table>
+<pre><code class="highlight mermaid">flowchart LR
+    MM[&quot;Matchmaker&quot;] --&gt;|&quot;推荐：直接推&quot;| Client[&quot;游戏客户端&quot;]
+    MM -.-&gt;|&quot;兼容：已废弃&quot;| CA[&quot;CreateAssignments&quot;]
+    CA --&gt; Redis[(&quot;Redis&quot;)]
+    Redis --&gt; Cache[&quot;本地 Assignments&quot;]
+    Cache --&gt;|&quot;1s 轮询&quot;| WA[&quot;WatchAssignments&quot;]
+    WA -.-&gt;|&quot;stream&quot;| MM</code></pre>
+
+<hr>
+<h2 id="附：学习路线与复习卡汇总"><a href="#附：学习路线与复习卡汇总" class="headerlink" title="附：学习路线与复习卡汇总"></a>附：学习路线与复习卡汇总</h2><h3 id="学习路线建议"><a href="#学习路线建议" class="headerlink" title="学习路线建议"></a>学习路线建议</h3><ol>
+<li><strong>先跑起来再读代码</strong>：<code>OM_STATE_STORAGE_TYPE=memory go run .</code>（<code>docs/MIGRATION.md:21</code>），用 <code>main_test.go</code> 熟悉 CreateTicket &#x2F; ActivateTickets 的语义。</li>
+<li><strong>搞懂一条不变式</strong>：Ticket ID ≡ Redis Stream entry ID。搞懂它，第二&#x2F;三&#x2F;四讲全部串起来。</li>
+<li><strong>重点读两个文件</strong>：<code>internal/statestore/cache/replicatedticketcache.go</code>（读路径）与 <code>main.go:585-1177</code>（匹配编排）。其余都是配角。</li>
+<li><strong>自己写一个 MMF</strong>：从 <code>proto/mmf.proto</code> 的双向流契约出发，注意<strong>要按 pool 名 concat 分块</strong>（<code>docs/MIGRATION.md:175</code>）。</li>
+<li><strong>上线前必读 FAQ</strong>：<code>docs/FAQ.md:11-14</code>（关键指标）、<code>:18-23</code>（DEACTIVATION_WAIT）、<code>:42</code>（不支持 sharding）、<code>:56-70</code>（TTL 计算）、<code>:80-86</code>（绕开自动下线）。</li>
+</ol>
+<h3 id="复习卡"><a href="#复习卡" class="headerlink" title="复习卡"></a>复习卡</h3><table>
+<thead>
+<tr>
+<th>#</th>
+<th>卡片</th>
+<th>答案</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>v2 有几个二进制？</td>
+<td><strong>一个</strong> <code>om-core</code>（<code>README.md:10</code>）</td>
+</tr>
+<tr>
+<td>2</td>
+<td>唯一服务名与 RPC 数？</td>
+<td><code>OpenMatchService</code>，6 个（2 个废弃）（<code>proto/api.proto:29-82</code>）</td>
+</tr>
+<tr>
+<td>3</td>
+<td>v2 删掉了哪两个组件？</td>
+<td><code>synchronizer</code> + <code>evaluator</code>（<code>docs/MIGRATION.md:49</code>）</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Ticket ID 谁生成？</td>
+<td>Redis Stream entry ID（存储层）（<code>redis.go:594</code>）</td>
+</tr>
+<tr>
+<td>5</td>
+<td>新票默认什么状态？</td>
+<td><strong>inactive</strong>，必须显式 Activate（<code>replicatedticketcache.go:257</code>）</td>
+</tr>
+<tr>
+<td>6</td>
+<td>StateReplicator 有几个方法？</td>
+<td><strong>3 个</strong>（<code>datatypes/store.go:56-60</code>）</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Redis 用的什么数据结构？</td>
+<td><strong>Streams</strong>（XADD&#x2F;XREAD&#x2F;XTRIM），无 Lua、无 sorted set</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Redis stream 名？</td>
+<td><code>om-replication</code>（<code>redis.go:378</code>）</td>
+</tr>
+<tr>
+<td>9</td>
+<td>本地缓存有几个 sync.Map？</td>
+<td><strong>3 个</strong>：Tickets &#x2F; InactiveSet &#x2F; Assignments（<code>replicatedticketcache.go:62-64</code>）</td>
+</tr>
+<tr>
+<td>10</td>
+<td>“活跃票”怎么算？</td>
+<td><code>setDifference</code>：不在 InactiveSet 里的（<code>main.go:1390-1402</code>）</td>
+</tr>
+<tr>
+<td>11</td>
+<td>过滤器有几类？是 CEL 吗？</td>
+<td><strong>4 类硬编码求交</strong>，不是 CEL（<code>filter.go:52-139</code>）</td>
+</tr>
+<tr>
+<td>12</td>
+<td>字段缺失时过滤器如何判定？</td>
+<td><strong>直接淘汰</strong>（<code>filter.go:92-94</code>）</td>
+</tr>
+<tr>
+<td>13</td>
+<td>gRPC 分块阈值？</td>
+<td><code>4 * 1000 * 1000</code>（<code>main.go:670</code>）</td>
+</tr>
+<tr>
+<td>14</td>
+<td>MMF 会被调用方断连取消吗？</td>
+<td><strong>不会</strong>（<code>WithoutCancel</code>，<code>main.go:595</code>）</td>
+</tr>
+<tr>
+<td>15</td>
+<td>MMF 硬超时？</td>
+<td><code>OM_MMF_TIMEOUT_SECS=600</code>（<code>config.go:64</code>）</td>
+</tr>
+<tr>
+<td>16</td>
+<td>返回 Match 前默认要等什么？</td>
+<td>等票 Deactivate 复制完成（<code>OM_MATCH_TICKET_DEACTIVATION_WAIT=true</code>）</td>
+</tr>
+<tr>
+<td>17</td>
+<td>下线确认的轮询间隔&#x2F;超时？</td>
+<td>100ms &#x2F; 60s（<code>main.go:1094/1084</code>）</td>
+</tr>
+<tr>
+<td>18</td>
+<td>Assignment 推荐谁下发？</td>
+<td><strong>Matchmaker 自己</strong>（OM 的两个端点已废弃）</td>
+</tr>
+<tr>
+<td>19</td>
+<td><code>WatchAssignments</code> 内部实现？</td>
+<td>每票一个 goroutine + <code>time.Sleep(1s)</code>（<code>main.go:1282-1298</code>）</td>
+</tr>
+<tr>
+<td>20</td>
+<td><code>OM_CACHE_TICKET_TTL_MS</code> 默认？</td>
+<td>600000（10 分钟）（<code>config.go:133</code>）</td>
+</tr>
+<tr>
+<td>21</td>
+<td>出向攒批的条数&#x2F;超时？</td>
+<td>50 条 &#x2F; 500ms（<code>config.go:131-132</code>）</td>
+</tr>
+<tr>
+<td>22</td>
+<td>单次状态更新上限？</td>
+<td><code>OM_MAX_STATE_UPDATES_PER_CALL=500</code>（<code>config.go:61</code>）</td>
+</tr>
+<tr>
+<td>23</td>
+<td>Ticket ID 正则？</td>
+<td><code>^\d&#123;13&#125;-\d+$</code>（<code>redis.go:133</code>）</td>
+</tr>
+<tr>
+<td>24</td>
+<td>能删 Ticket 吗？</td>
+<td><strong>不能</strong>，无删除 API，靠 TTL</td>
+</tr>
+<tr>
+<td>25</td>
+<td>支持 Redis 分片吗？</td>
+<td><strong>不支持</strong>（<code>docs/FAQ.md:42</code>）</td>
+</tr>
+<tr>
+<td>26</td>
+<td>gRPC &#x2F; HTTP &#x2F; Prometheus 端口？</td>
+<td>50581 &#x2F; 8080 &#x2F; 2223</td>
+</tr>
+<tr>
+<td>27</td>
+<td>默认指标出口？</td>
+<td>OTLP sidecar（<code>OM_OTEL_SIDECAR=true</code>）</td>
+</tr>
+<tr>
+<td>28</td>
+<td>新增环境变量要注意什么？</td>
+<td>必须在 <code>config.go</code> 里 <code>SetDefault</code>（<code>config.go:26-37</code>）</td>
+</tr>
+<tr>
+<td>29</td>
+<td>源码里一个真实的拼写 bug？</td>
+<td><code>om_core.ticket.assigment.watch</code>（<code>metrics.go:255</code>）</td>
+</tr>
+<tr>
+<td>30</td>
+<td>碰撞谁负责？</td>
+<td><strong>开发者&#x2F;匹配器</strong>，OM 完全不介入（<code>docs/MIGRATION.md:49</code>）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="涉及文件索引"><a href="#涉及文件索引" class="headerlink" title="涉及文件索引"></a>涉及文件索引</h2><blockquote>
+<p>行数为 HEAD（<code>ac392a0</code>）版本。⚠️ 标注的两个文件在工作区已被修改且<strong>无法编译</strong>，行号以 HEAD 为准。</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>相对路径</th>
+<th>行数</th>
+<th>角色</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>main.go</code></td>
+<td>1402 ⚠️</td>
+<td>全部 gRPC handler + 匹配编排；本笔记主角</td>
+</tr>
+<tr>
+<td><code>server.go</code></td>
+<td>171</td>
+<td>进程启动（gRPC + gateway）与 <code>stats.Handler</code> RPC 埋点</td>
+</tr>
+<tr>
+<td><code>metrics.go</code></td>
+<td>310</td>
+<td>OTel 初始化（OTLP &#x2F; Prometheus）与 core 指标注册</td>
+</tr>
+<tr>
+<td><code>main_test.go</code></td>
+<td>492</td>
+<td>createTicket &#x2F; validateTicketStateUpdates &#x2F; act-deact 测试</td>
+</tr>
+<tr>
+<td><code>internal/config/config.go</code></td>
+<td>162</td>
+<td>全部配置默认值与注释（单一事实源）</td>
+</tr>
+<tr>
+<td><code>internal/config/config_test.go</code></td>
+<td>91</td>
+<td>默认值&#x2F;类型断言</td>
+</tr>
+<tr>
+<td><code>internal/logging/logging.go</code></td>
+<td>63</td>
+<td>logrus 格式与级别配置</td>
+</tr>
+<tr>
+<td><code>internal/logging/logging_test.go</code></td>
+<td>43</td>
+<td><code>newFormatter</code> 三种入参</td>
+</tr>
+<tr>
+<td><code>internal/statestore/datatypes/store.go</code></td>
+<td>60</td>
+<td><code>StateReplicator</code> 接口 + <code>StateUpdate</code>&#x2F;<code>StateResponse</code> + 4 个 Cmd 常量</td>
+</tr>
+<tr>
+<td><code>internal/statestore/memory/memory.go</code></td>
+<td>142</td>
+<td>内存复制器（无缓冲 channel 模拟 Redis Streams）</td>
+</tr>
+<tr>
+<td><code>internal/statestore/redis/redis.go</code></td>
+<td>624</td>
+<td>Redis Streams 复制器（连接池 + 退避 + XADD&#x2F;XREAD&#x2F;XTRIM）</td>
+</tr>
+<tr>
+<td><code>internal/statestore/cache/replicatedticketcache.go</code></td>
+<td>456 ⚠️</td>
+<td>本地副本 + 出入向队列 + 过期；本笔记另一主角</td>
+</tr>
+<tr>
+<td><code>internal/statestore/cache/metrics.go</code></td>
+<td>184</td>
+<td>cache 指标注册与 Observable callback</td>
+</tr>
+<tr>
+<td><code>internal/filter/filter.go</code></td>
+<td>139</td>
+<td><code>In()</code> 四类过滤器求交 + <code>ValidatePoolFilters()</code></td>
+</tr>
+<tr>
+<td><code>internal/filter/filter_test.go</code></td>
+<td>101</td>
+<td>正反用例驱动</td>
+</tr>
+<tr>
+<td><code>internal/filter/testcases/testcases.go</code></td>
+<td>415</td>
+<td>全部 filter 测试用例（含 NaN 全套与四类交集）</td>
+</tr>
+<tr>
+<td><code>pkg/pb/messages.pb.go</code></td>
+<td>2369</td>
+<td>Ticket &#x2F; Pool &#x2F; Profile &#x2F; Match &#x2F; Roster 等 Go 生成物</td>
+</tr>
+<tr>
+<td><code>pkg/pb/api.pb.go</code></td>
+<td>150</td>
+<td><code>OpenMatchService</code> 消息注册</td>
+</tr>
+<tr>
+<td><code>pkg/pb/api_grpc.pb.go</code></td>
+<td>462</td>
+<td><code>OpenMatchService</code> client&#x2F;server 契约</td>
+</tr>
+<tr>
+<td><code>pkg/pb/mmf.pb.go</code></td>
+<td>92</td>
+<td><code>ChunkedMmfRunRequest</code> &#x2F; <code>StreamedMmfResponse</code></td>
+</tr>
+<tr>
+<td><code>pkg/pb/mmf_grpc.pb.go</code></td>
+<td>165</td>
+<td><code>MatchMakingFunctionService</code> 双向流契约（om-core 作 client）</td>
+</tr>
+<tr>
+<td><code>pkg/api/api.pb.gw.go</code></td>
+<td>504</td>
+<td>grpc-gateway 反向代理生成物</td>
+</tr>
+<tr>
+<td><strong>合计 22 个 .go 文件</strong></td>
+<td><strong>8597</strong></td>
+<td></td>
+</tr>
+</tbody></table>
+<h3 id="非-Go-素材"><a href="#非-Go-素材" class="headerlink" title="非 Go 素材"></a>非 Go 素材</h3><table>
+<thead>
+<tr>
+<th>相对路径</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>proto/messages.proto</code></td>
+<td>260 行。Ticket <code>:51-78</code>、Assignment <code>:81-86</code>、Pool <code>:90-146</code>、Profile <code>:148-166</code>、Match <code>:168-174</code>、Roster <code>:177-184</code>、MatchmakingFunctionSpec <code>:187-203</code>、ChunkedMmfRunRequest <code>:212-217</code></td>
+</tr>
+<tr>
+<td><code>proto/api.proto</code></td>
+<td>83 行。唯一服务定义 <code>:29-82</code></td>
+</tr>
+<tr>
+<td><code>proto/mmf.proto</code></td>
+<td>30 行。MMF 双向流 <code>:23-29</code></td>
+</tr>
+<tr>
+<td><code>proto/api.yaml</code></td>
+<td>44 行。HTTP→gRPC 路由 <code>:22-44</code></td>
+</tr>
+<tr>
+<td><code>docs/MIGRATION.md</code></td>
+<td>184 行。<strong>v1&#x2F;v2 差异官方对照</strong>：<code>:45-49</code>（evaluator&#x2F;synchronizer）、<code>:83-87</code>（Ticket 字段）、<code>:161-167</code>（MMF 契约）</td>
+</tr>
+<tr>
+<td><code>docs/FAQ.md</code></td>
+<td>121 行。<code>:11-14</code>（关键指标）、<code>:18-23</code>（DEACTIVATION_WAIT）、<code>:42</code>（不支持 sharding）、<code>:56-70</code>（TTL 计算）、<code>:80-86</code>（绕开自动下线）、<code>:96-98</code>（gateway 的 result 包装）</td>
+</tr>
+<tr>
+<td><code>docs/ADVANCED.md</code></td>
+<td>长文。队列角色、长生命周期票模式</td>
+</tr>
+<tr>
+<td><code>docs/METRICS.md</code></td>
+<td>56 行。<code>:13-36</code> core 指标、<code>:37+</code> cache 指标</td>
+</tr>
+<tr>
+<td><code>docs/DEVELOPMENT.md</code></td>
+<td>82 行</td>
+</tr>
+<tr>
+<td><code>deploy/cloud_run/service.yaml</code></td>
+<td>51 行。sidecar 拓扑、读写 Redis 端点分离</td>
+</tr>
+<tr>
+<td><code>deploy/gke/om.yaml</code></td>
+<td>~100 行。同构 GKE 部署</td>
+</tr>
+<tr>
+<td><code>deploy/gke/redis.yaml</code></td>
+<td>Redis 部署清单</td>
+</tr>
+<tr>
+<td><code>go.mod</code></td>
+<td>依赖清单，<strong>无 CEL 依赖</strong>（佐证 filter 为自研）</td>
+</tr>
+</tbody></table>
+
+
+            
+            
+            <blockquote>
+                <p>
+                本文地址：
+                <a href="https://gycxxx.github.io/open-match/" target="_blank" rel="external">https://gycxxx.github.io/open-match/</a>
+                </p>
+                <footer><cite><a href="https://gycxxx.github.io">@源码深读笔记</a></cite></footer>
+            </blockquote>
+            </div>
+            
+<nav class="post-nav">
+  
+    <div class="waves-block waves-effect prev fl">
+      <a href="/opencoze-agent/" id="post-prev" class="post-nav-link">
+        <div class="tips"><i class="icon icon-angle-left icon-lg icon-pr"></i> Prev</div>
+        <h4 class="title">OpenCoze Agent 模块源码深读笔记</h4>
+      </a>
+    </div>
+  
+
+  
+    <div class="waves-block waves-effect next fr">
+      <a href="/mybatis/" id="post-next" class="post-nav-link">
+        <div class="tips">Next <i class="icon icon-angle-right icon-lg icon-pl"></i></div>
+        <h4 class="title">MyBatis 源码深度学习笔记</h4>
+      </a>
+    </div>
+  
+</nav>
+
+
+            
+            
+
+
+
+        </div>
+    </div>
+</article>
+
+    </div>
+  </main>
+<div class="mask" id="mask"></div>
+<a href="javascript:;" id="gotop" class="waves-effect waves-circle waves-light"><span class="icon icon-lg icon-chevron-up"></span></a>
+
+<script>
+var BLOG_SHARE = {
+    title: "Open Match 2 源码深读笔记",
+    pic: "/img/avatar.jpg",
+    summary: document.getElementsByName('summary')[0].content,
+    url: "https://gycxxx.github.io/open-match/index.html"
+};
+</script>
+<div class="global-share" id="global-share">
+    <div class="tit">分享到：</div>
+    <ul class="reset share-icons">
+      <li>
+        <a class="weibo share-sns" href="javascript:;" data-title="微博" data-service="tsina">
+          <i class="icon icon-weibo"></i>
+        </a>
+      </li>
+      <li>
+        <a class="weixin share-sns" href="javascript:;" data-title="微信" data-service="weixin">
+          <i class="icon icon-weixin"></i>
+        </a>
+      </li>
+      <li>
+        <a class="qq share-sns" href="javascript:;" data-title=" QQ" data-service="cqq">
+          <i class="icon icon-qq"></i>
+        </a>
+      </li>
+      <li>
+        <a class="facebook share-sns" href="javascript:;" data-title=" Facebook" data-service="fb">
+          <i class="icon icon-facebook"></i>
+        </a>
+      </li>
+      <li>
+        <a class="twitter share-sns" href="javascript:;" data-title=" Twitter" data-service="twitter">
+          <i class="icon icon-twitter"></i>
+        </a>
+      </li>
+      <li>
+        <a class="douban share-sns" href="javascript:;" data-title="豆瓣" data-service="douban">
+          豆
+        </a>
+      </li>
+    </ul>
+ </div>
+
+
+<script src="/js/waves.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+
+
+<div class="search-panel" id="search-panel">
+    <ul class="search-result" id="search-result"></ul>
+</div>
+<script type="text/template" id="search-tpl">
+<li class="item">
+    <a href="/{path}" class="waves-block waves-effect">
+        <div class="title ellipsis" title="{title}">{title}</div>
+        <div class="flex-row flex-middle">
+            <div class="tags ellipsis">
+                {tags}
+            </div>
+            <time class="flex-col time">{date}</time>
+        </div>
+    </a>
+</li>
+</script>
+
+
+<script src="/js/search.js"></script>
+
+
+
+
+
+
+
+
+
+
+<!-- hexo injector body_end start --><script src="/js/mermaid.min.js"></script>
+<script>(function () {
+  function restore(node) {
+    var raw = node.getAttribute("data-mermaid-source");
+    if (raw != null) { node.textContent = raw; }
+  }
+  function render() {
+    var codes = document.querySelectorAll("pre > code.highlight.mermaid, pre > code.mermaid");
+    for (var i = 0; i < codes.length; i++) {
+      var code = codes[i];
+      var pre = code.parentNode;
+      var box = document.createElement("div");
+      box.className = "mermaid";
+      box.setAttribute("data-mermaid-source", code.textContent);
+      box.textContent = code.textContent;
+      pre.parentNode.replaceChild(box, pre);
+    }
+    var nodes = document.querySelectorAll(".mermaid");
+    if (!window.mermaid || !nodes.length) { return; }
+    window.mermaid.initialize({
+      startOnLoad: false,
+      theme: "default",
+      logLevel: 4,
+      securityLevel: "loose",
+      flowchart: { curve: "linear" },
+      gantt: { axisFormat: "%m/%d/%Y" },
+      sequence: { actorMargin: 50 }
+    });
+    window.mermaid.run({ nodes: nodes, suppressErrors: true })
+      .then(function () {
+        for (var j = 0; j < nodes.length; j++) {
+          if (!nodes[j].querySelector("svg")) { restore(nodes[j]); }
+        }
+      })
+      .catch(function (err) {
+        if (window.console && console.error) { console.error(err); }
+        for (var k = 0; k < nodes.length; k++) { restore(nodes[k]); }
+      });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", render);
+  } else {
+    render();
+  }
+})();</script><!-- hexo injector body_end end --></body>
+</html>

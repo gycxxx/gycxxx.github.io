@@ -18,7 +18,7 @@
 <meta property="og:description" content="基于对 src&#x2F;java.base&#x2F;share&#x2F;classes&#x2F;java&#x2F;util&#x2F; 目录下 Java 集合源码（ArrayList.java、LinkedList.java、HashMap.java、LinkedHashMap.java、TreeMap.java、HashSet.java、PriorityQueue.java、ArrayDeque.java、Collections.java、A">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-10-14T16:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-16T02:55:08.158Z">
+<meta property="article:modified_time" content="2026-10-16T07:29:40.710Z">
 <meta property="article:author" content="gyc">
 <meta property="article:tag" content="源码">
 <meta property="article:tag" content="集合">
@@ -188,7 +188,7 @@
 
             
             <nav class="post-toc-wrap" id="post-toc">
-            <ol class="post-toc"><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%9B%AE%E5%BD%95"><span class="post-toc-number">1.</span> <span class="post-toc-text">目录</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E3%80%87%E3%80%81%E5%85%A8%E6%99%AF%E5%9C%B0%E5%9B%BE"><span class="post-toc-number">2.</span> <span class="post-toc-text">〇、全景地图</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%80%9F%E8%A7%88%EF%BC%9A%E5%90%84%E8%AE%B2%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88%EF%BC%88%E5%85%88%E7%9C%8B%E8%BF%99%E4%B8%AA%E5%86%8D%E8%BF%9B%E7%BB%86%E8%8A%82%EF%BC%89"><span class="post-toc-number">3.</span> <span class="post-toc-text">速览：各讲做了什么（先看这个再进细节）</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%9D%A2%E8%AF%95%E9%80%9F%E9%80%9A%EF%BC%9AJava-%E9%9B%86%E5%90%88%E9%AB%98%E9%A2%91%E9%97%AE%E9%A2%98%E4%B8%80%E9%A1%B5%E7%BA%B8"><span class="post-toc-number">4.</span> <span class="post-toc-text">面试速通：Java 集合高频问题一页纸</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%AB%98%E9%A2%91-Q-A%EF%BC%88%E5%85%88%E7%BB%93%E8%AE%BA%EF%BC%89"><span class="post-toc-number">4.1.</span> <span class="post-toc-text">高频 Q&amp;A（先结论）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E6%98%93%E9%94%99%E7%82%B9%E4%B8%8E%E9%9D%A2%E8%AF%95%E5%9D%91"><span class="post-toc-number">4.2.</span> <span class="post-toc-text">易错点与面试坑</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%B3%E9%94%AE%E6%95%B0%E5%80%BC%E9%80%9F%E8%AE%B0"><span class="post-toc-number">4.3.</span> <span class="post-toc-text">关键数值速记</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%EF%BC%9AList-%E5%AE%B6%E6%97%8F-%E2%80%94%E2%80%94-ArrayList%E3%80%81LinkedList-%E4%B8%8E-AbstractList"><span class="post-toc-number">5.</span> <span class="post-toc-text">第一讲：List 家族 —— ArrayList、LinkedList 与 AbstractList</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88"><span class="post-toc-number">5.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB"><span class="post-toc-number">5.2.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89ArrayList-java-%E2%80%94%E2%80%94-%E4%B8%80%E4%B8%AA%E4%BC%9A%E8%87%AA%E5%8A%A8%E5%8A%A0%E9%95%BF%E7%9A%84-Object"><span class="post-toc-number">5.2.1.</span> <span class="post-toc-text">1）ArrayList.java —— 一个会自动加长的 Object[]</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89LinkedList-java-%E2%80%94%E2%80%94-%E5%8F%8C%E9%93%BE%E8%A1%A8%EF%BC%8C%E5%90%8C%E6%97%B6%E4%B9%9F%E6%98%AF-Deque"><span class="post-toc-number">5.2.2.</span> <span class="post-toc-text">2）LinkedList.java —— 双链表，同时也是 Deque</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89AbstractList-java-%E2%80%94%E2%80%94-modCount-%E7%9A%84%E5%AE%B6"><span class="post-toc-number">5.2.3.</span> <span class="post-toc-text">3）AbstractList.java —— modCount 的家</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89Arrays-asList-%E2%80%94%E2%80%94-%E5%9B%BA%E5%AE%9A%E5%A4%A7%E5%B0%8F%E8%A7%86%E5%9B%BE"><span class="post-toc-number">5.2.4.</span> <span class="post-toc-text">4）Arrays.asList —— 固定大小视图</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#5%EF%BC%89CopyOnWriteArrayList-%E7%AE%80%E8%BF%B0"><span class="post-toc-number">5.2.5.</span> <span class="post-toc-text">5）CopyOnWriteArrayList 简述</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%BC%94%E7%AE%97-%E2%91%A0%EF%BC%9A%E4%B8%80%E6%AC%A1-list-iterator-%E9%81%8D%E5%8E%86%E4%B8%AD%E5%B9%B6%E5%8F%91%E4%BF%AE%E6%94%B9%E6%8A%9B-CME"><span class="post-toc-number">5.3.</span> <span class="post-toc-text">端到端演算 ①：一次 list.iterator() 遍历中并发修改抛 CME</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9AArrayList-%E6%98%AF%E2%80%9D%E6%95%B0%E7%BB%84-arraycopy%E2%80%9D%EF%BC%8CLinkedList-%E6%98%AF%E2%80%9D%E6%8C%87%E9%92%88-modCount%E2%80%9D"><span class="post-toc-number">5.4.</span> <span class="post-toc-text">第一讲小结：ArrayList 是”数组 + arraycopy”，LinkedList 是”指针 + modCount”</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%EF%BC%9AMap-%E5%AE%B6%E6%97%8F%E6%A0%B8%E5%BF%83-%E2%80%94%E2%80%94-HashMap%E3%80%81LinkedHashMap-%E4%B8%8E-TreeMap"><span class="post-toc-number">6.</span> <span class="post-toc-text">第二讲：Map 家族核心 —— HashMap、LinkedHashMap 与 TreeMap</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-1"><span class="post-toc-number">6.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-1"><span class="post-toc-number">6.2.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89HashMap-java-%E2%80%94%E2%80%94-%E6%95%B0%E7%BB%84%E6%8C%82%E9%93%BE%E8%A1%A8-%E7%BA%A2%E9%BB%91%E6%A0%91"><span class="post-toc-number">6.2.1.</span> <span class="post-toc-text">1）HashMap.java —— 数组挂链表&#x2F;红黑树</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89LinkedHashMap-java-%E2%80%94%E2%80%94-%E5%8F%8C%E5%90%91%E9%93%BE%E8%A1%A8%E8%AE%B0%E9%A1%BA%E5%BA%8F"><span class="post-toc-number">6.2.2.</span> <span class="post-toc-text">2）LinkedHashMap.java —— 双向链表记顺序</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89TreeMap-java-%E2%80%94%E2%80%94-%E7%BA%A2%E9%BB%91%E6%A0%91"><span class="post-toc-number">6.2.3.</span> <span class="post-toc-text">3）TreeMap.java —— 红黑树</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89IdentityHashMap-WeakHashMap-%E7%AE%80%E8%BF%B0"><span class="post-toc-number">6.2.4.</span> <span class="post-toc-text">4）IdentityHashMap &#x2F; WeakHashMap 简述</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%BC%94%E7%AE%97-%E2%91%A1%EF%BC%9A%E4%B8%80%E6%AC%A1-map-put-k-v-%E4%BB%8E-hash-%E5%88%B0%E8%90%BD%E6%A1%B6%EF%BC%88%E5%90%AB%E6%89%A9%E5%AE%B9%E8%A7%A6%E5%8F%91%EF%BC%89"><span class="post-toc-number">6.3.</span> <span class="post-toc-text">端到端演算 ②：一次 map.put(k,v) 从 hash 到落桶（含扩容触发）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9AHashMap-%E6%98%AF%E2%80%9D%E6%95%B0%E7%BB%84-%E9%93%BE-%E6%A0%91-2-%E6%AC%A1%E5%B9%82%E6%89%A9%E5%AE%B9%E2%80%9D%EF%BC%8CLinkedHashMap-%E9%9D%A0%E9%92%A9%E5%AD%90%E5%8A%A0%E5%BA%8F"><span class="post-toc-number">6.4.</span> <span class="post-toc-text">第二讲小结：HashMap 是”数组 + 链&#x2F;树 + 2 次幂扩容”，LinkedHashMap 靠钩子加序</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%EF%BC%9ASet-%E5%AE%B6%E6%97%8F%E4%B8%8E-Queue-%E2%80%94%E2%80%94-HashSet%E3%80%81PriorityQueue%E3%80%81ArrayDeque"><span class="post-toc-number">7.</span> <span class="post-toc-text">第三讲：Set 家族与 Queue —— HashSet、PriorityQueue、ArrayDeque</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-2"><span class="post-toc-number">7.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-2"><span class="post-toc-number">7.2.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89HashSet-java-%E2%80%94%E2%80%94-Map-%E7%9A%84%E5%A3%B3"><span class="post-toc-number">7.2.1.</span> <span class="post-toc-text">1）HashSet.java —— Map 的壳</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89PriorityQueue-java-%E2%80%94%E2%80%94-%E5%B0%8F%E9%A1%B6%E5%A0%86"><span class="post-toc-number">7.2.2.</span> <span class="post-toc-text">2）PriorityQueue.java —— 小顶堆</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89ArrayDeque-java-%E2%80%94%E2%80%94-%E5%BE%AA%E7%8E%AF%E6%95%B0%E7%BB%84%E5%8F%8C%E7%AB%AF%E9%98%9F%E5%88%97"><span class="post-toc-number">7.2.3.</span> <span class="post-toc-text">3）ArrayDeque.java —— 循环数组双端队列</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89LinkedList-%E4%BD%9C%E4%B8%BA-Deque"><span class="post-toc-number">7.2.4.</span> <span class="post-toc-text">4）LinkedList 作为 Deque</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9ASet-%E6%98%AF-Map-%E7%9A%84%E5%A3%B3%EF%BC%8CPQ-%E6%98%AF%E6%95%B0%E7%BB%84%E5%A0%86%EF%BC%8CArrayDeque-%E6%98%AF%E5%BE%AA%E7%8E%AF%E6%95%B0%E7%BB%84"><span class="post-toc-number">7.3.</span> <span class="post-toc-text">第三讲小结：Set 是 Map 的壳，PQ 是数组堆，ArrayDeque 是循环数组</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%EF%BC%9A%E8%BF%AD%E4%BB%A3%E5%99%A8%E4%B8%8E%E5%B7%A5%E5%85%B7%E7%B1%BB-%E2%80%94%E2%80%94-Iterator%E3%80%81Collections%E3%80%81Arrays"><span class="post-toc-number">8.</span> <span class="post-toc-text">第四讲：迭代器与工具类 —— Iterator、Collections、Arrays</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-3"><span class="post-toc-number">8.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-3"><span class="post-toc-number">8.2.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89Iterator-java-ListIterator-java-%E2%80%94%E2%80%94-%E6%8E%A5%E5%8F%A3%E5%A5%91%E7%BA%A6"><span class="post-toc-number">8.2.1.</span> <span class="post-toc-text">1）Iterator.java &#x2F; ListIterator.java —— 接口契约</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89fail-fast-%E7%9A%84-modCount-%E6%9C%BA%E5%88%B6"><span class="post-toc-number">8.2.2.</span> <span class="post-toc-text">2）fail-fast 的 modCount 机制</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89Collections-java-%E2%80%94%E2%80%94-%E5%8C%85%E8%A3%85%E4%B8%8E%E7%AE%97%E6%B3%95"><span class="post-toc-number">8.2.3.</span> <span class="post-toc-text">3）Collections.java —— 包装与算法</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89Arrays-java-%E2%80%94%E2%80%94-%E6%95%B0%E7%BB%84%E5%B7%A5%E5%85%B7%E7%AE%B1"><span class="post-toc-number">8.2.4.</span> <span class="post-toc-text">4）Arrays.java —— 数组工具箱</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#5%EF%BC%89Comparator-Comparable-Spliterator"><span class="post-toc-number">8.2.5.</span> <span class="post-toc-text">5）Comparator &#x2F; Comparable &#x2F; Spliterator</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E6%B8%B8%E6%A0%87-modCount-%E7%AE%A1%E9%81%8D%E5%8E%86%EF%BC%8CCollections-Arrays-%E7%AE%A1%E5%8C%85%E8%A3%85%E4%B8%8E%E7%AE%97%E6%B3%95"><span class="post-toc-number">8.3.</span> <span class="post-toc-text">第四讲小结：游标 + modCount 管遍历，Collections&#x2F;Arrays 管包装与算法</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%EF%BC%9A%E6%95%A3%E5%88%97%E5%8E%9F%E7%90%86%E4%B8%8E%E8%AE%BE%E8%AE%A1%E6%9D%83%E8%A1%A1-%E2%80%94%E2%80%94-%E4%B8%BA%E4%BB%80%E4%B9%88%E6%98%AF-2-%E6%AC%A1%E5%B9%82%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88%E6%A0%91%E5%8C%96%E9%98%88%E5%80%BC%E6%98%AF-8"><span class="post-toc-number">9.</span> <span class="post-toc-text">第五讲：散列原理与设计权衡 —— 为什么是 2 次幂、为什么树化阈值是 8</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-4"><span class="post-toc-number">9.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB%EF%BC%88%E5%8E%9F%E7%90%86%E6%8E%A8%E6%BC%94%EF%BC%89"><span class="post-toc-number">9.2.</span> <span class="post-toc-text">逐文件精读（原理推演）</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89%E4%B8%BA%E4%BB%80%E4%B9%88%E5%AE%B9%E9%87%8F%E5%BF%85%E9%A1%BB%E6%98%AF-2-%E6%AC%A1%E5%B9%82"><span class="post-toc-number">9.2.1.</span> <span class="post-toc-text">1）为什么容量必须是 2 次幂</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89%E6%89%B0%E5%8A%A8%E5%87%BD%E6%95%B0-h-h-16-%E7%9A%84%E6%84%8F%E4%B9%89"><span class="post-toc-number">9.2.2.</span> <span class="post-toc-text">2）扰动函数 h ^ (h &gt;&gt;&gt; 16) 的意义</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89%E4%B8%BA%E4%BB%80%E4%B9%88%E6%A0%91%E5%8C%96%E9%98%88%E5%80%BC%E6%98%AF-8%EF%BC%88%E6%B3%8A%E6%9D%BE%E5%88%86%E5%B8%83%EF%BC%89"><span class="post-toc-number">9.2.3.</span> <span class="post-toc-text">3）为什么树化阈值是 8（泊松分布）</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89loadFactor-0-75-%E7%9A%84%E6%97%B6%E7%A9%BA%E6%9D%83%E8%A1%A1"><span class="post-toc-number">9.2.4.</span> <span class="post-toc-text">4）loadFactor 0.75 的时空权衡</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#5%EF%BC%89HashMap-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B8%8B%E6%AD%BB%E5%BE%AA%E7%8E%AF%EF%BC%9AJDK-7-vs-JDK-8"><span class="post-toc-number">9.2.5.</span> <span class="post-toc-text">5）HashMap 多线程下死循环：JDK 7 vs JDK 8</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E6%AF%8F%E4%B8%AA%E9%AD%94%E6%B3%95%E6%95%B0%E5%AD%97%E9%83%BD%E6%98%AF%E6%95%B0%E5%AD%A6%E4%B8%8E%E5%B7%A5%E7%A8%8B%E7%9A%84%E6%9D%83%E8%A1%A1"><span class="post-toc-number">9.3.</span> <span class="post-toc-text">第五讲小结：每个魔法数字都是数学与工程的权衡</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%99%84%EF%BC%9A%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E4%B8%8E%E5%A4%8D%E4%B9%A0%E5%8D%A1%E6%B1%87%E6%80%BB"><span class="post-toc-number">10.</span> <span class="post-toc-text">附：学习路线与复习卡汇总</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E5%BB%BA%E8%AE%AE"><span class="post-toc-number">10.1.</span> <span class="post-toc-text">学习路线建议</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%A4%8D%E4%B9%A0%E5%8D%A1"><span class="post-toc-number">10.2.</span> <span class="post-toc-text">复习卡</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E6%B6%89%E5%8F%8A%E6%96%87%E4%BB%B6%E7%B4%A2%E5%BC%95"><span class="post-toc-number">11.</span> <span class="post-toc-text">涉及文件索引</span></a></li></ol>
+            <ol class="post-toc"><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%9B%AE%E5%BD%95"><span class="post-toc-number">1.</span> <span class="post-toc-text">目录</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E3%80%87%E3%80%81%E5%85%A8%E6%99%AF%E5%9C%B0%E5%9B%BE"><span class="post-toc-number">2.</span> <span class="post-toc-text">〇、全景地图</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%80%9F%E8%A7%88%EF%BC%9A%E5%90%84%E8%AE%B2%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88%EF%BC%88%E5%85%88%E7%9C%8B%E8%BF%99%E4%B8%AA%E5%86%8D%E8%BF%9B%E7%BB%86%E8%8A%82%EF%BC%89"><span class="post-toc-number">3.</span> <span class="post-toc-text">速览：各讲做了什么（先看这个再进细节）</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%9D%A2%E8%AF%95%E9%80%9F%E9%80%9A%EF%BC%9AJava-%E9%9B%86%E5%90%88%E9%AB%98%E9%A2%91%E9%97%AE%E9%A2%98%E4%B8%80%E9%A1%B5%E7%BA%B8"><span class="post-toc-number">4.</span> <span class="post-toc-text">面试速通：Java 集合高频问题一页纸</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%AB%98%E9%A2%91-Q-A%EF%BC%88%E5%85%88%E7%BB%93%E8%AE%BA%EF%BC%89"><span class="post-toc-number">4.1.</span> <span class="post-toc-text">高频 Q&amp;A（先结论）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E6%98%93%E9%94%99%E7%82%B9%E4%B8%8E%E9%9D%A2%E8%AF%95%E5%9D%91"><span class="post-toc-number">4.2.</span> <span class="post-toc-text">易错点与面试坑</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%B3%E9%94%AE%E6%95%B0%E5%80%BC%E9%80%9F%E8%AE%B0"><span class="post-toc-number">4.3.</span> <span class="post-toc-text">关键数值速记</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%EF%BC%9AList-%E5%AE%B6%E6%97%8F-%E2%80%94%E2%80%94-ArrayList%E3%80%81LinkedList-%E4%B8%8E-AbstractList"><span class="post-toc-number">5.</span> <span class="post-toc-text">第一讲：List 家族 —— ArrayList、LinkedList 与 AbstractList</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88"><span class="post-toc-number">5.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB"><span class="post-toc-number">5.2.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89ArrayList-java-%E2%80%94%E2%80%94-%E4%B8%80%E4%B8%AA%E4%BC%9A%E8%87%AA%E5%8A%A8%E5%8A%A0%E9%95%BF%E7%9A%84-Object"><span class="post-toc-number">5.2.1.</span> <span class="post-toc-text">1）ArrayList.java —— 一个会自动加长的 Object[]</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89LinkedList-java-%E2%80%94%E2%80%94-%E5%8F%8C%E9%93%BE%E8%A1%A8%EF%BC%8C%E5%90%8C%E6%97%B6%E4%B9%9F%E6%98%AF-Deque"><span class="post-toc-number">5.2.2.</span> <span class="post-toc-text">2）LinkedList.java —— 双链表，同时也是 Deque</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89AbstractList-java-%E2%80%94%E2%80%94-modCount-%E7%9A%84%E5%AE%B6"><span class="post-toc-number">5.2.3.</span> <span class="post-toc-text">3）AbstractList.java —— modCount 的家</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89Arrays-asList-%E2%80%94%E2%80%94-%E5%9B%BA%E5%AE%9A%E5%A4%A7%E5%B0%8F%E8%A7%86%E5%9B%BE"><span class="post-toc-number">5.2.4.</span> <span class="post-toc-text">4）Arrays.asList —— 固定大小视图</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#5%EF%BC%89CopyOnWriteArrayList-%E7%AE%80%E8%BF%B0"><span class="post-toc-number">5.2.5.</span> <span class="post-toc-text">5）CopyOnWriteArrayList 简述</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%BC%94%E7%AE%97-%E2%91%A0%EF%BC%9A%E4%B8%80%E6%AC%A1-list-iterator-%E9%81%8D%E5%8E%86%E4%B8%AD%E5%B9%B6%E5%8F%91%E4%BF%AE%E6%94%B9%E6%8A%9B-CME"><span class="post-toc-number">5.3.</span> <span class="post-toc-text">端到端演算 ①：一次 list.iterator() 遍历中并发修改抛 CME</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9AArrayList-%E6%98%AF%E2%80%9D%E6%95%B0%E7%BB%84-arraycopy%E2%80%9D%EF%BC%8CLinkedList-%E6%98%AF%E2%80%9D%E6%8C%87%E9%92%88-modCount%E2%80%9D"><span class="post-toc-number">5.4.</span> <span class="post-toc-text">第一讲小结：ArrayList 是”数组 + arraycopy”，LinkedList 是”指针 + modCount”</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%EF%BC%9AMap-%E5%AE%B6%E6%97%8F%E6%A0%B8%E5%BF%83-%E2%80%94%E2%80%94-HashMap%E3%80%81LinkedHashMap-%E4%B8%8E-TreeMap"><span class="post-toc-number">6.</span> <span class="post-toc-text">第二讲：Map 家族核心 —— HashMap、LinkedHashMap 与 TreeMap</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-1"><span class="post-toc-number">6.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-1"><span class="post-toc-number">6.2.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89HashMap-java-%E2%80%94%E2%80%94-%E6%95%B0%E7%BB%84%E6%8C%82%E9%93%BE%E8%A1%A8-%E7%BA%A2%E9%BB%91%E6%A0%91"><span class="post-toc-number">6.2.1.</span> <span class="post-toc-text">1）HashMap.java —— 数组挂链表&#x2F;红黑树</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89LinkedHashMap-java-%E2%80%94%E2%80%94-%E5%8F%8C%E5%90%91%E9%93%BE%E8%A1%A8%E8%AE%B0%E9%A1%BA%E5%BA%8F"><span class="post-toc-number">6.2.2.</span> <span class="post-toc-text">2）LinkedHashMap.java —— 双向链表记顺序</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89TreeMap-java-%E2%80%94%E2%80%94-%E7%BA%A2%E9%BB%91%E6%A0%91"><span class="post-toc-number">6.2.3.</span> <span class="post-toc-text">3）TreeMap.java —— 红黑树</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89IdentityHashMap-WeakHashMap-%E7%AE%80%E8%BF%B0"><span class="post-toc-number">6.2.4.</span> <span class="post-toc-text">4）IdentityHashMap &#x2F; WeakHashMap 简述</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%BC%94%E7%AE%97-%E2%91%A1%EF%BC%9A%E4%B8%80%E6%AC%A1-map-put-k-v-%E4%BB%8E-hash-%E5%88%B0%E8%90%BD%E6%A1%B6%EF%BC%88%E5%90%AB%E6%89%A9%E5%AE%B9%E8%A7%A6%E5%8F%91%EF%BC%89"><span class="post-toc-number">6.3.</span> <span class="post-toc-text">端到端演算 ②：一次 map.put(k,v) 从 hash 到落桶（含扩容触发）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9AHashMap-%E6%98%AF%E2%80%9D%E6%95%B0%E7%BB%84-%E9%93%BE-%E6%A0%91-2-%E6%AC%A1%E5%B9%82%E6%89%A9%E5%AE%B9%E2%80%9D%EF%BC%8CLinkedHashMap-%E9%9D%A0%E9%92%A9%E5%AD%90%E5%8A%A0%E5%BA%8F"><span class="post-toc-number">6.4.</span> <span class="post-toc-text">第二讲小结：HashMap 是”数组 + 链&#x2F;树 + 2 次幂扩容”，LinkedHashMap 靠钩子加序</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%EF%BC%9ASet-%E5%AE%B6%E6%97%8F%E4%B8%8E-Queue-%E2%80%94%E2%80%94-HashSet%E3%80%81PriorityQueue%E3%80%81ArrayDeque"><span class="post-toc-number">7.</span> <span class="post-toc-text">第三讲：Set 家族与 Queue —— HashSet、PriorityQueue、ArrayDeque</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-2"><span class="post-toc-number">7.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-2"><span class="post-toc-number">7.2.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89HashSet-java-%E2%80%94%E2%80%94-Map-%E7%9A%84%E5%A3%B3"><span class="post-toc-number">7.2.1.</span> <span class="post-toc-text">1）HashSet.java —— Map 的壳</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89PriorityQueue-java-%E2%80%94%E2%80%94-%E5%B0%8F%E9%A1%B6%E5%A0%86"><span class="post-toc-number">7.2.2.</span> <span class="post-toc-text">2）PriorityQueue.java —— 小顶堆</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89ArrayDeque-java-%E2%80%94%E2%80%94-%E5%BE%AA%E7%8E%AF%E6%95%B0%E7%BB%84%E5%8F%8C%E7%AB%AF%E9%98%9F%E5%88%97"><span class="post-toc-number">7.2.3.</span> <span class="post-toc-text">3）ArrayDeque.java —— 循环数组双端队列</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89LinkedList-%E4%BD%9C%E4%B8%BA-Deque"><span class="post-toc-number">7.2.4.</span> <span class="post-toc-text">4）LinkedList 作为 Deque</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9ASet-%E6%98%AF-Map-%E7%9A%84%E5%A3%B3%EF%BC%8CPQ-%E6%98%AF%E6%95%B0%E7%BB%84%E5%A0%86%EF%BC%8CArrayDeque-%E6%98%AF%E5%BE%AA%E7%8E%AF%E6%95%B0%E7%BB%84"><span class="post-toc-number">7.3.</span> <span class="post-toc-text">第三讲小结：Set 是 Map 的壳，PQ 是数组堆，ArrayDeque 是循环数组</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%EF%BC%9A%E8%BF%AD%E4%BB%A3%E5%99%A8%E4%B8%8E%E5%B7%A5%E5%85%B7%E7%B1%BB-%E2%80%94%E2%80%94-Iterator%E3%80%81Collections%E3%80%81Arrays"><span class="post-toc-number">8.</span> <span class="post-toc-text">第四讲：迭代器与工具类 —— Iterator、Collections、Arrays</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-3"><span class="post-toc-number">8.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB-3"><span class="post-toc-number">8.2.</span> <span class="post-toc-text">逐文件精读</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89Iterator-java-ListIterator-java-%E2%80%94%E2%80%94-%E6%8E%A5%E5%8F%A3%E5%A5%91%E7%BA%A6"><span class="post-toc-number">8.2.1.</span> <span class="post-toc-text">1）Iterator.java &#x2F; ListIterator.java —— 接口契约</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89fail-fast-%E7%9A%84-modCount-%E6%9C%BA%E5%88%B6"><span class="post-toc-number">8.2.2.</span> <span class="post-toc-text">2）fail-fast 的 modCount 机制</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89Collections-java-%E2%80%94%E2%80%94-%E5%8C%85%E8%A3%85%E4%B8%8E%E7%AE%97%E6%B3%95"><span class="post-toc-number">8.2.3.</span> <span class="post-toc-text">3）Collections.java —— 包装与算法</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89Arrays-java-%E2%80%94%E2%80%94-%E6%95%B0%E7%BB%84%E5%B7%A5%E5%85%B7%E7%AE%B1"><span class="post-toc-number">8.2.4.</span> <span class="post-toc-text">4）Arrays.java —— 数组工具箱</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#5%EF%BC%89Comparator-Comparable-Spliterator"><span class="post-toc-number">8.2.5.</span> <span class="post-toc-text">5）Comparator &#x2F; Comparable &#x2F; Spliterator</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E6%B8%B8%E6%A0%87-modCount-%E7%AE%A1%E9%81%8D%E5%8E%86%EF%BC%8CCollections-Arrays-%E7%AE%A1%E5%8C%85%E8%A3%85%E4%B8%8E%E7%AE%97%E6%B3%95"><span class="post-toc-number">8.3.</span> <span class="post-toc-text">第四讲小结：游标 + modCount 管遍历，Collections&#x2F;Arrays 管包装与算法</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%EF%BC%9A%E6%95%A3%E5%88%97%E5%8E%9F%E7%90%86%E4%B8%8E%E8%AE%BE%E8%AE%A1%E6%9D%83%E8%A1%A1-%E2%80%94%E2%80%94-%E4%B8%BA%E4%BB%80%E4%B9%88%E6%98%AF-2-%E6%AC%A1%E5%B9%82%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88%E6%A0%91%E5%8C%96%E9%98%88%E5%80%BC%E6%98%AF-8"><span class="post-toc-number">9.</span> <span class="post-toc-text">第五讲：散列原理与设计权衡 —— 为什么是 2 次幂、为什么树化阈值是 8</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-4"><span class="post-toc-number">9.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%80%90%E6%96%87%E4%BB%B6%E7%B2%BE%E8%AF%BB%EF%BC%88%E5%8E%9F%E7%90%86%E6%8E%A8%E6%BC%94%EF%BC%89"><span class="post-toc-number">9.2.</span> <span class="post-toc-text">逐文件精读（原理推演）</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#1%EF%BC%89%E4%B8%BA%E4%BB%80%E4%B9%88%E5%AE%B9%E9%87%8F%E5%BF%85%E9%A1%BB%E6%98%AF-2-%E6%AC%A1%E5%B9%82"><span class="post-toc-number">9.2.1.</span> <span class="post-toc-text">1）为什么容量必须是 2 次幂</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#2%EF%BC%89%E6%89%B0%E5%8A%A8%E5%87%BD%E6%95%B0-h-h-16-%E7%9A%84%E6%84%8F%E4%B9%89"><span class="post-toc-number">9.2.2.</span> <span class="post-toc-text">2）扰动函数 h ^ (h &gt;&gt;&gt; 16) 的意义</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#3%EF%BC%89%E4%B8%BA%E4%BB%80%E4%B9%88%E6%A0%91%E5%8C%96%E9%98%88%E5%80%BC%E6%98%AF-8%EF%BC%88%E6%B3%8A%E6%9D%BE%E5%88%86%E5%B8%83%EF%BC%89"><span class="post-toc-number">9.2.3.</span> <span class="post-toc-text">3）为什么树化阈值是 8（泊松分布）</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#4%EF%BC%89loadFactor-0-75-%E7%9A%84%E6%97%B6%E7%A9%BA%E6%9D%83%E8%A1%A1"><span class="post-toc-number">9.2.4.</span> <span class="post-toc-text">4）loadFactor 0.75 的时空权衡</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#5%EF%BC%89HashMap-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B8%8B%E6%AD%BB%E5%BE%AA%E7%8E%AF%EF%BC%9AJDK-7-vs-JDK-8"><span class="post-toc-number">9.2.5.</span> <span class="post-toc-text">5）HashMap 多线程下死循环：JDK 7 vs JDK 8</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E6%AF%8F%E4%B8%AA%E9%AD%94%E6%B3%95%E6%95%B0%E5%AD%97%E9%83%BD%E6%98%AF%E6%95%B0%E5%AD%A6%E4%B8%8E%E5%B7%A5%E7%A8%8B%E7%9A%84%E6%9D%83%E8%A1%A1"><span class="post-toc-number">9.3.</span> <span class="post-toc-text">第五讲小结：每个魔法数字都是数学与工程的权衡</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E5%85%AD%E8%AE%B2%EF%BC%9A%E5%B9%B6%E5%8F%91%E9%9B%86%E5%90%88-%E2%80%94%E2%80%94-%E4%BB%8E%E2%80%9D%E4%B8%80%E6%8A%8A%E5%A4%A7%E9%94%81%E2%80%9D%E5%88%B0%E2%80%9D%E6%97%A0%E9%94%81-%E5%8D%8F%E4%BD%9C%E6%89%A9%E5%AE%B9%E2%80%9D"><span class="post-toc-number">10.</span> <span class="post-toc-text">第六讲：并发集合 —— 从”一把大锁”到”无锁 + 协作扩容”</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88-5"><span class="post-toc-number">10.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-1-%E5%B9%B6%E5%8F%91%E5%AE%B9%E5%99%A8%E6%97%8F%E8%B0%B1"><span class="post-toc-number">10.2.</span> <span class="post-toc-text">6.1 并发容器族谱</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-2-ConcurrentHashMap%EF%BC%88%E4%B8%80%EF%BC%89%EF%BC%9A%E9%94%81%E7%B2%92%E5%BA%A6%E7%9A%84%E4%B8%89%E4%BB%A3%E6%BC%94%E8%BF%9B"><span class="post-toc-number">10.3.</span> <span class="post-toc-text">6.2 ConcurrentHashMap（一）：锁粒度的三代演进</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#%E6%A0%B8%E5%BF%83%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E5%B8%B8%E9%87%8F"><span class="post-toc-number">10.3.1.</span> <span class="post-toc-text">核心数据结构与常量</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#spread%EF%BC%9A%E6%AF%94-HashMap-%E5%A4%9A%E4%BA%86%E4%B8%80%E6%AC%A1%E2%80%9D%E5%8E%BB%E7%AC%A6%E5%8F%B7%E4%BD%8D%E2%80%9D"><span class="post-toc-number">10.3.2.</span> <span class="post-toc-text">spread：比 HashMap 多了一次”去符号位”</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-3-ConcurrentHashMap%EF%BC%88%E4%BA%8C%EF%BC%89%EF%BC%9AputVal-%E9%80%90%E8%A1%8C-%E2%80%94%E2%80%94-%E5%9B%9B%E8%B7%AF%E5%88%86%E6%94%AF"><span class="post-toc-number">10.4.</span> <span class="post-toc-text">6.3 ConcurrentHashMap（二）：putVal 逐行 —— 四路分支</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#initTable%EF%BC%9AsizeCtl-%E5%BD%93%E5%88%9D%E5%A7%8B%E5%8C%96%E9%94%81"><span class="post-toc-number">10.4.1.</span> <span class="post-toc-text">initTable：sizeCtl 当初始化锁</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-4-ConcurrentHashMap%EF%BC%88%E4%B8%89%EF%BC%89%EF%BC%9A%E5%8D%8F%E4%BD%9C%E6%89%A9%E5%AE%B9-%E2%80%94%E2%80%94-%E6%9C%AC%E8%AE%B2%E6%9C%80%E7%B2%BE%E5%A6%99%E7%9A%84%E9%83%A8%E5%88%86"><span class="post-toc-number">10.5.</span> <span class="post-toc-text">6.4 ConcurrentHashMap（三）：协作扩容 —— 本讲最精妙的部分</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#addCount%EF%BC%9A%E8%AE%A1%E6%95%B0-%E5%86%B3%E5%AE%9A%E6%98%AF%E5%90%A6%E6%89%A9%E5%AE%B9"><span class="post-toc-number">10.5.1.</span> <span class="post-toc-text">addCount：计数 + 决定是否扩容</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#transfer%EF%BC%9A%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%88%86%E6%A1%B6%E6%90%AC%E8%BF%90"><span class="post-toc-number">10.5.2.</span> <span class="post-toc-text">transfer：多线程分桶搬运</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#%E7%AB%AF%E5%88%B0%E7%AB%AF%E6%BC%94%E7%AE%97-%E2%91%A5%EF%BC%9A%E5%A4%9A%E7%BA%BF%E7%A8%8B-put-%E8%A7%A6%E5%8F%91%E5%8D%8F%E4%BD%9C%E6%89%A9%E5%AE%B9"><span class="post-toc-number">10.5.3.</span> <span class="post-toc-text">端到端演算 ⑥：多线程 put 触发协作扩容</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-5-CopyOnWriteArrayList%EF%BC%9A%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6%EF%BC%8C%E8%AF%BB%E6%B0%B8%E8%BF%9C%E6%97%A0%E9%94%81"><span class="post-toc-number">10.6.</span> <span class="post-toc-text">6.5 CopyOnWriteArrayList：写时复制，读永远无锁</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-6-ConcurrentLinkedQueue%EF%BC%9AMichael-Scott-%E6%97%A0%E9%94%81%E9%98%9F%E5%88%97"><span class="post-toc-number">10.7.</span> <span class="post-toc-text">6.6 ConcurrentLinkedQueue：Michael-Scott 无锁队列</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-7-BlockingQueue-%E5%9B%9B%E5%85%84%E5%BC%9F%EF%BC%9A%E9%94%81%E7%9A%84%E6%95%B0%E9%87%8F%E4%B8%8E%E5%AE%B9%E9%87%8F%E7%AD%96%E7%95%A5"><span class="post-toc-number">10.8.</span> <span class="post-toc-text">6.7 BlockingQueue 四兄弟：锁的数量与容量策略</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#ArrayBlockingQueue%EF%BC%9A%E6%95%99%E7%A7%91%E4%B9%A6%E7%BA%A7%E7%9A%84%E5%8D%95%E9%94%81%E5%8F%8C%E6%9D%A1%E4%BB%B6"><span class="post-toc-number">10.8.1.</span> <span class="post-toc-text">ArrayBlockingQueue：教科书级的单锁双条件</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#LinkedBlockingQueue%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E6%95%A2%E7%94%A8%E4%B8%A4%E6%8A%8A%E9%94%81%EF%BC%9F"><span class="post-toc-number">10.8.2.</span> <span class="post-toc-text">LinkedBlockingQueue：为什么敢用两把锁？</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#PriorityBlockingQueue%EF%BC%9A%E6%89%A9%E5%AE%B9%E6%97%B6%E6%8A%8A%E9%94%81%E6%94%BE%E4%BA%86"><span class="post-toc-number">10.8.3.</span> <span class="post-toc-text">PriorityBlockingQueue：扩容时把锁放了</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#SynchronousQueue%EF%BC%9A%E9%9B%B6%E5%AE%B9%E9%87%8F%E7%9A%84%E2%80%9D%E4%B8%80%E6%89%8B%E4%BA%A4%E9%92%B1%E4%B8%80%E6%89%8B%E4%BA%A4%E8%B4%A7%E2%80%9D"><span class="post-toc-number">10.8.4.</span> <span class="post-toc-text">SynchronousQueue：零容量的”一手交钱一手交货”</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-8-ConcurrentSkipListMap%EF%BC%9A%E5%B9%B6%E5%8F%91%E7%89%88%E7%9A%84%E6%9C%89%E5%BA%8F-Map"><span class="post-toc-number">10.9.</span> <span class="post-toc-text">6.8 ConcurrentSkipListMap：并发版的有序 Map</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-9-%E8%A3%85%E9%A5%B0%E5%99%A8%E6%96%B9%E6%A1%88%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E2%80%9D%E5%85%A8%E9%94%81%E2%80%9D%E4%B8%8D%E6%98%AF%E6%9C%80%E4%BC%98%E8%A7%A3"><span class="post-toc-number">10.10.</span> <span class="post-toc-text">6.9 装饰器方案：为什么”全锁”不是最优解</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-10-%E9%80%89%E5%9E%8B%E5%86%B3%E7%AD%96%E8%A1%A8"><span class="post-toc-number">10.11.</span> <span class="post-toc-text">6.10 选型决策表</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E5%85%AD%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E5%B9%B6%E5%8F%91-%E7%BC%A9%E5%B0%8F%E4%B8%B4%E7%95%8C%E5%8C%BA-%E6%97%A0%E9%94%81%E8%AF%BB-%E5%8D%8F%E4%BD%9C"><span class="post-toc-number">10.12.</span> <span class="post-toc-text">第六讲小结：并发 &#x3D; 缩小临界区 + 无锁读 + 协作</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%99%84%EF%BC%9A%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E4%B8%8E%E5%A4%8D%E4%B9%A0%E5%8D%A1%E6%B1%87%E6%80%BB"><span class="post-toc-number">11.</span> <span class="post-toc-text">附：学习路线与复习卡汇总</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E5%BB%BA%E8%AE%AE"><span class="post-toc-number">11.1.</span> <span class="post-toc-text">学习路线建议</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%A4%8D%E4%B9%A0%E5%8D%A1"><span class="post-toc-number">11.2.</span> <span class="post-toc-text">复习卡</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E6%B6%89%E5%8F%8A%E6%96%87%E4%BB%B6%E7%B4%A2%E5%BC%95"><span class="post-toc-number">12.</span> <span class="post-toc-text">涉及文件索引</span></a></li></ol>
             </nav>
             
         </aside>
@@ -198,8 +198,8 @@
             <div class="post-content" id="post-content" itemprop="postContent">
             <blockquote>
 <p>基于对 <code>src/java.base/share/classes/java/util/</code> 目录下 Java 集合源码（<code>ArrayList.java</code>、<code>LinkedList.java</code>、<code>HashMap.java</code>、<code>LinkedHashMap.java</code>、<code>TreeMap.java</code>、<code>HashSet.java</code>、<code>PriorityQueue.java</code>、<code>ArrayDeque.java</code>、<code>Collections.java</code>、<code>Arrays.java</code>、<code>AbstractList.java</code>、<code>Iterator.java</code> 等）的逐文件精读整理而成。</p>
-<p>阅读顺序即学习顺序：List 家族 → Map 家族核心 → Set 与 Queue → 迭代器与工具类 → 散列原理与设计权衡。</p>
-<p>所有结论均标注了源文件位置（格式 <code>src/java.base/share/classes/java/util/xxx.java:行号</code>），建议对照代码阅读。本讲只覆盖<strong>非并发</strong>集合，并发容器（<code>ConcurrentHashMap</code> 等）归并发库文档。</p>
+<p>阅读顺序即学习顺序：List 家族 → Map 家族核心 → Set 与 Queue → 迭代器与工具类 → 散列原理与设计权衡 → <strong>并发集合</strong>。</p>
+<p>所有结论均标注了源文件位置（格式 <code>src/java.base/share/classes/java/util/xxx.java:行号</code>），建议对照代码阅读。第一~五讲覆盖<strong>非并发</strong>集合，<strong>第六讲覆盖并发集合</strong>（<code>java.util.concurrent</code> 下的容器）；线程池&#x2F;AQS&#x2F;Lock 等见 <code>java-concurrent.md</code> 与 <code>java-lock.md</code>。</p>
 <p><strong>版本基线</strong>：OpenJDK <strong>21（jdk-21-ga）</strong>。<br><strong>精确 commit</strong>：<code>890adb6410dab4606a4f26a942aed02fb2f55387</code>，commit 时间 <code>2023-08-09 20:19:41 +0000</code>（由 <code>git -C D:/work/2026/deep-dive/sources/jdk rev-parse HEAD</code> 与 <code>git log -1 --format=%ci</code> 取得）。</p>
 </blockquote>
 <hr>
@@ -212,6 +212,7 @@
 <li><a href="#%E7%AC%AC%E4%B8%89%E8%AE%B2set-%E5%AE%B6%E6%97%8F%E4%B8%8E-queue--hashsetpriorityqueuearraydeque">第三讲：Set 家族与 Queue —— HashSet、PriorityQueue、ArrayDeque</a></li>
 <li><a href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%E8%BF%AD%E4%BB%A3%E5%99%A8%E4%B8%8E%E5%B7%A5%E5%85%B7%E7%B1%BB--iteratorcollectionsarrays">第四讲：迭代器与工具类 —— Iterator、Collections、Arrays</a></li>
 <li><a href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%E6%95%A3%E5%88%97%E5%8E%9F%E7%90%86%E4%B8%8E%E8%AE%BE%E8%AE%A1%E6%9D%83%E8%A1%A1--%E4%B8%BA%E4%BB%80%E4%B9%88%E6%98%AF-2-%E6%AC%A1%E5%B9%82%E4%B8%BA%E4%BB%80%E4%B9%88%E6%A0%91%E5%8C%96%E9%98%88%E5%80%BC%E6%98%AF-8">第五讲：散列原理与设计权衡 —— 为什么是 2 次幂、为什么树化阈值是 8</a></li>
+<li><a href="#%E7%AC%AC%E5%85%AD%E8%AE%B2%E5%B9%B6%E5%8F%91%E9%9B%86%E5%90%88--%E4%BB%8E%E4%B8%80%E6%8A%8A%E5%A4%A7%E9%94%81%E5%88%B0%E6%97%A0%E9%94%81--%E5%8D%8F%E4%BD%9C%E6%89%A9%E5%AE%B9">第六讲：并发集合 —— 从”一把大锁”到”无锁 + 协作扩容”</a></li>
 <li><a href="#%E9%99%84%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E4%B8%8E%E5%A4%8D%E4%B9%A0%E5%8D%A1%E6%B1%87%E6%80%BB">附：学习路线与复习卡汇总</a></li>
 <li><a href="#%E6%B6%89%E5%8F%8A%E6%96%87%E4%BB%B6%E7%B4%A2%E5%BC%95">涉及文件索引</a></li>
 </ul>
@@ -245,6 +246,9 @@
 <li><strong>扩容流</strong>：<code>add</code>&#x2F;<code>put</code> → 检查容量 → 不够就 <code>grow</code>&#x2F;<code>resize</code> → 搬迁老元素。ArrayList 1.5 倍、HashMap 2 倍、PriorityQueue 小数组翻倍否则 50%、ArrayDeque 循环数组翻倍。</li>
 <li><strong>迭代流</strong>：<code>iterator()</code> 创建快照式的 <code>cursor/lastRet</code> 状态 → 每步 <code>checkForComodification()</code> 比 <code>modCount</code> → 不一致抛 <code>ConcurrentModificationException</code>（fail-fast，best-effort）。</li>
 </ol>
+<blockquote>
+<p><strong>并发集合（第六讲）不在这三条主线的射程内</strong>：<code>ConcurrentHashMap</code> 的散列算法与 HashMap 完全同构（容量 16 &#x2F; 0.75 &#x2F; 树化 8 &#x2F; 退化 6），差别<strong>全在并发控制</strong>——空桶 CAS、<code>synchronized</code> 锁桶头、<code>sizeCtl</code> 状态机、多线程协作扩容；<code>CopyOnWriteArrayList</code> 则连”迭代流”都换成了”快照引用”。所以第六讲可以当作前五讲的<strong>对照组</strong>来读。</p>
+</blockquote>
 <hr>
 <h2 id="速览：各讲做了什么（先看这个再进细节）"><a href="#速览：各讲做了什么（先看这个再进细节）" class="headerlink" title="速览：各讲做了什么（先看这个再进细节）"></a>速览：各讲做了什么（先看这个再进细节）</h2><p>先用大白话把五讲各自干了什么说清楚，再进逐文件精读。</p>
 <table>
@@ -286,6 +290,12 @@
 <td>为什么容量是 2 次幂（位与代替取模）、为什么树化阈值是 8（泊松分布）、loadFactor 0.75 的时空权衡</td>
 <td>HashMap.java 注释</td>
 </tr>
+<tr>
+<td>第六讲</td>
+<td>并发集合</td>
+<td>CHM 把锁粒度压到<strong>单个桶</strong>、读完全无锁、扩容时<strong>所有线程一起搬</strong>；COW 写时复制换读无锁；BlockingQueue 靠 Condition 阻塞</td>
+<td>ConcurrentHashMap.java、CopyOnWriteArrayList.java、ArrayBlockingQueue.java、PriorityBlockingQueue.java</td>
+</tr>
 </tbody></table>
 <p>全流程图（一次 <code>map.put(k,v)</code> 从 hash 到落桶 + 一次 <code>list.iterator()</code> 遍历中并发修改抛 CME）：</p>
 <pre><code class="highlight mermaid">flowchart TD
@@ -317,7 +327,7 @@
 <h2 id="面试速通：Java-集合高频问题一页纸"><a href="#面试速通：Java-集合高频问题一页纸" class="headerlink" title="面试速通：Java 集合高频问题一页纸"></a>面试速通：Java 集合高频问题一页纸</h2><blockquote>
 <p>先给结论，再按讲次展开。<br>ArrayList 的全部魔法是「一个 <code>Object[]</code> + <code>System.arraycopy</code> + <code>modCount</code>」三件套；<br>HashMap 的全部魔法是「2 次幂容量 + <code>h ^ (h &gt;&gt;&gt; 16)</code> 扰动 + 链长 8 树化兜底 + lo&#x2F;hi 拆分迁移」四件事。<br>面试先答这两句总分，被追问细节再往下走：<br>第一讲 List 家族，第二讲 Map 家族核心，第三讲 Set 与 Queue，第四讲迭代器与工具类，第五讲散列原理与每个魔法数字背后的权衡。<br>本页所有结论均提炼自对应讲次的小结与关键机制表，不引入文档之外的知识点。<br>用法：先扫表格建立全局印象，被问到哪条就讲哪条，再按「深入」列回查原文细节。<br>适用场景：面试前 10 分钟过一遍建立全局，或被追问时按图索骥。</p>
 </blockquote>
-<h3 id="高频-Q-A（先结论）"><a href="#高频-Q-A（先结论）" class="headerlink" title="高频 Q&amp;A（先结论）"></a>高频 Q&amp;A（先结论）</h3><p>16 道最高频题的「一句话答案」。先报结论占住阵地，面试官真追问时，按「深入」列展开到对应讲次。<br>题目覆盖 List&#x2F;Map&#x2F;Set&#x2F;Queue&#x2F;迭代器&#x2F;散列原理六大块，顺序大致按被问频率排。</p>
+<h3 id="高频-Q-A（先结论）"><a href="#高频-Q-A（先结论）" class="headerlink" title="高频 Q&amp;A（先结论）"></a>高频 Q&amp;A（先结论）</h3><p>27 道最高频题的「一句话答案」。先报结论占住阵地，面试官真追问时，按「深入」列展开到对应讲次。<br>题目覆盖 List&#x2F;Map&#x2F;Set&#x2F;Queue&#x2F;迭代器&#x2F;散列原理&#x2F;并发容器七大块，顺序大致按被问频率排。</p>
 <table>
 <thead>
 <tr>
@@ -423,6 +433,72 @@
 <td>只能用 <code>iterator.remove()</code>：它内部调 <code>list.remove(lastRet)</code> 后会同步 <code>expectedModCount</code>，所以不触发 CME；直接 <code>list.remove</code> 必抛</td>
 <td>第四讲</td>
 </tr>
+<tr>
+<td>17</td>
+<td>ConcurrentHashMap 怎么保证线程安全？</td>
+<td>四路降级：空桶 CAS 无锁 → 撞见 <code>MOVED</code> 帮忙搬 → <code>putIfAbsent</code> 命中首节点无锁 → 都不行才 <code>synchronized</code> 锁<strong>桶头</strong></td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td>18</td>
+<td>CHM 与 JDK 7 的 Segment 段锁有什么区别？</td>
+<td>JDK 8 起没有 Segment 了，锁粒度从”一段”下沉到”一个桶”；并发度 ≈ 桶数，且无需预分配 Segment</td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td>19</td>
+<td><code>ConcurrentHashMap.size()</code> 精确吗？</td>
+<td>不精确。<code>baseCount</code> + <code>CounterCell[]</code> 分段求和，求和时别人还在改；元素数可能超 int，官方推荐 <code>mappingCount()</code></td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td>20</td>
+<td>CHM 扩容时其他线程在干嘛？</td>
+<td><strong>一起搬</strong>。撞见 <code>ForwardingNode</code>（<code>hash == MOVED</code>）就 <code>helpTransfer</code>，按 <code>stride</code> 从 <code>transferIndex</code> 认领一段桶</td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td>21</td>
+<td>CopyOnWriteArrayList 为什么读不加锁？</td>
+<td>写时 <code>Arrays.copyOf</code> 整份复制后 <code>volatile</code> 写回，读直接读 volatile 数组；迭代器持有创建时数组引用作快照，绝不 CME</td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td>22</td>
+<td>COW 适合什么场景？</td>
+<td>读远多于写、且能容忍短暂过期（监听器&#x2F;白名单&#x2F;路由表）。写是 O(n) 复制 + 有锁，写多会致命</td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td>23</td>
+<td><code>ConcurrentLinkedQueue.size()</code> 为什么是 O(n)？</td>
+<td>无锁队列维护不了精确原子计数（那会重新引入竞争点），只能遍历；判空请用 <code>isEmpty()</code></td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td>24</td>
+<td><code>ArrayBlockingQueue</code> 与 <code>LinkedBlockingQueue</code> 区别？</td>
+<td>ABQ 有界 + <strong>单锁</strong>双 Condition；LBQ 默认无界（<code>Integer.MAX_VALUE</code>）+ <strong>双锁</strong>（<code>putLock</code>&#x2F;<code>takeLock</code>）+ <code>AtomicInteger count</code>，吞吐更高</td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td>25</td>
+<td><code>PriorityBlockingQueue</code> 怎么扩容？</td>
+<td><strong>先把主锁放了</strong>，用 <code>allocationSpinLock</code> 只保护”分配新数组”，分配完再拿锁做 <code>arraycopy</code>——把慢操作移出临界区</td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td>26</td>
+<td>ConcurrentHashMap 为什么不支持 null？</td>
+<td><code>get(key)</code> 返回 null 必须唯一表示”不存在”；单线程的 HashMap 可以用 <code>containsKey</code> 兜底，并发下做不到</td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td>27</td>
+<td><code>synchronizedMap</code> 够用吗？</td>
+<td>不够。它只保证<strong>单方法</strong>原子，复合操作（check-then-put）仍有竞态，还需外部 <code>synchronized(map)</code>；不如直接用 CHM 的 <code>putIfAbsent</code></td>
+<td>第六讲</td>
+</tr>
 </tbody></table>
 <h3 id="易错点与面试坑"><a href="#易错点与面试坑" class="headerlink" title="易错点与面试坑"></a>易错点与面试坑</h3><p>以下每条都是文档专门强调过的反直觉点——知道就加分，不知道必挂。按被问到的频率从高到低排列。</p>
 <ul>
@@ -434,6 +510,11 @@
 <li><strong>LinkedHashMap 的 <code>get</code> 也算结构性修改</strong>：<code>accessOrder=true</code> 时 <code>afterNodeAccess</code> 挪尾会 <code>++modCount</code>，<br>所以遍历中调用 <code>get</code> 同样可能触发 CME——「只读」操作在这里并不只读。<br>LRU 缓存正是利用这一点：访问即挪尾，头节点就是最久未用。</li>
 <li><strong>PriorityQueue 与 ArrayDeque 显式拒绝 <code>null</code> 元素</strong>：<code>offer</code>&#x2F;<code>addFirst</code>&#x2F;<code>addLast</code> 开头就是 null 检查，直接抛 <code>NullPointerException</code>；<br>注意这与 HashMap 允许 null key（null 的 hash 固定为 0 落 0 号桶）正好相反——同一个框架里，不同容器对 null 的态度并不统一。</li>
 <li><strong><code>Collections.unmodifiableList</code> 是拦写的视图不是拷贝</strong>：它持原 List 引用直接转发，所有写操作抛 UOE；<br>原表后续的改动会照样反映到这个「不可变」视图上——要真正不可变得自己拷贝一份。<br>三类装饰器（synchronized&#x2F;unmodifiable&#x2F;checked）都是这个模式：持引用、转发、在转发前后加动作。</li>
+<li><strong>并发容器的迭代器不抛 CME，但也不是「正确」</strong>：CHM 的 <code>Traverser</code> 是<strong>弱一致</strong>的——可能看不到遍历期间新插入的元素；<br>COW 的 <code>COWIterator</code> 看到的是<strong>创建那一刻的历史快照</strong>，别人的修改永远看不见。<br>「不抛异常」只说明不会因为并发修改而崩，不代表你拿到的是一致视图——需要精确快照就得自己在外面加锁。</li>
+<li><strong><code>ConcurrentHashMap.size()</code> 不是精确值，而且可能溢出</strong>：它是 <code>baseCount + Σ CounterCell</code> 的并发求和，<br>求和时别人还在改；元素数超过 <code>Integer.MAX_VALUE</code> 时 <code>size()</code> 会<strong>饱和</strong>到 <code>Integer.MAX_VALUE</code>，所以官方给了 <code>mappingCount()</code> 返回 <code>long</code>。<br>同理 <code>ConcurrentLinkedQueue.size()</code> 干脆是 <strong>O(n) 遍历</strong>，判空请用 <code>isEmpty()</code>。</li>
+<li><strong><code>synchronizedMap</code> 挡不住复合操作的竞态</strong>：<code>if (!map.containsKey(k)) map.put(k, v)</code> 即使套了 <code>synchronizedMap</code> 也一样有窗口，<br>因为 <code>containsKey</code> 和 <code>put</code> 是两次独立加锁。要么外部 <code>synchronized (map) &#123; ... &#125;</code>，要么直接用 CHM 的 <code>putIfAbsent</code> —— 既然都要外部加锁，前者就没意义了。</li>
+<li><strong><code>PriorityBlockingQueue</code> 是无界的</strong>：默认初始容量 11，满了自动扩容，<strong>永远不会阻塞生产者</strong>，内存可能撑爆；<br>而且它<strong>不保证同优先级元素的 FIFO</strong>。需要背压就用 <code>ArrayBlockingQueue</code>。</li>
+<li>**<code>CopyOnWriteArrayList</code> 的迭代器不支持 <code>remove</code>&#x2F;<code>set</code>&#x2F;<code>add</code>**：改快照毫无意义（快照是历史不是当前），<br>源码注释直接写明，调用会抛 <code>UnsupportedOperationException</code>。</li>
 </ul>
 <h3 id="关键数值速记"><a href="#关键数值速记" class="headerlink" title="关键数值速记"></a>关键数值速记</h3><p>被问数字时先报这张表，再补一句「每个魔法数字都是数学与工程的权衡，不是随意值」——这是第五讲的总纲。</p>
 <table>
@@ -529,8 +610,63 @@
 <td>TimSort（<code>Collections.sort</code> 底层）的复杂度与稳定性</td>
 <td>第四讲</td>
 </tr>
+<tr>
+<td><code>DEFAULT_CAPACITY = 16</code></td>
+<td>ConcurrentHashMap 默认初始容量（与 HashMap 同）</td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td><code>MIN_TRANSFER_STRIDE = 16</code></td>
+<td>CHM 协作扩容时每个线程一次认领的桶数下限</td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td><code>n &gt;&gt;&gt; 3 / NCPU</code></td>
+<td>CHM 扩容步长 <code>stride</code> 的计算式，小于 16 取 16</td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td><code>sizeCtl = -1</code></td>
+<td>CHM 正在初始化（<code>initTable</code> 的 CAS 锁）</td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td><code>sizeCtl &lt; -1</code></td>
+<td>CHM 正在扩容：高 16 位 <code>resizeStamp(n)</code> + 低 16 位线程数+1</td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td><code>MOVED=-1</code> &#x2F; <code>TREEBIN=-2</code> &#x2F; <code>RESERVED=-3</code></td>
+<td>CHM 三个负 hash 哨兵（普通节点 hash 恒非负，故负数可复用）</td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td><code>HASH_BITS = 0x7fffffff</code></td>
+<td><code>spread</code> 用它把符号位清零，为负 hash 哨兵腾出空间</td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td><code>DEFAULT_INITIAL_CAPACITY = 11</code></td>
+<td>PriorityBlockingQueue 默认初始容量（无界，自动扩容）</td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td><code>&lt;64 则 +2，否则 &gt;&gt;1</code></td>
+<td>PriorityBlockingQueue 的扩容增长量</td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td><code>Integer.MAX_VALUE</code></td>
+<td>LinkedBlockingQueue 默认容量（等于无界）</td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td><code>MAX_HOPS = 8</code></td>
+<td>ConcurrentLinkedQueue 从 head 跳多少步后放弃优化</td>
+<td>第六讲</td>
+</tr>
 </tbody></table>
-<p>一句话收尾：集合框架所有的坑都能回到三条主线——查找流（定位 → 比对）、扩容流（不够就搬）、迭代流（modCount 校验）。<br>记住主线，具体数字忘了也能顺着推出来；本页所有结论都能在对应讲次里找到源码依据。<br>建议配合各讲小结的「三个最值得记住的点」一起复习——那一页是细节，这一页是索引。</p>
+<p>一句话收尾：集合框架所有的坑都能回到三条主线——查找流（定位 → 比对）、扩容流（不够就搬）、迭代流（modCount 校验）；并发容器再加一条——<strong>缩小临界区 + 无锁读 + 协作搬迁</strong>。<br>记住主线，具体数字忘了也能顺着推出来；本页所有结论都能在对应讲次里找到源码依据。<br>建议配合各讲小结的「三个最值得记住的点」一起复习——那一页是细节，这一页是索引。</p>
 <hr>
 <h2 id="第一讲：List-家族-——-ArrayList、LinkedList-与-AbstractList"><a href="#第一讲：List-家族-——-ArrayList、LinkedList-与-AbstractList" class="headerlink" title="第一讲：List 家族 —— ArrayList、LinkedList 与 AbstractList"></a>第一讲：List 家族 —— ArrayList、LinkedList 与 AbstractList</h2><h3 id="先说人话：本讲每个阶段在干什么"><a href="#先说人话：本讲每个阶段在干什么" class="headerlink" title="先说人话：本讲每个阶段在干什么"></a>先说人话：本讲每个阶段在干什么</h3><p>把 List 家族想象成”两种装东西的盒子”：ArrayList 是一个<strong>能自动加长的抽屉阵列</strong>——你往里塞东西，塞满之前它会偷偷订一个更大的抽屉柜，把东西整批搬过去（<code>System.arraycopy</code>）；LinkedList 是一条<strong>两头都能挂车厢的火车</strong>——头尾加一节车厢是 O(1)，但你要去第 5 节车厢得从车头一节节走过去（O(n)）。</p>
 <table>
@@ -1488,12 +1624,609 @@
 <li><strong>JDK 8 改尾插法消除了 JDK 7 的死循环，但 HashMap 仍非线程安全</strong>。<code>resize</code>（<code>HashMap.java:721</code>）用 lo&#x2F;hi 两条新链保节点相对顺序不变，理论上不再形成环。但多线程 put 仍会丢数据、size 不准、resize 时数据错乱。<code>modCount</code> 是 best-effort fail-fast，不是并发控制。要线程安全必须用 <code>ConcurrentHashMap</code>（分段锁&#x2F;CAS）或 <code>Collections.synchronizedMap</code>（<code>Collections.java:2675</code> 全方法 synchronized 装饰器）。**”不报错”不等于”线程安全”**——这是最容易踩的坑。</li>
 </ol>
 <hr>
+<h2 id="第六讲：并发集合-——-从”一把大锁”到”无锁-协作扩容”"><a href="#第六讲：并发集合-——-从”一把大锁”到”无锁-协作扩容”" class="headerlink" title="第六讲：并发集合 —— 从”一把大锁”到”无锁 + 协作扩容”"></a>第六讲：并发集合 —— 从”一把大锁”到”无锁 + 协作扩容”</h2><h3 id="先说人话：本讲每个阶段在干什么-5"><a href="#先说人话：本讲每个阶段在干什么-5" class="headerlink" title="先说人话：本讲每个阶段在干什么"></a>先说人话：本讲每个阶段在干什么</h3><p>前五讲的所有集合都有一个共同前提：<strong>单线程写</strong>。<code>modCount</code> 只是 best-effort 的 fail-fast，它能在你写错时”尽量”喊一声，但它<strong>不保证任何正确性</strong>——第五讲末尾已经点破了这一点。</p>
+<p>本讲回答五个问题：</p>
+<ol>
+<li><strong>并发容器”并发”在哪</strong>——是给整个容器加一把锁（<code>Collections.synchronizedList</code>），还是把锁的粒度压到一个桶（<code>ConcurrentHashMap</code>）？</li>
+<li><strong><code>ConcurrentHashMap</code> 到底锁什么</strong>——JDK 7 的 <code>Segment</code> 段锁去哪了？JDK 8+ 用了什么？</li>
+<li><strong>读为什么能不加锁</strong>——<code>volatile</code> 数组 + <code>Unsafe</code>&#x2F;<code>VarHandle</code> 的 <code>tabAt</code> 是怎么做到”读完全无锁”的？</li>
+<li><strong><code>size()</code> 为什么不精确</strong>——<code>ConcurrentHashMap.size()</code> 返回的是 <code>int</code>，<code>mappingCount()</code> 返回 <code>long</code>，二者都不是精确值，为什么？</li>
+<li><strong>扩容时别的线程在干嘛</strong>——这是 <code>ConcurrentHashMap</code> 最精妙的设计：<strong>多线程协作扩容</strong>。</li>
+</ol>
+<blockquote>
+<p>⚠️ 声明：本讲覆盖 <code>java.util.concurrent</code> 下的<strong>并发容器</strong>部分。线程池、<code>Future</code>、<code>ForkJoinPool</code>、AQS、<code>Lock</code> 家族见 <code>java-concurrent.md</code> 与 <code>java-lock.md</code>。</p>
+</blockquote>
+<h3 id="6-1-并发容器族谱"><a href="#6-1-并发容器族谱" class="headerlink" title="6.1 并发容器族谱"></a>6.1 并发容器族谱</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">┌──────────────────── java.util.concurrent 容器族 ────────────────────┐</span><br><span class="line">│                                                                      │</span><br><span class="line">│  ── 并发 Map ──                                                      │</span><br><span class="line">│  ConcurrentHashMap      数组+链/树 + CAS + 桶级 synchronized        │</span><br><span class="line">│  ConcurrentSkipListMap  跳表（无锁，靠 CAS 连指针）有序版 CHM        │</span><br><span class="line">│                                                                      │</span><br><span class="line">│  ── 并发 List（写时复制）──                                          │</span><br><span class="line">│  CopyOnWriteArrayList   volatile 数组 + 写时整份复制 + 读无锁        │</span><br><span class="line">│  CopyOnWriteArraySet    内部就是 COWArrayList                        │</span><br><span class="line">│                                                                      │</span><br><span class="line">│  ── 并发 Queue（非阻塞）──                                           │</span><br><span class="line">│  ConcurrentLinkedQueue  Michael-Scott 队列，全 CAS                   │</span><br><span class="line">│  ConcurrentLinkedDeque  双向版                                       │</span><br><span class="line">│                                                                      │</span><br><span class="line">│  ── 阻塞 Queue（BlockingQueue）──                                    │</span><br><span class="line">│  ArrayBlockingQueue     有界数组 + 单锁双 Condition                  │</span><br><span class="line">│  LinkedBlockingQueue    链表 + 入队出队两把锁 + AtomicInteger        │</span><br><span class="line">│  PriorityBlockingQueue  无界堆 + 单锁 + 扩容时放锁的巧技             │</span><br><span class="line">│  SynchronousQueue       零容量，一手交钱一手交货                     │</span><br><span class="line">│  DelayQueue             无界 + 到期才能取                            │</span><br><span class="line">│  LinkedTransferQueue    链表 + 可直接投递给等待消费者                │</span><br><span class="line">│                                                                      │</span><br><span class="line">│  ── 复古方案（装饰器）──                                             │</span><br><span class="line">│  Collections.synchronizedXxx  全方法 synchronized，串行              │</span><br><span class="line">└──────────────────────────────────────────────────────────────────────┘</span><br></pre></td></tr></table></figure>
+
+<p>渲染版：</p>
+<pre><code class="highlight mermaid">flowchart TD
+    subgraph M[&quot;并发 Map&quot;]
+        CHM[&quot;ConcurrentHashMap&lt;br/&gt;CAS + 桶级 synchronized&lt;br/&gt;:1018 / :1031&quot;]
+        CSLM[&quot;ConcurrentSkipListMap&lt;br/&gt;跳表 + CAS 连指针&quot;]
+    end
+    subgraph L[&quot;并发 List&quot;]
+        COW[&quot;CopyOnWriteArrayList&lt;br/&gt;volatile array :110&lt;br/&gt;写时复制 :461&quot;]
+    end
+    subgraph Q[&quot;并发 Queue&quot;]
+        CLQ[&quot;ConcurrentLinkedQueue&lt;br/&gt;全 CAS offer :354&quot;]
+        ABQ[&quot;ArrayBlockingQueue&lt;br/&gt;单锁双条件 :121&quot;]
+        LBQ[&quot;LinkedBlockingQueue&lt;br/&gt;双锁 :156/:163&quot;]
+        PBQ[&quot;PriorityBlockingQueue&lt;br/&gt;无界堆 :138&quot;]
+        SQ[&quot;SynchronousQueue&lt;br/&gt;零容量 :186&quot;]
+    end
+    subgraph Old[&quot;装饰器（复古）&quot;]
+        SYNC[&quot;Collections.synchronizedXxx&lt;br/&gt;全方法 synchronized :2675&quot;]
+    end</code></pre>
+
+<hr>
+<h3 id="6-2-ConcurrentHashMap（一）：锁粒度的三代演进"><a href="#6-2-ConcurrentHashMap（一）：锁粒度的三代演进" class="headerlink" title="6.2 ConcurrentHashMap（一）：锁粒度的三代演进"></a>6.2 ConcurrentHashMap（一）：锁粒度的三代演进</h3><table>
+<thead>
+<tr>
+<th>版本</th>
+<th>结构</th>
+<th>锁粒度</th>
+<th>并发度上限</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>JDK 6&#x2F;7</td>
+<td><code>Segment[]</code> + <code>HashEntry[]</code></td>
+<td>段锁（<code>Segment extends ReentrantLock</code>）</td>
+<td><code>concurrencyLevel</code>，默认 <strong>16</strong></td>
+</tr>
+<tr>
+<td>JDK 8+</td>
+<td><code>Node[]</code> + <code>TreeBin</code></td>
+<td><strong>桶级</strong> <code>synchronized</code> + CAS</td>
+<td>≈ 桶数量</td>
+</tr>
+<tr>
+<td>装饰器</td>
+<td><code>synchronizedMap</code></td>
+<td><strong>整表</strong></td>
+<td>1</td>
+</tr>
+</tbody></table>
+<p>JDK 8 的改动本质上是：<strong>把”分段”这件事从数据结构层面下沉到了数组的每一个槽位</strong>。段锁要预先分配 16 个 Segment（内存开销 + 无法动态伸缩），桶级锁不需要任何额外结构——桶数组本来就在那里。</p>
+<h4 id="核心数据结构与常量"><a href="#核心数据结构与常量" class="headerlink" title="核心数据结构与常量"></a>核心数据结构与常量</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/java.base/share/classes/java/util/concurrent/ConcurrentHashMap.java</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">MAXIMUM_CAPACITY</span> <span class="operator">=</span> <span class="number">1</span> &lt;&lt; <span class="number">30</span>;        <span class="comment">// :508</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">DEFAULT_CAPACITY</span> <span class="operator">=</span> <span class="number">16</span>;             <span class="comment">// :514</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">float</span> <span class="variable">LOAD_FACTOR</span> <span class="operator">=</span> <span class="number">0.75f</span>;             <span class="comment">// :535</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">TREEIFY_THRESHOLD</span> <span class="operator">=</span> <span class="number">8</span>;                     <span class="comment">// :545</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">UNTREEIFY_THRESHOLD</span> <span class="operator">=</span> <span class="number">6</span>;                   <span class="comment">// :552</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">MIN_TREEIFY_CAPACITY</span> <span class="operator">=</span> <span class="number">64</span>;                 <span class="comment">// :560</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">MIN_TRANSFER_STRIDE</span> <span class="operator">=</span> <span class="number">16</span>;          <span class="comment">// :569</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">RESIZE_STAMP_BITS</span> <span class="operator">=</span> <span class="number">16</span>;            <span class="comment">// :575</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">MOVED</span>     <span class="operator">=</span> -<span class="number">1</span>; <span class="comment">// hash for forwarding nodes :591</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">TREEBIN</span>   <span class="operator">=</span> -<span class="number">2</span>; <span class="comment">// hash for roots of trees   :592</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">RESERVED</span>  <span class="operator">=</span> -<span class="number">3</span>; <span class="comment">// hash for transient reservations :593</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">HASH_BITS</span> <span class="operator">=</span> <span class="number">0x7fffffff</span>;                    <span class="comment">// :594</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>💡 <strong>注意 CHM 与 HashMap 常量完全同构</strong>：默认容量 16、负载因子 0.75、树化 8、退化 6、最小树化容量 64 —— 一个数字都不差（<code>HashMap.java:238/250/260/267/275</code>）。区别只在<strong>并发控制</strong>，散列算法是复用的。</p>
+</blockquote>
+<p><strong><code>MOVED = -1</code> &#x2F; <code>TREEBIN = -2</code> &#x2F; <code>RESERVED = -3</code> 是三个”负 hash 哨兵”<strong>，这是 CHM 最标志性的设计：正常节点的 hash 经过 <code>spread</code> 后一定是非负的（<code>&amp; HASH_BITS</code>，<code>:697</code>），于是</strong>负数就被腾出来当类型标记</strong>：</p>
+<ul>
+<li><code>-1 MOVED</code>：<code>ForwardingNode</code>，表示该桶<strong>已迁移完毕</strong>，要去新表找 → 触发 <code>helpTransfer</code>；</li>
+<li><code>-2 TREEBIN</code>：<code>TreeBin</code> 根节点，桶内是红黑树；</li>
+<li><code>-3 RESERVED</code>：<code>ReservationNode</code>，<code>computeIfAbsent</code> 递归更新时占位（<code>:1062-1063</code> 抛 <code>IllegalStateException(&quot;Recursive update&quot;)</code>）。</li>
+</ul>
+<h4 id="spread：比-HashMap-多了一次”去符号位”"><a href="#spread：比-HashMap-多了一次”去符号位”" class="headerlink" title="spread：比 HashMap 多了一次”去符号位”"></a><code>spread</code>：比 HashMap 多了一次”去符号位”</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ConcurrentHashMap.java:696-698</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="title function_">spread</span><span class="params">(<span class="type">int</span> h)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> (h ^ (h &gt;&gt;&gt; <span class="number">16</span>)) &amp; HASH_BITS;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>HashMap 是 <code>h ^ (h &gt;&gt;&gt; 16)</code>（<code>HashMap.java:336</code>），CHM 多了一个 <code>&amp; HASH_BITS</code>（<code>0x7fffffff</code>）——<strong>把最高位（符号位）清零</strong>。这样 hash 恒为非负，负数才能被安全地借去做类型标记。</p>
+<hr>
+<h3 id="6-3-ConcurrentHashMap（二）：putVal-逐行-——-四路分支"><a href="#6-3-ConcurrentHashMap（二）：putVal-逐行-——-四路分支" class="headerlink" title="6.3 ConcurrentHashMap（二）：putVal 逐行 —— 四路分支"></a>6.3 ConcurrentHashMap（二）：<code>putVal</code> 逐行 —— 四路分支</h3><p>这是整个 <code>java.util.concurrent</code> 最值得背下来的一段代码（<code>ConcurrentHashMap.java:1010-1077</code>）：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> <span class="type">V</span> <span class="title function_">putVal</span><span class="params">(K key, V value, <span class="type">boolean</span> onlyIfAbsent)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (key == <span class="literal">null</span> || value == <span class="literal">null</span>) <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">NullPointerException</span>();   <span class="comment">// :1011</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">hash</span> <span class="operator">=</span> spread(key.hashCode());                                    <span class="comment">// :1012</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">binCount</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">Node</span>&lt;K,V&gt;[] <span class="variable">tab</span> <span class="operator">=</span> table;;) &#123;                                     <span class="comment">// :1014 自旋</span></span><br><span class="line">        Node&lt;K,V&gt; f; <span class="type">int</span> n, i, fh; K fk; V fv;</span><br><span class="line">        <span class="keyword">if</span> (tab == <span class="literal">null</span> || (n = tab.length) == <span class="number">0</span>)</span><br><span class="line">            tab = initTable();                                            <span class="comment">// ①表未建 → 初始化</span></span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> ((f = tabAt(tab, i = (n - <span class="number">1</span>) &amp; hash)) == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (casTabAt(tab, i, <span class="literal">null</span>, <span class="keyword">new</span> <span class="title class_">Node</span>&lt;K,V&gt;(hash, key, value)))  <span class="comment">// ②空桶 → CAS 无锁</span></span><br><span class="line">                <span class="keyword">break</span>;                   <span class="comment">// no lock when adding to empty bin</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> ((fh = f.hash) == MOVED)</span><br><span class="line">            tab = helpTransfer(tab, f);                                   <span class="comment">// ③在迁移 → 帮忙搬</span></span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (onlyIfAbsent &amp;&amp; fh == hash &amp;&amp; ... &amp;&amp; (fv = f.val) != <span class="literal">null</span>)</span><br><span class="line">            <span class="keyword">return</span> fv;                                                    <span class="comment">// ④putIfAbsent 快路径</span></span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="type">V</span> <span class="variable">oldVal</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">            <span class="keyword">synchronized</span> (f) &#123;                                            <span class="comment">// ⑤桶非空 → 锁桶头</span></span><br><span class="line">                ...</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    addCount(<span class="number">1L</span>, binCount);                                               <span class="comment">// :1075 计数 + 可能触发扩容</span></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>四路分支的语义：</p>
+<table>
+<thead>
+<tr>
+<th>分支</th>
+<th>条件</th>
+<th>手段</th>
+<th>是否加锁</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>①</td>
+<td><code>table == null</code></td>
+<td><code>initTable()</code>（CAS <code>sizeCtl</code> 抢锁）</td>
+<td>自旋 + CAS</td>
+</tr>
+<tr>
+<td>②</td>
+<td>桶为空</td>
+<td><code>casTabAt</code> 直接放</td>
+<td><strong>完全无锁</strong></td>
+</tr>
+<tr>
+<td>③</td>
+<td>桶头是 <code>ForwardingNode</code>（<code>hash == MOVED</code>）</td>
+<td><code>helpTransfer</code> <strong>帮着扩容</strong></td>
+<td>无锁（参与迁移）</td>
+</tr>
+<tr>
+<td>④</td>
+<td><code>putIfAbsent</code> 且首节点命中</td>
+<td>直接返回</td>
+<td><strong>完全无锁</strong>（注释明说 “check first node without acquiring lock”）</td>
+</tr>
+<tr>
+<td>⑤</td>
+<td>桶非空且需遍历</td>
+<td><code>synchronized (f)</code> 锁桶头节点</td>
+<td><strong>桶级锁</strong></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>🔑 <strong>一句话记住 CHM 的并发策略</strong>：<strong>能 CAS 就 CAS，CAS 不了就锁住那个桶，锁住的只是链表头&#x2F;树根这一个对象</strong>。两个线程操作不同桶时<strong>零竞争</strong>。</p>
+</blockquote>
+<p>⚠️ <strong>CHM 不允许 <code>null</code> 键和 <code>null</code> 值</strong>（<code>:1011</code> 直接 NPE）。这不是洁癖，而是<strong>语义必需</strong>：<code>get(key)</code> 返回 <code>null</code> 必须能唯一表示”不存在”，否则并发下”值为 null”和”不存在”无法区分。HashMap 允许 null 是因为它单线程，可以额外用 <code>containsKey</code> 兜底。</p>
+<h4 id="initTable：sizeCtl-当初始化锁"><a href="#initTable：sizeCtl-当初始化锁" class="headerlink" title="initTable：sizeCtl 当初始化锁"></a><code>initTable</code>：<code>sizeCtl</code> 当初始化锁</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ConcurrentHashMap.java:2291-2312</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="type">Node</span>&lt;K,V&gt;[] <span class="title function_">initTable</span><span class="params">()</span> &#123;</span><br><span class="line">    Node&lt;K,V&gt;[] tab; <span class="type">int</span> sc;</span><br><span class="line">    <span class="keyword">while</span> ((tab = table) == <span class="literal">null</span> || tab.length == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> ((sc = sizeCtl) &lt; <span class="number">0</span>)</span><br><span class="line">            Thread.<span class="keyword">yield</span>(); <span class="comment">// lost initialization race; just spin      // :2295</span></span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (U.compareAndSetInt(<span class="built_in">this</span>, SIZECTL, sc, -<span class="number">1</span>)) &#123;           <span class="comment">// :2296 抢到锁</span></span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> ((tab = table) == <span class="literal">null</span> || tab.length == <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="type">int</span> <span class="variable">n</span> <span class="operator">=</span> (sc &gt; <span class="number">0</span>) ? sc : DEFAULT_CAPACITY;</span><br><span class="line">                    <span class="type">Node</span>&lt;K,V&gt;[] <span class="variable">nt</span> <span class="operator">=</span> (Node&lt;K,V&gt;[])<span class="keyword">new</span> <span class="title class_">Node</span>&lt;?,?&gt;[n];</span><br><span class="line">                    table = tab = nt;</span><br><span class="line">                    sc = n - (n &gt;&gt;&gt; <span class="number">2</span>);                                 <span class="comment">// :2303 阈值 = 0.75n</span></span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                sizeCtl = sc;                                           <span class="comment">// :2306 还原为阈值</span></span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> tab;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong><code>sizeCtl</code> 是一个四态复用变量</strong>，这是 CHM 里最容易看晕的地方：</p>
+<table>
+<thead>
+<tr>
+<th><code>sizeCtl</code> 取值</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>0</code></td>
+<td>表未初始化，用默认容量 16</td>
+</tr>
+<tr>
+<td><code>&gt; 0</code></td>
+<td><strong>① 未初始化时</strong> &#x3D; 待用的初始容量；<strong>② 已初始化时</strong> &#x3D; 扩容阈值（<code>n - (n&gt;&gt;&gt;2)</code>）</td>
+</tr>
+<tr>
+<td><code>-1</code></td>
+<td>正在初始化（<code>initTable</code> 的锁，<code>:2296</code>）</td>
+</tr>
+<tr>
+<td><code>&lt; -1</code></td>
+<td>正在扩容：高 16 位是 <code>resizeStamp(n)</code>（表长的”指纹”），低 16 位 &#x3D; 参与扩容的线程数 + 1</td>
+</tr>
+</tbody></table>
+<p><code>Thread.yield()</code>（<code>:2295</code>）而不是阻塞——因为初始化极短，自旋比挂起&#x2F;唤醒便宜。</p>
+<hr>
+<h3 id="6-4-ConcurrentHashMap（三）：协作扩容-——-本讲最精妙的部分"><a href="#6-4-ConcurrentHashMap（三）：协作扩容-——-本讲最精妙的部分" class="headerlink" title="6.4 ConcurrentHashMap（三）：协作扩容 —— 本讲最精妙的部分"></a>6.4 ConcurrentHashMap（三）：协作扩容 —— 本讲最精妙的部分</h3><h4 id="addCount：计数-决定是否扩容"><a href="#addCount：计数-决定是否扩容" class="headerlink" title="addCount：计数 + 决定是否扩容"></a><code>addCount</code>：计数 + 决定是否扩容</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ConcurrentHashMap.java:2324-2340</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="type">void</span> <span class="title function_">addCount</span><span class="params">(<span class="type">long</span> x, <span class="type">int</span> check)</span> &#123;</span><br><span class="line">    CounterCell[] cs; <span class="type">long</span> b, s;</span><br><span class="line">    <span class="keyword">if</span> ((cs = counterCells) != <span class="literal">null</span> ||</span><br><span class="line">        !U.compareAndSetLong(<span class="built_in">this</span>, BASECOUNT, b = baseCount, s = b + x)) &#123;</span><br><span class="line">        <span class="comment">// 竞争失败 → 分散到 CounterCell</span></span><br><span class="line">        CounterCell c; <span class="type">long</span> v; <span class="type">int</span> m;</span><br><span class="line">        <span class="type">boolean</span> <span class="variable">uncontended</span> <span class="operator">=</span> <span class="literal">true</span>;</span><br><span class="line">        <span class="keyword">if</span> (cs == <span class="literal">null</span> || (m = cs.length - <span class="number">1</span>) &lt; <span class="number">0</span> ||</span><br><span class="line">            (c = cs[ThreadLocalRandom.getProbe() &amp; m]) == <span class="literal">null</span> ||</span><br><span class="line">            !(uncontended = U.compareAndSetLong(c, CELLVALUE, v = c.value, v + x))) &#123;</span><br><span class="line">            fullAddCount(x, uncontended);   <span class="comment">// :2334 还是失败 → 真正的 LongAdder 逻辑</span></span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (check &lt;= <span class="number">1</span>)</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        s = sumCount();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (check &gt;= <span class="number">0</span>) &#123;                        <span class="comment">// :2341 检查是否需要扩容</span></span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>这就是 <code>LongAdder</code> 的分段计数思想</strong>（<code>baseCount</code> 打底 + <code>CounterCell[]</code> 分散竞争，<code>ConcurrentHashMap.java:790</code> &#x2F; <code>:815</code>）：</p>
+<ul>
+<li>无竞争：直接 CAS <code>baseCount</code>；</li>
+<li>有竞争：按 <code>ThreadLocalRandom.getProbe()</code> 散列到某个 <code>CounterCell</code> 上各自加；</li>
+<li>还冲突：<code>fullAddCount</code>（<code>:2582</code>）扩容 <code>CounterCell[]</code>（翻倍，<code>:2629</code> <code>Arrays.copyOf(cs, n &lt;&lt; 1)</code>）。</li>
+</ul>
+<blockquote>
+<p>⚠️ <strong>所以 <code>size()</code> 必然不精确</strong>：它是 <code>sumCount()</code> &#x3D; <code>baseCount + Σ CounterCell</code>，求和时<strong>其他线程还在并发修改</strong>。<code>size()</code>（<code>:909</code>）把结果夹到 <code>int</code> 范围，<code>mappingCount()</code>（<code>:2174</code>）返回 <code>long</code>——官方推荐用后者，因为元素数可能超 <code>Integer.MAX_VALUE</code>，此时 <code>size()</code> 会饱和到 <code>Integer.MAX_VALUE</code>。</p>
+</blockquote>
+<h4 id="transfer：多线程分桶搬运"><a href="#transfer：多线程分桶搬运" class="headerlink" title="transfer：多线程分桶搬运"></a><code>transfer</code>：多线程分桶搬运</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ConcurrentHashMap.java:2424-2441</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="type">void</span> <span class="title function_">transfer</span><span class="params">(Node&lt;K,V&gt;[] tab, Node&lt;K,V&gt;[] nextTab)</span> &#123;</span><br><span class="line">    <span class="type">int</span> <span class="variable">n</span> <span class="operator">=</span> tab.length, stride;</span><br><span class="line">    <span class="keyword">if</span> ((stride = (NCPU &gt; <span class="number">1</span>) ? (n &gt;&gt;&gt; <span class="number">3</span>) / NCPU : n) &lt; MIN_TRANSFER_STRIDE)</span><br><span class="line">        stride = MIN_TRANSFER_STRIDE; <span class="comment">// subdivide range            // :2426</span></span><br><span class="line">    <span class="keyword">if</span> (nextTab == <span class="literal">null</span>) &#123;            <span class="comment">// initiating</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="type">Node</span>&lt;K,V&gt;[] <span class="variable">nt</span> <span class="operator">=</span> (Node&lt;K,V&gt;[])<span class="keyword">new</span> <span class="title class_">Node</span>&lt;?,?&gt;[n &lt;&lt; <span class="number">1</span>];    <span class="comment">// :2431 新表 2 倍</span></span><br><span class="line">            nextTab = nt;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable ex) &#123;      <span class="comment">// try to cope with OOME</span></span><br><span class="line">            sizeCtl = Integer.MAX_VALUE;                            <span class="comment">// :2434 OOM 时放弃扩容</span></span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        nextTable = nextTab;</span><br><span class="line">        transferIndex = n;                                          <span class="comment">// :2438 从后往前领任务</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="type">int</span> <span class="variable">nextn</span> <span class="operator">=</span> nextTab.length;</span><br><span class="line">    <span class="type">ForwardingNode</span>&lt;K,V&gt; <span class="variable">fwd</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ForwardingNode</span>&lt;K,V&gt;(nextTab);     <span class="comment">// :2441 迁移完成标记</span></span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>协作机制的三要素</strong>：</p>
+<ol>
+<li><strong><code>stride</code>（步长）</strong>：每个线程一次”领” <code>stride</code> 个桶来搬。默认 <code>n/8/NCPU</code>，最小 16（<code>:2426</code>、<code>:569</code>）。</li>
+<li><strong><code>transferIndex</code> 全局游标</strong>：线程用 CAS 从 <code>transferIndex</code> 认领一段区间（<code>[transferIndex-stride, transferIndex)</code>），<strong>从后往前</strong>推进。谁抢到哪段就搬哪段，互不干扰。</li>
+<li><strong><code>ForwardingNode</code> 占位</strong>：搬完一个桶就在老表槽位放一个 <code>ForwardingNode</code>（hash &#x3D; <code>MOVED = -1</code>）。其他线程 <code>put</code>&#x2F;<code>get</code> 撞见它就知道”这里搬完了，去新表找”——<code>put</code> 走 <code>helpTransfer</code>（<code>:1022-1023</code>）<strong>顺便帮忙搬</strong>，<code>get</code> 走 <code>ForwardingNode.find()</code> 到新表查。</li>
+</ol>
+<pre><code class="highlight mermaid">sequenceDiagram
+    autonumber
+    participant T1 as 线程1（触发者）
+    participant T2 as 线程2（撞见 MOVED）
+    participant Old as 老表 table
+    participant New as 新表 nextTable（2n）
+
+    T1-&gt;&gt;T1: addCount → s &gt;= sizeCtl :2343
+    T1-&gt;&gt;T1: resizeStamp(n)&lt;&lt;16 + 2 置入 sizeCtl
+    T1-&gt;&gt;New: new Node[n&lt;&lt;1] :2431
+    T1-&gt;&gt;T1: transferIndex = n :2438
+    T1-&gt;&gt;Old: CAS 认领 [n-stride, n)
+    T1-&gt;&gt;Old: 搬桶 → 槽位置 ForwardingNode :2441
+    T2-&gt;&gt;Old: put 撞见 hash==MOVED :1022
+    T2-&gt;&gt;New: helpTransfer 认领下一段一起搬
+    T2-&gt;&gt;Old: 搬桶 → 置 ForwardingNode
+    T1-&gt;&gt;T1: 搬完 → sizeCtl 减 1（线程数-1）:2471
+    T2-&gt;&gt;T2: 搬完 → sizeCtl 减 1
+    Note over T1,T2: 最后一个退出者把 table 指向 nextTable&lt;br/&gt;并设 sizeCtl = 2n - (2n&gt;&gt;&gt;2) :2468</code></pre>
+
+<blockquote>
+<p>🔑 <strong><code>sizeCtl</code> 在这里当”线程计数器”用</strong>：进入时 <code>+2</code>，每多一个线程 <code>+1</code>，每退出一个 <code>-1</code>（<code>:2471</code> <code>compareAndSetInt(this, SIZECTL, sc, sc - 1)</code>）。高 16 位的 <code>resizeStamp(n)</code> 保证<strong>这一轮扩容</strong>的计数不会被<strong>下一轮</strong>的线程误改。</p>
+</blockquote>
+<h4 id="端到端演算-⑥：多线程-put-触发协作扩容"><a href="#端到端演算-⑥：多线程-put-触发协作扩容" class="headerlink" title="端到端演算 ⑥：多线程 put 触发协作扩容"></a>端到端演算 ⑥：多线程 put 触发协作扩容</h4><p>设初始 <code>table.length = 16</code>，阈值 <code>sizeCtl = 12</code>。</p>
+<table>
+<thead>
+<tr>
+<th>步</th>
+<th>线程</th>
+<th>动作</th>
+<th>源码</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>T1</td>
+<td><code>put</code> 第 12 个元素，桶非空走 <code>synchronized</code></td>
+<td><code>:1031</code></td>
+<td>插入成功</td>
+</tr>
+<tr>
+<td>2</td>
+<td>T1</td>
+<td><code>addCount(1L, binCount)</code></td>
+<td><code>:1075</code></td>
+<td><code>s = 12</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>T1</td>
+<td><code>s &gt;= sizeCtl(12)</code> 成立</td>
+<td><code>:2343</code></td>
+<td>进入扩容分支</td>
+</tr>
+<tr>
+<td>4</td>
+<td>T1</td>
+<td><code>CAS(sizeCtl, 12, (rs&lt;&lt;16)+2)</code></td>
+<td>—</td>
+<td>抢到扩容权，线程数 &#x3D; 1</td>
+</tr>
+<tr>
+<td>5</td>
+<td>T1</td>
+<td>建 <code>nextTable[32]</code>，<code>transferIndex = 16</code></td>
+<td><code>:2431</code>&#x2F;<code>:2438</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td>6</td>
+<td>T1</td>
+<td>认领 <code>[0,16)</code>（stride 取 16），搬第 15 号桶</td>
+<td>—</td>
+<td>老表[15] &#x3D; <code>ForwardingNode</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>T2</td>
+<td><code>put</code> 到 15 号桶，<code>tabAt().hash == MOVED</code></td>
+<td><code>:1018</code>&#x2F;<code>:1022</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td>8</td>
+<td>T2</td>
+<td><code>helpTransfer</code>：CAS 认领下一段，一起搬</td>
+<td><code>:1023</code></td>
+<td><code>sizeCtl</code> 线程数 &#x3D; 2</td>
+</tr>
+<tr>
+<td>9</td>
+<td>T1</td>
+<td>自己那段搬完，<code>sizeCtl</code> 减 1</td>
+<td><code>:2471</code></td>
+<td>线程数 &#x3D; 1</td>
+</tr>
+<tr>
+<td>10</td>
+<td>T2</td>
+<td>也搬完，<code>sizeCtl</code> 减 1</td>
+<td><code>:2471</code></td>
+<td>线程数 &#x3D; 0</td>
+</tr>
+<tr>
+<td>11</td>
+<td>T2</td>
+<td>最后退出者：<code>table = nextTable</code>，<code>sizeCtl = 32 - 8 = 24</code></td>
+<td><code>:2468</code></td>
+<td>扩容完成</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>关键结论：<strong>扩容期间读写都不阻塞</strong>。<code>get</code> 撞见 <code>MOVED</code> 就去新表查，撞见未搬的桶就在老表查；<code>put</code> 撞见 <code>MOVED</code> 就来帮忙。这是”读写并发 + 协作搬迁”，与 <code>HashMap</code> 单线程 <code>resize</code> 的独占语义完全不同。</p>
+</blockquote>
+<hr>
+<h3 id="6-5-CopyOnWriteArrayList：写时复制，读永远无锁"><a href="#6-5-CopyOnWriteArrayList：写时复制，读永远无锁" class="headerlink" title="6.5 CopyOnWriteArrayList：写时复制，读永远无锁"></a>6.5 CopyOnWriteArrayList：写时复制，读永远无锁</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/java.base/share/classes/java/util/concurrent/CopyOnWriteArrayList.java</span></span><br><span class="line"><span class="keyword">final</span> <span class="keyword">transient</span> <span class="type">Object</span> <span class="variable">lock</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Object</span>();         <span class="comment">// :107</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">transient</span> <span class="keyword">volatile</span> Object[] array;          <span class="comment">// :110  ← 唯一的可变状态</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// :461-470</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">add</span><span class="params">(E e)</span> &#123;</span><br><span class="line">    <span class="keyword">synchronized</span> (lock) &#123;</span><br><span class="line">        <span class="type">Object</span>[] <span class="variable">es</span> <span class="operator">=</span> getArray();</span><br><span class="line">        <span class="type">int</span> <span class="variable">len</span> <span class="operator">=</span> es.length;</span><br><span class="line">        es = Arrays.copyOf(es, len + <span class="number">1</span>);            <span class="comment">// :465 复制一份更长的</span></span><br><span class="line">        es[len] = e;</span><br><span class="line">        setArray(es);                               <span class="comment">// :467 volatile 写，一次性生效</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// :1107-1109</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">Iterator</span>&lt;E&gt; <span class="title function_">iterator</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">COWIterator</span>&lt;E&gt;(getArray(), <span class="number">0</span>);       <span class="comment">// 把当前数组引用当快照传进去</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// :1161-1170</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">COWIterator</span>&lt;E&gt; <span class="keyword">implements</span> <span class="title class_">ListIterator</span>&lt;E&gt; &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Object[] snapshot;                <span class="comment">// :1163 快照</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> cursor;</span><br><span class="line">    COWIterator(Object[] es, <span class="type">int</span> initialCursor) &#123;</span><br><span class="line">        cursor = initialCursor;</span><br><span class="line">        snapshot = es;                              <span class="comment">// :1168 只是拿引用，不复制</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>三句话概括 COW</strong>：</p>
+<ol>
+<li><strong>写</strong>：<code>synchronized(lock)</code> 互斥 → <code>Arrays.copyOf</code> 复制整份 → 改副本 → <code>volatile</code> 写回。所以<strong>写是 O(n) 且有锁</strong>。</li>
+<li><strong>读</strong>：<code>get(int)</code>（<code>:402</code>）直接读 <code>volatile array</code>，<strong>完全无锁、无同步</strong>。</li>
+<li><strong>迭代</strong>：<code>COWIterator</code> 持有的是<strong>创建那一刻的数组引用</strong>（<code>:1168</code>）。此后无论别人怎么改，迭代器看到的永远是那份老数组——<strong>不可能抛 CME</strong>。</li>
+</ol>
+<blockquote>
+<p>⚠️ <strong>两个必须知道的坑</strong>：<br>① **迭代器不支持 <code>remove</code>&#x2F;<code>set</code>&#x2F;<code>add</code>**（源码注释明说，<code>:1103-1105</code>）。因为改快照毫无意义，而且快照是”历史”不是”当前”。<br>② <strong>数据弱一致</strong>——迭代器看到的是创建时的状态，可能已经过期。这与 CHM 的弱一致不同：CHM 是”能看到部分新数据”，COW 是”只能看到旧数据”。</p>
+</blockquote>
+<p><strong>适用判据</strong>：读 &gt;&gt; 写（如监听器列表、配置白名单、路由表），且<strong>能容忍短暂过期</strong>。写多则 O(n) 复制 + 频繁 GC 会致命。</p>
+<hr>
+<h3 id="6-6-ConcurrentLinkedQueue：Michael-Scott-无锁队列"><a href="#6-6-ConcurrentLinkedQueue：Michael-Scott-无锁队列" class="headerlink" title="6.6 ConcurrentLinkedQueue：Michael-Scott 无锁队列"></a>6.6 ConcurrentLinkedQueue：Michael-Scott 无锁队列</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/java.base/share/classes/java/util/concurrent/ConcurrentLinkedQueue.java</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">offer</span><span class="params">(E e)</span> &#123; ... &#125;        <span class="comment">// :354  入队（CAS）</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">E</span> <span class="title function_">poll</span><span class="params">()</span>          &#123; ... &#125;         <span class="comment">// :383  出队（CAS）</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">E</span> <span class="title function_">peek</span><span class="params">()</span>          &#123; ... &#125;         <span class="comment">// :404  看队头</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">isEmpty</span><span class="params">()</span> &#123; <span class="keyword">return</span> first() == <span class="literal">null</span>; &#125;   <span class="comment">// :446-447</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">int</span> <span class="title function_">size</span><span class="params">()</span>        &#123; ... &#125;         <span class="comment">// :466  需要遍历！</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>算法骨架（Michael &amp; Scott 1996）</strong>：</p>
+<ul>
+<li>入队：CAS 把新节点挂到 <code>tail.next</code>，再尝试 CAS 推进 <code>tail</code>；</li>
+<li>出队：CAS 把 <code>head</code> 往后挪，把旧 head 的 <code>next</code> 指向自己（自链接，帮助 GC + 协助其他线程定位）；</li>
+<li><strong>所有操作靠 <code>VarHandle</code> 的 CAS</strong>（<code>:1058</code> <code>HEAD</code>、<code>:1059</code> <code>TAIL</code>）。</li>
+</ul>
+<p>⚠️ <strong>三个反直觉点</strong>：</p>
+<ol>
+<li><strong><code>size()</code> 是 O(n) 遍历</strong>（<code>:466-475</code>），不是 O(1)。因为无锁队列维护不了精确的原子计数器（那会重新引入竞争点）。<strong>高并发下别用 <code>size()</code> 判空</strong>，用 <code>isEmpty()</code>（<code>:446</code>，只看 <code>first()</code> 是否为 null）。</li>
+<li><strong><code>tail</code> 不总是指向最后一个节点</strong>。为了省一次 CAS，每两次入队才更新一次 <code>tail</code>；<code>MAX_HOPS = 8</code>（<code>:991</code>）限制了”从 head 跳多少步还找不到就放弃优化”的边界。</li>
+<li><strong><code>remove(Object)</code>（<code>:521</code>）也是 O(n)</strong> 且语义弱（只是 CAS 把 item 置 null，节点链还在）。</li>
+</ol>
+<hr>
+<h3 id="6-7-BlockingQueue-四兄弟：锁的数量与容量策略"><a href="#6-7-BlockingQueue-四兄弟：锁的数量与容量策略" class="headerlink" title="6.7 BlockingQueue 四兄弟：锁的数量与容量策略"></a>6.7 BlockingQueue 四兄弟：锁的数量与容量策略</h3><table>
+<thead>
+<tr>
+<th>实现</th>
+<th>容量</th>
+<th>锁</th>
+<th>关键行</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ArrayBlockingQueue</code></td>
+<td><strong>有界</strong>（构造时定死）</td>
+<td><strong>1 把</strong> <code>ReentrantLock</code> + 2 个 Condition</td>
+<td><code>:121</code> &#x2F; <code>:125</code> &#x2F; <code>:129</code></td>
+</tr>
+<tr>
+<td><code>LinkedBlockingQueue</code></td>
+<td><strong>可选有界</strong>（默认 <code>Integer.MAX_VALUE</code>）</td>
+<td><strong>2 把</strong>（<code>takeLock</code> &#x2F; <code>putLock</code>）+ <code>AtomicInteger count</code></td>
+<td><code>:156</code> &#x2F; <code>:163</code> &#x2F; <code>:141</code></td>
+</tr>
+<tr>
+<td><code>PriorityBlockingQueue</code></td>
+<td><strong>无界</strong>（自动扩容）</td>
+<td>1 把 + 无 <code>notFull</code>（永远不满）</td>
+<td><code>:164</code> &#x2F; <code>:170</code></td>
+</tr>
+<tr>
+<td><code>SynchronousQueue</code></td>
+<td><strong>0</strong>（不存元素）</td>
+<td><code>Transferer</code>（栈&#x2F;队列两种 CAS 实现）</td>
+<td><code>:186</code> &#x2F; <code>:210</code> &#x2F; <code>:494</code></td>
+</tr>
+</tbody></table>
+<h4 id="ArrayBlockingQueue：教科书级的单锁双条件"><a href="#ArrayBlockingQueue：教科书级的单锁双条件" class="headerlink" title="ArrayBlockingQueue：教科书级的单锁双条件"></a>ArrayBlockingQueue：教科书级的单锁双条件</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/java.base/share/classes/java/util/concurrent/ArrayBlockingQueue.java</span></span><br><span class="line"><span class="type">int</span> count;                              <span class="comment">// :113  （在锁保护下，不需要 volatile）</span></span><br><span class="line"><span class="keyword">final</span> ReentrantLock lock;               <span class="comment">// :121</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Condition notEmpty;       <span class="comment">// :125  消费者等这个</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Condition notFull;        <span class="comment">// :129  生产者等这个</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="type">void</span> <span class="title function_">put</span><span class="params">(E e)</span> <span class="keyword">throws</span> InterruptedException &#123;   <span class="comment">// :364</span></span><br><span class="line">    Objects.requireNonNull(e);</span><br><span class="line">    <span class="keyword">final</span> <span class="type">ReentrantLock</span> <span class="variable">lock</span> <span class="operator">=</span> <span class="built_in">this</span>.lock;</span><br><span class="line">    lock.lockInterruptibly();           <span class="comment">// :367  可中断</span></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">while</span> (count == items.length)</span><br><span class="line">            notFull.await();            <span class="comment">// :371  满了 → 等 notFull</span></span><br><span class="line">        enqueue(e);</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        lock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="type">E</span> <span class="title function_">take</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;        <span class="comment">// :415</span></span><br><span class="line">    <span class="keyword">final</span> <span class="type">ReentrantLock</span> <span class="variable">lock</span> <span class="operator">=</span> <span class="built_in">this</span>.lock;</span><br><span class="line">    lock.lockInterruptibly();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">while</span> (count == <span class="number">0</span>)</span><br><span class="line">            notEmpty.await();           <span class="comment">// :421  空了 → 等 notEmpty</span></span><br><span class="line">        <span class="keyword">return</span> dequeue();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        lock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>三个细节值得记：<br>① **<code>while</code> 而不是 <code>if</code>**——<code>await()</code> 返回后必须重新检查条件（ spurious wakeup + 被唤醒后可能又被别的线程抢走）；<br>② <strong><code>lockInterruptibly()</code> 而非 <code>lock()</code><strong>——阻塞队列的核心价值就是”可中断地等”；<br>③ <strong><code>count</code> 不用 volatile</strong>——因为它</strong>只在锁内读写</strong>，锁的 happens-before 已保证可见性。这是”能被锁保护就别用 volatile”的范例。</p>
+</blockquote>
+<h4 id="LinkedBlockingQueue：为什么敢用两把锁？"><a href="#LinkedBlockingQueue：为什么敢用两把锁？" class="headerlink" title="LinkedBlockingQueue：为什么敢用两把锁？"></a>LinkedBlockingQueue：为什么敢用两把锁？</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/java.base/share/classes/java/util/concurrent/LinkedBlockingQueue.java</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="type">AtomicInteger</span> <span class="variable">count</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AtomicInteger</span>();   <span class="comment">// :141  ← 关键</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="type">ReentrantLock</span> <span class="variable">takeLock</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ReentrantLock</span>();<span class="comment">// :156</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="type">Condition</span> <span class="variable">notEmpty</span> <span class="operator">=</span> takeLock.newCondition();<span class="comment">// :160</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="type">ReentrantLock</span> <span class="variable">putLock</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ReentrantLock</span>(); <span class="comment">// :163</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="type">Condition</span> <span class="variable">notFull</span> <span class="operator">=</span> putLock.newCondition();  <span class="comment">// :167</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>入队只锁 <code>putLock</code>，出队只锁 <code>takeLock</code>，两者互不阻塞</strong>——吞吐量比 ABQ 高一截。</p>
+<p>但 <code>count</code> 必须同时被两边改，所以：</p>
+<ul>
+<li>用 <code>AtomicInteger</code> 而不是 <code>int</code>；</li>
+<li>入队时 <code>count.getAndIncrement()</code>，出队时 <code>count.getAndDecrement()</code>；</li>
+<li><strong>唤醒对方</strong>时要先获取对方的锁（<code>signalNotEmpty</code> 里要 <code>takeLock.lock()</code>），这是唯一一处双锁交叉。</li>
+</ul>
+<blockquote>
+<p>⚠️ 因此 <code>count</code> 在极端并发下<strong>可能短暂为负或超过 capacity</strong>（原子操作与锁不是同一临界区），判空&#x2F;判满仍以锁内判断为准。</p>
+</blockquote>
+<h4 id="PriorityBlockingQueue：扩容时把锁放了"><a href="#PriorityBlockingQueue：扩容时把锁放了" class="headerlink" title="PriorityBlockingQueue：扩容时把锁放了"></a>PriorityBlockingQueue：扩容时把锁放了</h4><p>这是最巧的一处设计（<code>:287-310</code>）：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="type">void</span> <span class="title function_">tryGrow</span><span class="params">(Object[] array, <span class="type">int</span> oldCap)</span> &#123;</span><br><span class="line">    lock.unlock(); <span class="comment">// must release and then re-acquire main lock   // :288  ← 先放锁！</span></span><br><span class="line">    <span class="type">Object</span>[] <span class="variable">newArray</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">if</span> (allocationSpinLock == <span class="number">0</span> &amp;&amp;</span><br><span class="line">        ALLOCATIONSPINLOCK.compareAndSet(<span class="built_in">this</span>, <span class="number">0</span>, <span class="number">1</span>)) &#123;            <span class="comment">// :290 自造自旋锁，只保护&quot;分配&quot;</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="type">int</span> <span class="variable">growth</span> <span class="operator">=</span> (oldCap &lt; <span class="number">64</span>)</span><br><span class="line">                ? (oldCap + <span class="number">2</span>) <span class="comment">// grow faster if small</span></span><br><span class="line">                : (oldCap &gt;&gt; <span class="number">1</span>);                                   <span class="comment">// :293-295</span></span><br><span class="line">            <span class="type">int</span> <span class="variable">newCap</span> <span class="operator">=</span> ArraysSupport.newLength(oldCap, <span class="number">1</span>, growth);</span><br><span class="line">            <span class="keyword">if</span> (queue == array)</span><br><span class="line">                newArray = <span class="keyword">new</span> <span class="title class_">Object</span>[newCap];                     <span class="comment">// :297 真正分配内存</span></span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            allocationSpinLock = <span class="number">0</span>;                                <span class="comment">// :300</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (newArray == <span class="literal">null</span>) <span class="comment">// back off if another thread is allocating</span></span><br><span class="line">        Thread.<span class="keyword">yield</span>();                                            <span class="comment">// :303 别人在分配 → 让出 CPU</span></span><br><span class="line">    lock.lock();                                                   <span class="comment">// :304 重新拿锁</span></span><br><span class="line">    <span class="keyword">if</span> (newArray != <span class="literal">null</span> &amp;&amp; queue == array) &#123;</span><br><span class="line">        queue = newArray;</span><br><span class="line">        System.arraycopy(array, <span class="number">0</span>, newArray, <span class="number">0</span>, oldCap);           <span class="comment">// :307 锁内只做 arraycopy</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>思路</strong>：分配大数组（<code>new Object[newCap]</code>）可能触发 GC、很慢，如果抱着主锁做，会<strong>阻塞所有生产者消费者</strong>。于是：</p>
+<ol>
+<li>先 <code>lock.unlock()</code>（<code>:288</code>）；</li>
+<li>用一个专门的 <code>allocationSpinLock</code>（<code>:175</code>，volatile int + CAS）保证<strong>只有一个线程在做分配</strong>；</li>
+<li>没抢到的线程 <code>Thread.yield()</code> 让出（<code>:303</code>）；</li>
+<li>分配完再 <code>lock.lock()</code>（<code>:304</code>），在锁内只做快速的 <code>arraycopy</code>（<code>:307</code>）。</li>
+</ol>
+<blockquote>
+<p>💡 这是”<strong>把慢操作移出临界区，用第二个轻量锁保证互斥</strong>“的通用范式，值得迁移到自己的代码里。</p>
+</blockquote>
+<p>⚠️ <strong>PBQ 是无界的</strong>（默认初始容量 11，<code>:138</code>），所以<strong>永远不会阻塞生产者</strong>，内存可能撑爆。另外它<strong>不保证同优先级元素的 FIFO 顺序</strong>。</p>
+<h4 id="SynchronousQueue：零容量的”一手交钱一手交货”"><a href="#SynchronousQueue：零容量的”一手交钱一手交货”" class="headerlink" title="SynchronousQueue：零容量的”一手交钱一手交货”"></a>SynchronousQueue：零容量的”一手交钱一手交货”</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/java.base/share/classes/java/util/concurrent/SynchronousQueue.java</span></span><br><span class="line"><span class="keyword">abstract</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">Transferer</span>&lt;E&gt; &#123; ... &#125;        <span class="comment">// :186</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">TransferStack</span>&lt;E&gt; ...            <span class="comment">// :210  非公平（LIFO 栈）</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">TransferQueue</span>&lt;E&gt; ...            <span class="comment">// :494  公平（FIFO 队列）</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">void</span> <span class="title function_">put</span><span class="params">(E e)</span> <span class="keyword">throws</span> InterruptedException   <span class="comment">// :837  阻塞直到有人取走</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">offer</span><span class="params">(E e)</span>                          <span class="comment">// :873  有人等着就成功，否则立即 false</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">E</span> <span class="title function_">take</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException        <span class="comment">// :885</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>它不存任何元素</strong>——<code>put</code> 必须等到某个 <code>take</code> 来”配对”才能返回，<code>take</code> 同理。内部有两个实现：</p>
+<ul>
+<li><code>TransferStack</code>（LIFO，非公平，默认）：吞吐量高，但可能<strong>线程饥饿</strong>（后来的消费者先配对）；</li>
+<li><code>TransferQueue</code>（FIFO，公平）：构造时 <code>new SynchronousQueue(true)</code> 启用。</li>
+</ul>
+<p><code>Executors.newCachedThreadPool()</code>（<code>Executors.java</code>）就是用它——任务来了必须有线程立刻接，接不了就新建线程。</p>
+<hr>
+<h3 id="6-8-ConcurrentSkipListMap：并发版的有序-Map"><a href="#6-8-ConcurrentSkipListMap：并发版的有序-Map" class="headerlink" title="6.8 ConcurrentSkipListMap：并发版的有序 Map"></a>6.8 ConcurrentSkipListMap：并发版的有序 Map</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/java.base/share/classes/java/util/concurrent/ConcurrentSkipListMap.java</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">Node</span>&lt;K,V&gt;  &#123; ... &#125;   <span class="comment">// :360  数据节点（最底层）</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">Index</span>&lt;K,V&gt; &#123; ... &#125;   <span class="comment">// :374  索引节点（上面各层）</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">V</span> <span class="title function_">get</span><span class="params">(Object key)</span>      &#123; ... &#125;   <span class="comment">// :1311</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">V</span> <span class="title function_">put</span><span class="params">(K key, V value)</span>  &#123; ... &#125;   <span class="comment">// :1344</span></span><br></pre></td></tr></table></figure>
+
+<p>跳表 &#x3D; 多层有序链表，靠”抛硬币”随机决定节点层数。<strong>并发版的要点</strong>：</p>
+<ul>
+<li>底层 <code>Node</code> 的 <code>next</code>、上层 <code>Index</code> 的 <code>right</code>&#x2F;<code>down</code> 全部用 <strong>CAS</strong> 连接；</li>
+<li>删除用 <strong>标记节点 + 惰性断开</strong>（先 CAS 标记，再修正指针），避免 CAS 的 ABA 与中间态问题；</li>
+<li><strong><code>size()</code> 需要遍历</strong>（和 CLQ 同理），且**不是 O(1)**。</li>
+</ul>
+<blockquote>
+<p>选型：<strong>需要有序 + 并发</strong> → <code>ConcurrentSkipListMap</code>；<strong>只需并发</strong> → <code>ConcurrentHashMap</code>（吞吐更高）。红黑树（TreeMap）因为旋转涉及多个节点的原子修改，<strong>无法高效地做成无锁</strong>，所以并发有序结构选了跳表。</p>
+</blockquote>
+<hr>
+<h3 id="6-9-装饰器方案：为什么”全锁”不是最优解"><a href="#6-9-装饰器方案：为什么”全锁”不是最优解" class="headerlink" title="6.9 装饰器方案：为什么”全锁”不是最优解"></a>6.9 装饰器方案：为什么”全锁”不是最优解</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/java.base/share/classes/java/util/Collections.java</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">SynchronizedCollection</span>&lt;E&gt; ...                        <span class="comment">// :2281</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; <span class="type">List</span>&lt;T&gt; <span class="title function_">synchronizedList</span><span class="params">(List&lt;T&gt; list)</span> &#123; ... &#125;  <span class="comment">// :2675</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">SynchronizedList</span>&lt;E&gt; ...                              <span class="comment">// :2690</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> &lt;K,V&gt; <span class="type">Map</span>&lt;K,V&gt; <span class="title function_">synchronizedMap</span><span class="params">(Map&lt;K,V&gt; m)</span> &#123; ... &#125;  <span class="comment">// :2852</span></span><br></pre></td></tr></table></figure>
+
+<p>原理极简：每个方法 <code>synchronized (mutex) &#123; return c.xxx(); &#125;</code>，把调用<strong>串行化</strong>。</p>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th><code>synchronizedMap</code></th>
+<th><code>ConcurrentHashMap</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>并发度</td>
+<td><strong>1</strong>（任何操作都互斥）</td>
+<td>≈ 桶数量</td>
+</tr>
+<tr>
+<td>读是否阻塞</td>
+<td>是（锁全局）</td>
+<td><strong>否</strong>（volatile 读）</td>
+</tr>
+<tr>
+<td>迭代时能否修改</td>
+<td>抛 CME（fail-fast）</td>
+<td>可以（弱一致迭代器）</td>
+</tr>
+<tr>
+<td><code>null</code> 支持</td>
+<td>支持</td>
+<td><strong>不支持</strong>（<code>:1011</code>）</td>
+</tr>
+<tr>
+<td>复合操作</td>
+<td>需<strong>外部加锁</strong>（<code>if (!m.containsKey(k)) m.put(...)</code> 仍有竞态）</td>
+<td>有 <code>putIfAbsent</code>&#x2F;<code>computeIfAbsent</code>（<code>:1691</code>）原子方法</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>🔑 <strong>最容易踩的坑</strong>：<code>synchronizedMap</code> 只保证<strong>单个方法</strong>原子，<strong>复合操作仍然有竞态</strong>。正确写法是 <code>synchronized (map) &#123; if (!map.containsKey(k)) map.put(k, v); &#125;</code>——既然都要外部加锁了，不如直接用 CHM 的 <code>putIfAbsent</code>。</p>
+</blockquote>
+<h3 id="6-10-选型决策表"><a href="#6-10-选型决策表" class="headerlink" title="6.10 选型决策表"></a>6.10 选型决策表</h3><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>选什么</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>高并发 KV 缓存</td>
+<td><code>ConcurrentHashMap</code></td>
+<td>读无锁、写锁桶、协作扩容</td>
+</tr>
+<tr>
+<td>高并发计数</td>
+<td><code>LongAdder</code>（不是容器，但同思想）</td>
+<td><code>baseCount + CounterCell[]</code> 分段</td>
+</tr>
+<tr>
+<td>并发有序 Map</td>
+<td><code>ConcurrentSkipListMap</code></td>
+<td>跳表可 CAS 化</td>
+</tr>
+<tr>
+<td>监听器 &#x2F; 白名单 &#x2F; 路由表</td>
+<td><code>CopyOnWriteArrayList</code></td>
+<td>读 &gt;&gt; 写，容忍短暂过期</td>
+</tr>
+<tr>
+<td>高并发生产者-消费者（无界）</td>
+<td><code>LinkedBlockingQueue</code></td>
+<td>双锁，吞吐高</td>
+</tr>
+<tr>
+<td>有界背压</td>
+<td><code>ArrayBlockingQueue</code></td>
+<td>容量固定，天然限流</td>
+</tr>
+<tr>
+<td>优先级任务调度</td>
+<td><code>PriorityBlockingQueue</code></td>
+<td>堆 + 无界</td>
+</tr>
+<tr>
+<td>直接交接（零缓冲）</td>
+<td><code>SynchronousQueue</code></td>
+<td><code>newCachedThreadPool</code> 就是它</td>
+</tr>
+<tr>
+<td>读多写少 + 需 <code>null</code></td>
+<td><code>Collections.synchronizedMap</code> + 外部锁</td>
+<td>老代码兼容</td>
+</tr>
+</tbody></table>
+<h3 id="第六讲小结：并发-缩小临界区-无锁读-协作"><a href="#第六讲小结：并发-缩小临界区-无锁读-协作" class="headerlink" title="第六讲小结：并发 &#x3D; 缩小临界区 + 无锁读 + 协作"></a>第六讲小结：并发 &#x3D; 缩小临界区 + 无锁读 + 协作</h3><p><strong>一句话定位</strong>：并发容器的全部手段就是三件事——<strong>把锁的粒度压到最小</strong>（CHM 压到单个桶）、<strong>让读完全无锁</strong>（volatile 数组 &#x2F; volatile node）、<strong>把慢操作移出临界区</strong>（PBQ 放锁扩容）；实在要扩容时，让所有线程<strong>一起搬</strong>（CHM 的 <code>helpTransfer</code>）。</p>
+<pre><code class="highlight mermaid">flowchart TD
+    A[&quot;并发容器三板斧&quot;] --&gt; B[&quot;① 缩小临界区&lt;br/&gt;CHM 锁桶头 :1031&lt;br/&gt;LBQ 双锁 :156/:163&quot;]
+    A --&gt; C[&quot;② 读无锁&lt;br/&gt;COW volatile array :110&lt;br/&gt;CHM volatile table + tabAt&quot;]
+    A --&gt; D[&quot;③ 慢操作移出临界区&lt;br/&gt;PBQ 放锁扩容 :288&lt;br/&gt;CHM OOM 时放弃 :2434&quot;]
+    A --&gt; E[&quot;④ 协作而非阻塞&lt;br/&gt;helpTransfer :1023&lt;br/&gt;transferIndex 分段领任务&quot;]
+    B --&gt; F[&quot;size() 与迭代弱一致&lt;br/&gt;CHM sumCount :909&lt;br/&gt;CLQ size O(n) :466&quot;]
+    C --&gt; F</code></pre>
+
+<p><strong>关键机制的输入&#x2F;输出</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>机制</th>
+<th>输入</th>
+<th>输出</th>
+<th>源码位置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>spread</code> 扰动</td>
+<td>hashCode</td>
+<td><code>(h ^ h&gt;&gt;&gt;16) &amp; HASH_BITS</code>（非负）</td>
+<td><code>ConcurrentHashMap.java:696</code></td>
+</tr>
+<tr>
+<td>空桶插入</td>
+<td>key&#x2F;value</td>
+<td>CAS <code>Node</code> 入桶，<strong>无锁</strong></td>
+<td><code>ConcurrentHashMap.java:1018-1021</code></td>
+</tr>
+<tr>
+<td>非空桶插入</td>
+<td>key&#x2F;value</td>
+<td><code>synchronized(桶头)</code> 后链&#x2F;树插入</td>
+<td><code>ConcurrentHashMap.java:1031</code></td>
+</tr>
+<tr>
+<td><code>initTable</code></td>
+<td>—</td>
+<td>用 <code>sizeCtl=-1</code> 当初始化锁</td>
+<td><code>ConcurrentHashMap.java:2291-2306</code></td>
+</tr>
+<tr>
+<td><code>addCount</code></td>
+<td>+1</td>
+<td><code>baseCount</code> CAS，失败转 <code>CounterCell</code></td>
+<td><code>ConcurrentHashMap.java:2324-2340</code></td>
+</tr>
+<tr>
+<td><code>transfer</code></td>
+<td>老表</td>
+<td>按 <code>stride</code> 分段，多线程协作搬</td>
+<td><code>ConcurrentHashMap.java:2424-2438</code></td>
+</tr>
+<tr>
+<td><code>ForwardingNode</code></td>
+<td>新表引用</td>
+<td>老桶置 <code>hash=-1</code> 标记迁移完成</td>
+<td><code>ConcurrentHashMap.java:2441</code>、<code>:591</code></td>
+</tr>
+<tr>
+<td>COW 写</td>
+<td>元素</td>
+<td><code>Arrays.copyOf</code> + <code>volatile</code> 写回</td>
+<td><code>CopyOnWriteArrayList.java:461-469</code></td>
+</tr>
+<tr>
+<td>COW 迭代</td>
+<td>—</td>
+<td>持有老数组<strong>引用</strong>作快照，绝不 CME</td>
+<td><code>CopyOnWriteArrayList.java:1107</code>、<code>:1168</code></td>
+</tr>
+<tr>
+<td>ABQ 阻塞</td>
+<td>元素</td>
+<td>满等 <code>notFull</code>，空等 <code>notEmpty</code></td>
+<td><code>ArrayBlockingQueue.java:371</code>、<code>:421</code></td>
+</tr>
+<tr>
+<td>PBQ 扩容</td>
+<td>老数组</td>
+<td><strong>先放主锁</strong>，用 <code>allocationSpinLock</code> 分配</td>
+<td><code>PriorityBlockingQueue.java:288-304</code></td>
+</tr>
+</tbody></table>
+<p><strong>三个最值得记住的点</strong>：</p>
+<ol>
+<li><strong>CHM 的并发策略是”分层降级”<strong>：空桶 CAS（无锁）→ 撞见 <code>MOVED</code> 就帮忙搬（协作）→ <code>putIfAbsent</code> 命中首节点（无锁）→ 都不行才 <code>synchronized</code> 锁桶头（<code>ConcurrentHashMap.java:1018</code>–<code>:1031</code>）。四个分支按代价从低到高排列，</strong>绝大多数情况下根本不会走到加锁</strong>。理解了这个顺序，就理解了为什么 CHM 在高并发下吞吐能接近无锁。</li>
+<li><strong><code>sizeCtl</code> 一个 int 当四个东西用</strong>：初始容量 &#x2F; 扩容阈值 &#x2F; 初始化锁（-1）&#x2F; 扩容线程数（低 16 位）+ 表长指纹（高 16 位）。这是”用位运算压缩状态机”的典范，代价是可读性——源码注释（<code>:381</code> 附近）用了整整一段来解释它。读源码时<strong>先认状态再读代码</strong>，否则必晕。</li>
+<li><strong>“弱一致”是并发容器的默认契约，不是 bug</strong>。CHM 的迭代器（<code>Traverser</code>，<code>:3336</code>；<code>BaseIterator</code>，<code>:3428</code>）不抛 CME 但可能看不到新元素；CLQ 的 <code>size()</code> 是 O(n) 且不准；COW 的迭代器看到的是历史快照。<strong>如果你的业务需要”精确快照”，就必须自己在外面加锁</strong>——任何并发容器都不提供这个保证。</li>
+</ol>
+<hr>
 <h2 id="附：学习路线与复习卡汇总"><a href="#附：学习路线与复习卡汇总" class="headerlink" title="附：学习路线与复习卡汇总"></a>附：学习路线与复习卡汇总</h2><h3 id="学习路线建议"><a href="#学习路线建议" class="headerlink" title="学习路线建议"></a>学习路线建议</h3><ol>
 <li><strong>先读 List 家族</strong>（第一讲）：ArrayList 是最简单的”数组 + arraycopy + modCount”三件套，理解它就理解了 fail-fast、扩容、subList 视图这些通用模式。</li>
 <li><strong>再读 Map 家族</strong>（第二讲）：HashMap 是集大成，把散列、2 次幂、树化、扩容迁移全揉在一起；LinkedHashMap 演示”钩子扩展”模式；TreeMap 演示红黑树。</li>
 <li><strong>Set 与 Queue</strong>（第三讲）：Set 是 Map 的壳（快速过）；PriorityQueue 学堆的数组化；ArrayDeque 学循环数组。</li>
 <li><strong>迭代器与工具</strong>（第四讲）：把 modCount&#x2F;CME 机制吃透，Collections&#x2F;Arrays 装饰器模式过一遍。</li>
 <li><strong>散列原理</strong>（第五讲）：回头理解 HashMap 每个数字的”为什么”，把前四讲串起来。</li>
+<li><strong>并发集合</strong>（第六讲）：对照第五讲的结论看 CHM——散列算法完全复用，差别全在并发控制；重点吃透 <code>putVal</code> 四路分支、<code>sizeCtl</code> 四态、协作扩容三要素。</li>
 </ol>
 <h3 id="复习卡"><a href="#复习卡" class="headerlink" title="复习卡"></a>复习卡</h3><table>
 <thead>
@@ -1583,6 +2316,81 @@
 <td>?</td>
 <td>委托 <code>list.sort</code> → TimSort（<code>Collections.java:145</code>）</td>
 </tr>
+<tr>
+<td>CHM 锁粒度</td>
+<td>?</td>
+<td>桶级 <code>synchronized(f)</code>，不是 Segment（<code>ConcurrentHashMap.java:1031</code>）</td>
+</tr>
+<tr>
+<td>CHM 空桶插入</td>
+<td>?</td>
+<td><code>casTabAt</code> 无锁（<code>:1018-1021</code>）</td>
+</tr>
+<tr>
+<td>CHM 三个负 hash</td>
+<td>?</td>
+<td><code>MOVED=-1</code> &#x2F; <code>TREEBIN=-2</code> &#x2F; <code>RESERVED=-3</code>（<code>:591-593</code>）</td>
+</tr>
+<tr>
+<td><code>sizeCtl</code> 四态</td>
+<td>?</td>
+<td><code>0</code>未建 &#x2F; <code>&gt;0</code>容量或阈值 &#x2F; <code>-1</code>初始化中 &#x2F; <code>&lt;-1</code>扩容中（线程数）</td>
+</tr>
+<tr>
+<td>CHM 扩容步长</td>
+<td>?</td>
+<td><code>stride = n&gt;&gt;&gt;3/NCPU</code>，下限 <code>MIN_TRANSFER_STRIDE=16</code>（<code>:2426</code>、<code>:569</code>）</td>
+</tr>
+<tr>
+<td>CHM 计数结构</td>
+<td>?</td>
+<td><code>baseCount</code> + <code>CounterCell[]</code>（<code>:790</code>、<code>:815</code>），即 LongAdder 思想</td>
+</tr>
+<tr>
+<td>CHM 精确 size?</td>
+<td>?</td>
+<td>不精确；超 int 用 <code>mappingCount()</code>（<code>:2174</code>）</td>
+</tr>
+<tr>
+<td>COW 读为什么无锁</td>
+<td>?</td>
+<td><code>volatile Object[] array</code>（<code>:110</code>），写时整份复制（<code>:465</code>）</td>
+</tr>
+<tr>
+<td>COW 迭代器</td>
+<td>?</td>
+<td>持有创建时数组<strong>引用</strong>作快照，绝无 CME（<code>:1107</code>、<code>:1168</code>）</td>
+</tr>
+<tr>
+<td>CLQ <code>size()</code></td>
+<td>?</td>
+<td>O(n) 遍历（<code>:466</code>），判空用 <code>isEmpty()</code>（<code>:446</code>）</td>
+</tr>
+<tr>
+<td>ABQ 锁与条件</td>
+<td>?</td>
+<td>单锁 + <code>notEmpty</code>&#x2F;<code>notFull</code> 双 Condition（<code>:121</code>、<code>:125</code>、<code>:129</code>）</td>
+</tr>
+<tr>
+<td>LBQ 锁</td>
+<td>?</td>
+<td><code>putLock</code>&#x2F;<code>takeLock</code> 两把 + <code>AtomicInteger count</code>（<code>:156</code>、<code>:163</code>、<code>:141</code>）</td>
+</tr>
+<tr>
+<td>PBQ 扩容绝招</td>
+<td>?</td>
+<td>先 <code>lock.unlock()</code>，用 <code>allocationSpinLock</code> 分配（<code>:288-304</code>）</td>
+</tr>
+<tr>
+<td>SynchronousQueue 容量</td>
+<td>?</td>
+<td>0，不存元素；<code>TransferStack</code>(LIFO) &#x2F; <code>TransferQueue</code>(FIFO)（<code>:210</code>、<code>:494</code>）</td>
+</tr>
+<tr>
+<td>CHM 支持 null?</td>
+<td>?</td>
+<td>不支持，key&#x2F;value 都 NPE（<code>:1011</code>）</td>
+</tr>
 </tbody></table>
 <hr>
 <h2 id="涉及文件索引"><a href="#涉及文件索引" class="headerlink" title="涉及文件索引"></a>涉及文件索引</h2><table>
@@ -1658,6 +2466,51 @@
 <td>8820</td>
 <td>数组工具 + asList</td>
 </tr>
+<tr>
+<td><code>src/java.base/share/classes/java/util/concurrent/ConcurrentHashMap.java</code></td>
+<td>6385</td>
+<td><strong>并发 Map 核心</strong>：CAS + 桶级锁 + 协作扩容</td>
+</tr>
+<tr>
+<td><code>src/java.base/share/classes/java/util/concurrent/ConcurrentSkipListMap.java</code></td>
+<td>3443</td>
+<td>并发有序 Map（跳表 + CAS）</td>
+</tr>
+<tr>
+<td><code>src/java.base/share/classes/java/util/concurrent/CopyOnWriteArrayList.java</code></td>
+<td>2102</td>
+<td>写时复制 List，读无锁</td>
+</tr>
+<tr>
+<td><code>src/java.base/share/classes/java/util/concurrent/ConcurrentLinkedQueue.java</code></td>
+<td>1075</td>
+<td>Michael-Scott 无锁队列</td>
+</tr>
+<tr>
+<td><code>src/java.base/share/classes/java/util/concurrent/ArrayBlockingQueue.java</code></td>
+<td>1638</td>
+<td>有界数组 + 单锁双 Condition</td>
+</tr>
+<tr>
+<td><code>src/java.base/share/classes/java/util/concurrent/LinkedBlockingQueue.java</code></td>
+<td>1161</td>
+<td>链表 + 双锁 + AtomicInteger</td>
+</tr>
+<tr>
+<td><code>src/java.base/share/classes/java/util/concurrent/PriorityBlockingQueue.java</code></td>
+<td>1107</td>
+<td>无界堆 + 放锁扩容</td>
+</tr>
+<tr>
+<td><code>src/java.base/share/classes/java/util/concurrent/SynchronousQueue.java</code></td>
+<td>1168</td>
+<td>零容量移交，TransferStack&#x2F;TransferQueue</td>
+</tr>
+<tr>
+<td><code>src/java.base/share/classes/java/util/concurrent/LinkedTransferQueue.java</code></td>
+<td>1666</td>
+<td>链表 + 直接投递给等待消费者</td>
+</tr>
 </tbody></table>
 <p>（<code>IdentityHashMap</code>、<code>WeakHashMap</code>、<code>EnumMap</code>、<code>CopyOnWriteArrayList</code>、<code>ConcurrentModificationException</code>、<code>Comparator</code>、<code>Comparable</code>、<code>Spliterator</code> 等在文中简要涉及，未逐行精读。）</p>
 
@@ -1676,18 +2529,18 @@
 <nav class="post-nav">
   
     <div class="waves-block waves-effect prev fl">
-      <a href="/elasticsearch/" id="post-prev" class="post-nav-link">
+      <a href="/mybatis/" id="post-prev" class="post-nav-link">
         <div class="tips"><i class="icon icon-angle-left icon-lg icon-pr"></i> Prev</div>
-        <h4 class="title">Elasticsearch 源码深度学习笔记</h4>
+        <h4 class="title">MyBatis 源码深度学习笔记</h4>
       </a>
     </div>
   
 
   
     <div class="waves-block waves-effect next fr">
-      <a href="/java-lock/" id="post-next" class="post-nav-link">
+      <a href="/java-concurrent/" id="post-next" class="post-nav-link">
         <div class="tips">Next <i class="icon icon-angle-right icon-lg icon-pl"></i></div>
-        <h4 class="title">Java 锁源码深度学习笔记</h4>
+        <h4 class="title">Java 并发库（JUC）源码深度学习笔记</h4>
       </a>
     </div>
   

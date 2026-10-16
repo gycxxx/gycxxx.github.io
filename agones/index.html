@@ -1,0 +1,2386 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Agones 源码深读笔记 | 源码深读笔记 | Kafka / Nacos / Spring / Redis / MySQL / ES / Java / JVM / RAG</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  <meta name="theme-color" content="#3F51B5">
+  
+  
+  <meta name="keywords" content="Agones,Kubernetes,游戏服务器,源码">
+  <meta name="description" content="对象：GoogleCloudPlatform&#x2F;Agones —— Kubernetes 上的专用游戏服务器（Dedicated Game Server）编排系统版本：commit 2c9fadb5ea1d3ed09793cd8be87059cc19731eb1（2026-10-15）代码规模：401 个 Go 文件，非测试代码约 43758 行（pkg&#x2F; + cmd&#x2F;）核心依赖：k8s">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Agones 源码深读笔记">
+<meta property="og:url" content="https://gycxxx.github.io/agones/index.html">
+<meta property="og:site_name" content="源码深读笔记">
+<meta property="og:description" content="对象：GoogleCloudPlatform&#x2F;Agones —— Kubernetes 上的专用游戏服务器（Dedicated Game Server）编排系统版本：commit 2c9fadb5ea1d3ed09793cd8be87059cc19731eb1（2026-10-15）代码规模：401 个 Go 文件，非测试代码约 43758 行（pkg&#x2F; + cmd&#x2F;）核心依赖：k8s">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-10-16T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-16T07:29:40.766Z">
+<meta property="article:author" content="gyc">
+<meta property="article:tag" content="Agones">
+<meta property="article:tag" content="Kubernetes">
+<meta property="article:tag" content="游戏服务器">
+<meta property="article:tag" content="源码">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternative" href="/atom.xml" title="源码深读笔记" type="application/atom+xml">
+  
+  <meta name="summary" content="主流基础设施、框架与 JDK 的源码级深度学习笔记">
+  <link rel="shortcut icon" href="/img/favicon.ico">
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="loading" class="active"></div>
+
+  <nav id="menu" class="hide" >
+   <div class="inner flex-row-vertical">
+  <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="menu-off">
+      <i class="icon icon-lg icon-close"></i>
+  </a>
+  <div class="brand-wrap">
+    <div class="brand">
+      <a href="/" class="avatar"><img src="/img/avatar.jpg"></a>
+      <hgroup class="introduce">
+        <h5 class="nickname">gyc</h5>
+        
+      </hgroup>
+    </div>
+  </div>
+  <div class="scroll-wrap flex-col">
+    <ul class="nav">
+      
+          <li class="waves-block waves-effect">
+            <a href="/"  >
+              <i class="icon icon-lg icon-home"></i>
+              主页
+            </a>
+          </li>
+      
+          <li class="waves-block waves-effect">
+            <a href="/archives"  >
+              <i class="icon icon-lg icon-archive"></i>
+              归档
+            </a>
+          </li>
+      
+          <li class="waves-block waves-effect">
+            <a href="/categories"  >
+              <i class="icon icon-lg icon-th-list"></i>
+              分类
+            </a>
+          </li>
+      
+          <li class="waves-block waves-effect">
+            <a href="/tags"  >
+              <i class="icon icon-lg icon-tags"></i>
+              标签
+            </a>
+          </li>
+      
+    </ul>
+
+    <footer class="footer">
+  <p>源码深读笔记 &copy; 2026</p>
+  <p>Power by <a href="http://hexo.io/" target="_blank">Hexo</a> Theme
+  <a href="https://github.com/yscoder/hexo-theme-indigo" target="_blank">indigo</a></p>
+  <a href="/atom.xml" target="_blank" class="rss" title="rss"><i class="icon icon-2x icon-rss-square"></i></a>
+</footer>
+
+  </div>
+</div>
+
+  </nav>
+  <main id="main">
+    <header class="top-header" id="header">
+    <div class="flex-row">
+        <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light on" id="menu-toggle">
+          <i class="icon icon-lg icon-navicon"></i>
+        </a>
+        <div class="flex-col header-title ellipsis">Agones 源码深读笔记</div>
+        
+        <div class="search-wrap" id="search-wrap">
+            <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="back">
+                <i class="icon icon-lg icon-chevron-left"></i>
+            </a>
+            <input type="text" id="key" class="search-input " autocomplete="off" placeholder="输入感兴趣的关键字">
+            <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="search">
+                <i class="icon icon-lg icon-search"></i>
+            </a>
+        </div>
+        
+        
+        <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="menu-share">
+            <i class="icon icon-lg icon-share-alt"></i>
+        </a>
+        
+    </div>
+</header>
+<header class="content-header">
+  <div class="container">
+    <h1 class="author">Agones 源码深读笔记</h1>
+    <h5 class="subtitle">
+        
+            <time datetime="2026-10-16T16:00:00.000Z" itemprop="datePublished" class="page-time">
+  2026-10-17
+</time>
+
+
+	<ul class="article-category-list"><li class="article-category-list-item"><a class="article-category-list-link" href="/categories/%E6%B8%B8%E6%88%8F%E4%B8%8E%E4%BA%91%E5%8E%9F%E7%94%9F/">游戏与云原生</a></li></ul>
+
+        
+    </h5>
+  </div>
+</header>
+
+    <div class="container body-wrap">
+      <article id="post-agones" 
+  class="article article-type-post" itemprop="blogPost">
+    <div class="post-meta flex-row">
+        
+	<ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Agones/" rel="tag">Agones</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Kubernetes/" rel="tag">Kubernetes</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%B8%B8%E6%88%8F%E6%9C%8D%E5%8A%A1%E5%99%A8/" rel="tag">游戏服务器</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%BA%90%E7%A0%81/" rel="tag">源码</a></li></ul>
+
+    </div>
+    <div class="post-body">
+        <aside class="post-widget" id="post-widget">
+
+            
+            <div class="post-share" id="post-share">
+    <div class="tit">分享到：</div>
+    <ul class="reset share-icons">
+      <li>
+        <a class="weibo share-sns" href="javascript:;" data-title="微博" data-service="tsina">
+          <i class="icon icon-weibo"></i>
+        </a>
+      </li>
+      <li>
+        <a class="weixin share-sns" href="javascript:;" data-title="微信" data-service="weixin">
+          <i class="icon icon-weixin"></i>
+        </a>
+      </li>
+      <li>
+        <a class="qq share-sns" href="javascript:;" data-title=" QQ" data-service="cqq">
+          <i class="icon icon-qq"></i>
+        </a>
+      </li>
+      <li>
+        <a class="facebook share-sns" href="javascript:;" data-title=" Facebook" data-service="fb">
+          <i class="icon icon-facebook"></i>
+        </a>
+      </li>
+      <li>
+        <a class="twitter share-sns" href="javascript:;" data-title=" Twitter" data-service="twitter">
+          <i class="icon icon-twitter"></i>
+        </a>
+      </li>
+      <li>
+        <a class="douban share-sns" href="javascript:;" data-title="豆瓣" data-service="douban">
+          豆
+        </a>
+      </li>
+    </ul>
+ </div>
+
+            
+
+            
+            <nav class="post-toc-wrap" id="post-toc">
+            <ol class="post-toc"><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%9B%AE%E5%BD%95"><span class="post-toc-number">1.</span> <span class="post-toc-text">目录</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E3%80%87%E3%80%81%E5%85%A8%E6%99%AF%E5%9C%B0%E5%9B%BE"><span class="post-toc-number">2.</span> <span class="post-toc-text">〇、全景地图</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%80%9F%E8%A7%88%EF%BC%9A%E5%90%84%E8%AE%B2%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88%EF%BC%88%E5%85%88%E7%9C%8B%E8%BF%99%E4%B8%AA%E5%86%8D%E8%BF%9B%E7%BB%86%E8%8A%82%EF%BC%89"><span class="post-toc-number">3.</span> <span class="post-toc-text">速览：各讲做了什么（先看这个再进细节）</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%9D%A2%E8%AF%95%E9%80%9F%E9%80%9A%EF%BC%9AAgones-%E9%AB%98%E9%A2%91%E9%97%AE%E9%A2%98%E4%B8%80%E9%A1%B5%E7%BA%B8"><span class="post-toc-number">4.</span> <span class="post-toc-text">面试速通：Agones 高频问题一页纸</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%AB%98%E9%A2%91-Q-A%EF%BC%88%E5%85%88%E7%BB%93%E8%AE%BA%EF%BC%89"><span class="post-toc-number">4.1.</span> <span class="post-toc-text">高频 Q&amp;A（先结论）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E6%98%93%E9%94%99%E7%82%B9%E4%B8%8E%E9%9D%A2%E8%AF%95%E5%9D%91"><span class="post-toc-number">4.2.</span> <span class="post-toc-text">易错点与面试坑</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%B3%E9%94%AE%E6%95%B0%E5%80%BC%E9%80%9F%E8%AE%B0"><span class="post-toc-number">4.3.</span> <span class="post-toc-text">关键数值速记</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%EF%BC%9A%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B-%E2%80%94%E2%80%94-%E4%B8%89%E5%B1%82-CRD-%E4%B8%8E-GameServer-%E7%8A%B6%E6%80%81%E6%9C%BA"><span class="post-toc-number">5.</span> <span class="post-toc-text">第一讲：数据模型 —— 三层 CRD 与 GameServer 状态机</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E6%9C%AC%E8%AE%B2%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88"><span class="post-toc-number">5.1.</span> <span class="post-toc-text">先说人话：本讲每个阶段在干什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#1-1-%E4%B8%89%E5%B1%82-CRD-%E7%9A%84%E5%85%B3%E8%81%94"><span class="post-toc-number">5.2.</span> <span class="post-toc-text">1.1 三层 CRD 的关联</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#1-2-GameServer%EF%BC%9AStatus-%E4%B8%8D%E6%98%AF-subresource"><span class="post-toc-number">5.3.</span> <span class="post-toc-text">1.2 GameServer：Status 不是 subresource</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#1-3-GameServer-%E7%9A%84-11-%E4%B8%AA%E7%8A%B6%E6%80%81"><span class="post-toc-number">5.4.</span> <span class="post-toc-text">1.3 GameServer 的 11 个状态</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#1-4-GameServerSpec-%E5%85%B3%E9%94%AE%E5%AD%97%E6%AE%B5"><span class="post-toc-number">5.5.</span> <span class="post-toc-text">1.4 GameServerSpec 关键字段</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#1-5-Fleet-GameServerSet-FleetAutoscaler"><span class="post-toc-number">5.6.</span> <span class="post-toc-text">1.5 Fleet &#x2F; GameServerSet &#x2F; FleetAutoscaler</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#1-6-GameServerAllocation"><span class="post-toc-number">5.7.</span> <span class="post-toc-text">1.6 GameServerAllocation</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E4%B8%89%E5%B1%82-ownerRef-%E4%B8%80%E4%B8%AA%E9%9D%9E-subresource-%E7%9A%84-Status"><span class="post-toc-number">5.8.</span> <span class="post-toc-text">第一讲小结：三层 ownerRef + 一个非 subresource 的 Status</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%EF%BC%9A%E6%8E%A7%E5%88%B6%E9%9D%A2%E9%AA%A8%E6%9E%B6-%E2%80%94%E2%80%94-controller-%E8%BF%9B%E7%A8%8B%E4%B8%8E-workerqueue"><span class="post-toc-number">6.</span> <span class="post-toc-text">第二讲：控制面骨架 —— controller 进程与 workerqueue</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E4%B8%80%E4%B8%AA%E8%BF%9B%E7%A8%8B%EF%BC%8C%E5%9B%9B%E4%B8%AA-controller%EF%BC%8C%E4%B8%80%E5%A0%86%E9%98%9F%E5%88%97"><span class="post-toc-number">6.1.</span> <span class="post-toc-text">先说人话：一个进程，四个 controller，一堆队列</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-1-main-%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B"><span class="post-toc-number">6.2.</span> <span class="post-toc-text">2.1 main() 启动流程</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-2-%E4%BA%94%E4%B8%AA-runner"><span class="post-toc-number">6.3.</span> <span class="post-toc-text">2.2 五个 runner</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-3-workerqueue%EF%BC%9A%E8%87%AA%E7%A0%94%E5%B0%81%E8%A3%85%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88"><span class="post-toc-number">6.4.</span> <span class="post-toc-text">2.3 workerqueue：自研封装做了什么</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-4-GameServer-controller-%E7%9A%84%E4%B8%89%E6%9D%A1%E9%98%9F%E5%88%97"><span class="post-toc-number">6.5.</span> <span class="post-toc-text">2.4 GameServer controller 的三条队列</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-5-syncHandler%EF%BC%9A%E4%B8%80%E6%9D%A1%E4%B8%B2%E8%A1%8C%E7%9A%84%E7%8A%B6%E6%80%81%E6%8E%A8%E8%BF%9B%E9%93%BE"><span class="post-toc-number">6.6.</span> <span class="post-toc-text">2.5 syncHandler：一条串行的状态推进链</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E5%8D%95%E8%BF%9B%E7%A8%8B-%E5%A4%9A%E9%98%9F%E5%88%97-%E9%93%BE%E5%BC%8F%E7%8A%B6%E6%80%81%E6%8E%A8%E8%BF%9B"><span class="post-toc-number">6.7.</span> <span class="post-toc-text">第二讲小结：单进程 + 多队列 + 链式状态推进</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%EF%BC%9AGameServer-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E4%B8%8E-SDK-Server"><span class="post-toc-number">7.</span> <span class="post-toc-text">第三讲：GameServer 生命周期与 SDK Server</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9Acontroller-%E6%8E%A8%E5%89%8D%E5%8D%8A%E6%AE%B5%EF%BC%8Csidecar-%E6%8E%A8%E5%90%8E%E5%8D%8A%E6%AE%B5"><span class="post-toc-number">7.1.</span> <span class="post-toc-text">先说人话：controller 推前半段，sidecar 推后半段</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-1-%E7%8A%B6%E6%80%81%E8%BF%81%E7%A7%BB%E6%80%BB%E8%A1%A8"><span class="post-toc-number">7.2.</span> <span class="post-toc-text">3.1 状态迁移总表</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-2-sdk-server%EF%BC%9A%E4%B8%89%E4%B8%AA%E7%AB%AF%E5%8F%A3%E4%B8%8E%E4%B8%89%E7%B1%BB-service"><span class="post-toc-number">7.3.</span> <span class="post-toc-text">3.2 sdk-server：三个端口与三类 service</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-3-SDK-%E8%B0%83%E7%94%A8%E5%A6%82%E4%BD%95%E5%86%99%E5%9B%9E%EF%BC%9A%E6%9C%AC%E5%9C%B0%E7%BC%93%E5%AD%98-JSON-Patch"><span class="post-toc-number">7.4.</span> <span class="post-toc-text">3.3 SDK 调用如何写回：本地缓存 + JSON Patch</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-4-%E5%81%A5%E5%BA%B7%E6%A3%80%E6%9F%A5%EF%BC%9A%E4%B8%89%E5%B1%82"><span class="post-toc-number">7.5.</span> <span class="post-toc-text">3.4 健康检查：三层</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-5-%E7%AB%AF%E5%8F%A3%E5%88%86%E9%85%8D%EF%BC%9A%E6%AF%8F-Node-%E4%B8%80%E5%BC%A0%E4%BD%8D%E5%9B%BE"><span class="post-toc-number">7.6.</span> <span class="post-toc-text">3.5 端口分配：每 Node 一张位图</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-6-Pod-%E5%88%9B%E5%BB%BA%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E6%B3%A8%E5%85%A5"><span class="post-toc-number">7.7.</span> <span class="post-toc-text">3.6 Pod 创建与环境变量注入</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-7-Eviction%EF%BC%9A%E4%B8%89%E6%80%81%E6%A8%A1%E5%9E%8B-PDB"><span class="post-toc-number">7.8.</span> <span class="post-toc-text">3.7 Eviction：三态模型 + PDB</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-8-%E4%BA%91%E5%8E%82%E5%95%86%E6%8A%BD%E8%B1%A1"><span class="post-toc-number">7.9.</span> <span class="post-toc-text">3.8 云厂商抽象</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E7%8A%B6%E6%80%81%E6%9C%BA%E6%98%AF%E2%80%9D%E5%8F%8C%E4%BA%BA%E8%88%9E%E2%80%9D"><span class="post-toc-number">7.10.</span> <span class="post-toc-text">第三讲小结：状态机是”双人舞”</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%EF%BC%9AFleet-%E4%B8%8E-GameServerSet-%E7%BC%96%E6%8E%92"><span class="post-toc-number">8.</span> <span class="post-toc-text">第四讲：Fleet 与 GameServerSet 编排</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9AFleet-%E5%8F%AA%E7%AE%A1%E2%80%9D%E6%95%B0%E9%87%8F%E2%80%9D%EF%BC%8CGameServerSet-%E6%89%8D%E7%AE%A1%E2%80%9D%E7%94%9F%E6%AD%BB%E2%80%9D"><span class="post-toc-number">8.1.</span> <span class="post-toc-text">先说人话：Fleet 只管”数量”，GameServerSet 才管”生死”</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#4-1-Fleet-controller-%E4%B8%BB%E6%B5%81%E7%A8%8B"><span class="post-toc-number">8.2.</span> <span class="post-toc-text">4.1 Fleet controller 主流程</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#4-2-%E6%BB%9A%E5%8A%A8%E6%9B%B4%E6%96%B0%EF%BC%9A%E4%B8%A4%E4%B8%AA%E5%8F%82%E6%95%B0%EF%BC%8C%E4%B8%A4%E4%B8%AA%E5%9F%BA%E6%95%B0"><span class="post-toc-number">8.3.</span> <span class="post-toc-text">4.2 滚动更新：两个参数，两个基数</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#4-3-GameServerSet-%E6%89%A9%E7%BC%A9%E5%AE%B9%EF%BC%9A%E4%B8%A4%E8%B6%9F%E6%89%AB%E6%8F%8F"><span class="post-toc-number">8.4.</span> <span class="post-toc-text">4.3 GameServerSet 扩缩容：两趟扫描</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#4-4-%E5%88%A0%E9%99%A4%E9%A1%BA%E5%BA%8F%EF%BC%9A%E6%8C%89%E8%B0%83%E5%BA%A6%E7%AD%96%E7%95%A5%E6%8E%92%E5%BA%8F%EF%BC%8C%E4%B8%8D%E6%98%AF%E5%9B%BA%E5%AE%9A%E4%BC%98%E5%85%88%E7%BA%A7"><span class="post-toc-number">8.5.</span> <span class="post-toc-text">4.4 删除顺序：按调度策略排序，不是固定优先级</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#4-5-AllocationOverflow%EF%BC%9A%E6%BA%A2%E5%87%BA%E6%A0%87%E8%AE%B0"><span class="post-toc-number">8.6.</span> <span class="post-toc-text">4.5 AllocationOverflow：溢出标记</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E6%95%B0%E9%87%8F%E5%9C%A8-Fleet%EF%BC%8C%E7%94%9F%E6%AD%BB%E5%9C%A8-GameServerSet"><span class="post-toc-number">8.7.</span> <span class="post-toc-text">第四讲小结：数量在 Fleet，生死在 GameServerSet</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%EF%BC%9AGameServerAllocation-%E2%80%94%E2%80%94-%E5%88%86%E9%85%8D%E7%9A%84%E4%B8%A4%E6%9D%A1%E8%B7%AF%E5%BE%84"><span class="post-toc-number">9.</span> <span class="post-toc-text">第五讲：GameServerAllocation —— 分配的两条路径</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E4%B8%80%E6%AC%A1-RPC-%E6%8D%A2%E6%9D%A5%E4%B8%80%E4%B8%AA-IP-Port"><span class="post-toc-number">9.1.</span> <span class="post-toc-text">先说人话：一次 RPC 换来一个 IP:Port</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#5-1-%E4%B8%A4%E6%9D%A1%E8%B7%AF%E5%BE%84"><span class="post-toc-number">9.2.</span> <span class="post-toc-text">5.1 两条路径</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#5-2-%E5%88%86%E9%85%8D%E7%BC%93%E5%AD%98%EF%BC%9A%E5%8F%AA%E6%94%B6-Ready-%E4%B8%8E-Allocated"><span class="post-toc-number">9.3.</span> <span class="post-toc-text">5.2 分配缓存：只收 Ready 与 Allocated</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#5-3-Packed-vs-Distributed%EF%BC%9A%E4%B8%89%E5%A4%84%E5%B7%AE%E5%BC%82"><span class="post-toc-number">9.4.</span> <span class="post-toc-text">5.3 Packed vs Distributed：三处差异</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#5-4-%E5%B9%B6%E5%8F%91%E5%AE%89%E5%85%A8%EF%BC%9A%E5%8D%95-goroutine-%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AF"><span class="post-toc-number">9.5.</span> <span class="post-toc-text">5.4 并发安全：单 goroutine 事件循环</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#5-5-%E5%A4%B1%E8%B4%A5%E8%AF%AD%E4%B9%89%EF%BC%9A%E4%B8%8D%E6%98%AF%E9%94%99%E8%AF%AF%E7%A0%81"><span class="post-toc-number">9.6.</span> <span class="post-toc-text">5.5 失败语义：不是错误码</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#5-6-%E5%A4%9A%E9%9B%86%E7%BE%A4%E5%88%86%E9%85%8D"><span class="post-toc-number">9.7.</span> <span class="post-toc-text">5.6 多集群分配</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E4%BA%94%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E6%89%B9%E5%A4%84%E7%90%86-%E4%B8%B2%E8%A1%8C%E6%8C%91%E6%9C%8D-%E9%9D%9E%E9%94%99%E8%AF%AF%E7%A0%81%E5%A4%B1%E8%B4%A5"><span class="post-toc-number">9.8.</span> <span class="post-toc-text">第五讲小结：批处理 + 串行挑服 + 非错误码失败</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E7%AC%AC%E5%85%AD%E8%AE%B2%EF%BC%9AFleetAutoscaler%E3%80%81%E5%8F%AF%E8%A7%82%E6%B5%8B%E6%80%A7%E4%B8%8E%E9%83%A8%E7%BD%B2%E6%8B%93%E6%89%91"><span class="post-toc-number">10.</span> <span class="post-toc-text">第六讲：FleetAutoscaler、可观测性与部署拓扑</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%85%88%E8%AF%B4%E4%BA%BA%E8%AF%9D%EF%BC%9A%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E8%AF%A5%E5%A4%9A%E5%BC%80%E5%87%A0%E5%8F%B0%E6%B8%B8%E6%88%8F%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="post-toc-number">10.1.</span> <span class="post-toc-text">先说人话：什么时候该多开几台游戏服务器</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-1-%E4%B8%83%E7%A7%8D%E7%AD%96%E7%95%A5"><span class="post-toc-number">10.2.</span> <span class="post-toc-text">6.1 七种策略</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-2-Buffer%EF%BC%9A%E7%AE%97%E7%9A%84%E6%98%AF-Allocated%EF%BC%8C%E4%B8%8D%E6%98%AF-Ready"><span class="post-toc-number">10.3.</span> <span class="post-toc-text">6.2 Buffer：算的是 Allocated，不是 Ready</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-3-Webhook%EF%BC%9AHTTP-%E8%80%8C%E9%9D%9E-gRPC"><span class="post-toc-number">10.4.</span> <span class="post-toc-text">6.3 Webhook：HTTP 而非 gRPC</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-4-%E5%90%8C%E6%AD%A5%E5%91%A8%E6%9C%9F%EF%BC%9Aper-resource-ticker"><span class="post-toc-number">10.5.</span> <span class="post-toc-text">6.4 同步周期：per-resource ticker</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-5-%E5%8F%AF%E8%A7%82%E6%B5%8B%E6%80%A7%EF%BC%9AOpenCensus-%E5%8F%8C-exporter"><span class="post-toc-number">10.6.</span> <span class="post-toc-text">6.5 可观测性：OpenCensus + 双 exporter</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-6-%E9%83%A8%E7%BD%B2%E6%8B%93%E6%89%91"><span class="post-toc-number">10.7.</span> <span class="post-toc-text">6.6 部署拓扑</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-7-%E4%B8%89%E4%B8%AA%E5%8F%8D%E7%9B%B4%E8%A7%89%E7%9A%84%E5%85%A8%E5%B1%80%E7%BB%93%E8%AE%BA"><span class="post-toc-number">10.8.</span> <span class="post-toc-text">6.7 三个反直觉的全局结论</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%AC%AC%E5%85%AD%E8%AE%B2%E5%B0%8F%E7%BB%93%EF%BC%9A%E4%B8%83%E7%A7%8D%E7%AD%96%E7%95%A5%E3%80%81Allocated-%E4%B8%BA%E5%9F%BA%E6%95%B0%E3%80%81%E8%BD%AF%E5%A4%B1%E8%B4%A5"><span class="post-toc-number">10.9.</span> <span class="post-toc-text">第六讲小结：七种策略、Allocated 为基数、软失败</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%99%84%EF%BC%9A%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E3%80%81%E5%A4%8D%E4%B9%A0%E5%8D%A1%E4%B8%8E%E6%96%87%E4%BB%B6%E7%B4%A2%E5%BC%95"><span class="post-toc-number">11.</span> <span class="post-toc-text">附：学习路线、复习卡与文件索引</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%EF%BC%88%E5%BB%BA%E8%AE%AE-3-%E5%A4%A9%EF%BC%89"><span class="post-toc-number">11.1.</span> <span class="post-toc-text">学习路线（建议 3 天）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#25-%E5%BC%A0%E5%A4%8D%E4%B9%A0%E5%8D%A1"><span class="post-toc-number">11.2.</span> <span class="post-toc-text">25 张复习卡</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E6%96%87%E4%BB%B6%E7%B4%A2%E5%BC%95"><span class="post-toc-number">11.3.</span> <span class="post-toc-text">文件索引</span></a></li></ol></li></ol>
+            </nav>
+            
+        </aside>
+
+        <div class="post-main">
+
+            <div class="post-content" id="post-content" itemprop="postContent">
+            <blockquote>
+<p><strong>对象</strong>：GoogleCloudPlatform&#x2F;Agones —— Kubernetes 上的<strong>专用游戏服务器（Dedicated Game Server）编排系统</strong><br><strong>版本</strong>：commit <code>2c9fadb5ea1d3ed09793cd8be87059cc19731eb1</code>（2026-10-15）<br><strong>代码规模</strong>：401 个 Go 文件，非测试代码约 <strong>43758 行</strong>（<code>pkg/</code> + <code>cmd/</code>）<br><strong>核心依赖</strong>：<code>k8s.io/client-go</code>、<code>k8s.io/apiextensions-apiserver</code>、<code>go.opencensus.io</code>、<code>grpc-gateway</code>、<code>Extism</code>（Wasm 插件）<br><strong>文档定位</strong>：面向”要在 K8s 上跑游戏服务器、需要改调度&#x2F;分配&#x2F;自动扩缩容行为”的工程师。全文逐文件精读，**所有结论标注 <code>路径:行号</code>**，可对照源码复验。</p>
+<p>阅读前提：本文只讲 <strong>Agones 控制面</strong>。匹配器本身（Open Match）见 <code>open-match.md</code>；本文只覆盖 Agones 与匹配器的<strong>衔接点</strong>（<code>GameServerAllocation</code>）。</p>
+<p>⚠️ 一个必须先破除的直觉：Agones 不是”Deployment 的游戏版”。<strong>GameServer 是有状态且昂贵的</strong>——<code>Allocated</code> 的实例绝不能被随意替换或缩掉。这一条约束贯穿 Fleet 滚动更新、缩容排序、自动扩缩容的全部设计。</p>
+</blockquote>
+<hr>
+<h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ul>
+<li><a href="#%E3%80%87%E5%85%A8%E6%99%AF%E5%9C%B0%E5%9B%BE">〇、全景地图</a></li>
+<li><a href="#%E9%80%9F%E8%A7%88%E5%90%84%E8%AE%B2%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88%E5%85%88%E7%9C%8B%E8%BF%99%E4%B8%AA%E5%86%8D%E8%BF%9B%E7%BB%86%E8%8A%82">速览：各讲做了什么（先看这个再进细节）</a></li>
+<li><a href="#%E9%9D%A2%E8%AF%95%E9%80%9F%E9%80%9Aagones-%E9%AB%98%E9%A2%91%E9%97%AE%E9%A2%98%E4%B8%80%E9%A1%B5%E7%BA%B8">面试速通：Agones 高频问题一页纸</a></li>
+<li><a href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B--%E4%B8%89%E5%B1%82-crd-%E4%B8%8E-gameserver-%E7%8A%B6%E6%80%81%E6%9C%BA">第一讲：数据模型 —— 三层 CRD 与 GameServer 状态机</a></li>
+<li><a href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%E6%8E%A7%E5%88%B6%E9%9D%A2%E9%AA%A8%E6%9E%B6--controller-%E8%BF%9B%E7%A8%8B%E4%B8%8E-workerqueue">第二讲：控制面骨架 —— controller 进程与 workerqueue</a></li>
+<li><a href="#%E7%AC%AC%E4%B8%89%E8%AE%B2gameserver-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E4%B8%8E-sdk-server">第三讲：GameServer 生命周期与 SDK Server</a></li>
+<li><a href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2fleet-%E4%B8%8E-gameserverset-%E7%BC%96%E6%8E%92">第四讲：Fleet 与 GameServerSet 编排</a></li>
+<li><a href="#%E7%AC%AC%E4%BA%94%E8%AE%B2gameserverallocation--%E5%88%86%E9%85%8D%E7%9A%84%E4%B8%A4%E6%9D%A1%E8%B7%AF%E5%BE%84">第五讲：GameServerAllocation —— 分配的两条路径</a></li>
+<li><a href="#%E7%AC%AC%E5%85%AD%E8%AE%B2fleetautoscaler%E5%8F%AF%E8%A7%82%E6%B5%8B%E6%80%A7%E4%B8%8E%E9%83%A8%E7%BD%B2%E6%8B%93%E6%89%91">第六讲：FleetAutoscaler、可观测性与部署拓扑</a></li>
+<li><a href="#%E9%99%84%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E5%A4%8D%E4%B9%A0%E5%8D%A1%E4%B8%8E%E6%96%87%E4%BB%B6%E7%B4%A2%E5%BC%95">附：学习路线、复习卡与文件索引</a></li>
+</ul>
+<hr>
+<h2 id="〇、全景地图"><a href="#〇、全景地图" class="headerlink" title="〇、全景地图"></a>〇、全景地图</h2><p>Agones 的骨架可以压成一句话：<strong>用 CRD 描述”游戏服务器”，用 controller 把 CRD 翻译成 Pod，用 SDK sidecar 让游戏进程反向参与生命周期管理</strong>。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">┌──────────────────────── 控制面（agones-system 命名空间）────────────────────────┐</span><br><span class="line">│                                                                                  │</span><br><span class="line">│  agones-controller        主控制器：gameservers / gameserversets /               │</span><br><span class="line">│                           fleets / fleetautoscalers 四个 controller + 端口分配器  │</span><br><span class="line">│  agones-extensions        Admission Webhook（默认值注入 + 校验）                 │</span><br><span class="line">│                           + 集群内 Allocation API（聚合 API Server）              │</span><br><span class="line">│  agones-allocator         独立 gRPC/REST 分配服务（mTLS，供外部匹配器调用）       │</span><br><span class="line">│  agones-ping              UDP/HTTP 拨测（验证外部连通性）                        │</span><br><span class="line">│  agones-processor         可选的 allocator 批处理后端（Feature Gate 控制）        │</span><br><span class="line">└─────────────────────────────────────────────────────────────────────────────────┘</span><br><span class="line"></span><br><span class="line">┌──────────────────── 数据面（每个 GameServer Pod 内）───────────────────────────┐</span><br><span class="line">│   GameServer 容器（你的游戏二进制）                                              │</span><br><span class="line">│        │  gRPC :9357                                                             │</span><br><span class="line">│        ▼                                                                          │</span><br><span class="line">│   agones-gameserver-sidecar（SDK Server）                                        │</span><br><span class="line">│        │  JSON Patch 到 Kubernetes API                                            │</span><br><span class="line">│        ▼                                                                          │</span><br><span class="line">│   GameServer CRD 对象                                                             │</span><br><span class="line">└─────────────────────────────────────────────────────────────────────────────────┘</span><br><span class="line"></span><br><span class="line">        CRD 层级（类比 Deployment → ReplicaSet → Pod）：</span><br><span class="line">        Fleet ──(ownerRef + label)──&gt; GameServerSet ──(ownerRef + label)──&gt; GameServer ──&gt; Pod</span><br></pre></td></tr></table></figure>
+
+<p>渲染版：</p>
+<pre><code class="highlight mermaid">flowchart TD
+    subgraph CP[&quot;控制面 agones-system&quot;]
+        CTRL[&quot;agones-controller&lt;br/&gt;4 个 controller + 端口分配&quot;]
+        EXT[&quot;agones-extensions&lt;br/&gt;Webhook + 本地 Allocation API&quot;]
+        ALC[&quot;agones-allocator&lt;br/&gt;gRPC/REST :443 mTLS&quot;]
+        PROC[&quot;agones-processor&lt;br/&gt;可选批处理后端&quot;]
+    end
+    subgraph CRD[&quot;CRD 层级&quot;]
+        F[&quot;Fleet&quot;] --&gt;|&quot;ownerRef + agones.dev/fleet&quot;| GSS[&quot;GameServerSet&quot;]
+        GSS --&gt;|&quot;ownerRef + agones.dev/gameserverset&quot;| GS[&quot;GameServer&quot;]
+        GS --&gt;|&quot;controller 创建&quot;| POD[&quot;Pod&quot;]
+    end
+    subgraph DP[&quot;数据面 Pod&quot;]
+        SDK[&quot;agones-sdk sidecar&lt;br/&gt;gRPC :9357 / HTTP :9358&lt;br/&gt;cmd/sdk-server/main.go:50-52&quot;]
+        APP[&quot;游戏二进制&lt;br/&gt;sdks/go/sdk.go:59&quot;]
+    end
+    CTRL --&gt; GSS
+    CTRL --&gt; GS
+    EXT -.-&gt;|&quot;mutate/validate&quot;| CRD
+    ALC --&gt;|&quot;置 Allocated&quot;| GS
+    ALC --&gt; PROC
+    POD --- SDK
+    SDK --&gt;|&quot;JSON Patch&quot;| GS
+    APP &lt;--&gt;|&quot;:9357&quot;| SDK</code></pre>
+
+<p>贯穿全系统的四条主线：</p>
+<ol>
+<li><strong>状态流</strong>：<code>PortAllocation → Creating → Starting → Scheduled → RequestReady → Ready → Allocated → Shutdown</code>。controller 负责推进前半段（建 Pod、填地址），<strong>sidecar 负责推进后半段</strong>（<code>Ready</code>&#x2F;<code>Allocated</code>&#x2F;<code>Shutdown</code> 由游戏进程发起）。</li>
+<li><strong>所有权流</strong>：<code>ownerReference</code> 串起 Fleet → GameServerSet → GameServer → Pod 四层，删除靠 K8s GC 级联；<code>label</code>（<code>agones.dev/fleet</code>、<code>agones.dev/gameserverset</code>）才是<strong>查询</strong>用的索引。</li>
+<li><strong>分配流</strong>：外部匹配器 → allocator → 从缓存里挑一个 Ready&#x2F;Allocated 的 GameServer → 置 <code>Allocated</code> → 返回 IP:Port 给玩家。</li>
+<li><strong>扩缩容流</strong>：<code>FleetAutoscaler</code> per-resource ticker → 算目标副本 → 写 <code>Fleet.Spec.Replicas</code> → Fleet controller 调 GameServerSet → GameServerSet controller 多退少补。</li>
+</ol>
+<hr>
+<h2 id="速览：各讲做了什么（先看这个再进细节）"><a href="#速览：各讲做了什么（先看这个再进细节）" class="headerlink" title="速览：各讲做了什么（先看这个再进细节）"></a>速览：各讲做了什么（先看这个再进细节）</h2><table>
+<thead>
+<tr>
+<th>讲</th>
+<th>主题</th>
+<th>一句话结论</th>
+<th>关键文件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>一</td>
+<td>数据模型</td>
+<td>三层 CRD（Fleet → GameServerSet → GameServer）靠 <strong>ownerRef + label</strong> 串起来；GameServer 有 <strong>11 个状态</strong>，其中 <code>Allocated</code>&#x2F;<code>Reserved</code> <strong>不可删除</strong></td>
+<td><code>pkg/apis/agones/v1/gameserver.go:40-69</code>、<code>pkg/apis/agones/v1/fleet.go:116-153</code></td>
+</tr>
+<tr>
+<td>二</td>
+<td>控制面骨架</td>
+<td><code>cmd/controller/main.go</code> 起 4 个 runner，每个 controller 都是「informer + workqueue + syncHandler」；GameServer controller 用<strong>三条队列</strong>按状态分流</td>
+<td><code>cmd/controller/main.go:207-222</code>、<code>pkg/util/workerqueue/workerqueue.go</code></td>
+</tr>
+<tr>
+<td>三</td>
+<td>GameServer 生命周期</td>
+<td>controller 建 Pod 并推进到 <code>Scheduled</code>；之后由 <strong>sidecar 通过 gRPC + JSON Patch</strong> 接管，游戏进程自己声明 <code>Ready</code>&#x2F;<code>Allocated</code>&#x2F;<code>Shutdown</code></td>
+<td><code>pkg/gameservers/controller.go:500-523</code>、<code>pkg/sdkserver/sdkserver.go:465-477</code></td>
+</tr>
+<tr>
+<td>四</td>
+<td>Fleet 编排</td>
+<td>Fleet 只管 GameServerSet 的<strong>数量</strong>；滚动更新靠 <code>MaxSurge</code> 加新 Set、<code>MaxUnavailable</code> 减旧 Set；<strong>缩容删除顺序由 Packed&#x2F;Distributed 排序决定</strong>，不是固定状态优先级</td>
+<td><code>pkg/fleets/controller.go:501-547</code>、<code>pkg/gameserversets/gameserversets.go:46-119</code></td>
+</tr>
+<tr>
+<td>五</td>
+<td>分配</td>
+<td>两条路径：集群内走<strong>聚合 API</strong>（只注册 <code>create</code> 动词），集群外走 <strong>allocator gRPC</strong>；核心是「排序列表 + 单 goroutine 批处理 + 5 次 10ms 重试」</td>
+<td><code>pkg/gameserverallocations/allocator.go:467-630</code>、<code>pkg/gameserverallocations/allocation_cache.go</code></td>
+</tr>
+<tr>
+<td>六</td>
+<td>自动扩缩容与观测</td>
+<td><code>FleetAutoscaler</code> 有 <strong>7 种策略</strong>；Buffer 算的是 <code>AllocatedReplicas + BufferSize</code>（<strong>不是 ReadyReplicas</strong>）；指标走 OpenCensus + Prometheus&#x2F;Stackdriver 双 exporter</td>
+<td><code>pkg/fleetautoscalers/fleetautoscalers.go:73-91</code>、<code>pkg/metrics/controller_metrics.go:23-42</code></td>
+</tr>
+</tbody></table>
+<p>全流程图（一个 GameServer 从创建到被玩家连上）：</p>
+<pre><code class="highlight mermaid">sequenceDiagram
+    autonumber
+    participant U as 用户/匹配器
+    participant CRD as GameServer CRD
+    participant C as gameservers controller
+    participant PA as portAllocator
+    participant K8s as Kubernetes
+    participant SDK as sdk-server sidecar
+    participant ALC as allocator
+    participant P as 玩家
+
+    U-&gt;&gt;CRD: 创建 Fleet（或直接创建 GameServer）
+    CRD-&gt;&gt;C: informer 事件入队
+    C-&gt;&gt;PA: PortAllocation 状态 → Allocate()
+    PA--&gt;&gt;C: HostPort 写回 Spec.Ports
+    C-&gt;&gt;K8s: Creating → createGameServerPod
+    K8s--&gt;&gt;C: Pod 有 NodeName
+    C-&gt;&gt;CRD: Starting → Scheduled（写入 Address/Ports）
+    SDK-&gt;&gt;SDK: 游戏进程启动，连 :9357
+    SDK-&gt;&gt;CRD: Ready() → 置 RequestReady
+    C-&gt;&gt;CRD: RequestReady → Ready（补地址 + ready-container-id）
+    U-&gt;&gt;ALC: GameServerAllocation 请求
+    ALC-&gt;&gt;CRD: 挑一个 Ready → 置 Allocated + last-allocated 注解
+    ALC--&gt;&gt;U: 返回 IP:Port / NodeName
+    U--&gt;&gt;P: 把地址发给玩家
+    P-&gt;&gt;SDK: 直连游戏端口</code></pre>
+
+<hr>
+<h2 id="面试速通：Agones-高频问题一页纸"><a href="#面试速通：Agones-高频问题一页纸" class="headerlink" title="面试速通：Agones 高频问题一页纸"></a>面试速通：Agones 高频问题一页纸</h2><blockquote>
+<p>先给结论，再按讲次展开。<br>Agones 的全部魔法可以压成两句话：<br><strong>① 状态机是”controller 推前半段、sidecar 推后半段”的双人舞；</strong><br><strong>② 一切扩缩容&#x2F;删除决策都要先保护 <code>Allocated</code> 和 <code>Reserved</code>。</strong><br>面试先答这两句总分，被追问细节再往下走。<br>本页所有结论均提炼自对应讲次的小结与关键机制表，不引入文档之外的知识点。<br>用法：先扫表格建立全局印象，被问到哪条就讲哪条，再按「深入」列回查原文细节。</p>
+</blockquote>
+<h3 id="高频-Q-A（先结论）"><a href="#高频-Q-A（先结论）" class="headerlink" title="高频 Q&amp;A（先结论）"></a>高频 Q&amp;A（先结论）</h3><p>22 道最高频题的「一句话答案」。题目覆盖 CRD&#x2F;状态机&#x2F;SDK&#x2F;Fleet&#x2F;分配&#x2F;自动扩缩容六大块。</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>面试问题</th>
+<th>一句话结论</th>
+<th>深入</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Agones 是干什么的？</td>
+<td>在 K8s 上编排<strong>专用游戏服务器</strong>：管理其生命周期（创建&#x2F;就绪&#x2F;分配&#x2F;关闭）、端口、健康检查与自动扩缩容</td>
+<td>〇</td>
+</tr>
+<tr>
+<td>2</td>
+<td>三层 CRD 是什么关系？</td>
+<td><code>Fleet → GameServerSet → GameServer → Pod</code>，类比 <code>Deployment → ReplicaSet → Pod</code>，靠 <strong>ownerReference</strong> 级联删除、靠 <strong>label</strong> 查询</td>
+<td>第一讲</td>
+</tr>
+<tr>
+<td>3</td>
+<td>GameServer 有哪些状态？</td>
+<td>11 个：<code>PortAllocation / Creating / Starting / Scheduled / RequestReady / Ready / Shutdown / Error / Unhealthy / Reserved / Allocated</code></td>
+<td>第一讲</td>
+</tr>
+<tr>
+<td>4</td>
+<td>哪些状态不可删除？</td>
+<td><code>Allocated</code> 与 <code>Reserved</code>——<code>IsDeletable()</code> 要求它们<strong>必须已有 DeletionTimestamp</strong> 才可删</td>
+<td>第一讲</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>PortAllocation</code> 状态什么时候出现？</td>
+<td>只在创建期一次：当端口策略含 <code>Dynamic</code> 或 <code>Passthrough</code> 时，初始状态不是 <code>Creating</code> 而是 <code>PortAllocation</code></td>
+<td>第一讲</td>
+</tr>
+<tr>
+<td>6</td>
+<td>状态机由谁推进？</td>
+<td><strong>前半段 controller</strong>（建 Pod → Scheduled），<strong>后半段 sidecar</strong>（游戏进程调 <code>Ready()</code>&#x2F;<code>Allocate()</code>&#x2F;<code>Shutdown()</code> 反向写 CRD）</td>
+<td>第三讲</td>
+</tr>
+<tr>
+<td>7</td>
+<td>SDK sidecar 的端口？</td>
+<td>gRPC <strong>9357</strong>、HTTP gateway <strong>9358</strong>、healthcheck <strong>8080</strong></td>
+<td>第三讲</td>
+</tr>
+<tr>
+<td>8</td>
+<td>游戏进程怎么改 GameServer 对象？</td>
+<td>sidecar 用 <strong>JSON Patch</strong> 直接打 Kubernetes API（不走 controller），并 watch 自己那一个对象做本地缓存</td>
+<td>第三讲</td>
+</tr>
+<tr>
+<td>9</td>
+<td>健康检查怎么做？</td>
+<td>三层：SDK 心跳 → sidecar 每 <code>PeriodSeconds</code> 自检（默认 5s，失败 3 次判定）→ kubelet <code>/gshealthz</code> liveness probe；另外 <code>HealthController</code> 处理驱逐&#x2F;容器崩溃等”非心跳”不健康</td>
+<td>第三讲</td>
+</tr>
+<tr>
+<td>10</td>
+<td>端口怎么分配？</td>
+<td><code>portAllocator</code> 维护<strong>每 Node 一张端口位图</strong>，<code>Dynamic</code> 分配 hostPort、<code>Passthrough</code> 同时把 containerPort 设成同值；失败即 <code>DeAllocate</code> 回滚</td>
+<td>第三讲</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Fleet 滚动更新默认参数？</td>
+<td><code>MaxSurge = MaxUnavailable = 25%</code>；<strong>基数不同</strong>——Surge 以 <code>Spec.Replicas</code> 为基数，Unavailable 以 <code>Status.ReadyReplicas</code> 为基数</td>
+<td>第四讲</td>
+</tr>
+<tr>
+<td>12</td>
+<td>为什么滚动更新到处减 <code>sumAllocated</code>？</td>
+<td>因为旧 Set 里 <code>Allocated</code> 的 GameServer <strong>删不掉</strong>，只能在目标副本里给它留位置</td>
+<td>第四讲</td>
+</tr>
+<tr>
+<td>13</td>
+<td>缩容时先删哪些 GameServer？</td>
+<td><strong>按 Packed&#x2F;Distributed 排序后取前 N 个</strong>，不是固定状态优先级；<code>Allocated</code>&#x2F;<code>Reserved</code> 连候选列表都进不去</td>
+<td>第四讲</td>
+</tr>
+<tr>
+<td>14</td>
+<td>GameServerSet 怎么删 GameServer？</td>
+<td>不是直接 Delete，而是把状态**置为 <code>Shutdown</code>**，交给 gameservers controller 收尾</td>
+<td>第四讲</td>
+</tr>
+<tr>
+<td>15</td>
+<td>分配有哪两条路径？</td>
+<td>集群内走<strong>聚合 API Server</strong>（GSA 只注册 <code>create</code> 动词）；集群外走独立 <strong>allocator</strong> 的 gRPC&#x2F;REST（默认 443，mTLS）</td>
+<td>第五讲</td>
+</tr>
+<tr>
+<td>16</td>
+<td><code>Packed</code> 与 <code>Distributed</code> 差在哪？</td>
+<td>Packed 把 <strong>Allocated 排最前</strong>、优先填满节点最挤的；Distributed <strong>完全不看节点计数</strong>，无 Priorities 时随机打散</td>
+<td>第五讲</td>
+</tr>
+<tr>
+<td>17</td>
+<td>没有可用 GameServer 时返回什么？</td>
+<td><strong>不是错误码</strong>。HTTP 返回 <code>201 Created</code> + <code>Status.State = UnAllocated</code>；竞争失败则是 <code>Contention</code></td>
+<td>第五讲</td>
+</tr>
+<tr>
+<td>18</td>
+<td>分配怎么保证并发安全？</td>
+<td>没有全局锁，而是 <strong>单 goroutine 事件循环</strong>消费 <code>pendingRequests</code>（容量 100）+ channel 串行化；缓存本身用 <code>sync.RWMutex</code></td>
+<td>第五讲</td>
+</tr>
+<tr>
+<td>19</td>
+<td>FleetAutoscaler 有几种策略？</td>
+<td><strong>7 种</strong>：Buffer &#x2F; Webhook &#x2F; Counter &#x2F; List &#x2F; Schedule &#x2F; Chain &#x2F; Wasm</td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td>20</td>
+<td>Buffer 策略怎么算？</td>
+<td><code>AllocatedReplicas + BufferSize</code>（百分比时是 <code>Allocated/(1-pct)</code>），再用 Min&#x2F;MaxReplicas 夹逼——<strong>注意是 Allocated 不是 Ready</strong></td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td>21</td>
+<td>Webhook 策略是 gRPC 吗？</td>
+<td><strong>不是</strong>，是 HTTP&#x2F;JSON，硬编码 <strong>15s</strong> 超时；<code>CABundle != nil</code> 时自动切 https</td>
+<td>第六讲</td>
+</tr>
+<tr>
+<td>22</td>
+<td>默认同步周期多少？</td>
+<td><strong>30s</strong>，但这是 per-resource 的 ticker（<code>spec.sync.fixedInterval.seconds</code>），<strong>没有全局 syncPeriod 常量</strong></td>
+<td>第六讲</td>
+</tr>
+</tbody></table>
+<h3 id="易错点与面试坑"><a href="#易错点与面试坑" class="headerlink" title="易错点与面试坑"></a>易错点与面试坑</h3><p>以下每条都是文档专门强调过的反直觉点——知道就加分，不知道必挂。</p>
+<ul>
+<li><strong>GameServer 的 <code>Status</code> 不是 subresource</strong>（区别于 Fleet&#x2F;GameServerSet）。这是刻意的：为了能在<strong>一次原子操作里同时改 spec 与 status</strong>，这对分配至关重要（<code>pkg/apis/agones/v1/gameserver.go:187-198</code>）。</li>
+<li><strong><code>Allocated</code>&#x2F;<code>Reserved</code> 是”免死金牌”<strong>：<code>IsDeletable()</code> 对这两个状态要求</strong>必须已有 DeletionTimestamp</strong>。后果是——如果它们的数量已超过目标副本数，Fleet&#x2F;GameServerSet <strong>根本缩不下去</strong>，只能等游戏结束。</li>
+<li>**Buffer 策略算的是 <code>AllocatedReplicas</code>，不是 <code>ReadyReplicas</code>**。很多人按字面理解成”保留 N 个 Ready”，源码是 <code>f.Status.AllocatedReplicas + BufferSize</code>（<code>pkg/fleetautoscalers/fleetautoscalers.go:383</code>）；API 注释明确说此处的 “ready” 指 “non-allocated”。</li>
+<li><strong>分配失败不是 HTTP 错误</strong>。集群内 API 一律返回 <code>201 Created</code>，靠 <code>Status.State = UnAllocated</code>&#x2F;<code>Contention</code> 区分；gRPC 侧默认映射为 <code>429 Too Many Requests</code>。</li>
+<li><strong>缩容没有”先删 Unhealthy”的固定优先级表</strong>。它是把候选按调度策略<strong>排序后取前 N</strong>，方向恰好与分配相反：分配往”最挤”的节点塞，缩容从”最空”的节点收。</li>
+<li><strong><code>Reserved</code> 是唯一会自动回退的状态</strong>：<code>Reserve(seconds)</code> 到期后 sidecar 自动置回 <code>Ready</code>（<code>pkg/sdkserver/sdkserver.go:699-709</code>）。</li>
+<li>**<code>Recreate</code> 策略只减 <code>Allocated</code>，不减 <code>Reserved</code>**；而 <code>RollingUpdate</code> 的某条分支减的是 <code>Reserved + Allocated</code>。两者语义不一致（<code>pkg/fleets/controller.go:428-430</code> vs <code>:465-482</code>）。</li>
+<li>**Fleet 没有 <code>pod-template-hash</code>**。判定”哪个 GameServerSet 是当前版本”用 <code>apiequality.Semantic.DeepEqual</code> 全量比对 <code>Spec.Template</code>。</li>
+<li><strong>端口耗尽不会立刻判 Unhealthy</strong>：<code>WaitOnFreePorts()</code> 为 true 的云产品（如 GKE Autopilot）会让 <code>HealthController</code> 放行，交给 Cluster Autoscaler 扩容重试。</li>
+<li><strong><code>eviction.safe</code> 默认是 <code>Never</code><strong>，意味着 GameServer Pod 默认</strong>不允许被 Cluster Autoscaler 驱逐</strong>——这通过 <code>safe-to-evict: &quot;false&quot;</code> 注解 + 配套 PDB 实现。</li>
+</ul>
+<h3 id="关键数值速记"><a href="#关键数值速记" class="headerlink" title="关键数值速记"></a>关键数值速记</h3><table>
+<thead>
+<tr>
+<th>数值</th>
+<th>含义</th>
+<th>出处</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>9357 &#x2F; 9358 &#x2F; 8080</strong></td>
+<td>SDK sidecar 的 gRPC &#x2F; HTTP gateway &#x2F; health 端口</td>
+<td><code>cmd/sdk-server/main.go:50-52</code></td>
+</tr>
+<tr>
+<td><strong>11</strong></td>
+<td><code>GameServerState</code> 枚举数量</td>
+<td><code>pkg/apis/agones/v1/gameserver.go:40-69</code></td>
+</tr>
+<tr>
+<td><code>Shutdown</code> &#x2F; <code>Error</code> &#x2F; <code>Unhealthy</code></td>
+<td>三个终态（<code>TerminalGameServerStates</code>）</td>
+<td><code>pkg/apis/agones/v1/gameserver.go:174-180</code></td>
+</tr>
+<tr>
+<td><strong>5 &#x2F; 3 &#x2F; 5</strong></td>
+<td>Health 默认 <code>PeriodSeconds</code> &#x2F; <code>FailureThreshold</code> &#x2F; <code>InitialDelaySeconds</code></td>
+<td><code>pkg/apis/agones/v1/gameserver.go:413/416/419</code></td>
+</tr>
+<tr>
+<td><code>Dynamic</code>（默认）&#x2F; <code>Static</code> &#x2F; <code>Passthrough</code> &#x2F; <code>None</code></td>
+<td>四种 <code>PortPolicy</code></td>
+<td><code>pkg/apis/agones/v1/gameserver.go:74-86</code>、<code>:454</code></td>
+</tr>
+<tr>
+<td><code>UDP</code>（默认）&#x2F; <code>TCP</code> &#x2F; <code>TCPUDP</code></td>
+<td>端口协议</td>
+<td><code>pkg/apis/agones/v1/gameserver.go:462</code>、<code>:119</code></td>
+</tr>
+<tr>
+<td><code>Never</code>（默认）&#x2F; <code>OnUpgrade</code> &#x2F; <code>Always</code></td>
+<td><code>eviction.safe</code> 三态</td>
+<td><code>pkg/apis/agones/v1/gameserver.go:482</code></td>
+</tr>
+<tr>
+<td><code>agones.dev/fleet</code> &#x2F; <code>agones.dev/gameserverset</code></td>
+<td>两个核心 label</td>
+<td><code>pkg/apis/agones/v1/fleet.go:31</code>、<code>gameserverset.go:28</code></td>
+</tr>
+<tr>
+<td><strong>25% &#x2F; 25%</strong></td>
+<td>Fleet 默认 <code>MaxSurge</code> &#x2F; <code>MaxUnavailable</code></td>
+<td><code>pkg/apis/agones/v1/fleet.go:170-176</code></td>
+</tr>
+<tr>
+<td>1% ~ 99%</td>
+<td>滚动更新百分比合法区间</td>
+<td><code>pkg/apis/agones/v1/fleet.go:196</code></td>
+</tr>
+<tr>
+<td><strong>30s</strong></td>
+<td>Error 状态 GameServer 的删除宽限期</td>
+<td><code>pkg/gameserversets/controller.go:64</code></td>
+</tr>
+<tr>
+<td><strong>64 &#x2F; 64</strong></td>
+<td>默认单批最大创建&#x2F;删除数</td>
+<td><code>cmd/controller/main.go:282/284</code></td>
+</tr>
+<tr>
+<td><strong>5000</strong></td>
+<td>每个 GameServerSet 允许的最大 Pending Pod 数</td>
+<td><code>cmd/controller/main.go:285</code></td>
+</tr>
+<tr>
+<td><strong>100 &#x2F; 200</strong></td>
+<td>controller 默认 API Server QPS &#x2F; Burst</td>
+<td><code>cmd/controller/main.go:275-276</code></td>
+</tr>
+<tr>
+<td><strong>64</strong></td>
+<td>controller 默认 worker 数</td>
+<td><code>cmd/controller/main.go:274</code></td>
+</tr>
+<tr>
+<td><strong>30s</strong></td>
+<td>informer resync 周期</td>
+<td><code>cmd/controller/main.go:87</code></td>
+</tr>
+<tr>
+<td>15s &#x2F; 10s &#x2F; 2s</td>
+<td>Leader election 的 LeaseDuration &#x2F; RenewDeadline &#x2F; RetryPeriod</td>
+<td><code>cmd/controller/main.go:644-646</code></td>
+</tr>
+<tr>
+<td>20ms×5 → 500ms</td>
+<td>gameservers controller 的 fast&#x2F;slow 限速器</td>
+<td><code>pkg/gameservers/controller.go:270-274</code></td>
+</tr>
+<tr>
+<td><strong>100 &#x2F; 100</strong></td>
+<td>allocator 批处理队列容量与刷新阈值</td>
+<td><code>pkg/gameserverallocations/allocator.go:83-84</code></td>
+</tr>
+<tr>
+<td><strong>5 次 10ms</strong> &#x2F; <strong>7 次 100ms×2</strong></td>
+<td>本地 &#x2F; 远程分配重试参数</td>
+<td><code>pkg/gameserverallocations/allocator.go:88-99</code></td>
+</tr>
+<tr>
+<td><strong>443 → 8443</strong></td>
+<td>allocator Helm 实际端口（gRPC 与 http 同端口复用）</td>
+<td><code>install/helm/agones/values.yaml:265-275</code></td>
+</tr>
+<tr>
+<td><strong>30s</strong></td>
+<td>FleetAutoscaler 默认同步周期</td>
+<td><code>pkg/apis/autoscaling/v1/fleetautoscaler.go:156</code></td>
+</tr>
+<tr>
+<td><strong>15s</strong></td>
+<td>FleetAutoscaler Webhook HTTP 客户端超时</td>
+<td><code>pkg/fleetautoscalers/fleetautoscalers.go:219</code></td>
+</tr>
+<tr>
+<td><strong>7</strong></td>
+<td>FleetAutoscaler 策略类型数</td>
+<td><code>pkg/apis/autoscaling/v1/fleetautoscaler.go:125-152</code></td>
+</tr>
+<tr>
+<td><strong>8080 &#x2F; <code>/metrics</code></strong></td>
+<td>metrics HTTP 端口与路径</td>
+<td><code>pkg/util/httpserver/server.go:49-51</code>、<code>pkg/metrics/exporter.go:154</code></td>
+</tr>
+<tr>
+<td><strong>15s &#x2F; 60s</strong></td>
+<td>Prometheus &#x2F; Stackdriver 上报周期</td>
+<td><code>pkg/metrics/exporter.go:96-101</code></td>
+</tr>
+<tr>
+<td><strong>600000</strong></td>
+<td><code>gameserver_state_duration</code> 的 LRU 容量</td>
+<td><code>pkg/metrics/controller.go:60</code></td>
+</tr>
+<tr>
+<td><strong>30s</strong></td>
+<td>Go SDK 连接握手超时</td>
+<td><code>sdks/go/sdk.go:55-68</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="第一讲：数据模型-——-三层-CRD-与-GameServer-状态机"><a href="#第一讲：数据模型-——-三层-CRD-与-GameServer-状态机" class="headerlink" title="第一讲：数据模型 —— 三层 CRD 与 GameServer 状态机"></a>第一讲：数据模型 —— 三层 CRD 与 GameServer 状态机</h2><h3 id="先说人话：本讲每个阶段在干什么"><a href="#先说人话：本讲每个阶段在干什么" class="headerlink" title="先说人话：本讲每个阶段在干什么"></a>先说人话：本讲每个阶段在干什么</h3><p>Agones 的所有复杂度都源于一件事：<strong>GameServer 不是无状态的 Pod</strong>。它有 IP、有端口、有玩家、有生命周期，而且<strong>被玩家占用时绝对不能动</strong>。</p>
+<p>本讲先建立三个认知：</p>
+<ol>
+<li><strong>三层 CRD 怎么串起来的</strong>（ownerRef 管删除，label 管查询）；</li>
+<li><strong>11 个状态各自代表什么</strong>、哪些是终态、哪些受保护；</li>
+<li><strong><code>GameServer.Status</code> 为什么不是 subresource</strong>。</li>
+</ol>
+<h3 id="1-1-三层-CRD-的关联"><a href="#1-1-三层-CRD-的关联" class="headerlink" title="1.1 三层 CRD 的关联"></a>1.1 三层 CRD 的关联</h3><pre><code class="highlight mermaid">flowchart LR
+    F[&quot;Fleet&lt;br/&gt;pkg/apis/agones/v1/fleet.go:59-85&quot;] --&gt;|&quot;GameServerSet()&lt;br/&gt;fleet.go:116-153&quot;| GSS[&quot;GameServerSet&lt;br/&gt;gameserverset.go:58-82&quot;]
+    GSS --&gt;|&quot;GameServer()&lt;br/&gt;gameserverset.go:141-167&quot;| GS[&quot;GameServer&lt;br/&gt;gameserver.go:187-198&quot;]
+    GS --&gt;|&quot;Pod()&lt;br/&gt;gameserver.go:843-869&quot;| POD[&quot;Pod&quot;]</code></pre>
+
+<p><strong>Fleet → GameServerSet</strong>（<code>pkg/apis/agones/v1/fleet.go:116-153</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/apis/agones/v1/fleet.go:119-140</span></span><br><span class="line">Spec: GameServerSetSpec&#123;</span><br><span class="line">    Template:   f.Spec.Template,</span><br><span class="line">    Scheduling: f.Spec.Scheduling,</span><br><span class="line">&#125;,</span><br><span class="line">...</span><br><span class="line">gsSet.ObjectMeta.GenerateName = f.ObjectMeta.Name + <span class="string">&quot;-&quot;</span>   <span class="comment">// :127</span></span><br><span class="line">gsSet.ObjectMeta.Name = <span class="string">&quot;&quot;</span>                                 <span class="comment">// :128</span></span><br><span class="line">...</span><br><span class="line">ref := metav1.NewControllerRef(f, SchemeGroupVersion.WithKind(<span class="string">&quot;Fleet&quot;</span>))   <span class="comment">// :133</span></span><br><span class="line">gsSet.ObjectMeta.OwnerReferences = <span class="built_in">append</span>(gsSet.ObjectMeta.OwnerReferences, *ref)  <span class="comment">// :134</span></span><br><span class="line">...</span><br><span class="line">gsSet.ObjectMeta.Labels[FleetNameLabel] = f.ObjectMeta.Name  <span class="comment">// :140</span></span><br></pre></td></tr></table></figure>
+
+<p>三个设计点：</p>
+<table>
+<thead>
+<tr>
+<th>点</th>
+<th>做法</th>
+<th>为什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>命名</td>
+<td><code>GenerateName = &lt;parent&gt;-</code>，<code>Name</code> 置空</td>
+<td>保证永不撞名，滚动更新可同时存在多个 Set</td>
+</tr>
+<tr>
+<td>级联删除</td>
+<td><code>metav1.NewControllerRef</code> 写 <code>ownerReferences</code></td>
+<td>删 Fleet 自动删 GameServerSet → GameServer → Pod</td>
+</tr>
+<tr>
+<td>查询索引</td>
+<td><code>FleetNameLabel = &quot;agones.dev/fleet&quot;</code></td>
+<td>后续 <code>ListGameServerSetsByFleetOwner</code> 靠 label + ownerRef 双重过滤</td>
+</tr>
+</tbody></table>
+<p><strong>Fleet 名是”两跳透传”的</strong>：<code>gs.ObjectMeta.Labels[FleetNameLabel] = gsSet.ObjectMeta.Labels[FleetNameLabel]</code>（<code>pkg/apis/agones/v1/gameserverset.go:165</code>）。所以可以直接用 <code>agones.dev/fleet=&lt;name&gt;</code> 选出整个 Fleet 的所有 GameServer——这一点在自动扩缩容和 metrics 里被大量使用。</p>
+<h3 id="1-2-GameServer：Status-不是-subresource"><a href="#1-2-GameServer：Status-不是-subresource" class="headerlink" title="1.2 GameServer：Status 不是 subresource"></a>1.2 GameServer：Status 不是 subresource</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/apis/agones/v1/gameserver.go:187-198</span></span><br><span class="line"><span class="comment">// It is worth noting that while there is a `GameServerStatus` Status entry for the `GameServer`, it is not</span></span><br><span class="line"><span class="comment">// defined as a subresource - unlike `Fleet` and other Agones resources.</span></span><br><span class="line"><span class="comment">// This is so that we can retain the ability to change multiple aspects of a `GameServer` in a single atomic operation,</span></span><br><span class="line"><span class="comment">// which is particularly useful for operations such as allocation.</span></span><br><span class="line"><span class="keyword">type</span> GameServer <span class="keyword">struct</span> &#123;</span><br><span class="line">	metav1.TypeMeta   <span class="string">`json:&quot;,inline&quot;`</span></span><br><span class="line">	metav1.ObjectMeta <span class="string">`json:&quot;metadata,omitempty&quot;`</span></span><br><span class="line">	Spec   GameServerSpec   <span class="string">`json:&quot;spec&quot;`</span></span><br><span class="line">	Status GameServerStatus <span class="string">`json:&quot;status&quot;`</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>🔑 <strong>这是 Agones 数据模型最重要的一个决定</strong>。Kubernetes 里 <code>Status</code> 做成 subresource 是标准实践（Fleet&#x2F;GameServerSet 都遵守了），但 GameServer <strong>故意不遵守</strong>——因为分配需要”一次 Update 同时改 spec（端口）+ status（状态）”。如果拆成 subresource，就要两次 API 调用，中间可能失败或被打断。</p>
+</blockquote>
+<h3 id="1-3-GameServer-的-11-个状态"><a href="#1-3-GameServer-的-11-个状态" class="headerlink" title="1.3 GameServer 的 11 个状态"></a>1.3 GameServer 的 11 个状态</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/apis/agones/v1/gameserver.go:40-69</span></span><br><span class="line">GameServerStatePortAllocation GameServerState = <span class="string">&quot;PortAllocation&quot;</span>  <span class="comment">// :43</span></span><br><span class="line">GameServerStateCreating       GameServerState = <span class="string">&quot;Creating&quot;</span>        <span class="comment">// :45</span></span><br><span class="line">GameServerStateStarting       GameServerState = <span class="string">&quot;Starting&quot;</span>        <span class="comment">// :48</span></span><br><span class="line">GameServerStateScheduled      GameServerState = <span class="string">&quot;Scheduled&quot;</span>       <span class="comment">// :51</span></span><br><span class="line">GameServerStateRequestReady   GameServerState = <span class="string">&quot;RequestReady&quot;</span>    <span class="comment">// :53</span></span><br><span class="line">GameServerStateReady          GameServerState = <span class="string">&quot;Ready&quot;</span>           <span class="comment">// :56</span></span><br><span class="line">GameServerStateShutdown       GameServerState = <span class="string">&quot;Shutdown&quot;</span>        <span class="comment">// :59</span></span><br><span class="line">GameServerStateError          GameServerState = <span class="string">&quot;Error&quot;</span>           <span class="comment">// :62</span></span><br><span class="line">GameServerStateUnhealthy      GameServerState = <span class="string">&quot;Unhealthy&quot;</span>       <span class="comment">// :64</span></span><br><span class="line">GameServerStateReserved       GameServerState = <span class="string">&quot;Reserved&quot;</span>        <span class="comment">// :66</span></span><br><span class="line">GameServerStateAllocated      GameServerState = <span class="string">&quot;Allocated&quot;</span>       <span class="comment">// :68</span></span><br></pre></td></tr></table></figure>
+
+<pre><code class="highlight mermaid">stateDiagram-v2
+    [*] --&gt; PortAllocation: 有 Dynamic/Passthrough 端口&lt;br/&gt;gameserver.go:430
+    [*] --&gt; Creating: 否则&lt;br/&gt;gameserver.go:427
+    PortAllocation --&gt; Creating: 端口分配成功&lt;br/&gt;pkg/gameservers/controller.go:581
+    Creating --&gt; Starting: 建 Pod 成功&lt;br/&gt;pkg/gameservers/controller.go:640
+    Creating --&gt; Error: 建 Pod 失败&lt;br/&gt;pkg/gameservers/controller.go:1148
+    Starting --&gt; Scheduled: Pod 有 NodeName&lt;br/&gt;pkg/gameservers/controller.go:975
+    Scheduled --&gt; RequestReady: SDK Ready()&lt;br/&gt;sdkserver.go:544
+    RequestReady --&gt; Ready: 补地址+容器ID&lt;br/&gt;pkg/gameservers/controller.go:1035
+    Ready --&gt; Reserved: SDK Reserve(s)&lt;br/&gt;sdkserver.go:692
+    Reserved --&gt; Ready: 到期自动回退&lt;br/&gt;sdkserver.go:699
+    Ready --&gt; Allocated: 分配 / SDK Allocate()&lt;br/&gt;allocator.go:673
+    Reserved --&gt; Allocated: 分配
+    Ready --&gt; Shutdown: SDK Shutdown()
+    Allocated --&gt; Shutdown: SDK Shutdown()
+    Ready --&gt; Unhealthy: 心跳/驱逐/崩溃
+    Allocated --&gt; Unhealthy: 心跳/驱逐/崩溃
+    Shutdown --&gt; [*]: 对象被删除
+    Error --&gt; [*]
+    Unhealthy --&gt; [*]</code></pre>
+
+<p><strong>三个语义判定方法</strong>（业务含义的锚点）：</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>含义</th>
+<th>位置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>IsBeforeReady()</code></td>
+<td>PortAllocation&#x2F;Creating&#x2F;Starting&#x2F;Scheduled&#x2F;RequestReady</td>
+<td><code>gameserver.go:674-689</code></td>
+</tr>
+<tr>
+<td><code>IsActive()</code></td>
+<td>Allocated &#x2F; Ready &#x2F; Reserved</td>
+<td><code>gameserver.go:692-703</code></td>
+</tr>
+<tr>
+<td><code>IsDeletable()</code></td>
+<td><strong>Allocated&#x2F;Reserved 必须已有 DeletionTimestamp</strong></td>
+<td><code>gameserver.go:659-665</code></td>
+</tr>
+</tbody></table>
+<p>终态集合：<code>TerminalGameServerStates = &#123;Shutdown, Error, Unhealthy&#125;</code>（<code>gameserver.go:174-180</code>）。</p>
+<blockquote>
+<p>⚠️ <strong>没有 <code>Crashed</code> 状态</strong>。容器崩溃被统一收敛为 <code>Unhealthy</code>（<code>pkg/gameservers/health.go:164-205</code>）。这是很多人凭 K8s 直觉猜错的地方。</p>
+</blockquote>
+<h3 id="1-4-GameServerSpec-关键字段"><a href="#1-4-GameServerSpec-关键字段" class="headerlink" title="1.4 GameServerSpec 关键字段"></a>1.4 GameServerSpec 关键字段</h3><table>
+<thead>
+<tr>
+<th>字段</th>
+<th>行号</th>
+<th>语义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Container</code></td>
+<td>220</td>
+<td>只在 Pod 有 &gt;1 容器时必填</td>
+</tr>
+<tr>
+<td><code>Ports []GameServerPort</code></td>
+<td>222</td>
+<td>可暴露的端口</td>
+</tr>
+<tr>
+<td><code>Health</code></td>
+<td>224</td>
+<td>健康检查（4 个字段，见第三讲）</td>
+</tr>
+<tr>
+<td><code>Scheduling</code></td>
+<td>226</td>
+<td>默认 <code>Packed</code></td>
+</tr>
+<tr>
+<td><code>SdkServer</code></td>
+<td>228</td>
+<td>sidecar 参数（gRPC&#x2F;HTTP 端口、日志级别）</td>
+</tr>
+<tr>
+<td><code>Template corev1.PodTemplateSpec</code></td>
+<td>230</td>
+<td>要创建的 Pod</td>
+</tr>
+<tr>
+<td><code>Players *PlayersSpec</code></td>
+<td>233</td>
+<td>Alpha，<code>PlayerTracking</code> 门控</td>
+</tr>
+<tr>
+<td><code>Counters</code> &#x2F; <code>Lists</code></td>
+<td>237 &#x2F; 242</td>
+<td>Beta，<code>CountsAndLists</code> 门控，<strong>key 必须创建时声明</strong></td>
+</tr>
+<tr>
+<td><code>Eviction *Eviction</code></td>
+<td>245</td>
+<td>默认 <code>Never</code></td>
+</tr>
+</tbody></table>
+<p><strong><code>PortPolicy</code> 四种</strong>（<code>gameserver.go:74-86</code>）：<code>Static</code>（用户指定 hostPort）&#x2F; <code>Dynamic</code>（系统分配）&#x2F; <code>Passthrough</code>（分配后 containerPort 也设成同值）&#x2F; <code>None</code>（忽略 hostPort）。默认 <code>Dynamic</code>（<code>:454</code>），默认 range 名 <code>default</code>（<code>:122</code>）。</p>
+<h3 id="1-5-Fleet-GameServerSet-FleetAutoscaler"><a href="#1-5-Fleet-GameServerSet-FleetAutoscaler" class="headerlink" title="1.5 Fleet &#x2F; GameServerSet &#x2F; FleetAutoscaler"></a>1.5 Fleet &#x2F; GameServerSet &#x2F; FleetAutoscaler</h3><p><strong>FleetSpec</strong>（<code>pkg/apis/agones/v1/fleet.go:59-85</code>）：<code>Replicas</code>、<code>AllocationOverflow</code>、<code>Strategy</code>（默认 RollingUpdate）、<code>Scheduling</code>（默认 Packed）、<code>Priorities</code>、<code>Template</code>。</p>
+<p><code>FleetStatus</code>（<code>:88-113</code>）里有两个容易忽略的字段：</p>
+<ul>
+<li><code>ReservedReplicas</code>（<code>:95</code>）：注释明说 “Reserved instances won’t be deleted on scale down, but <strong>won’t cause an autoscaler to scale up</strong>“——Reserved 不影响扩容决策。</li>
+<li><code>Allocations int64</code>（<code>:99</code>）：”a counter of the number of allocations observed”——<strong>单调递增的分配计数</strong>，不是当前副本数。</li>
+</ul>
+<p><strong>GameServerSetSpec</strong>（<code>gameserverset.go:58-82</code>）与 FleetSpec 几乎一样，但：</p>
+<ul>
+<li><code>ValidateUpdate</code>（<code>:113-120</code>）规定 <strong><code>spec.template</code> 不可变更</strong>——改模板只能靠 Fleet 滚动更新换新 Set。</li>
+</ul>
+<p><strong>FleetAutoscaler 不在 <code>agones/v1</code> 下</strong>，而在 <code>pkg/apis/autoscaling/v1/fleetautoscaler.go</code>（671 行）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/apis/autoscaling/v1/fleetautoscaler.go:59-67</span></span><br><span class="line"><span class="keyword">type</span> FleetAutoscalerSpec <span class="keyword">struct</span> &#123;</span><br><span class="line">	FleetName <span class="type">string</span>                <span class="string">`json:&quot;fleetName&quot;`</span></span><br><span class="line">	Policy    FleetAutoscalerPolicy <span class="string">`json:&quot;policy&quot;`</span></span><br><span class="line">	Sync      *FleetAutoscalerSync  <span class="string">`json:&quot;sync,omitempty&quot;`</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>7 种策略类型（<code>:122-157</code>）：<code>BufferPolicyType</code>(125) &#x2F; <code>WebhookPolicyType</code>(128) &#x2F; <code>CounterPolicyType</code>(133) &#x2F; <code>ListPolicyType</code>(138) &#x2F; <code>SchedulePolicyType</code>(143) &#x2F; <code>ChainPolicyType</code>(148) &#x2F; <code>WasmPolicyType</code>(152)；<code>defaultIntervalSyncSeconds int32 = 30</code>(156)。</p>
+<h3 id="1-6-GameServerAllocation"><a href="#1-6-GameServerAllocation" class="headerlink" title="1.6 GameServerAllocation"></a>1.6 GameServerAllocation</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/apis/allocation/v1/gameserverallocation.go:47</span></span><br><span class="line">+genclient:onlyVerbs=create</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>这行注释是理解 GSA 的钥匙：<strong>它只能 create，不是一个持久化的 CRD</strong>。它是一次性的”分配请求”，POST 上去、同步返回、用完即弃。</p>
+</blockquote>
+<p><code>State</code> 枚举（<code>:33-41</code>）：<code>Allocated</code>(35) &#x2F; <code>UnAllocated</code>(37) &#x2F; <code>Contention</code>(40)。</p>
+<p>Selector 结构（<code>:129-150</code>）：内联 <code>metav1.LabelSelector</code> + 可选 <code>GameServerState</code> + <code>Counters</code> &#x2F; <code>Lists</code> 过滤。默认值 <code>GameServerState = Ready</code>（<code>:211</code>），**只允许 <code>Ready</code> 或 <code>Allocated</code>**（<code>:371-373</code>）。</p>
+<p><strong>优先级排序</strong>：<code>Spec.Preferred</code> 全部排在 <code>Spec.Required</code> <strong>之前</strong>，由 <code>Converter()</code> 拼成扁平 <code>Selectors</code> 数组：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/apis/allocation/v1/gameserverallocation.go:586-593</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(gsa *GameServerAllocation)</span></span> Converter() &#123;</span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(gsa.Spec.Selectors) == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">var</span> selectors []GameServerSelector</span><br><span class="line">		selectors = <span class="built_in">append</span>(selectors, gsa.Spec.Preferred...)</span><br><span class="line">		selectors = <span class="built_in">append</span>(selectors, gsa.Spec.Required)</span><br><span class="line">		gsa.Spec.Selectors = selectors</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>SchedulingStrategy</strong>（<code>pkg/apis/scheduling.go:23</code> &#x2F; <code>:30</code>）：</p>
+<ul>
+<li><code>Packed</code>：优先分配到 <strong>Allocated 最多、其次 Ready 最多</strong>的节点上（bin pack）；</li>
+<li><code>Distributed</code>：优先分配到 <strong>Allocated 最少</strong>的节点（打散）。</li>
+</ul>
+<h3 id="第一讲小结：三层-ownerRef-一个非-subresource-的-Status"><a href="#第一讲小结：三层-ownerRef-一个非-subresource-的-Status" class="headerlink" title="第一讲小结：三层 ownerRef + 一个非 subresource 的 Status"></a>第一讲小结：三层 ownerRef + 一个非 subresource 的 Status</h3><table>
+<thead>
+<tr>
+<th>项</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>一句话定位</strong></td>
+<td>Fleet → GameServerSet → GameServer → Pod 靠 ownerRef 级联、label 查询；GameServer 的 Status <strong>不做 subresource</strong> 以换取原子分配</td>
+</tr>
+<tr>
+<td><strong>输入</strong></td>
+<td>用户提交的 CRD YAML</td>
+</tr>
+<tr>
+<td><strong>输出</strong></td>
+<td>被 controller 消费的期望状态</td>
+</tr>
+<tr>
+<td><strong>三个最值得记住的点</strong></td>
+<td>① <code>IsDeletable()</code> 把 <code>Allocated</code>&#x2F;<code>Reserved</code> 保护起来（<code>gameserver.go:659-665</code>），这是全系统所有”减 Allocated”逻辑的根源；② GameServer Status 非 subresource（<code>gameserver.go:187-198</code>）是刻意的原子性设计；③ Fleet 名通过 label <strong>两跳透传</strong>到 GameServer（<code>gameserverset.go:165</code>）</td>
+</tr>
+</tbody></table>
+<pre><code class="highlight mermaid">flowchart TD
+    A[&quot;Fleet.Spec.Template&quot;] --&gt;|&quot;GameServerSet()&lt;br/&gt;fleet.go:116&quot;| B[&quot;GameServerSet.Spec&quot;]
+    B --&gt;|&quot;GameServer()&lt;br/&gt;gameserverset.go:141&quot;| C[&quot;GameServer.Spec&quot;]
+    C --&gt;|&quot;Pod()&lt;br/&gt;gameserver.go:843&quot;| D[&quot;Pod&quot;]
+    D --&gt; E&#123;&quot;Status.State&quot;&#125;
+    E --&gt;|&quot;Allocated / Reserved&quot;| F[&quot;IsDeletable=false&lt;br/&gt;gameserver.go:659&quot;]
+    E --&gt;|&quot;Shutdown / Error / Unhealthy&quot;| G[&quot;终态&lt;br/&gt;gameserver.go:174&quot;]</code></pre>
+
+<hr>
+<h2 id="第二讲：控制面骨架-——-controller-进程与-workerqueue"><a href="#第二讲：控制面骨架-——-controller-进程与-workerqueue" class="headerlink" title="第二讲：控制面骨架 —— controller 进程与 workerqueue"></a>第二讲：控制面骨架 —— controller 进程与 workerqueue</h2><h3 id="先说人话：一个进程，四个-controller，一堆队列"><a href="#先说人话：一个进程，四个-controller，一堆队列" class="headerlink" title="先说人话：一个进程，四个 controller，一堆队列"></a>先说人话：一个进程，四个 controller，一堆队列</h3><p>Agones 的 controller 是<strong>单进程多 controller</strong> 形态，和 kube-controller-manager 同构。本讲解决三个问题：</p>
+<ol>
+<li><code>main()</code> 到各 controller 的启动链路；</li>
+<li>workerqueue 这个自研封装到底做了什么；</li>
+<li>GameServer controller 为什么要用<strong>三条队列</strong>。</li>
+</ol>
+<h3 id="2-1-main-启动流程"><a href="#2-1-main-启动流程" class="headerlink" title="2.1 main() 启动流程"></a>2.1 <code>main()</code> 启动流程</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// cmd/controller/main.go:122-124</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	ctx, cancel := signals.NewSigKillContext()</span><br><span class="line">	ctlConf := parseEnvFlags()</span><br></pre></td></tr></table></figure>
+
+<p>顺序：信号 context（<code>:123</code>）→ 解析配置（<code>:124</code>）→ 日志（<code>:126-137</code>）→ 建三个 client（<code>:150-171</code>）→ cloud product hooks（<code>:173-176</code>）→ 两个 informer factory（<code>:178-179</code>）→ metrics + health（<code>:181-203</code>）→ 构造 5 个 runner（<code>:207-222</code>）→ <strong>先起 HTTP server</strong>（<code>:232</code>）→ <code>whenLeader(...)</code> 里启动 informer 和 runner（<code>:234-244</code>）。</p>
+<blockquote>
+<p>💡 <strong>为什么 HTTP server 要先起</strong>？源码注释解释得很清楚（<code>:230-231</code>）：”Server has to be started earlier because it contains the health check. This allows the controller to not fail health check during install when there is replication”——安装期 controller 还没拿到 leader 锁，如果健康检查端点后起，Deployment 的 readiness probe 会一直失败导致滚动卡死。</p>
+</blockquote>
+<p><strong>三个 client</strong>（<code>cmd/controller/main.go:150-171</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">clientConf, err := runtime.InClusterBuildConfig(logger, ctlConf.KubeConfig)</span><br><span class="line">clientConf.QPS = <span class="type">float32</span>(ctlConf.APIServerSustainedQPS)   <span class="comment">// 默认 100</span></span><br><span class="line">clientConf.Burst = ctlConf.APIServerBurstQPS              <span class="comment">// 默认 200</span></span><br><span class="line">kubeClient, err := kubernetes.NewForConfig(clientConf)      <span class="comment">// core</span></span><br><span class="line">extClient, err := extclientset.NewForConfig(clientConf)     <span class="comment">// CRD</span></span><br><span class="line">agonesClient, err := versioned.NewForConfig(clientConf)     <span class="comment">// Agones</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Leader election</strong>（<code>:614-661</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// cmd/controller/main.go:635-646</span></span><br><span class="line">leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig&#123;</span><br><span class="line">	Lock:            lock,</span><br><span class="line">	ReleaseOnCancel: <span class="literal">true</span>,        <span class="comment">// :643</span></span><br><span class="line">	LeaseDuration:   <span class="number">15</span> * time.Second,  <span class="comment">// :644</span></span><br><span class="line">	RenewDeadline:   <span class="number">10</span> * time.Second,  <span class="comment">// :645</span></span><br><span class="line">	RetryPeriod:     <span class="number">2</span> * time.Second,   <span class="comment">// :646</span></span><br><span class="line">	...</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Lease 名 <code>agones-controller-lock</code>（<code>:624</code>），namespace 默认 <code>agones-system</code>（<code>:270</code>）；</li>
+<li><strong>默认关闭</strong>（<code>:271</code>），Helm 里 <code>replicas &gt; 1</code> 时才注入 <code>LEADER_ELECTION=true</code>（<code>install/helm/agones/templates/controller.yaml:196-198</code>）；</li>
+<li><code>ReleaseOnCancel: true</code> 有注释强调：必须让受保护的代码<strong>先于</strong> cancel 结束。</li>
+</ul>
+<h3 id="2-2-五个-runner"><a href="#2-2-五个-runner" class="headerlink" title="2.2 五个 runner"></a>2.2 五个 runner</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// cmd/controller/main.go:207-222</span></span><br><span class="line">runners := []runner&#123;</span><br><span class="line">	httpserver.Server,                       <span class="comment">// :181, :232</span></span><br><span class="line">	metrics.NewController,                   <span class="comment">// :202（仅 Prometheus/Stackdriver 开启时）</span></span><br><span class="line">	gameservers.NewPerNodeCounter,           <span class="comment">// :207</span></span><br><span class="line">	gameservers.NewController,               <span class="comment">// :209-214</span></span><br><span class="line">	gameserversets.NewController,            <span class="comment">// :215-216</span></span><br><span class="line">	fleets.NewController,                    <span class="comment">// :217</span></span><br><span class="line">	fleetautoscalers.NewController,          <span class="comment">// :218-219</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// cmd/controller/main.go:610-612</span></span><br><span class="line"><span class="keyword">type</span> runner <span class="keyword">interface</span> &#123;</span><br><span class="line">	Run(ctx context.Context, workers <span class="type">int</span>) <span class="type">error</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>每个 runner 一个 goroutine，worker 数统一来自 <code>ctlConf.NumWorkers</code>，<strong>默认 64</strong>（<code>:274</code>）。</p>
+<blockquote>
+<p>⚠️ ** allocation 不在 controller 进程里**。它是独立二进制 <code>cmd/allocator/</code>（另有集群内的聚合 API 由 <code>cmd/extensions/</code> 承载）。这是一个常见的误解点。</p>
+</blockquote>
+<h3 id="2-3-workerqueue：自研封装做了什么"><a href="#2-3-workerqueue：自研封装做了什么" class="headerlink" title="2.3 workerqueue：自研封装做了什么"></a>2.3 workerqueue：自研封装做了什么</h3><p><code>pkg/util/workerqueue/workerqueue.go</code>（267 行）是 client-go <code>workqueue</code> 的薄封装，但有几个 Agones 特有的设计：</p>
+<p><strong>① 三种入队方式</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>底层</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Enqueue</code></td>
+<td><code>AddRateLimited</code></td>
+<td>常规入队</td>
+</tr>
+<tr>
+<td><code>EnqueueImmediately</code></td>
+<td><code>Add</code></td>
+<td>注释说用于 “continue partially completed work”（分批扩容时被截断，立刻再排一轮）</td>
+</tr>
+<tr>
+<td><code>EnqueueAfter</code></td>
+<td><code>AddAfter</code></td>
+<td>延迟入队</td>
+</tr>
+</tbody></table>
+<p><strong>② 两级限速器</strong>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/util/workerqueue/workerqueue.go:88-102</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">FastRateLimiter</span><span class="params">(maxDelay time.Duration)</span></span> workqueue.TypedRateLimiter[any] &#123;</span><br><span class="line">	<span class="keyword">const</span> numFastRetries = <span class="number">5</span></span><br><span class="line">	<span class="keyword">const</span> fastDelay = <span class="number">200</span> * time.Millisecond <span class="comment">// first few retries up to &#x27;numFastRetries&#x27; are fast</span></span><br><span class="line">	<span class="keyword">return</span> workqueue.NewTypedItemFastSlowRateLimiter[any](fastDelay, maxDelay, numFastRetries)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>③ <code>traceError</code> 机制</strong>（<code>:41-64</code>）：有些错误想重试但<strong>不想打 Error 日志</strong>（比如正常的资源冲突），用 <code>NewTraceError</code> 包装后只以 Trace 级别记录（<code>:196-197</code>）。</p>
+<p><strong>④ liveness 探针</strong>：<code>Healthy()</code> 比对 <code>workers</code> 与 <code>running</code>（<code>:232-242</code>），被挂到健康检查（第三讲会看到三处）。</p>
+<h3 id="2-4-GameServer-controller-的三条队列"><a href="#2-4-GameServer-controller-的三条队列" class="headerlink" title="2.4 GameServer controller 的三条队列"></a>2.4 GameServer controller 的三条队列</h3><p>这是 Agones 最值得学习的一处工程细节：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/gameservers/controller.go:184-189</span></span><br><span class="line">c.workerqueue = workerqueue.NewWorkerQueueWithRateLimiter(c.syncGameServer, ...)</span><br><span class="line">c.creationWorkerQueue = workerqueue.NewWorkerQueueWithRateLimiter(c.syncGameServer, ..., <span class="string">&quot;creation&quot;</span>, ...)</span><br><span class="line">c.deletionWorkerQueue = workerqueue.NewWorkerQueueWithRateLimiter(c.syncGameServer, ..., <span class="string">&quot;deletion&quot;</span>, ...)</span><br><span class="line">health.AddLivenessCheck(<span class="string">&quot;gameserver-workerqueue&quot;</span>, healthcheck.Check(c.workerqueue.Healthy))</span><br></pre></td></tr></table></figure>
+
+<p><strong>三条队列共用同一个 <code>syncGameServer</code> handler</strong>，只按状态分流：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/gameservers/controller.go:252-266</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Controller)</span></span> enqueueGameServerBasedOnState(gs *agonesv1.GameServer) &#123;</span><br><span class="line">	<span class="keyword">switch</span> gs.Status.State &#123;</span><br><span class="line">	<span class="keyword">case</span> agonesv1.GameServerStatePortAllocation, agonesv1.GameServerStateCreating:</span><br><span class="line">		c.creationWorkerQueue.Enqueue(gs)     <span class="comment">// 创建密集期</span></span><br><span class="line">	<span class="keyword">case</span> agonesv1.GameServerStateShutdown:</span><br><span class="line">		c.deletionWorkerQueue.Enqueue(gs)     <span class="comment">// 删除密集期</span></span><br><span class="line">	<span class="keyword">default</span>:</span><br><span class="line">		c.workerqueue.Enqueue(gs)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>💡 <strong>为什么值得学</strong>：游戏服务器的创建（建 Pod）和删除（级联清理）都是<strong>慢操作且会成批爆发</strong>（Fleet 一次扩容几百个）。如果和稳态的 heartbeat&#x2F;状态推进共用一条队列，一次大扩容就会把 <code>Ready → Allocated</code> 的实时性拖垮。分流后三条队列互不阻塞。</p>
+</blockquote>
+<p><strong>informer 事件过滤</strong>（<code>:197-199</code>）：GameServer 的 <code>UpdateFunc</code> 只在 <strong><code>Status.State</code> 变化或 <code>DeletionTimestamp</code> 非零</strong>时才入队——避免 sidecar 频繁写 label&#x2F;annotation 引发无谓的 sync。</p>
+<h3 id="2-5-syncHandler：一条串行的状态推进链"><a href="#2-5-syncHandler：一条串行的状态推进链" class="headerlink" title="2.5 syncHandler：一条串行的状态推进链"></a>2.5 syncHandler：一条串行的状态推进链</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/gameservers/controller.go:500-523</span></span><br><span class="line"><span class="keyword">if</span> gs, err = c.syncGameServerDeletionTimestamp(ctx, gs); err != <span class="literal">nil</span> &#123;   <span class="comment">// :500</span></span><br><span class="line"><span class="keyword">if</span> gs, err = c.syncGameServerPortAllocationState(ctx, gs); err != <span class="literal">nil</span> &#123; <span class="comment">// :503</span></span><br><span class="line"><span class="keyword">if</span> gs, err = c.syncGameServerCreatingState(ctx, gs); err != <span class="literal">nil</span> &#123;       <span class="comment">// :506</span></span><br><span class="line"><span class="keyword">if</span> gs, err = c.syncGameServerStartingState(ctx, gs); err != <span class="literal">nil</span> &#123;       <span class="comment">// :509</span></span><br><span class="line"><span class="keyword">if</span> gs, err = c.syncGameServerRequestReadyState(ctx, gs); err != <span class="literal">nil</span> &#123;   <span class="comment">// :512</span></span><br><span class="line"><span class="keyword">if</span> gs, err = c.syncGameServerPodIPs(ctx, gs); err != <span class="literal">nil</span> &#123;              <span class="comment">// :515</span></span><br><span class="line"><span class="keyword">if</span> gs, err = c.syncDevelopmentGameServer(ctx, gs); err != <span class="literal">nil</span> &#123;         <span class="comment">// :518</span></span><br><span class="line"><span class="keyword">if</span> err := c.syncGameServerShutdownState(ctx, gs); err != <span class="literal">nil</span> &#123;          <span class="comment">// :521</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>🔑 每个 <code>syncXxxState</code> <strong>只在当前状态匹配时才动作</strong>，所以一次 sync 可以连续推进多步（例如 <code>PortAllocation → Creating → Starting</code>）。这是一个”状态机的链式实现”——没有显式的 switch，而是让每个函数自己判断”现在该不该我干”。</p>
+</blockquote>
+<h3 id="第二讲小结：单进程-多队列-链式状态推进"><a href="#第二讲小结：单进程-多队列-链式状态推进" class="headerlink" title="第二讲小结：单进程 + 多队列 + 链式状态推进"></a>第二讲小结：单进程 + 多队列 + 链式状态推进</h3><table>
+<thead>
+<tr>
+<th>项</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>一句话定位</strong></td>
+<td><code>cmd/controller</code> 单进程起 5 个 runner；GameServer controller 用<strong>三条队列按状态分流</strong>；sync 是一条只在匹配状态时动作的<strong>串行推进链</strong></td>
+</tr>
+<tr>
+<td><strong>输入</strong></td>
+<td>informer 事件（GameServer &#x2F; Pod &#x2F; Node）</td>
+</tr>
+<tr>
+<td><strong>输出</strong></td>
+<td>写回 GameServer 对象 + 创建&#x2F;删除 Pod</td>
+</tr>
+<tr>
+<td><strong>三个最值得记住的点</strong></td>
+<td>① HTTP server <strong>先于</strong> leader election 启动（<code>:230-232</code>）；② 三条队列分流创建&#x2F;删除&#x2F;稳态（<code>:252-266</code>）避免大扩缩容拖垮实时性；③ sync 链靠”每个函数自己判断该不该干”实现状态推进（<code>:500-523</code>）</td>
+</tr>
+</tbody></table>
+<pre><code class="highlight mermaid">flowchart LR
+    INF[&quot;Informer&lt;br/&gt;GameServer/Pod/Node&quot;] --&gt; EH[&quot;Event Handler&lt;br/&gt;仅 State 变化才入队 :197&quot;]
+    EH --&gt; SPLIT&#123;&quot;State?&quot;&#125;
+    SPLIT --&gt;|&quot;PortAllocation/Creating&quot;| Q1[&quot;creationWorkerQueue&quot;]
+    SPLIT --&gt;|&quot;Shutdown&quot;| Q2[&quot;deletionWorkerQueue&quot;]
+    SPLIT --&gt;|&quot;其他&quot;| Q3[&quot;workerqueue&quot;]
+    Q1 --&gt; SYNC[&quot;syncGameServer :480&quot;]
+    Q2 --&gt; SYNC
+    Q3 --&gt; SYNC
+    SYNC --&gt; C1[&quot;syncDeletionTimestamp&quot;]
+    C1 --&gt; C2[&quot;syncPortAllocation&quot;]
+    C2 --&gt; C3[&quot;syncCreating&quot;]
+    C3 --&gt; C4[&quot;syncStarting&quot;]
+    C4 --&gt; C5[&quot;syncRequestReady&quot;]
+    C5 --&gt; C6[&quot;syncShutdown&quot;]</code></pre>
+
+<hr>
+<h2 id="第三讲：GameServer-生命周期与-SDK-Server"><a href="#第三讲：GameServer-生命周期与-SDK-Server" class="headerlink" title="第三讲：GameServer 生命周期与 SDK Server"></a>第三讲：GameServer 生命周期与 SDK Server</h2><h3 id="先说人话：controller-推前半段，sidecar-推后半段"><a href="#先说人话：controller-推前半段，sidecar-推后半段" class="headerlink" title="先说人话：controller 推前半段，sidecar 推后半段"></a>先说人话：controller 推前半段，sidecar 推后半段</h3><p>这是 Agones 最独特的地方：<strong>游戏进程自己决定什么时候 Ready、什么时候结束</strong>。controller 只负责”把 Pod 建出来、把地址填进去”，之后控制权交给每个 Pod 里的 sidecar。</p>
+<h3 id="3-1-状态迁移总表"><a href="#3-1-状态迁移总表" class="headerlink" title="3.1 状态迁移总表"></a>3.1 状态迁移总表</h3><table>
+<thead>
+<tr>
+<th>源状态</th>
+<th>目标状态</th>
+<th>触发条件</th>
+<th>源码位置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>(创建)</td>
+<td><code>PortAllocation</code></td>
+<td>端口策略含 Dynamic&#x2F;Passthrough</td>
+<td><code>pkg/apis/agones/v1/gameserver.go:430</code></td>
+</tr>
+<tr>
+<td>(创建)</td>
+<td><code>Creating</code></td>
+<td>全 Static&#x2F;None</td>
+<td><code>gameserver.go:427</code></td>
+</tr>
+<tr>
+<td><code>PortAllocation</code></td>
+<td><code>Creating</code></td>
+<td><code>portAllocator.Allocate()</code> 成功</td>
+<td><code>pkg/gameservers/controller.go:579-581</code></td>
+</tr>
+<tr>
+<td><code>Creating</code></td>
+<td><code>Starting</code></td>
+<td><code>createGameServerPod</code> 成功</td>
+<td><code>pkg/gameservers/controller.go:629-644</code>（状态写于 <code>:640</code>）</td>
+</tr>
+<tr>
+<td><code>Creating</code></td>
+<td><code>Error</code></td>
+<td>Pod 创建失败</td>
+<td><code>pkg/gameservers/controller.go:698/728/732</code> → <code>moveToErrorState</code> <code>:1148-1163</code></td>
+</tr>
+<tr>
+<td><code>Starting</code></td>
+<td><code>Scheduled</code></td>
+<td>Pod 已有 <code>NodeName</code>，写 Address&#x2F;Ports</td>
+<td><code>pkg/gameservers/controller.go:959-980</code>（<code>:975</code>）</td>
+</tr>
+<tr>
+<td><code>Scheduled</code></td>
+<td><code>RequestReady</code></td>
+<td>SDK <code>Ready()</code></td>
+<td><code>pkg/sdkserver/sdkserver.go:541-546</code></td>
+</tr>
+<tr>
+<td><code>RequestReady</code></td>
+<td><code>Ready</code></td>
+<td>controller 补地址 + ready-container-id</td>
+<td><code>pkg/gameservers/controller.go:988-1046</code>（<code>:1035</code>）</td>
+</tr>
+<tr>
+<td><code>Ready</code></td>
+<td><code>Reserved</code></td>
+<td>SDK <code>Reserve(seconds)</code></td>
+<td><code>sdkserver.go:678-695</code>（<code>:692</code>）</td>
+</tr>
+<tr>
+<td><code>Reserved</code></td>
+<td><code>Ready</code></td>
+<td>到期自动回退</td>
+<td><code>sdkserver.go:699-709</code></td>
+</tr>
+<tr>
+<td><code>Ready</code>&#x2F;<code>Reserved</code></td>
+<td><code>Allocated</code></td>
+<td>分配 或 SDK <code>Allocate()</code></td>
+<td><code>allocator.go:673</code> &#x2F; <code>sdkserver.go:549-553</code></td>
+</tr>
+<tr>
+<td>任意非终态</td>
+<td><code>Shutdown</code></td>
+<td>SDK <code>Shutdown()</code> 或 Pod Succeeded</td>
+<td><code>sdkserver.go:558-564</code> &#x2F; <code>succeeded.go:190</code></td>
+</tr>
+<tr>
+<td>任意非终态</td>
+<td><code>Unhealthy</code></td>
+<td>心跳失败 &#x2F; 驱逐 &#x2F; 容器崩溃 &#x2F; 无空闲端口</td>
+<td><code>sdkserver.go:1418-1424</code>、<code>health.go:154-205</code></td>
+</tr>
+<tr>
+<td><code>Shutdown</code></td>
+<td>(对象删除)</td>
+<td>controller 删 GameServer，级联删 Pod</td>
+<td><code>pkg/gameservers/controller.go:1131-1145</code>（<code>:1139</code>）</td>
+</tr>
+</tbody></table>
+<h3 id="3-2-sdk-server：三个端口与三类-service"><a href="#3-2-sdk-server：三个端口与三类-service" class="headerlink" title="3.2 sdk-server：三个端口与三类 service"></a>3.2 sdk-server：三个端口与三类 service</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// cmd/sdk-server/main.go:49-52</span></span><br><span class="line">defaultGRPCPort   = <span class="number">9357</span></span><br><span class="line">defaultHTTPPort   = <span class="number">9358</span></span><br><span class="line">defaultHealthPort = <span class="number">8080</span></span><br></pre></td></tr></table></figure>
+
+<p>启动后注册三个 gRPC service（<code>cmd/sdk-server/main.go:188-190</code>）：<code>sdk</code>（Stable）、<code>sdkalpha</code>、<code>sdkbeta</code>。HTTP 侧由 <strong>grpc-gateway</strong> 反代到 9357（<code>:267-293</code>），所以 REST 与 gRPC <strong>共用同一套实现</strong>。</p>
+<p><strong>RPC 清单</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>RPC</th>
+<th>Stage</th>
+<th>位置</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Ready</code></td>
+<td>Stable</td>
+<td><code>sdkserver.go:541-546</code></td>
+<td>置 <code>RequestReady</code>（controller 再转 <code>Ready</code>）</td>
+</tr>
+<tr>
+<td><code>Allocate</code></td>
+<td>Stable</td>
+<td><code>:549-553</code></td>
+<td>置 <code>Allocated</code> + 写 <code>last-allocated</code> 注解</td>
+</tr>
+<tr>
+<td><code>Shutdown</code></td>
+<td>Stable</td>
+<td><code>:558-564</code></td>
+<td>置 <code>Shutdown</code></td>
+</tr>
+<tr>
+<td><code>Health</code> (client-stream)</td>
+<td>Stable</td>
+<td><code>:568-581</code></td>
+<td>每收一帧刷新 <code>healthLastUpdated</code></td>
+</tr>
+<tr>
+<td><code>GetGameServer</code></td>
+<td>Stable</td>
+<td><code>:646-653</code></td>
+<td>只读</td>
+</tr>
+<tr>
+<td><code>WatchGameServer</code> (server-stream)</td>
+<td>Stable</td>
+<td><code>:657-675</code></td>
+<td>订阅对象变化</td>
+</tr>
+<tr>
+<td><code>SetLabel</code> &#x2F; <code>SetAnnotation</code></td>
+<td>Stable</td>
+<td><code>:585-643</code></td>
+<td>写 <code>agones.dev/sdk-&lt;key&gt;</code> 前缀的元数据</td>
+</tr>
+<tr>
+<td><code>Reserve(Duration)</code></td>
+<td>Stable</td>
+<td><code>:678-695</code></td>
+<td>置 <code>Reserved</code> + <code>ReservedUntil</code>，起回落定时器</td>
+</tr>
+<tr>
+<td><code>PlayerConnect</code> &#x2F; <code>PlayerDisconnect</code></td>
+<td>Alpha</td>
+<td><code>:725-778</code></td>
+<td>玩家进出（FeatureGate 门控）</td>
+</tr>
+<tr>
+<td><code>GetCounter</code> &#x2F; <code>UpdateCounter</code></td>
+<td>Beta</td>
+<td><code>:856-1000</code></td>
+<td>计数器（批量合并 1s）</td>
+</tr>
+<tr>
+<td><code>GetList</code> &#x2F; <code>AddListValue</code> &#x2F; …</td>
+<td>Beta</td>
+<td><code>:1073-1355</code></td>
+<td>列表（最大容量 1000）</td>
+</tr>
+</tbody></table>
+<h3 id="3-3-SDK-调用如何写回：本地缓存-JSON-Patch"><a href="#3-3-SDK-调用如何写回：本地缓存-JSON-Patch" class="headerlink" title="3.3 SDK 调用如何写回：本地缓存 + JSON Patch"></a>3.3 SDK 调用如何写回：本地缓存 + JSON Patch</h3><p><strong>读</strong>：sidecar 起一个<strong>只 watch 自己这一个 GameServer</strong> 的 informer：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/sdkserver/sdkserver.go:157-164</span></span><br><span class="line">resync := <span class="number">0</span> * time.Second</span><br><span class="line">tweakListOptions := <span class="function"><span class="keyword">func</span><span class="params">(opts *metav1.ListOptions)</span></span> &#123;</span><br><span class="line">	s1 := fields.OneTermEqualSelector(<span class="string">&quot;metadata.name&quot;</span>, gameServerName)</span><br><span class="line">	opts.FieldSelector = s1.String()</span><br><span class="line">&#125;</span><br><span class="line">factory := externalversions.NewSharedInformerFactoryWithOptions(agonesClient, resync,</span><br><span class="line">	externalversions.WithNamespace(namespace), externalversions.WithTweakListOptions(tweakListOptions))</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>用 <code>metadata.name</code> 做 field selector，<strong>每个 sidecar 只订阅一个对象</strong>，这是 Sidecar 模式在 K8s 里的标准优化。</p>
+</blockquote>
+<p><strong>写</strong>：所有变更先进一个<strong>单 worker 的限速队列</strong>（默认 500ms 一个请求，<code>cmd/sdk-server/main.go:311</code>），再由 <code>syncGameServer</code> 分发（<code>:338-357</code>），最后用 JSON Patch 打回：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/sdkserver/sdkserver.go:465-477</span></span><br><span class="line">patch, err := gs.Patch(gsCopy)</span><br><span class="line">gs, err = s.gameServerGetter.GameServers(s.namespace).Patch(ctx, gs.GetObjectMeta().GetName(),</span><br><span class="line">	types.JSONPatchType, patch, metav1.PatchOptions&#123;&#125;)</span><br></pre></td></tr></table></figure>
+
+<p><strong>状态写入的两个守卫</strong>（<code>sdkserver.go:376-393</code>）：不允许覆盖正在删除的对象；<strong>不允许从 <code>Unhealthy</code> 逃出</strong>。</p>
+<h3 id="3-4-健康检查：三层"><a href="#3-4-健康检查：三层" class="headerlink" title="3.4 健康检查：三层"></a>3.4 健康检查：三层</h3><pre><code class="highlight mermaid">flowchart TB
+    G[&quot;游戏进程&quot;] --&gt;|&quot;gRPC Health stream&quot;| S1[&quot;sidecar touchHealthLastUpdated&lt;br/&gt;sdkserver.go:579&quot;]
+    S1 --&gt; S2[&quot;goroutine 每 PeriodSeconds 自检&lt;br/&gt;checkHealthUpdateState :1442&quot;]
+    S2 --&gt;|&quot;failureCount &gt;= 3&quot;| U[&quot;置 Unhealthy&lt;br/&gt;:1422&quot;]
+    K[&quot;kubelet&quot;] --&gt;|&quot;GET /gshealthz :8080&quot;| S3[&quot;sidecar 惰性启动检测循环&lt;br/&gt;:217-228&quot;]
+    S3 --&gt;|&quot;失败&quot;| R[&quot;重启容器&quot;]
+    HC[&quot;HealthController&lt;br/&gt;pkg/gameservers/health.go&quot;] --&gt;|&quot;Pod Evicted / 容器失败 / 无空闲端口&quot;| U</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>机制</th>
+<th>默认值</th>
+<th>位置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>① 心跳</td>
+<td>SDK 客户端流式 <code>Health()</code></td>
+<td>—</td>
+<td><code>sdkserver.go:568-581</code></td>
+</tr>
+<tr>
+<td>② sidecar 自检</td>
+<td><code>wait.Until(checkHealthUpdateState, healthTimeout, ...)</code></td>
+<td><code>PeriodSeconds=5</code>、<code>FailureThreshold=3</code></td>
+<td><code>:1442</code>、<code>gameserver.go:413/416</code></td>
+</tr>
+<tr>
+<td>③ kubelet 探针</td>
+<td><code>/gshealthz</code> liveness（controller 注入）</td>
+<td><code>InitialDelaySeconds=5</code></td>
+<td><code>pkg/gameservers/controller.go:840-874</code>、<code>gameserver.go:419</code></td>
+</tr>
+<tr>
+<td>④ controller 兜底</td>
+<td><code>isUnhealthy(pod)</code> 判驱逐&#x2F;崩溃&#x2F;无端口</td>
+<td>—</td>
+<td><code>health.go:115-117</code></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>⚠️ **<code>Health</code> 结构只有 4 个字段，没有 <code>TimeoutSeconds</code>**：<code>Disabled</code> &#x2F; <code>PeriodSeconds</code> &#x2F; <code>FailureThreshold</code> &#x2F; <code>InitialDelaySeconds</code>（<code>gameserver.go:263-273</code>）。<code>PeriodSeconds</code> 兼任”心跳间隔”和”超时窗口”两职（<code>:264</code> <code>s.healthTimeout = PeriodSeconds * time.Second</code>）。</p>
+</blockquote>
+<p><strong>防误判的巧技</strong>：<code>skipUnhealthyGameContainer</code>（<code>health.go:305-356</code>）用 <code>agones.dev/ready-container-id</code> 注解区分”Ready 之前崩溃（可重启）”与”Ready 之后崩溃（→ Unhealthy）”。</p>
+<h3 id="3-5-端口分配：每-Node-一张位图"><a href="#3-5-端口分配：每-Node-一张位图" class="headerlink" title="3.5 端口分配：每 Node 一张位图"></a>3.5 端口分配：每 Node 一张位图</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/portallocator/portallocator.go:40-58</span></span><br><span class="line"><span class="keyword">type</span> Interface <span class="keyword">interface</span> &#123;</span><br><span class="line">	Run(ctx context.Context) <span class="type">error</span></span><br><span class="line">	Allocate(gs *agonesv1.GameServer) *agonesv1.GameServer</span><br><span class="line">	DeAllocate(gs *agonesv1.GameServer)</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">type</span> PortRange <span class="keyword">struct</span> &#123; MinPort <span class="type">int32</span>; MaxPort <span class="type">int32</span> &#125;</span><br></pre></td></tr></table></figure>
+
+<p>核心扫描（<code>:193-210</code>）与 Passthrough 语义（<code>:236-240</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">gs.Spec.Ports[i].HostPort = a.port</span><br><span class="line"><span class="keyword">if</span> p.PortPolicy == agonesv1.Passthrough &#123;</span><br><span class="line">	gs.Spec.Ports[i].ContainerPort = a.port   <span class="comment">// containerPort 也被改成同值</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>端口耗尽时递归扩容位图</strong>（<code>:272-274</code>），注释说明是为了配合 Cluster Autoscaler——<strong>没有空闲端口 ≠ 游戏服务器坏了</strong>，可能是节点不够。</p>
+<p><strong>失败回滚</strong>（<code>pkg/gameservers/controller.go:589</code>）：分配后 Update 失败立即 <code>DeAllocate</code>，避免端口泄漏。</p>
+<h3 id="3-6-Pod-创建与环境变量注入"><a href="#3-6-Pod-创建与环境变量注入" class="headerlink" title="3.6 Pod 创建与环境变量注入"></a>3.6 Pod 创建与环境变量注入</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/gameservers/controller.go:692-720</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Controller)</span></span> createGameServerPod(ctx context.Context, gs *agonesv1.GameServer) (*agonesv1.GameServer, <span class="type">error</span>) &#123;</span><br><span class="line">	sidecar := c.sidecar(gs)                        <span class="comment">// :693</span></span><br><span class="line">	pod, err := gs.Pod(c.controllerHooks, sidecar)  <span class="comment">// :694</span></span><br><span class="line">	...</span><br><span class="line">	err = c.addGameServerHealthCheck(gs, pod)        <span class="comment">// :713</span></span><br><span class="line">	c.addSDKServerEnvVars(gs, pod)                   <span class="comment">// :717</span></span><br><span class="line">	pod, err = c.podGetter.Pods(...).Create(ctx, pod, metav1.CreateOptions&#123;&#125;)  <span class="comment">// :720</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>sidecar 容器注入的环境变量</strong>（<code>pkg/gameservers/controller.go:750-779</code>）：</p>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>值</th>
+<th>行号</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>GAMESERVER_NAME</code></td>
+<td><code>gs.ObjectMeta.Name</code></td>
+<td><code>:751-754</code></td>
+</tr>
+<tr>
+<td><code>POD_NAMESPACE</code></td>
+<td><code>metadata.namespace</code>（fieldRef）</td>
+<td><code>:755-762</code></td>
+</tr>
+<tr>
+<td><code>FEATURE_GATES</code></td>
+<td><code>runtime.EncodeFeatures()</code></td>
+<td><code>:763-766</code></td>
+</tr>
+<tr>
+<td><code>LOG_LEVEL</code></td>
+<td><code>gs.Spec.SdkServer.LogLevel</code></td>
+<td><code>:767-770</code></td>
+</tr>
+<tr>
+<td><code>REQUESTS_RATE_LIMIT</code></td>
+<td>默认 <code>500ms</code></td>
+<td><code>:771-774</code></td>
+</tr>
+<tr>
+<td><code>MAX_LIST_ITEMS</code></td>
+<td>默认 1000</td>
+<td><code>:775-778</code></td>
+</tr>
+</tbody></table>
+<p><strong>游戏容器注入</strong>：<code>AGONES_SDK_GRPC_PORT</code> &#x2F; <code>AGONES_SDK_HTTP_PORT</code>（常量在 <code>pkg/gameservers/controller.go:65-66</code>，注入逻辑 <code>:918-933</code>）。SDK 客户端默认连 <code>localhost:9357</code>，30s 握手超时（<code>sdks/go/sdk.go:55-68</code>）。</p>
+<h3 id="3-7-Eviction：三态模型-PDB"><a href="#3-7-Eviction：三态模型-PDB" class="headerlink" title="3.7 Eviction：三态模型 + PDB"></a>3.7 Eviction：三态模型 + PDB</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/apis/agones/v1/gameserver.go:88-101</span></span><br><span class="line">EvictionSafeAlways    EvictionSafe = <span class="string">&quot;Always&quot;</span>     <span class="comment">// :94</span></span><br><span class="line">EvictionSafeOnUpgrade EvictionSafe = <span class="string">&quot;OnUpgrade&quot;</span>  <span class="comment">// :97</span></span><br><span class="line">EvictionSafeNever     EvictionSafe = <span class="string">&quot;Never&quot;</span>      <span class="comment">// :100   ← 默认（:482）</span></span><br></pre></td></tr></table></figure>
+
+<p>落地到 Pod 的两个元数据（<code>pkg/cloudproduct/eviction/eviction.go:27-59</code>）：</p>
+<table>
+<thead>
+<tr>
+<th>eviction.safe</th>
+<th><code>safe-to-evict</code> 注解</th>
+<th><code>agones.dev/safe-to-evict</code> 标签</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Always</code></td>
+<td><code>&quot;true&quot;</code></td>
+<td><code>&quot;true&quot;</code></td>
+</tr>
+<tr>
+<td><code>OnUpgrade</code></td>
+<td><code>&quot;false&quot;</code>（挡 CA 缩容）</td>
+<td><code>&quot;true&quot;</code>（不匹配严格 PDB）</td>
+</tr>
+<tr>
+<td><code>Never</code>（默认）</td>
+<td><code>&quot;false&quot;</code></td>
+<td><code>&quot;false&quot;</code>（<strong>匹配严格 PDB</strong>）</td>
+</tr>
+</tbody></table>
+<p>配套 PDB 名 <code>agones-gameserver-safe-to-evict-false</code>，selector <code>agones.dev/safe-to-evict: &quot;false&quot;</code>（<code>install/helm/agones/templates/pdb.yaml:20-26</code>）。</p>
+<blockquote>
+<p>💡 这套”注解给 Cluster Autoscaler 看、标签给 PDB 看”的双元数据设计，是 K8s 上保护有状态工作负载的标准打法。</p>
+</blockquote>
+<h3 id="3-8-云厂商抽象"><a href="#3-8-云厂商抽象" class="headerlink" title="3.8 云厂商抽象"></a>3.8 云厂商抽象</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/cloudproduct/cloudproduct.go:43-55</span></span><br><span class="line"><span class="keyword">type</span> ControllerHooksInterface <span class="keyword">interface</span> &#123;</span><br><span class="line">	agonesv1.APIHooks</span><br><span class="line">	SyncPodPortsToGameServer(*agonesv1.GameServer, *corev1.Pod) <span class="type">error</span></span><br><span class="line">	NewPortAllocator(...) portallocator.Interface</span><br><span class="line">	WaitOnFreePorts() <span class="type">bool</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>本版本只有两个实现</strong>（没有独立的 EKS&#x2F;AKS 包）：</p>
+<table>
+<thead>
+<tr>
+<th>产品</th>
+<th>位置</th>
+<th>特殊处理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>generic</code>（含 EKS&#x2F;AKS&#x2F;GKE Standard）</td>
+<td><code>pkg/cloudproduct/generic/generic.go:32-55</code></td>
+<td>全放行，标准端口分配器</td>
+</tr>
+<tr>
+<td><code>gke-autopilot</code></td>
+<td><code>pkg/cloudproduct/gke/gke.go:100-102</code></td>
+<td>读 <code>autopilot.gke.io/host-port-assignment</code> 注解做端口重映射（<code>:104-125</code>）、强制 Packed（<code>:153-160</code>）、<code>WaitOnFreePorts()=true</code>（<code>:135</code>）</td>
+</tr>
+</tbody></table>
+<h3 id="第三讲小结：状态机是”双人舞”"><a href="#第三讲小结：状态机是”双人舞”" class="headerlink" title="第三讲小结：状态机是”双人舞”"></a>第三讲小结：状态机是”双人舞”</h3><table>
+<thead>
+<tr>
+<th>项</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>一句话定位</strong></td>
+<td>controller 建 Pod 推到 <code>Scheduled</code>，之后由 <strong>sidecar 通过 gRPC + JSON Patch 反向写 CRD</strong>；健康检查三层；端口按 Node 位图分配</td>
+</tr>
+<tr>
+<td><strong>输入</strong></td>
+<td>GameServer CRD + SDK 的 gRPC 调用</td>
+</tr>
+<tr>
+<td><strong>输出</strong></td>
+<td>Pod + 状态迁移 + <code>Status.Ports/Address</code></td>
+</tr>
+<tr>
+<td><strong>三个最值得记住的点</strong></td>
+<td>① <code>Ready</code>&#x2F;<code>Allocated</code>&#x2F;<code>Shutdown</code> 由<strong>游戏进程</strong>发起（<code>sdkserver.go:541/549/558</code>），controller 无权决定；② sidecar 直连 API Server 做 JSON Patch（<code>:471</code>），不经过 controller；③ <code>Reserved</code> 是<strong>唯一会自动回退</strong>的状态（<code>:699-709</code>）</td>
+</tr>
+</tbody></table>
+<pre><code class="highlight mermaid">flowchart LR
+    C[&quot;controller&quot;] --&gt;|&quot;建 Pod + 填地址&quot;| GS[&quot;GameServer CRD&quot;]
+    SDK[&quot;sidecar :9357&quot;] --&gt;|&quot;JSON Patch :471&quot;| GS
+    GAME[&quot;游戏进程&quot;] --&gt;|&quot;Ready/Allocate/Shutdown&quot;| SDK
+    GS --&gt;|&quot;watch 单对象 :157&quot;| SDK
+    HC[&quot;HealthController&quot;] --&gt;|&quot;判 Unhealthy&quot;| GS</code></pre>
+
+<hr>
+<h2 id="第四讲：Fleet-与-GameServerSet-编排"><a href="#第四讲：Fleet-与-GameServerSet-编排" class="headerlink" title="第四讲：Fleet 与 GameServerSet 编排"></a>第四讲：Fleet 与 GameServerSet 编排</h2><h3 id="先说人话：Fleet-只管”数量”，GameServerSet-才管”生死”"><a href="#先说人话：Fleet-只管”数量”，GameServerSet-才管”生死”" class="headerlink" title="先说人话：Fleet 只管”数量”，GameServerSet 才管”生死”"></a>先说人话：Fleet 只管”数量”，GameServerSet 才管”生死”</h3><p>Fleet controller <strong>不直接创建 GameServer</strong>。它把 <code>Fleet.Spec.Template</code> 摊平成若干 GameServerSet，通过改 <code>Replicas</code> 实现滚动更新，最后把各 Set 的 status 聚合回 Fleet。</p>
+<h3 id="4-1-Fleet-controller-主流程"><a href="#4-1-Fleet-controller-主流程" class="headerlink" title="4.1 Fleet controller 主流程"></a>4.1 Fleet controller 主流程</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/fleets/controller.go:330-355</span></span><br><span class="line">list, err := ListGameServerSetsByFleetOwner(gameServerSetNamespacedLister, fleet)</span><br><span class="line">active, rest := c.filterGameServerSetByActive(fleet, list)</span><br><span class="line"><span class="keyword">if</span> active == <span class="literal">nil</span> &#123;</span><br><span class="line">	active = fleet.GameServerSet()     <span class="comment">// 内存里造一个，还没持久化</span></span><br><span class="line">&#125;</span><br><span class="line">replicas, err := c.applyDeploymentStrategy(ctx, fleet, active, rest)</span><br><span class="line"><span class="keyword">if</span> err := c.deleteEmptyGameServerSets(ctx, fleet, rest); err != <span class="literal">nil</span> &#123; ... &#125;</span><br><span class="line"><span class="keyword">if</span> err := c.upsertGameServerSet(ctx, fleet, active, replicas); err != <span class="literal">nil</span> &#123; ... &#125;</span><br><span class="line"><span class="keyword">return</span> c.updateFleetStatus(ctx, fleet)</span><br></pre></td></tr></table></figure>
+
+<p><strong><code>Replicas</code> 不是原始值，而是被策略”折减”后的目标</strong>。</p>
+<h3 id="4-2-滚动更新：两个参数，两个基数"><a href="#4-2-滚动更新：两个参数，两个基数" class="headerlink" title="4.2 滚动更新：两个参数，两个基数"></a>4.2 滚动更新：两个参数，两个基数</h3><pre><code class="highlight mermaid">flowchart TD
+    S[&quot;applyDeploymentStrategy&lt;br/&gt;pkg/fleets/controller.go:417-443&quot;] --&gt; T&#123;&quot;Strategy.Type&quot;&#125;
+    T --&gt;|&quot;Recreate&quot;| RC[&quot;recreateDeployment :465-482&lt;br/&gt;rest 全部打到 0&quot;]
+    T --&gt;|&quot;RollingUpdate&quot;| RU[&quot;rollingUpdateDeployment :501-547&quot;]
+    RU --&gt; UP[&quot;膨胀侧：MaxSurge&lt;br/&gt;基数 = Spec.Replicas :528&quot;]
+    RU --&gt; DOWN[&quot;收缩侧：MaxUnavailable&lt;br/&gt;基数 = Status.ReadyReplicas&lt;br/&gt;controller_rollingupdatefix.go:60&quot;]
+    UP --&gt; UPS[&quot;upsertGameServerSet :361-413&quot;]
+    DOWN --&gt; UPS</code></pre>
+
+<p><strong>膨胀侧的四道闸门</strong>（<code>pkg/fleets/controller.go:501-547</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ① 正在滚动中 → 等</span></span><br><span class="line"><span class="keyword">if</span> active.Spec.Replicas != active.Status.Replicas &#123;</span><br><span class="line">	<span class="keyword">return</span> replicas, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// ② 目标为 0 → 滚动无意义</span></span><br><span class="line"><span class="keyword">if</span> fleet.Spec.Replicas == <span class="number">0</span> &#123; <span class="keyword">return</span> <span class="number">0</span>, <span class="literal">nil</span> &#125;</span><br><span class="line"><span class="comment">// ③ 已够（给 Allocated 留位置）→ 直接返回</span></span><br><span class="line"><span class="keyword">if</span> active.Spec.Replicas &gt;= (fleet.Spec.Replicas - sumAllocated) &#123;</span><br><span class="line">	<span class="keyword">return</span> fleet.LowerBoundReplicas(fleet.Spec.Replicas - sumAllocated), <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// ④ 按 MaxSurge 加，再夹逼</span></span><br><span class="line">r, err := intstr.GetValueFromIntOrPercent(fleet.Spec.Strategy.RollingUpdate.MaxSurge, <span class="type">int</span>(fleet.Spec.Replicas), <span class="literal">true</span>)</span><br></pre></td></tr></table></figure>
+
+<p><strong>收缩侧的核心不动点</strong>（<code>pkg/fleets/controller_rollingupdatefix.go:59-89</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">minAvailable := min(fleet.Status.ReadyReplicas-unavailable, fleet.Spec.Replicas)</span><br><span class="line">newGSSUnavailablePodCount := active.Spec.Replicas - active.Status.ReadyReplicas - active.Status.ReservedReplicas -</span><br><span class="line">	active.Status.AllocatedReplicas - active.Status.ShutdownReplicas</span><br><span class="line">maxScaledDown := readyReplicasCount - minAvailable - newGSSUnavailablePodCount</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> maxScaledDown &lt;= <span class="number">0</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span>    <span class="comment">// ← 新 Set 还没起来一批 Ready，旧 Set 不许往下调</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>🔑 这与 K8s Deployment 的 <code>scaleDownOldReplicaSetsForRollingUpdate</code> 同构：<strong>先起新的，再收旧的</strong>。</p>
+</blockquote>
+<p><strong>Recreate 与 RollingUpdate 的一处不一致</strong>（值得记住）：<code>Recreate</code> 只减 <code>Allocated</code>（<code>pkg/fleets/controller.go:465-482</code>），而 <code>RollingUpdate</code> 的某条分支减的是 <code>Reserved + Allocated</code>（<code>:428-430</code>）。</p>
+<h3 id="4-3-GameServerSet-扩缩容：两趟扫描"><a href="#4-3-GameServerSet-扩缩容：两趟扫描" class="headerlink" title="4.3 GameServerSet 扩缩容：两趟扫描"></a>4.3 GameServerSet 扩缩容：两趟扫描</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/gameserversets/controller.go:409-414</span></span><br><span class="line"><span class="comment">// pass 1 - count allocated/reserved servers only, since those can&#x27;t be touched</span></span><br><span class="line"><span class="keyword">for</span> _, gs := <span class="keyword">range</span> list &#123;</span><br><span class="line">	<span class="keyword">if</span> !gs.IsDeletable() &#123;</span><br><span class="line">		upCount++</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>第一趟只数不可删的（Allocated&#x2F;Reserved），它们连候选都进不去</strong>；第二趟才扫其余状态。</p>
+<p><strong>三个节流阀门</strong>（<code>:473-487</code>）：</p>
+<table>
+<thead>
+<tr>
+<th>阀门</th>
+<th>默认值</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>maxCreations</code></td>
+<td>64</td>
+<td>单批最大创建数</td>
+</tr>
+<tr>
+<td><code>maxPending</code></td>
+<td>5000</td>
+<td>允许的最大 Pending Pod 总数（防打爆 kubelet）</td>
+</tr>
+<tr>
+<td><code>maxDeletions</code></td>
+<td>64</td>
+<td>单批最大删除数</td>
+</tr>
+</tbody></table>
+<p>被截断则 <code>partialReconciliation = true</code>，返回后 <code>defer c.workerqueue.EnqueueImmediately(gsSet)</code>（<code>:354-359</code>）立刻再排一轮。</p>
+<h3 id="4-4-删除顺序：按调度策略排序，不是固定优先级"><a href="#4-4-删除顺序：按调度策略排序，不是固定优先级" class="headerlink" title="4.4 删除顺序：按调度策略排序，不是固定优先级"></a>4.4 删除顺序：按调度策略排序，不是固定优先级</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/gameserversets/controller.go:490-498</span></span><br><span class="line"><span class="keyword">if</span> deleteCount &gt; <span class="number">0</span> &#123;</span><br><span class="line">	potentialDeletions = SortGameServersByStrategy(strategy, potentialDeletions, counts, priorities)</span><br><span class="line">	toDelete = <span class="built_in">append</span>(toDelete, potentialDeletions[<span class="number">0</span>:deleteCount]...)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>排序实现在 <code>pkg/gameserversets/gameserversets.go:46-119</code>：</p>
+<ul>
+<li><strong>Packed</strong>（<code>:55-102</code>）：未调度&#x2F;节点已删的排最前 → 同节点内 <code>IsBeforeReady</code> 优先于 Ready → 节点 <code>(Allocated+Ready)</code> <strong>少</strong>的优先 → 按 <code>NodeName</code> 字典序（使同一节点被排空）。</li>
+<li><strong>Distributed</strong>（<code>:106-119</code>）：先按 Counter&#x2F;List Priorities，再按 <code>CreationTimestamp</code> <strong>最老的排最前</strong>。</li>
+</ul>
+<blockquote>
+<p>💡 <strong>这与分配侧的排序方向正好相反</strong>：分配往”最挤”的节点塞（<code>allocation_cache.go:197-211</code> <code>(Allocated+Ready)</code> 多的排前），缩容从”最空”的节点收。二者互补，使 GameServer 密度收敛、缩容效率最高。</p>
+</blockquote>
+<p><strong>删除动作是”置 Shutdown”而不是 Delete 对象</strong>（<code>:550-562</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// We should not delete the gameservers directly buy set their state to shutdown and let the gameserver controller to delete</span></span><br><span class="line">gsCopy.Status.State = agonesv1.GameServerStateShutdown</span><br></pre></td></tr></table></figure>
+
+<p><strong>Error 状态的 30s 宽限期</strong>（<code>:503-519</code>，常量 <code>gameServerErrorDeletionDelay = 30 * time.Second</code> 在 <code>:64</code>）：崩坏型 template 会被遏制创建 churn。</p>
+<h3 id="4-5-AllocationOverflow：溢出标记"><a href="#4-5-AllocationOverflow：溢出标记" class="headerlink" title="4.5 AllocationOverflow：溢出标记"></a>4.5 AllocationOverflow：溢出标记</h3><p>由 GameServerSet 内一个<strong>独立 controller</strong> 实现（<code>pkg/gameserversets/allocation_overflow.go</code>）。触发条件 <code>Status.AllocatedReplicas &gt; Spec.Replicas</code>（<code>:89</code>、<code>:134</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/gameserversets/allocation_overflow.go:138-161</span></span><br><span class="line">overflow := gsSet.Status.AllocatedReplicas - gsSet.Spec.Replicas</span><br><span class="line">list, err := ListGameServersByGameServerSetOwner(c.gameServerLister, gsSet)</span><br><span class="line">matches, rest := gsSet.Spec.AllocationOverflow.CountMatches(list)</span><br><span class="line"><span class="keyword">if</span> matches &gt;= overflow &#123; <span class="keyword">return</span> <span class="literal">nil</span> &#125;</span><br><span class="line">rest = SortGameServersByStrategy(gsSet.Spec.Scheduling, rest, c.counter.Counts(), gsSet.Spec.Priorities)</span><br><span class="line">rest = rest[:(overflow - matches)]</span><br><span class="line"><span class="keyword">for</span> _, gs := <span class="keyword">range</span> rest &#123;</span><br><span class="line">	gsSet.Spec.AllocationOverflow.Apply(gsCopy)   <span class="comment">// 打 label/annotation</span></span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>用途：当集群缩容但仍有 Allocated 的 GameServer 时，给”超出”的那部分打标记，供外部监控系统识别（”这些是溢出实例，别按常规告警”）。</p>
+</blockquote>
+<h3 id="第四讲小结：数量在-Fleet，生死在-GameServerSet"><a href="#第四讲小结：数量在-Fleet，生死在-GameServerSet" class="headerlink" title="第四讲小结：数量在 Fleet，生死在 GameServerSet"></a>第四讲小结：数量在 Fleet，生死在 GameServerSet</h3><table>
+<thead>
+<tr>
+<th>项</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>一句话定位</strong></td>
+<td>Fleet 只算 GameServerSet 的 <code>Replicas</code>；GameServerSet 做多退少补，<strong>删除顺序由 Packed&#x2F;Distributed 排序决定</strong>，<code>Allocated</code>&#x2F;<code>Reserved</code> 绝对保护</td>
+</tr>
+<tr>
+<td><strong>输入</strong></td>
+<td><code>Fleet.Spec.Replicas</code> &#x2F; <code>Strategy</code> &#x2F; <code>Scheduling</code></td>
+</tr>
+<tr>
+<td><strong>输出</strong></td>
+<td>GameServerSet 的 <code>Replicas</code>；GameServer 的创建与置 <code>Shutdown</code></td>
+</tr>
+<tr>
+<td><strong>三个最值得记住的点</strong></td>
+<td>① <code>MaxSurge</code> 以 <code>Spec.Replicas</code> 为基数、<code>MaxUnavailable</code> 以 <code>Status.ReadyReplicas</code> 为基数（<code>:528</code> &#x2F; <code>controller_rollingupdatefix.go:60</code>）；② 缩容删除<strong>没有固定状态优先级</strong>，是排序后取前 N（<code>:490-498</code>）；③ 删除是”置 Shutdown”而非 Delete（<code>:550-562</code>）</td>
+</tr>
+</tbody></table>
+<pre><code class="highlight mermaid">flowchart TD
+    F[&quot;Fleet.Spec.Replicas&quot;] --&gt; ADS[&quot;applyDeploymentStrategy :417&quot;]
+    ADS --&gt; UP[&quot;MaxSurge 加新 Set :528&quot;]
+    ADS --&gt; DOWN[&quot;MaxUnavailable 减旧 Set&lt;br/&gt;controller_rollingupdatefix.go:60&quot;]
+    UP --&gt; UPS[&quot;upsertGameServerSet :361&quot;]
+    DOWN --&gt; UPS
+    UPS --&gt; GSS[&quot;GameServerSet.Spec.Replicas&quot;]
+    GSS --&gt; CRA[&quot;computeReconciliationAction :380&quot;]
+    CRA --&gt;|&quot;pass1 数 Allocated/Reserved&quot;| UP1[&quot;upCount&quot;]
+    CRA --&gt;|&quot;pass2 扫其余&quot;| PD[&quot;potentialDeletions&quot;]
+    PD --&gt; SORT[&quot;SortGameServersByStrategy&lt;br/&gt;gameserversets.go:46&quot;]
+    SORT --&gt;|&quot;取前 N&quot;| DEL[&quot;置 Shutdown :556&quot;]
+    CRA --&gt;|&quot;numServersToAdd&quot;| ADD[&quot;addMoreGameServers :522&quot;]</code></pre>
+
+<hr>
+<h2 id="第五讲：GameServerAllocation-——-分配的两条路径"><a href="#第五讲：GameServerAllocation-——-分配的两条路径" class="headerlink" title="第五讲：GameServerAllocation —— 分配的两条路径"></a>第五讲：GameServerAllocation —— 分配的两条路径</h2><h3 id="先说人话：一次-RPC-换来一个-IP-Port"><a href="#先说人话：一次-RPC-换来一个-IP-Port" class="headerlink" title="先说人话：一次 RPC 换来一个 IP:Port"></a>先说人话：一次 RPC 换来一个 IP:Port</h3><p>匹配器拿到一批玩家后，向 Agones 要一个可用的游戏服务器。本讲回答：请求怎么进来的、怎么挑、并发怎么保证安全、没货时怎么返回。</p>
+<h3 id="5-1-两条路径"><a href="#5-1-两条路径" class="headerlink" title="5.1 两条路径"></a>5.1 两条路径</h3><pre><code class="highlight mermaid">flowchart LR
+    subgraph In[&quot;集群内&quot;]
+        M1[&quot;kubectl create -f gsa.yaml&quot;] --&gt; EXT[&quot;agones-extensions&lt;br/&gt;聚合 API Server&quot;]
+        EXT --&gt; AC1[&quot;c.allocator.Allocate&lt;br/&gt;pkg/gameserverallocations/controller.go:195&quot;]
+    end
+    subgraph Out[&quot;集群外&quot;]
+        M2[&quot;匹配器 gRPC&quot;] --&gt; ALC[&quot;agones-allocator :443 mTLS&quot;]
+        ALC --&gt; SH[&quot;serviceHandler.Allocate&lt;br/&gt;cmd/allocator/main.go:785&quot;]
+        SH --&gt; AC2[&quot;Allocator.Allocate&quot;]
+    end
+    AC1 --&gt; CORE[&quot;核心分配逻辑&quot;]
+    AC2 --&gt; CORE
+    CORE --&gt; RES[&quot;GameServerAllocation&lt;br/&gt;State=Allocated/UnAllocated/Contention&quot;]</code></pre>
+
+<p>**集群内是”聚合 API Server + 只注册 create 动词”**：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/gameserverallocations/controller.go:125-138</span></span><br><span class="line">resource := metav1.APIResource&#123;</span><br><span class="line">	Name: <span class="string">&quot;gameserverallocations&quot;</span>, SingularName: <span class="string">&quot;gameserverallocation&quot;</span>,</span><br><span class="line">	Namespaced: <span class="literal">true</span>, Kind: <span class="string">&quot;GameServerAllocation&quot;</span>,</span><br><span class="line">	Verbs: []<span class="type">string</span>&#123;<span class="string">&quot;create&quot;</span>&#125;,     <span class="comment">// ← 只有 create</span></span><br><span class="line">	ShortNames: []<span class="type">string</span>&#123;<span class="string">&quot;gsa&quot;</span>&#125;,</span><br><span class="line">&#125;</span><br><span class="line">c.api.AddAPIResource(allocationv1.SchemeGroupVersion.String(), resource, <span class="function"><span class="keyword">func</span><span class="params">(w http.ResponseWriter, r *http.Request, n <span class="type">string</span>)</span></span> <span class="type">error</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> c.processAllocationRequest(ctx, w, r, n)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>**集群外是独立二进制 <code>cmd/allocator</code>**，gRPC 与 REST <strong>复用同一个端口</strong>（443 → targetPort 8443，<code>install/helm/agones/values.yaml:265-275</code>），靠 <code>grpcHandlerFunc</code> 嗅探 Content-Type 分流（<code>cmd/allocator/main.go:223</code>、<code>:403-415</code>）。mTLS 客户端认证默认开启（<code>:115-116</code>）。</p>
+<h3 id="5-2-分配缓存：只收-Ready-与-Allocated"><a href="#5-2-分配缓存：只收-Ready-与-Allocated" class="headerlink" title="5.2 分配缓存：只收 Ready 与 Allocated"></a>5.2 分配缓存：只收 Ready 与 Allocated</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/gameserverallocations/cache.go:23-29</span></span><br><span class="line"><span class="keyword">type</span> gameServerCache <span class="keyword">struct</span> &#123;</span><br><span class="line">	mu    sync.RWMutex</span><br><span class="line">	cache <span class="keyword">map</span>[<span class="type">string</span>]*agonesv1.GameServer   <span class="comment">// key = namespace/name</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>⚠️ <strong>注意不是按 fleet 分桶</strong>，是<strong>扁平的一个 map</strong>。</p>
+<p><strong>matcher 只收两个状态</strong>（<code>pkg/gameserverallocations/allocation_cache.go:39-42</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">readyOrAllocatedGameServerMatcher</span><span class="params">(gs *agonesv1.GameServer)</span></span> <span class="type">bool</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> gs.Status.State == agonesv1.GameServerStateReady || gs.Status.State == agonesv1.GameServerStateAllocated</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>🔑 <strong>为什么要收 Allocated</strong>？为了让<strong>同一个已 Allocated 的 GameServer 能被反复分配</strong>（多轮 Matchmaking 场景，玩家陆续加入同一局）。这也是为什么系统必须写 <code>agones.dev/last-allocated</code> 时间戳注解——保证每次 Update 都产生 resourceVersion 变化，被 webhook 视为有效更新。</p>
+</blockquote>
+<p><strong>Store 有版本保护</strong>（<code>cache.go:43-52</code>）：Generation 更小、或 ResourceVersion 相同则直接丢弃（顺带省一次 DeepCopy）。防的是<strong>乱序 watch 事件回写旧对象</strong>。</p>
+<p><strong>watch 事件只有 Update&#x2F;Delete，没有 AddFunc</strong>（<code>allocation_cache.go:65-96</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">switch</span> &#123;</span><br><span class="line"><span class="keyword">case</span> newGs.IsBeingDeleted():</span><br><span class="line">	c.cache.Delete(key)</span><br><span class="line"><span class="keyword">case</span> c.matcher(newGs):</span><br><span class="line">	c.cache.Store(key, newGs)</span><br><span class="line"><span class="keyword">case</span> c.matcher(oldGs):</span><br><span class="line">	c.cache.Delete(key)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-3-Packed-vs-Distributed：三处差异"><a href="#5-3-Packed-vs-Distributed：三处差异" class="headerlink" title="5.3 Packed vs Distributed：三处差异"></a>5.3 Packed vs Distributed：三处差异</h3><p><strong>① 排序阶段</strong>（<code>allocator.go:566-573</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> list == <span class="literal">nil</span> &#123;</span><br><span class="line">	<span class="keyword">if</span> req.gsa.Spec.Scheduling == apis.Packed &#123;</span><br><span class="line">		list = c.allocationCache.ListSortedGameServers(req.gsa)</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="comment">// If Scheduling == Distributed, sort game servers by Priorities</span></span><br><span class="line">		list = c.allocationCache.ListSortedGameServersPriorities(req.gsa)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Distributed 走 <code>ListSortedGameServersPriorities</code>，<strong>完全不看节点计数</strong>。</p>
+<p><strong>② Packed 排序把 Allocated 排最前</strong>（<code>allocation_cache.go:182-211</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Search Allocated GameServers first.</span></span><br><span class="line"><span class="keyword">if</span> gs1.Status.State != gs2.Status.State &#123;</span><br><span class="line">	<span class="keyword">return</span> gs1.Status.State == agonesv1.GameServerStateAllocated</span><br><span class="line">&#125;</span><br><span class="line">...</span><br><span class="line"><span class="keyword">if</span> c1.Allocated &gt; c2.Allocated &#123; <span class="keyword">return</span> <span class="literal">true</span> &#125;</span><br><span class="line">...</span><br><span class="line"><span class="comment">// prefer nodes that have the most Ready gameservers on them - they are most likely to be</span></span><br><span class="line"><span class="comment">// completely filled and least likely target for scale down.</span></span><br><span class="line"><span class="keyword">if</span> c1.Ready &gt; c2.Ready &#123; <span class="keyword">return</span> <span class="literal">true</span> &#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>③ Distributed 遍历阶段随机化</strong>（<code>pkg/gameserverallocations/find.go:49-76</code>）：无 Priorities 时 <code>rand.Shuffle</code> 打乱索引；<strong>一旦配了 Priorities 就退化成顺序遍历</strong>（注释在 <code>:68-70</code>）。</p>
+<h3 id="5-4-并发安全：单-goroutine-事件循环"><a href="#5-4-并发安全：单-goroutine-事件循环" class="headerlink" title="5.4 并发安全：单 goroutine 事件循环"></a>5.4 并发安全：单 goroutine 事件循环</h3><pre><code class="highlight mermaid">sequenceDiagram
+    autonumber
+    participant C as Client
+    participant A as Allocator.Allocate&lt;br/&gt;allocator.go:202
+    participant L as allocateFromLocalCluster :264
+    participant Q as allocate() :467
+    participant LA as ListenAndAllocate 单 goroutine :491
+    participant AC as AllocationCache
+    participant UW as updateWorkers :607
+    participant K8s as Kubernetes API
+
+    C-&gt;&gt;A: AllocationRequest
+    A-&gt;&gt;A: Validate + Converter（合并 Preferred+Required）:213-232
+    A-&gt;&gt;L: Retry(allocationRetry, ...) 5 次 / 10ms :268
+    L-&gt;&gt;Q: 投递到 pendingRequests chan（容量 100）:479
+    Q-&gt;&gt;LA: 请求入队
+    LA-&gt;&gt;AC: findGameServerForAllocation(gsa, list) :575
+    LA-&gt;&gt;AC: RemoveGameServer(gs) :583
+    LA-&gt;&gt;UW: updateQueue &lt;- response :589
+    UW-&gt;&gt;K8s: 置 Allocated + last-allocated :690
+    UW--&gt;&gt;Q: 回传结果 :630
+    Q--&gt;&gt;C: gsa（含 Ports/Address/NodeName）</code></pre>
+
+<blockquote>
+<p>🔑 <strong>没有全局锁</strong>。并发安全靠两点：<code>gameServerCache</code> 自己的 <code>sync.RWMutex</code>；以及 <strong><code>ListenAndAllocate</code> 是单 goroutine</strong>消费 <code>pendingRequests</code>，天然串行化”挑服”这个临界操作。</p>
+</blockquote>
+<p><strong>Batch 失效条件</strong>（<code>allocator.go:540-562</code>）：请求数达 <code>maxBatchBeforeRefresh = 100</code>（<code>:84</code>），或本请求的 <code>SortKey()</code> 与当前批不同 → 整列表作废重排。<code>SortKey</code> 是 <code>Spec</code> 的哈希，避免不同优先级的请求共用同一份排好序的列表。</p>
+<h3 id="5-5-失败语义：不是错误码"><a href="#5-5-失败语义：不是错误码" class="headerlink" title="5.5 失败语义：不是错误码"></a>5.5 失败语义：不是错误码</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/gameserverallocations/allocator.go:281-308</span></span><br><span class="line"><span class="keyword">if</span> err != <span class="literal">nil</span> &amp;&amp; !goErrors.Is(err, ErrNoGameServer) &amp;&amp; !goErrors.Is(err, ErrConflictInGameServerSelection) &#123;</span><br><span class="line">	c.allocationCache.Resync()</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">switch</span> &#123;</span><br><span class="line"><span class="keyword">case</span> goErrors.Is(err, ErrNoGameServer), goErrors.Is(err, ErrGameServerUpdateConflict):</span><br><span class="line">	gsa.Status.State = allocationv1.GameServerAllocationUnAllocated</span><br><span class="line"><span class="keyword">case</span> goErrors.Is(err, ErrConflictInGameServerSelection):</span><br><span class="line">	gsa.Status.State = allocationv1.GameServerAllocationContention</span><br><span class="line"><span class="keyword">default</span>:</span><br><span class="line">	gsa.Status.State = allocationv1.GameServerAllocationAllocated</span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>HTTP 层最终给 <strong>201 Created</strong>（<code>pkg/gameserverallocations/controller.go:203-204</code>）；gRPC 侧默认映射 <code>429 Too Many Requests</code>（<code>cmd/allocator/main.go:122</code>）。</p>
+<p>⚠️ <strong>这是最容易踩的坑</strong>：很多人在客户端判断 HTTP 状态码，结果”没货”时拿到 201 以为成功了。**必须看 <code>Status.State</code>**。</p>
+<h3 id="5-6-多集群分配"><a href="#5-6-多集群分配" class="headerlink" title="5.6 多集群分配"></a>5.6 多集群分配</h3><p>入口 <code>MultiClusterSetting.Enabled</code>（<code>allocator.go:235</code>），实现 <code>applyMultiClusterAllocation</code>（<code>:316-360</code>）：List <code>GameServerAllocationPolicy</code> → 按 <code>PolicySelector</code> 过滤 → <code>NewConnectionInfoIterator</code> 按权重&#x2F;顺序迭代（<code>:332</code>）。</p>
+<p><strong>防环机制</strong>：远程调用前把 <code>MultiClusterSetting.Enabled = false</code>（<code>:377</code>），防止目的地集群再次转发。</p>
+<p><strong>两套重试</strong>（<code>:88-99</code>）：本地 5 次 10ms（Factor&#x3D;1.0）；远程 7 次 100ms（<strong>Factor&#x3D;2.0 指数</strong>）。且 <code>Retry()</code> 对 <code>ResourceExhausted</code> &#x2F; <code>ErrNoGameServer</code> &#x2F; <code>ErrTotalTimeoutExceeded</code> <strong>立即返回不重试</strong>（<code>:720-728</code>）——因为这些重试也没用。</p>
+<h3 id="第五讲小结：批处理-串行挑服-非错误码失败"><a href="#第五讲小结：批处理-串行挑服-非错误码失败" class="headerlink" title="第五讲小结：批处理 + 串行挑服 + 非错误码失败"></a>第五讲小结：批处理 + 串行挑服 + 非错误码失败</h3><table>
+<thead>
+<tr>
+<th>项</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>一句话定位</strong></td>
+<td>两条路径（聚合 API &#x2F; 独立 allocator）共用同一套 <code>Allocator</code>；核心是「排序列表 + 单 goroutine 批处理 + 短重试」</td>
+</tr>
+<tr>
+<td><strong>输入</strong></td>
+<td><code>GameServerAllocation</code>（含 Selectors &#x2F; Scheduling &#x2F; MetaPatch）</td>
+</tr>
+<tr>
+<td><strong>输出</strong></td>
+<td><code>GameServerAllocation</code> Status（Allocated 时带 Ports&#x2F;Address&#x2F;NodeName）</td>
+</tr>
+<tr>
+<td><strong>三个最值得记住的点</strong></td>
+<td>① 缓存只收 Ready 与 Allocated（<code>allocation_cache.go:39-42</code>），<strong>收 Allocated 是为了支持重复分配</strong>；② 并发安全靠<strong>单 goroutine 事件循环</strong>而非全局锁（<code>allocator.go:491</code>）；③ 没货返回 <strong>201 + UnAllocated</strong>，不是错误码（<code>:286-288</code>）</td>
+</tr>
+</tbody></table>
+<pre><code class="highlight mermaid">flowchart TD
+    REQ[&quot;AllocationRequest&quot;] --&gt; V[&quot;Validate + Converter&quot;]
+    V --&gt; MC&#123;&quot;MultiCluster?&quot;&#125;
+    MC --&gt;|&quot;是&quot;| RM[&quot;applyMultiClusterAllocation :316&quot;]
+    MC --&gt;|&quot;否&quot;| LC[&quot;allocateFromLocalCluster :264&quot;]
+    LC --&gt; RT[&quot;Retry 5×10ms :88&quot;]
+    RT --&gt; CH[&quot;pendingRequests chan(100) :479&quot;]
+    CH --&gt; LA[&quot;ListenAndAllocate 单 goroutine&quot;]
+    LA --&gt; SORT&#123;&quot;Packed / Distributed?&quot;&#125;
+    SORT --&gt;|&quot;Packed&quot;| LS[&quot;ListSortedGameServers&lt;br/&gt;Allocated 优先&quot;]
+    SORT --&gt;|&quot;Distributed&quot;| LSP[&quot;ListSortedGameServersPriorities&lt;br/&gt;不看节点计数&quot;]
+    LS --&gt; FIND[&quot;findGameServerForAllocation&quot;]
+    LSP --&gt; FIND
+    FIND --&gt;|&quot;命中&quot;| UP[&quot;置 Allocated + last-allocated :673&quot;]
+    FIND --&gt;|&quot;未命中&quot;| UA[&quot;State=UnAllocated :286&quot;]</code></pre>
+
+<hr>
+<h2 id="第六讲：FleetAutoscaler、可观测性与部署拓扑"><a href="#第六讲：FleetAutoscaler、可观测性与部署拓扑" class="headerlink" title="第六讲：FleetAutoscaler、可观测性与部署拓扑"></a>第六讲：FleetAutoscaler、可观测性与部署拓扑</h2><h3 id="先说人话：什么时候该多开几台游戏服务器"><a href="#先说人话：什么时候该多开几台游戏服务器" class="headerlink" title="先说人话：什么时候该多开几台游戏服务器"></a>先说人话：什么时候该多开几台游戏服务器</h3><p><code>FleetAutoscaler</code> 回答的问题很朴素：<strong>保持多少个”空着的”游戏服务器，才能让玩家不用等</strong>。</p>
+<h3 id="6-1-七种策略"><a href="#6-1-七种策略" class="headerlink" title="6.1 七种策略"></a>6.1 七种策略</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/fleetautoscalers/fleetautoscalers.go:73-91</span></span><br><span class="line"><span class="keyword">switch</span> pol.Type &#123;</span><br><span class="line"><span class="keyword">case</span> autoscalingv1.BufferPolicyType:</span><br><span class="line">	replicas, limited, err = applyBufferPolicy(state, pol.Buffer, f, fasLog)</span><br><span class="line"><span class="keyword">case</span> autoscalingv1.WebhookPolicyType:</span><br><span class="line">	replicas, limited, err = applyWebhookPolicy(ctx, state, pol.Webhook, f, fasLog)</span><br><span class="line"><span class="keyword">case</span> autoscalingv1.CounterPolicyType:</span><br><span class="line">	...</span><br><span class="line"><span class="keyword">case</span> autoscalingv1.ListPolicyType:</span><br><span class="line">	...</span><br><span class="line"><span class="keyword">case</span> autoscalingv1.SchedulePolicyType:</span><br><span class="line">	replicas, limited, err = applySchedulePolicy(ctx, state, pol.Schedule, f, ..., time.Now(), fasLog)</span><br><span class="line"><span class="keyword">case</span> autoscalingv1.ChainPolicyType:</span><br><span class="line">	replicas, limited, err = applyChainPolicy(...)</span><br><span class="line"><span class="keyword">case</span> autoscalingv1.WasmPolicyType:</span><br><span class="line">	replicas, limited, err = applyWasmPolicy(ctx, state, pol.Wasm, f, fasLog)</span><br><span class="line"><span class="keyword">default</span>:</span><br><span class="line">	err = errs.New(<span class="string">&quot;wrong policy type, should be one of: Buffer, Webhook, Counter, List, Schedule, Chain&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>策略</th>
+<th>实现</th>
+<th>依据</th>
+<th>夹逼</th>
+<th>Feature Gate</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Buffer</td>
+<td><code>fleetautoscalers.go:379-416</code></td>
+<td><code>Fleet.Status.AllocatedReplicas</code></td>
+<td>Min&#x2F;MaxReplicas</td>
+<td>默认开</td>
+</tr>
+<tr>
+<td>Webhook</td>
+<td><code>:288-377</code></td>
+<td>外部 HTTP 服务</td>
+<td>由服务决定</td>
+<td>默认开</td>
+</tr>
+<tr>
+<td>Counter</td>
+<td><code>:442-561</code></td>
+<td><code>Status.Counters[key]</code> 的 Count&#x2F;Capacity</td>
+<td>Min&#x2F;MaxCapacity</td>
+<td><code>CountsAndLists</code></td>
+</tr>
+<tr>
+<td>List</td>
+<td>同上（<code>l != nil</code> 分支 <code>:479-500</code>）</td>
+<td><code>Status.Lists[key]</code></td>
+<td>同上</td>
+<td><code>CountsAndLists</code></td>
+</tr>
+<tr>
+<td>Schedule</td>
+<td><code>:563-578</code> + <code>isScheduleActive:651-702</code></td>
+<td>cron &#x2F; 时间窗</td>
+<td>由内层策略</td>
+<td><code>ScheduledAutoscaler</code></td>
+</tr>
+<tr>
+<td>Chain</td>
+<td><code>:580-648</code></td>
+<td>顺序尝试，第一个不报错者生效</td>
+<td>由命中策略</td>
+<td><code>ScheduledAutoscaler</code></td>
+</tr>
+<tr>
+<td>Wasm</td>
+<td><code>:101-207</code>（Extism）</td>
+<td>Wasm 导出函数（默认 <code>scale</code>）</td>
+<td>由模块</td>
+<td><code>WasmAutoscaler</code>（默认 <strong>false</strong>）</td>
+</tr>
+</tbody></table>
+<h3 id="6-2-Buffer：算的是-Allocated，不是-Ready"><a href="#6-2-Buffer：算的是-Allocated，不是-Ready" class="headerlink" title="6.2 Buffer：算的是 Allocated，不是 Ready"></a>6.2 Buffer：算的是 Allocated，不是 Ready</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/fleetautoscalers/fleetautoscalers.go:382-410</span></span><br><span class="line"><span class="keyword">if</span> b.BufferSize.Type == intstr.Int &#123;</span><br><span class="line">	replicas = f.Status.AllocatedReplicas + <span class="type">int32</span>(b.BufferSize.IntValue())</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">	bufferPercent, err := intstr.GetValueFromIntOrPercent(&amp;b.BufferSize, <span class="number">100</span>, <span class="literal">true</span>)</span><br><span class="line">	replicas = <span class="type">int32</span>(math.Ceil(<span class="type">float64</span>(f.Status.AllocatedReplicas*<span class="number">100</span>) / <span class="type">float64</span>(<span class="number">100</span>-bufferPercent)))</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span> replicas &lt; b.MinReplicas &#123; replicas = b.MinReplicas; scalingInLimited = <span class="literal">true</span> &#125;</span><br><span class="line"><span class="keyword">if</span> replicas &gt; b.MaxReplicas &#123; replicas = b.MaxReplicas; scalingOutLimited = <span class="literal">true</span> &#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>🔑 <strong>两处反直觉</strong>：<br>① **是 <code>AllocatedReplicas</code>，不是 <code>ReadyReplicas</code>**。API 注释（<code>pkg/apis/autoscaling/v1/fleetautoscaler.go:177-179</code>）解释：此处的 “ready” 指 “non-allocated”，这样在”Fleet 刚创建 &#x2F; 集群容量不足”等边界下计算才稳定。<br>② <strong>百分比是”反解”的</strong>：30% 不是”乘 1.3”，而是”让 non-allocated 占比到 30%”，公式 <code>Allocated / (1 - pct)</code>。这避免了”按当前值增幅”的收敛震荡。</p>
+</blockquote>
+<h3 id="6-3-Webhook：HTTP-而非-gRPC"><a href="#6-3-Webhook：HTTP-而非-gRPC" class="headerlink" title="6.3 Webhook：HTTP 而非 gRPC"></a>6.3 Webhook：HTTP 而非 gRPC</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/fleetautoscalers/fleetautoscalers.go:216-235</span></span><br><span class="line">config := &amp;tls.Config&#123;&#125;</span><br><span class="line">state.httpClient = &amp;http.Client&#123;</span><br><span class="line">	Timeout: <span class="number">15</span> * time.Second,</span><br><span class="line">	Transport: &amp;http.Transport&#123; TLSClientConfig: config &#125;,</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span> w.CABundle != <span class="literal">nil</span> &#123;</span><br><span class="line">	<span class="keyword">if</span> err := setCABundle(config, w.CABundle); err != <span class="literal">nil</span> &#123; <span class="keyword">return</span> <span class="literal">nil</span>, err &#125;</span><br><span class="line">&#125;</span><br><span class="line">scheme := <span class="string">&quot;http&quot;</span></span><br><span class="line"><span class="keyword">if</span> w.CABundle != <span class="literal">nil</span> &#123; scheme = <span class="string">&quot;https&quot;</span> &#125;   <span class="comment">// ← CABundle 非空即自动切 https</span></span><br></pre></td></tr></table></figure>
+
+<p>契约结构体在 <code>pkg/apis/autoscaling/v1/fleetautoscaler.go</code>（**不在 <code>proto/</code>**）：<code>FleetAutoscaleRequest:339-355</code>、<code>FleetAutoscaleResponse&#123;UID, Scale, Replicas&#125;:358-366</code>、<code>FleetAutoscaleReview:370-373</code>。</p>
+<p>⚠️ <strong>失败语义宽松</strong>：<code>Scale == false</code> 时直接返回当前 <code>f.Status.Replicas</code> 且不报错（<code>:372-376</code>）。</p>
+<h3 id="6-4-同步周期：per-resource-ticker"><a href="#6-4-同步周期：per-resource-ticker" class="headerlink" title="6.4 同步周期：per-resource ticker"></a>6.4 同步周期：per-resource ticker</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pkg/fleetautoscalers/controller.go:496-531</span></span><br><span class="line">duration := time.Duration(fas.Spec.Sync.FixedInterval.Seconds) * time.Second</span><br><span class="line">...</span><br><span class="line">c.workerqueue.Enqueue(fas)   <span class="comment">// 加入时立刻触发一次</span></span><br><span class="line"><span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	wait.Until(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		c.workerqueue.Enqueue(fas)</span><br><span class="line">	&#125;, duration, ctx.Done())</span><br><span class="line">&#125;()</span><br></pre></td></tr></table></figure>
+
+<p><strong>没有全局 <code>syncPeriod</code> 常量</strong>——每个 FleetAutoscaler 一份 goroutine，周期取自 <code>spec.sync.fixedInterval.seconds</code>，默认 30s（<code>pkg/apis/autoscaling/v1/fleetautoscaler.go:156</code>）。<code>fasThreads</code> 按 <strong>UID</strong> 索引（不是 name，因为 name 会随时间复用，<code>:502</code>）。</p>
+<p><strong>Status 更新</strong>（<code>:436-462</code>）：<code>AbleToScale</code>、<code>ScalingLimited</code>、<code>CurrentReplicas</code>、<code>DesiredReplicas</code>、<code>LastScaleTime</code>、<code>LastAppliedPolicy</code>；被夹逼时发 <code>ScalingLimited</code> Warning 事件。</p>
+<h3 id="6-5-可观测性：OpenCensus-双-exporter"><a href="#6-5-可观测性：OpenCensus-双-exporter" class="headerlink" title="6.5 可观测性：OpenCensus + 双 exporter"></a>6.5 可观测性：OpenCensus + 双 exporter</h3><pre><code class="highlight mermaid">flowchart LR
+    CODE[&quot;业务代码 stats.Record&quot;] --&gt; OC[&quot;OpenCensus View&quot;]
+    OC --&gt;|&quot;Prometheus 开（默认）&quot;| P[&quot;prometheus exporter&lt;br/&gt;/metrics :8080&lt;br/&gt;上报周期 15s&quot;]
+    OC --&gt;|&quot;Stackdriver 开（默认关）&quot;| SD[&quot;Stackdriver exporter&lt;br/&gt;前缀 agones&lt;br/&gt;上报周期 60s&quot;]
+    HC[&quot;healthcheck&lt;br/&gt;heptiolabs&quot;] --&gt; HTTP[&quot;/ 根路径 :8080&lt;br/&gt;自带 /live /ready&quot;]</code></pre>
+
+<p><strong>指标清单</strong>（<code>pkg/metrics/controller_metrics.go:23-42</code>）：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>常量行</th>
+<th>View 行</th>
+<th>聚合</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>fleet_rollout_percent</code></td>
+<td>:24</td>
+<td>:73-78</td>
+<td>LastValue</td>
+</tr>
+<tr>
+<td><code>fleets_replicas_count</code></td>
+<td>:25</td>
+<td>:80-85</td>
+<td>LastValue</td>
+</tr>
+<tr>
+<td><code>fleet_autoscalers_buffer_limits</code></td>
+<td>:26</td>
+<td>:87-92</td>
+<td>LastValue</td>
+</tr>
+<tr>
+<td><code>fleet_autoscalers_buffer_size</code></td>
+<td>:27</td>
+<td>:94-99</td>
+<td>LastValue</td>
+</tr>
+<tr>
+<td><code>fleet_autoscalers_current_replicas_count</code></td>
+<td>:28</td>
+<td>:101-106</td>
+<td>LastValue</td>
+</tr>
+<tr>
+<td><code>fleet_autoscalers_desired_replicas_count</code></td>
+<td>:29</td>
+<td>:108-113</td>
+<td>LastValue</td>
+</tr>
+<tr>
+<td><code>fleet_autoscalers_able_to_scale</code></td>
+<td>:30</td>
+<td>:115-120</td>
+<td>LastValue</td>
+</tr>
+<tr>
+<td><code>fleet_autoscalers_limited</code></td>
+<td>:31</td>
+<td>:122-127</td>
+<td>LastValue</td>
+</tr>
+<tr>
+<td><code>fleet_counters</code> &#x2F; <code>fleet_lists</code></td>
+<td>:32 &#x2F; :33</td>
+<td>:129-141</td>
+<td>LastValue</td>
+</tr>
+<tr>
+<td><code>gameservers_count</code></td>
+<td>:34</td>
+<td>:143-148</td>
+<td>LastValue</td>
+</tr>
+<tr>
+<td><code>gameservers_total</code></td>
+<td>:35</td>
+<td>:150-155</td>
+<td><strong>Count</strong></td>
+</tr>
+<tr>
+<td><code>gameservers_allocations_total</code></td>
+<td>:36</td>
+<td>:157-162</td>
+<td><strong>Count</strong></td>
+</tr>
+<tr>
+<td><code>gameserver_player_connected_total</code> &#x2F; <code>..._capacity_total</code></td>
+<td>:37 &#x2F; :38</td>
+<td>:164-176</td>
+<td>LastValue</td>
+</tr>
+<tr>
+<td><code>nodes_count</code></td>
+<td>:39</td>
+<td>:178-183</td>
+<td>LastValue</td>
+</tr>
+<tr>
+<td><code>gameservers_node_count</code></td>
+<td>:40</td>
+<td>:185-189</td>
+<td>Distribution</td>
+</tr>
+<tr>
+<td><code>gameserver_state_duration</code></td>
+<td>:41</td>
+<td>:191-196</td>
+<td>Distribution（0…16384s）</td>
+</tr>
+</tbody></table>
+<p>另有 K8s client 类指标（<code>pkg/metrics/kubernetes_client.go:34-52</code>）：HTTP 请求、cache list&#x2F;watch、workqueue depth&#x2F;latency&#x2F;retries 等。</p>
+<p>⚠️ **不存在 <code>gameserver_allocations_failed_total</code>**。分配失败语义体现在 <code>fleet_autoscalers_limited</code> 与 Event <code>ScalingLimited</code> &#x2F; <code>FailedGetFleet</code>。</p>
+<p><strong>内存开销的关键一段</strong>：<code>gameserver_state_duration</code> 用 LRU 存状态变更时刻，<code>GameServersStateCount = 600_000</code>（<code>pkg/metrics/controller.go:60</code>），注释里按每条 400 字节估算共 <strong>229 MiB</strong>（<code>:52-59</code>）。</p>
+<p><strong>日志</strong>：logrus + JSON，<code>severity</code> &#x2F; <code>message</code> 字段被重命名成 GCP 友好格式（<code>pkg/util/runtime/runtime.go:37-49</code>）。</p>
+<h3 id="6-6-部署拓扑"><a href="#6-6-部署拓扑" class="headerlink" title="6.6 部署拓扑"></a>6.6 部署拓扑</h3><pre><code class="highlight mermaid">graph TB
+    subgraph NS[&quot;Namespace: agones-system&quot;]
+        CTRL[&quot;agones-controller&lt;br/&gt;replicas 2&lt;br/&gt;8080 http / 8081 webhook&lt;br/&gt;LEADER_ELECTION 仅副本&gt;1&quot;]
+        EXT[&quot;agones-extensions&lt;br/&gt;replicas 2&lt;br/&gt;Admission Webhook + 本地 Allocation API&quot;]
+        PROC[&quot;agones-processor&lt;br/&gt;replicas 2&lt;br/&gt;8080 http / 9090 grpc&quot;]
+        ALC[&quot;agones-allocator&lt;br/&gt;replicas 3&lt;br/&gt;Service LoadBalancer :443&quot;]
+        PING[&quot;agones-ping&lt;br/&gt;replicas 2&lt;br/&gt;HTTP :80 / UDP :50000&quot;]
+    end
+    subgraph PODS[&quot;GameServer Pod&quot;]
+        SDKS[&quot;agones-sdk sidecar :9357&quot;]
+        APP[&quot;游戏二进制&quot;]
+    end
+    KAPI[&quot;Kubernetes API Server&quot;]
+    PROM[&quot;Prometheus&quot;]
+    MATCH[&quot;外部匹配器&quot;]
+    PLAYER[&quot;玩家&quot;]
+
+    CTRL --&gt; KAPI
+    EXT -.-&gt;|&quot;mutate/validate&quot;| KAPI
+    ALC --&gt; PROC
+    MATCH --&gt;|&quot;gRPC mTLS :443&quot;| ALC
+    ALC --&gt;|&quot;置 Allocated&quot;| KAPI
+    APP &lt;--&gt; SDKS
+    SDKS --&gt;|&quot;JSON Patch&quot;| KAPI
+    PROM --&gt;|&quot;GET /metrics&quot;| CTRL
+    PLAYER --&gt; APP</code></pre>
+
+<p><strong>组件默认值速记</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>副本</th>
+<th>端口</th>
+<th>出处</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>controller</td>
+<td>2</td>
+<td>http 8080 &#x2F; webhook 8081</td>
+<td><code>install/helm/agones/values.yaml:106,99</code></td>
+</tr>
+<tr>
+<td>extensions</td>
+<td>2</td>
+<td>webhook 8081 &#x2F; http 8080</td>
+<td><code>values.yaml:167,155,157</code></td>
+</tr>
+<tr>
+<td>allocator</td>
+<td>3</td>
+<td>Service LB 443（http + grpc 复用）</td>
+<td><code>values.yaml:251,254,265,273</code></td>
+</tr>
+<tr>
+<td>processor</td>
+<td>2</td>
+<td>http 8080 &#x2F; grpc 9090</td>
+<td><code>values.yaml:298,317,320</code></td>
+</tr>
+<tr>
+<td>ping</td>
+<td>2</td>
+<td>HTTP LB 80 &#x2F; UDP LB 50000</td>
+<td><code>values.yaml:191,195,207</code></td>
+</tr>
+</tbody></table>
+<p><strong><code>cmd/extensions/main.go</code></strong> 是 Webhook 与本地 Allocation API 的宿主（<code>:151-159</code> 建 https server + 证书热加载，<code>:239-242</code> 注册四个 CRD 的 webhook）。<br><strong><code>cmd/ping/main.go</code></strong> 是纯拨测（UDP echo + HTTP 固定响应，<code>:59-66</code>）。<br><strong><code>cmd/processor/main.go</code></strong> 是 allocator 的可选批处理后端（<code>:241-246</code>）。</p>
+<p><strong>SDK 语言覆盖</strong>：<code>sdks/</code> 下有 go &#x2F; cpp &#x2F; csharp &#x2F; nodejs &#x2F; python &#x2F; rust &#x2F; swagger &#x2F; unity &#x2F; unreal 九个目录。</p>
+<h3 id="6-7-三个反直觉的全局结论"><a href="#6-7-三个反直觉的全局结论" class="headerlink" title="6.7 三个反直觉的全局结论"></a>6.7 三个反直觉的全局结论</h3><ol>
+<li><strong><code>Allocated</code> 与 <code>Reserved</code> 是全局的”免死金牌”<strong>。Fleet 滚动更新到处减 <code>sumAllocated</code>（<code>pkg/fleets/controller.go:428-430</code>、<code>:465-482</code>）、GameServerSet 第一趟扫描只数 <code>!IsDeletable()</code>（<code>gameserversets/controller.go:409-414</code>）、自动扩缩容的 Buffer 也以 <code>AllocatedReplicas</code> 为基数——</strong>全都是同一条约束的不同投影</strong>。</li>
+<li><strong>“分配”与”缩容”的排序方向相反，是刻意设计的互补</strong>。分配往最挤的节点塞（<code>allocation_cache.go:197-211</code>），缩容从最空的节点收（<code>gameserversets.go:83-84</code>），结果是 GameServer 密度收敛、缩容命中率最高。</li>
+<li><strong>失败大多是”软失败”<strong>。分配没货返回 201 + <code>UnAllocated</code>；Webhook <code>Scale=false</code> 不报错；端口耗尽不判 Unhealthy（<code>WaitOnFreePorts</code>）；<code>Recreate</code> 只减 Allocated 不减 Reserved。</strong>排查问题时不能只看 error 日志</strong>，要同时看 <code>Status.State</code> 与 Event。</li>
+</ol>
+<h3 id="第六讲小结：七种策略、Allocated-为基数、软失败"><a href="#第六讲小结：七种策略、Allocated-为基数、软失败" class="headerlink" title="第六讲小结：七种策略、Allocated 为基数、软失败"></a>第六讲小结：七种策略、Allocated 为基数、软失败</h3><table>
+<thead>
+<tr>
+<th>项</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>一句话定位</strong></td>
+<td>7 种策略；Buffer 以 <code>AllocatedReplicas</code> 为基数；同步周期是 per-resource ticker（默认 30s）；指标走 OpenCensus + 双 exporter</td>
+</tr>
+<tr>
+<td><strong>输入</strong></td>
+<td><code>FleetAutoscaler.Spec.Policy</code> + <code>Fleet.Status</code></td>
+</tr>
+<tr>
+<td><strong>输出</strong></td>
+<td><code>Fleet.Spec.Replicas</code> 的改写 + <code>FleetAutoscaler.Status</code></td>
+</tr>
+<tr>
+<td><strong>三个最值得记住的点</strong></td>
+<td>① Buffer 算 <code>AllocatedReplicas + BufferSize</code>（<code>fleetautoscalers.go:383</code>），百分比是反解公式；② Webhook 是 <strong>HTTP</strong> 不是 gRPC，15s 超时，CABundle 非空即 https（<code>:219</code>、<code>:231-234</code>）；③ <strong>没有全局 syncPeriod</strong>，每个 FleetAutoscaler 一份 goroutine（<code>pkg/fleetautoscalers/controller.go:496-531</code>）</td>
+</tr>
+</tbody></table>
+<pre><code class="highlight mermaid">flowchart TD
+    T[&quot;per-resource ticker 30s&lt;br/&gt;pkg/fleetautoscalers/controller.go:496&quot;] --&gt; SYNC[&quot;syncFleetAutoscaler&quot;]
+    SYNC --&gt; SW&#123;&quot;Policy.Type&quot;&#125;
+    SW --&gt;|&quot;Buffer&quot;| B[&quot;AllocatedReplicas + BufferSize&lt;br/&gt;Min/Max 夹逼 :383&quot;]
+    SW --&gt;|&quot;Webhook&quot;| W[&quot;HTTP POST 15s :219&quot;]
+    SW --&gt;|&quot;Counter/List&quot;| CL[&quot;Status.Counters/Lists :442&quot;]
+    SW --&gt;|&quot;Schedule&quot;| SC[&quot;cron 时间窗 :563&quot;]
+    SW --&gt;|&quot;Chain&quot;| CH[&quot;顺序尝试第一个成功 :580&quot;]
+    SW --&gt;|&quot;Wasm&quot;| WM[&quot;Extism 插件 :101&quot;]
+    B --&gt; UP[&quot;updateStatus :436&quot;]
+    W --&gt; UP
+    CL --&gt; UP
+    SC --&gt; UP
+    CH --&gt; UP
+    WM --&gt; UP
+    UP --&gt; FL[&quot;写 Fleet.Spec.Replicas&quot;]
+    UP --&gt; MET[&quot;stats.Record&lt;br/&gt;controller_metrics.go&quot;]</code></pre>
+
+<hr>
+<h2 id="附：学习路线、复习卡与文件索引"><a href="#附：学习路线、复习卡与文件索引" class="headerlink" title="附：学习路线、复习卡与文件索引"></a>附：学习路线、复习卡与文件索引</h2><h3 id="学习路线（建议-3-天）"><a href="#学习路线（建议-3-天）" class="headerlink" title="学习路线（建议 3 天）"></a>学习路线（建议 3 天）</h3><p><strong>Day 1 —— 数据模型与状态机</strong></p>
+<ol>
+<li><code>pkg/apis/agones/v1/gameserver.go</code> 通读（1207 行），把 11 个状态和三个 <code>Is*</code> 方法抄一遍；</li>
+<li><code>pkg/apis/agones/v1/fleet.go:116-153</code> + <code>gameserverset.go:141-167</code> 看懂三层关联；</li>
+<li>对照 <code>pkg/gameservers/controller.go:500-523</code> 的 sync 链，把状态迁移表画出来。</li>
+</ol>
+<p><strong>Day 2 —— 生命周期与 SDK</strong><br>4. <code>pkg/gameservers/controller.go</code> 的 <code>syncGameServerCreatingState</code> &#x2F; <code>StartingState</code> &#x2F; <code>RequestReadyState</code>；<br>5. <code>cmd/sdk-server/main.go</code> + <code>pkg/sdkserver/sdkserver.go</code> 的 RPC 表，重点看 <code>:465-477</code> 的 JSON Patch；<br>6. <code>pkg/gameservers/health.go</code> 的三层健康检查。</p>
+<p><strong>Day 3 —— 编排、分配、扩缩容</strong><br>7. <code>pkg/fleets/controller.go:501-547</code> + <code>controller_rollingupdatefix.go:59-89</code> 看懂双参数滚动更新；<br>8. <code>pkg/gameserversets/gameserversets.go:46-119</code> 的排序（对比 <code>allocation_cache.go:182-211</code>）；<br>9. <code>pkg/gameserverallocations/allocator.go:467-630</code> 的批处理链路；<br>10. <code>pkg/fleetautoscalers/fleetautoscalers.go:73-91</code> 的七路分发。</p>
+<h3 id="25-张复习卡"><a href="#25-张复习卡" class="headerlink" title="25 张复习卡"></a>25 张复习卡</h3><table>
+<thead>
+<tr>
+<th>#</th>
+<th>问题</th>
+<th>答案</th>
+<th>出处</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>GameServer 有几个状态？</td>
+<td>11 个</td>
+<td><code>gameserver.go:40-69</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>哪些是终态？</td>
+<td><code>Shutdown</code> &#x2F; <code>Error</code> &#x2F; <code>Unhealthy</code></td>
+<td><code>gameserver.go:174-180</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>哪些状态不可删？</td>
+<td><code>Allocated</code> &#x2F; <code>Reserved</code>（除非已有 DeletionTimestamp）</td>
+<td><code>gameserver.go:659-665</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>Status 是 subresource 吗？</td>
+<td><strong>不是</strong>（为原子分配）</td>
+<td><code>gameserver.go:187-198</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>PortAllocation</code> 何时出现？</td>
+<td>端口策略含 Dynamic&#x2F;Passthrough</td>
+<td><code>gameserver.go:430</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td>SDK sidecar 三个端口？</td>
+<td>9357 gRPC &#x2F; 9358 HTTP &#x2F; 8080 health</td>
+<td><code>cmd/sdk-server/main.go:50-52</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>谁把状态推到 Ready？</td>
+<td>sidecar 置 RequestReady，controller 转 Ready</td>
+<td><code>sdkserver.go:544</code> &#x2F; <code>pkg/gameservers/controller.go:1035</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>sidecar 怎么写回？</td>
+<td>JSON Patch 直连 API Server</td>
+<td><code>sdkserver.go:471</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td>Health 默认三个值？</td>
+<td>PeriodSeconds 5 &#x2F; FailureThreshold 3 &#x2F; InitialDelay 5</td>
+<td><code>gameserver.go:413/416/419</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>Reserved</code> 会回退吗？</td>
+<td>会，到期自动回 Ready（唯一自动回退状态）</td>
+<td><code>sdkserver.go:699-709</code></td>
+</tr>
+<tr>
+<td>11</td>
+<td>四种 PortPolicy？</td>
+<td>Static &#x2F; Dynamic（默认）&#x2F; Passthrough &#x2F; None</td>
+<td><code>gameserver.go:74-86</code>、<code>:454</code></td>
+</tr>
+<tr>
+<td>12</td>
+<td>默认 eviction.safe？</td>
+<td><code>Never</code></td>
+<td><code>gameserver.go:482</code></td>
+</tr>
+<tr>
+<td>13</td>
+<td>controller 默认 worker 数？</td>
+<td>64</td>
+<td><code>cmd/controller/main.go:274</code></td>
+</tr>
+<tr>
+<td>14</td>
+<td>GameServer controller 几条队列？</td>
+<td>3 条（creation &#x2F; deletion &#x2F; 主）</td>
+<td><code>pkg/gameservers/controller.go:184-186</code>、<code>:252-266</code></td>
+</tr>
+<tr>
+<td>15</td>
+<td>Fleet 默认 MaxSurge &#x2F; MaxUnavailable？</td>
+<td>都是 25%</td>
+<td><code>fleet.go:170-176</code></td>
+</tr>
+<tr>
+<td>16</td>
+<td>两个参数的基数？</td>
+<td>Surge→<code>Spec.Replicas</code>；Unavailable→<code>Status.ReadyReplicas</code></td>
+<td><code>pkg/fleets/controller.go:528</code> &#x2F; <code>controller_rollingupdatefix.go:60</code></td>
+</tr>
+<tr>
+<td>17</td>
+<td>缩容按什么顺序删？</td>
+<td>按 Packed&#x2F;Distributed 排序取前 N</td>
+<td><code>gameserversets.go:46-119</code>、<code>:490-498</code></td>
+</tr>
+<tr>
+<td>18</td>
+<td>GameServerSet 怎么删 GS？</td>
+<td>置 <code>Shutdown</code>，不直接 Delete</td>
+<td><code>gameserversets/controller.go:556</code></td>
+</tr>
+<tr>
+<td>19</td>
+<td>Error GS 删除宽限？</td>
+<td>30s</td>
+<td><code>gameserversets/controller.go:64</code></td>
+</tr>
+<tr>
+<td>20</td>
+<td>分配缓存收哪些状态？</td>
+<td>只收 Ready 与 Allocated</td>
+<td><code>allocation_cache.go:39-42</code></td>
+</tr>
+<tr>
+<td>21</td>
+<td>没货时返回什么？</td>
+<td>201 Created + <code>UnAllocated</code>（不是错误码）</td>
+<td><code>allocator.go:286</code> &#x2F; <code>pkg/gameserverallocations/controller.go:203</code></td>
+</tr>
+<tr>
+<td>22</td>
+<td>分配并发安全靠什么？</td>
+<td>单 goroutine 事件循环 + RWMutex 缓存</td>
+<td><code>allocator.go:491</code>、<code>cache.go:27</code></td>
+</tr>
+<tr>
+<td>23</td>
+<td>FleetAutoscaler 几种策略？</td>
+<td>7 种</td>
+<td><code>fleetautoscaler.go:125-152</code></td>
+</tr>
+<tr>
+<td>24</td>
+<td>Buffer 算什么？</td>
+<td><code>AllocatedReplicas + BufferSize</code>（非 Ready）</td>
+<td><code>fleetautoscalers.go:383</code></td>
+</tr>
+<tr>
+<td>25</td>
+<td>默认同步周期？</td>
+<td>30s（per-resource ticker，无全局常量）</td>
+<td><code>fleetautoscaler.go:156</code>、<code>pkg/fleetautoscalers/controller.go:496-531</code></td>
+</tr>
+</tbody></table>
+<h3 id="文件索引"><a href="#文件索引" class="headerlink" title="文件索引"></a>文件索引</h3><table>
+<thead>
+<tr>
+<th>文件</th>
+<th>行数</th>
+<th>本讲角色</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>pkg/apis/agones/v1/gameserver.go</code></td>
+<td>1207</td>
+<td><strong>核心</strong>：GameServer 类型 + 11 状态 + 端口策略 + Health</td>
+</tr>
+<tr>
+<td><code>pkg/apis/agones/v1/fleet.go</code></td>
+<td>259</td>
+<td>Fleet 类型 + <code>GameServerSet()</code> 转换</td>
+</tr>
+<tr>
+<td><code>pkg/apis/agones/v1/gameserverset.go</code></td>
+<td>167</td>
+<td>GameServerSet 类型 + <code>GameServer()</code> 转换 + 模板不可变校验</td>
+</tr>
+<tr>
+<td><code>pkg/apis/autoscaling/v1/fleetautoscaler.go</code></td>
+<td>671</td>
+<td><strong>核心</strong>：FleetAutoscaler 7 种策略 + Webhook 契约</td>
+</tr>
+<tr>
+<td><code>pkg/apis/allocation/v1/gameserverallocation.go</code></td>
+<td>605</td>
+<td>GSA 请求&#x2F;响应 + Selector + Converter</td>
+</tr>
+<tr>
+<td><code>pkg/apis/scheduling.go</code></td>
+<td>—</td>
+<td><code>Packed</code> &#x2F; <code>Distributed</code> 调度策略定义</td>
+</tr>
+<tr>
+<td><code>cmd/controller/main.go</code></td>
+<td>662</td>
+<td><strong>核心</strong>：controller 进程启动 + leader election + 5 个 runner</td>
+</tr>
+<tr>
+<td><code>pkg/gameservers/controller.go</code></td>
+<td>1185</td>
+<td><strong>核心</strong>：GameServer 状态机 + 三条队列 + Pod 创建</td>
+</tr>
+<tr>
+<td><code>pkg/gameservers/health.go</code></td>
+<td>—</td>
+<td>HealthController：驱逐&#x2F;崩溃&#x2F;无端口的不健康判定</td>
+</tr>
+<tr>
+<td><code>pkg/sdkserver/sdkserver.go</code></td>
+<td>1563</td>
+<td><strong>核心</strong>：SDK Server 全部 RPC + JSON Patch + 心跳</td>
+</tr>
+<tr>
+<td><code>cmd/sdk-server/main.go</code></td>
+<td>411</td>
+<td>sidecar 入口（三端口 + local&#x2F;test 模式）</td>
+</tr>
+<tr>
+<td><code>pkg/sdkserver/localsdk.go</code></td>
+<td>—</td>
+<td>本地调试的”假 SDK”（不连 K8s）</td>
+</tr>
+<tr>
+<td><code>pkg/portallocator/portallocator.go</code></td>
+<td>451</td>
+<td>每 Node 端口位图分配</td>
+</tr>
+<tr>
+<td><code>pkg/fleets/controller.go</code></td>
+<td>803</td>
+<td><strong>核心</strong>：Fleet 编排 + 滚动更新</td>
+</tr>
+<tr>
+<td><code>pkg/fleets/controller_rollingupdatefix.go</code></td>
+<td>—</td>
+<td>收缩侧 MaxUnavailable 实现</td>
+</tr>
+<tr>
+<td><code>pkg/gameserversets/controller.go</code></td>
+<td>802</td>
+<td><strong>核心</strong>：多退少补 + 删除排序</td>
+</tr>
+<tr>
+<td><code>pkg/gameserversets/gameserversets.go</code></td>
+<td>—</td>
+<td><code>SortGameServersByStrategy</code>（唯一的删除优先级实现）</td>
+</tr>
+<tr>
+<td><code>pkg/gameserversets/allocation_overflow.go</code></td>
+<td>—</td>
+<td>溢出实例打标</td>
+</tr>
+<tr>
+<td><code>pkg/gameserverallocations/allocator.go</code></td>
+<td>755</td>
+<td><strong>核心</strong>：分配链路 + 批处理 + 重试</td>
+</tr>
+<tr>
+<td><code>pkg/gameserverallocations/allocation_cache.go</code></td>
+<td>316</td>
+<td>分配缓存（只收 Ready&#x2F;Allocated）</td>
+</tr>
+<tr>
+<td><code>pkg/gameserverallocations/cache.go</code></td>
+<td>—</td>
+<td><code>gameServerCache</code>（RWMutex + 版本保护）</td>
+</tr>
+<tr>
+<td><code>pkg/gameserverallocations/find.go</code></td>
+<td>—</td>
+<td><code>findGameServerForAllocation</code> + Distributed 随机化</td>
+</tr>
+<tr>
+<td><code>pkg/gameserverallocations/controller.go</code></td>
+<td>—</td>
+<td>集群内聚合 API（只注册 create）</td>
+</tr>
+<tr>
+<td><code>cmd/allocator/main.go</code></td>
+<td>—</td>
+<td>独立分配服务入口（gRPC + REST 复用端口）</td>
+</tr>
+<tr>
+<td><code>pkg/fleetautoscalers/controller.go</code></td>
+<td>606</td>
+<td>FleetAutoscaler controller + per-resource ticker</td>
+</tr>
+<tr>
+<td><code>pkg/fleetautoscalers/fleetautoscalers.go</code></td>
+<td>906</td>
+<td><strong>核心</strong>：7 种策略实现</td>
+</tr>
+<tr>
+<td><code>pkg/metrics/controller_metrics.go</code></td>
+<td>230</td>
+<td>指标定义 + View</td>
+</tr>
+<tr>
+<td><code>pkg/metrics/exporter.go</code></td>
+<td>—</td>
+<td>Prometheus &#x2F; Stackdriver exporter</td>
+</tr>
+<tr>
+<td><code>pkg/util/workerqueue/workerqueue.go</code></td>
+<td>267</td>
+<td>自研队列封装（三种入队 + traceError）</td>
+</tr>
+<tr>
+<td><code>pkg/util/httpserver/server.go</code></td>
+<td>—</td>
+<td>HTTP server（默认 8080）+ 优雅关停</td>
+</tr>
+<tr>
+<td><code>pkg/cloudproduct/cloudproduct.go</code></td>
+<td>—</td>
+<td>云厂商抽象（generic &#x2F; gke-autopilot）</td>
+</tr>
+<tr>
+<td><code>sdks/go/sdk.go</code></td>
+<td>182</td>
+<td>Go SDK（<code>localhost:9357</code>，30s 超时）</td>
+</tr>
+</tbody></table>
+<hr>
+<blockquote>
+<p><strong>版本基准</strong>：commit <code>2c9fadb5ea1d3ed09793cd8be87059cc19731eb1</code>，401 个 Go 文件，非测试代码约 43758 行。<br>所有 <code>文件:行号</code> 均可用 <code>verify_citations.py</code> 校验。</p>
+</blockquote>
+
+
+            
+            
+            <blockquote>
+                <p>
+                本文地址：
+                <a href="https://gycxxx.github.io/agones/" target="_blank" rel="external">https://gycxxx.github.io/agones/</a>
+                </p>
+                <footer><cite><a href="https://gycxxx.github.io">@源码深读笔记</a></cite></footer>
+            </blockquote>
+            </div>
+            
+<nav class="post-nav">
+  
+
+  
+    <div class="waves-block waves-effect next fr">
+      <a href="/opencoze-agent/" id="post-next" class="post-nav-link">
+        <div class="tips">Next <i class="icon icon-angle-right icon-lg icon-pl"></i></div>
+        <h4 class="title">OpenCoze Agent 模块源码深读笔记</h4>
+      </a>
+    </div>
+  
+</nav>
+
+
+            
+            
+
+
+
+        </div>
+    </div>
+</article>
+
+    </div>
+  </main>
+<div class="mask" id="mask"></div>
+<a href="javascript:;" id="gotop" class="waves-effect waves-circle waves-light"><span class="icon icon-lg icon-chevron-up"></span></a>
+
+<script>
+var BLOG_SHARE = {
+    title: "Agones 源码深读笔记",
+    pic: "/img/avatar.jpg",
+    summary: document.getElementsByName('summary')[0].content,
+    url: "https://gycxxx.github.io/agones/index.html"
+};
+</script>
+<div class="global-share" id="global-share">
+    <div class="tit">分享到：</div>
+    <ul class="reset share-icons">
+      <li>
+        <a class="weibo share-sns" href="javascript:;" data-title="微博" data-service="tsina">
+          <i class="icon icon-weibo"></i>
+        </a>
+      </li>
+      <li>
+        <a class="weixin share-sns" href="javascript:;" data-title="微信" data-service="weixin">
+          <i class="icon icon-weixin"></i>
+        </a>
+      </li>
+      <li>
+        <a class="qq share-sns" href="javascript:;" data-title=" QQ" data-service="cqq">
+          <i class="icon icon-qq"></i>
+        </a>
+      </li>
+      <li>
+        <a class="facebook share-sns" href="javascript:;" data-title=" Facebook" data-service="fb">
+          <i class="icon icon-facebook"></i>
+        </a>
+      </li>
+      <li>
+        <a class="twitter share-sns" href="javascript:;" data-title=" Twitter" data-service="twitter">
+          <i class="icon icon-twitter"></i>
+        </a>
+      </li>
+      <li>
+        <a class="douban share-sns" href="javascript:;" data-title="豆瓣" data-service="douban">
+          豆
+        </a>
+      </li>
+    </ul>
+ </div>
+
+
+<script src="/js/waves.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+
+
+<div class="search-panel" id="search-panel">
+    <ul class="search-result" id="search-result"></ul>
+</div>
+<script type="text/template" id="search-tpl">
+<li class="item">
+    <a href="/{path}" class="waves-block waves-effect">
+        <div class="title ellipsis" title="{title}">{title}</div>
+        <div class="flex-row flex-middle">
+            <div class="tags ellipsis">
+                {tags}
+            </div>
+            <time class="flex-col time">{date}</time>
+        </div>
+    </a>
+</li>
+</script>
+
+
+<script src="/js/search.js"></script>
+
+
+
+
+
+
+
+
+
+
+<!-- hexo injector body_end start --><script src="/js/mermaid.min.js"></script>
+<script>(function () {
+  function restore(node) {
+    var raw = node.getAttribute("data-mermaid-source");
+    if (raw != null) { node.textContent = raw; }
+  }
+  function render() {
+    var codes = document.querySelectorAll("pre > code.highlight.mermaid, pre > code.mermaid");
+    for (var i = 0; i < codes.length; i++) {
+      var code = codes[i];
+      var pre = code.parentNode;
+      var box = document.createElement("div");
+      box.className = "mermaid";
+      box.setAttribute("data-mermaid-source", code.textContent);
+      box.textContent = code.textContent;
+      pre.parentNode.replaceChild(box, pre);
+    }
+    var nodes = document.querySelectorAll(".mermaid");
+    if (!window.mermaid || !nodes.length) { return; }
+    window.mermaid.initialize({
+      startOnLoad: false,
+      theme: "default",
+      logLevel: 4,
+      securityLevel: "loose",
+      flowchart: { curve: "linear" },
+      gantt: { axisFormat: "%m/%d/%Y" },
+      sequence: { actorMargin: 50 }
+    });
+    window.mermaid.run({ nodes: nodes, suppressErrors: true })
+      .then(function () {
+        for (var j = 0; j < nodes.length; j++) {
+          if (!nodes[j].querySelector("svg")) { restore(nodes[j]); }
+        }
+      })
+      .catch(function (err) {
+        if (window.console && console.error) { console.error(err); }
+        for (var k = 0; k < nodes.length; k++) { restore(nodes[k]); }
+      });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", render);
+  } else {
+    render();
+  }
+})();</script><!-- hexo injector body_end end --></body>
+</html>
