@@ -154,12 +154,14 @@
         </a>
       </div>
       <div class="site-state-item site-state-categories">
+          <a href="/categories/">
         <span class="site-state-item-count">5</span>
-        <span class="site-state-item-name">分类</span>
+        <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
+          <a href="/tags/">
         <span class="site-state-item-count">26</span>
-        <span class="site-state-item-name">标签</span>
+        <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
 </div>
@@ -175,239 +177,6 @@
     </div>
 
     <div class="main-inner index posts-expand">
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://gycxxx.github.io/rrf/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="gyc">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="源码深读笔记">
-      <meta itemprop="description" content="主流基础设施、框架与 JDK 的源码级深度学习笔记">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | 源码深读笔记">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/rrf/" class="post-title-link" itemprop="url">RRF（Reciprocal Rank Fusion，倒数排名融合）说明</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2026-09-30 00:00:00" itemprop="dateCreated datePublished" datetime="2026-09-30T00:00:00+08:00">2026-09-30</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/RAG/" itemprop="url" rel="index"><span itemprop="name">RAG</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>本文档整理 OpenCoze 中 RRF 重排序机制的位置、实现与算法细节。</p>
-<h2 id="1-概述"><a href="#1-概述" class="headerlink" title="1. 概述"></a>1. 概述</h2><p>RRF 是一种多路检索结果融合算法：不依赖各检索系统相似度分数的绝对值，只根据文档在每个结果列表中的<strong>排名</strong>计算融合得分，从而把向量检索、全文检索等异构召回结果统一排序。</p>
-<p>核心公式：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">score(d) = 1 / (rank(d) + k)</span><br></pre></td></tr></table></figure>
-
-<p>其中 <code>rank</code> 为文档在某个结果列表中的名次（0-based），<code>k</code> 为平滑常数（本项目默认 60，RRF 原始论文 Cormack et al. 2009 的推荐值，与 Elasticsearch、Milvus 的默认值一致）。</p>
-<h2 id="2-在检索链路中的位置"><a href="#2-在检索链路中的位置" class="headerlink" title="2. 在检索链路中的位置"></a>2. 在检索链路中的位置</h2><p>RRF 位于知识库检索（RAG）链路的<strong>重排序阶段</strong>，完整链路如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">用户 Query</span><br><span class="line">   │</span><br><span class="line">   ├─ (可选) Query Rewrite ── 改写查询</span><br><span class="line">   │</span><br><span class="line">   ├─ 多路召回（并行）</span><br><span class="line">   │    ├─ 向量检索（Milvus，语义检索）   ──► 结果列表 A</span><br><span class="line">   │    ├─ 全文检索（Elasticsearch）      ──► 结果列表 B</span><br><span class="line">   │    └─ (可选) NL2SQL 检索            ──► 结果列表 C</span><br><span class="line">   │</span><br><span class="line">   ├─ RRF 重排序（本文档）</span><br><span class="line">   │    输入：[[列表A], [列表B], [列表C]]</span><br><span class="line">   │    输出：去重后按融合分数降序的单一列表</span><br><span class="line">   │</span><br><span class="line">   └─ MinScore 过滤 + TopK 截断 ──► 最终检索结果</span><br></pre></td></tr></table></figure>
-
-<p>关键代码位于 <a href="../domain/knowledge/service/retrieve.go">retrieve.go</a>（<code>rerankKnowledge</code> 相关逻辑）：</p>
-<ul>
-<li>检索策略 <code>SearchTypeHybrid</code> 时，向量结果与 ES 结果<strong>同时</strong>进入融合列表</li>
-<li><code>SearchTypeSemantic</code> &#x2F; <code>SearchTypeFullText</code> 时只有单路结果（此时 RRF 退化为按原排名去重排序）</li>
-<li>启用 <code>EnableNL2SQL</code> 时，NL2SQL 结果也作为一个独立列表参与融合</li>
-<li>Rerank 返回后，低于 <code>Strategy.MinScore</code> 的文档被过滤，最终受 <code>Strategy.TopK</code> 限制</li>
-</ul>
-<h2 id="3-代码位置"><a href="#3-代码位置" class="headerlink" title="3. 代码位置"></a>3. 代码位置</h2><table>
-<thead>
-<tr>
-<th>职责</th>
-<th>文件</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Reranker 接口定义</td>
-<td><code>infra/document/rerank/rerank.go</code></td>
-</tr>
-<tr>
-<td>RRF 核心实现</td>
-<td><code>infra/document/rerank/impl/rrf/rrf.go</code></td>
-</tr>
-<tr>
-<td>Reranker 工厂（按配置选择实现）</td>
-<td><code>infra/document/rerank/impl/impl.go</code></td>
-</tr>
-<tr>
-<td>检索链路调用点</td>
-<td><code>domain/knowledge/service/retrieve.go</code></td>
-</tr>
-<tr>
-<td>Milvus 服务端 RRF（另一处，见 §7）</td>
-<td><code>infra/document/searchstore/impl/milvus/milvus_searchstore.go</code></td>
-</tr>
-</tbody></table>
-<h2 id="4-接口定义"><a href="#4-接口定义" class="headerlink" title="4. 接口定义"></a>4. 接口定义</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// infra/document/rerank/rerank.go</span></span><br><span class="line"><span class="keyword">type</span> Reranker <span class="keyword">interface</span> &#123;</span><br><span class="line">    Rerank(ctx context.Context, req *Request) (*Response, <span class="type">error</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Request <span class="keyword">struct</span> &#123;</span><br><span class="line">    Query <span class="type">string</span>      <span class="comment">// 原始或改写后的查询</span></span><br><span class="line">    Data  [][]*Data   <span class="comment">// 二维结构：多路召回的多个结果列表</span></span><br><span class="line">    TopN  *<span class="type">int64</span>      <span class="comment">// 最终保留条数（来自 Strategy.TopK）</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Response <span class="keyword">struct</span> &#123;</span><br><span class="line">    SortedData []*Data <span class="comment">// 按分数降序</span></span><br><span class="line">    TokenUsage *<span class="type">int64</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Data <span class="keyword">struct</span> &#123;</span><br><span class="line">    Document *schema.Document</span><br><span class="line">    Score    <span class="type">float64</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="5-核心实现"><a href="#5-核心实现" class="headerlink" title="5. 核心实现"></a>5. 核心实现</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// infra/document/rerank/impl/rrf/rrf.go</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewRRFReranker</span><span class="params">(k <span class="type">int64</span>)</span></span> rerank.Reranker &#123;</span><br><span class="line">    <span class="keyword">if</span> k == <span class="number">0</span> &#123;</span><br><span class="line">        k = <span class="number">60</span> <span class="comment">// 传 0 即使用论文推荐默认值</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> &amp;rrfReranker&#123;k&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(r *rrfReranker)</span></span> Rerank(ctx context.Context, req *rerank.Request) (*rerank.Response, <span class="type">error</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> req == <span class="literal">nil</span> || req.Data == <span class="literal">nil</span> || <span class="built_in">len</span>(req.Data) == <span class="number">0</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, fmt.Errorf(<span class="string">&quot;invalid request: no data provided&quot;</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    id2Score := <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="type">string</span>]<span class="type">float64</span>)</span><br><span class="line">    id2Data := <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="type">string</span>]*rerank.Data)</span><br><span class="line">    <span class="keyword">for</span> _, resultList := <span class="keyword">range</span> req.Data &#123;          <span class="comment">// 遍历每一路召回列表</span></span><br><span class="line">        <span class="keyword">for</span> rank := <span class="keyword">range</span> resultList &#123;              <span class="comment">// rank 为 0-based 名次</span></span><br><span class="line">            result := resultList[rank]</span><br><span class="line">            <span class="keyword">if</span> result != <span class="literal">nil</span> &amp;&amp; result.Document != <span class="literal">nil</span> &#123;</span><br><span class="line">                score := <span class="number">1.0</span> / (<span class="type">float64</span>(rank) + <span class="type">float64</span>(r.k))  <span class="comment">// RRF 公式</span></span><br><span class="line">                <span class="keyword">if</span> score &gt; id2Score[result.Document.ID] &#123;      <span class="comment">// 同 ID 只保留最高分</span></span><br><span class="line">                    id2Score[result.Document.ID] = score</span><br><span class="line">                    id2Data[result.Document.ID] = result</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">var</span> sorted []*rerank.Data</span><br><span class="line">    <span class="keyword">for</span> _, data := <span class="keyword">range</span> id2Data &#123;                  <span class="comment">// map 去重后收集</span></span><br><span class="line">        sorted = <span class="built_in">append</span>(sorted, data)</span><br><span class="line">    &#125;</span><br><span class="line">    sort.Slice(sorted, <span class="function"><span class="keyword">func</span><span class="params">(i, j <span class="type">int</span>)</span></span> <span class="type">bool</span> &#123;        <span class="comment">// 按分数降序</span></span><br><span class="line">        <span class="keyword">return</span> id2Score[sorted[i].Document.ID] &gt; id2Score[sorted[j].Document.ID]</span><br><span class="line">    &#125;)</span><br><span class="line">    topN := <span class="type">int64</span>(<span class="built_in">len</span>(sorted))</span><br><span class="line">    <span class="keyword">if</span> req.TopN != <span class="literal">nil</span> &amp;&amp; ptr.From(req.TopN) != <span class="number">0</span> &amp;&amp; ptr.From(req.TopN) &lt; topN &#123;</span><br><span class="line">        topN = ptr.From(req.TopN)                   <span class="comment">// TopN 截断</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> &amp;rerank.Response&#123;SortedData: sorted[:topN]&#125;, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>执行步骤：</p>
-<ol>
-<li><strong>校验</strong>：空请求直接报错</li>
-<li><strong>打分</strong>：对每路列表中每个文档按 <code>1/(rank+k)</code> 计算分数</li>
-<li><strong>去重</strong>：同一 <code>Document.ID</code> 出现在多个列表时，仅保留其最高得分（见 §6 与标准算法的差异）</li>
-<li><strong>排序</strong>：按融合分数从高到低</li>
-<li><strong>截断</strong>：<code>TopN</code> 有效且小于总数时，只返回前 N 条</li>
-</ol>
-<h2 id="6-与标准-RRF-算法的差异（重要）"><a href="#6-与标准-RRF-算法的差异（重要）" class="headerlink" title="6. 与标准 RRF 算法的差异（重要）"></a>6. 与标准 RRF 算法的差异（重要）</h2><p>标准 RRF（论文及 Elasticsearch 实现）对同一文档在<strong>多个列表中的得分求和</strong>：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">RRF(d) = Σ_i  1 / (rank_i(d) + k)      // 标准算法：跨列表累加</span><br></pre></td></tr></table></figure>
-
-<p>本实现改为<strong>取最大值</strong>：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">score(d) = max_i  1 / (rank_i(d) + k)  // 本实现：只取最好名次</span><br></pre></td></tr></table></figure>
-
-<p>影响：</p>
-<ul>
-<li><strong>标准算法（求和）</strong>：文档在多路召回中”都出现”会持续加分，鼓励多路一致性——一个文档同时被向量检索和全文检索召回时显著受益</li>
-<li><strong>本实现（取最大）</strong>：只看文档在所有列表中的<strong>最好名次</strong>，多路同时命中不再有叠加收益，效果上更接近”按各路最优名次统一去重排序”</li>
-</ul>
-<p>如需对齐标准 RRF 行为，可将 <code>if score &gt; id2Score[...]</code> 的分支改为累加：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">id2Score[result.Document.ID] += score</span><br><span class="line">id2Data[result.Document.ID] = result</span><br></pre></td></tr></table></figure>
-
-<h2 id="7-k-的取值逻辑"><a href="#7-k-的取值逻辑" class="headerlink" title="7. k 的取值逻辑"></a>7. k 的取值逻辑</h2><h3 id="当前取值：固定-60"><a href="#当前取值：固定-60" class="headerlink" title="当前取值：固定 60"></a>当前取值：固定 60</h3><p><code>k</code> 虽是构造参数，但当前<strong>全项目所有调用点均传 0</strong>，经 <code>NewRRFReranker</code> 内部兜底后等效于硬编码 60：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// infra/document/rerank/impl/impl.go —— RRF 与 default 分支均传 0</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">New</span><span class="params">(conf *config.KnowledgeConfig)</span></span> Reranker &#123;</span><br><span class="line">    <span class="keyword">switch</span> conf.RerankConfig.Type &#123;</span><br><span class="line">    <span class="keyword">case</span> config.RerankType_VikingDB:</span><br><span class="line">        <span class="keyword">return</span> vikingdb.NewReranker(conf.RerankConfig.VikingdbConfig)</span><br><span class="line">    <span class="keyword">case</span> config.RerankType_RRF:</span><br><span class="line">        <span class="keyword">return</span> rrf.NewRRFReranker(<span class="number">0</span>)</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        <span class="keyword">return</span> rrf.NewRRFReranker(<span class="number">0</span>)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>工厂逻辑说明：知识库未配置 Rerank 或配置为 RRF 类型时，均使用本地 RRF（无网络调用、零成本）；配置为 VikingDB 时使用其模型重排序服务。</p>
-<h3 id="k-的数学作用：控制名次间分数的衰减曲线"><a href="#k-的数学作用：控制名次间分数的衰减曲线" class="headerlink" title="k 的数学作用：控制名次间分数的衰减曲线"></a>k 的数学作用：控制名次间分数的衰减曲线</h3><table>
-<thead>
-<tr>
-<th>rank</th>
-<th>k&#x3D;1</th>
-<th>k&#x3D;60</th>
-<th>k&#x3D;1000</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>0</td>
-<td>1.000</td>
-<td>0.01667</td>
-<td>0.001000</td>
-</tr>
-<tr>
-<td>1</td>
-<td>0.500</td>
-<td>0.01639</td>
-<td>0.000999</td>
-</tr>
-<tr>
-<td>10</td>
-<td>0.091</td>
-<td>0.01429</td>
-<td>0.000990</td>
-</tr>
-<tr>
-<td>59</td>
-<td>0.017</td>
-<td>0.00840</td>
-<td>0.000944</td>
-</tr>
-</tbody></table>
-<ul>
-<li><strong>k 小</strong>（如 k&#x3D;1）：头名与次名分数差一倍，单路冠军几乎垄断融合结果</li>
-<li><strong>k&#x3D;60</strong>（默认）：名次间差距被压平（rank 0 与 rank 1 仅差约 0.0003），更看重文档的整体排名稳定性，对单路噪声更鲁棒</li>
-<li><strong>k 极大</strong>：所有名次分数趋近相等，退化为近似”按出现情况排序”</li>
-</ul>
-<h3 id="如何自定义-k"><a href="#如何自定义-k" class="headerlink" title="如何自定义 k"></a>如何自定义 k</h3><p>在 <code>impl.go</code> 调用处传入非零值，或从 <code>KnowledgeConfig</code> 透传配置：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> config.RerankType_RRF:</span><br><span class="line">    <span class="keyword">return</span> rrf.NewRRFReranker(conf.RerankConfig.RRFK) <span class="comment">// 需扩展配置结构</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="8-另一处-RRF：Milvus-服务端混合检索"><a href="#8-另一处-RRF：Milvus-服务端混合检索" class="headerlink" title="8. 另一处 RRF：Milvus 服务端混合检索"></a>8. 另一处 RRF：Milvus 服务端混合检索</h2><p>除应用层 RRF 外，Milvus 向量库内部还有一处服务端 RRF（<code>milvus_searchstore.go</code> 的 <code>HybridSearch</code>）：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">searchOption := client.NewHybridSearchOption(m.collectionName, ptr.From(options.TopK), annRequests...).</span><br><span class="line">    WithReranker(client.NewRRFReranker()). <span class="comment">// Milvus SDK 内置，由 Milvus 服务端执行</span></span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
-
-<p>这是对<strong>同一 collection 内多个向量索引</strong>（如多 embedding 模型的多个向量字段）做服务端融合，与应用层的多路（Milvus+ES+NL2SQL）融合是两层不同的 RRF，互不影响。</p>
-<h2 id="9-小结"><a href="#9-小结" class="headerlink" title="9. 小结"></a>9. 小结</h2><table>
-<thead>
-<tr>
-<th>项</th>
-<th>值</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>算法</td>
-<td>RRF 倒数排名融合（取最大值变体，见 §6）</td>
-</tr>
-<tr>
-<td>k 默认值</td>
-<td>60（论文推荐，当前不可配置）</td>
-</tr>
-<tr>
-<td>触发条件</td>
-<td>知识库未配置 Reranker，或配置为 RRF 类型</td>
-</tr>
-<tr>
-<td>输入</td>
-<td>多路召回结果列表（向量 &#x2F; ES &#x2F; NL2SQL）</td>
-</tr>
-<tr>
-<td>输出</td>
-<td>去重、按融合分数降序、TopK 截断后的列表</td>
-</tr>
-<tr>
-<td>后处理</td>
-<td><code>MinScore</code> 过滤（retrieve.go）</td>
-</tr>
-<tr>
-<td>成本</td>
-<td>纯本地计算，无网络调用、无模型推理开销</td>
-</tr>
-</tbody></table>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
 
     
 
@@ -1224,6 +993,239 @@
 <tr>
 <td>并发控制</td>
 <td>召回 errgroup limit&#x3D;2，批量索引 batchSize&#x3D;100</td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://gycxxx.github.io/rrf/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="gyc">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="源码深读笔记">
+      <meta itemprop="description" content="主流基础设施、框架与 JDK 的源码级深度学习笔记">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | 源码深读笔记">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/rrf/" class="post-title-link" itemprop="url">RRF（Reciprocal Rank Fusion，倒数排名融合）说明</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-09-30 00:00:00" itemprop="dateCreated datePublished" datetime="2026-09-30T00:00:00+08:00">2026-09-30</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/RAG/" itemprop="url" rel="index"><span itemprop="name">RAG</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>本文档整理 OpenCoze 中 RRF 重排序机制的位置、实现与算法细节。</p>
+<h2 id="1-概述"><a href="#1-概述" class="headerlink" title="1. 概述"></a>1. 概述</h2><p>RRF 是一种多路检索结果融合算法：不依赖各检索系统相似度分数的绝对值，只根据文档在每个结果列表中的<strong>排名</strong>计算融合得分，从而把向量检索、全文检索等异构召回结果统一排序。</p>
+<p>核心公式：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">score(d) = 1 / (rank(d) + k)</span><br></pre></td></tr></table></figure>
+
+<p>其中 <code>rank</code> 为文档在某个结果列表中的名次（0-based），<code>k</code> 为平滑常数（本项目默认 60，RRF 原始论文 Cormack et al. 2009 的推荐值，与 Elasticsearch、Milvus 的默认值一致）。</p>
+<h2 id="2-在检索链路中的位置"><a href="#2-在检索链路中的位置" class="headerlink" title="2. 在检索链路中的位置"></a>2. 在检索链路中的位置</h2><p>RRF 位于知识库检索（RAG）链路的<strong>重排序阶段</strong>，完整链路如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">用户 Query</span><br><span class="line">   │</span><br><span class="line">   ├─ (可选) Query Rewrite ── 改写查询</span><br><span class="line">   │</span><br><span class="line">   ├─ 多路召回（并行）</span><br><span class="line">   │    ├─ 向量检索（Milvus，语义检索）   ──► 结果列表 A</span><br><span class="line">   │    ├─ 全文检索（Elasticsearch）      ──► 结果列表 B</span><br><span class="line">   │    └─ (可选) NL2SQL 检索            ──► 结果列表 C</span><br><span class="line">   │</span><br><span class="line">   ├─ RRF 重排序（本文档）</span><br><span class="line">   │    输入：[[列表A], [列表B], [列表C]]</span><br><span class="line">   │    输出：去重后按融合分数降序的单一列表</span><br><span class="line">   │</span><br><span class="line">   └─ MinScore 过滤 + TopK 截断 ──► 最终检索结果</span><br></pre></td></tr></table></figure>
+
+<p>关键代码位于 <a href="../domain/knowledge/service/retrieve.go">retrieve.go</a>（<code>rerankKnowledge</code> 相关逻辑）：</p>
+<ul>
+<li>检索策略 <code>SearchTypeHybrid</code> 时，向量结果与 ES 结果<strong>同时</strong>进入融合列表</li>
+<li><code>SearchTypeSemantic</code> &#x2F; <code>SearchTypeFullText</code> 时只有单路结果（此时 RRF 退化为按原排名去重排序）</li>
+<li>启用 <code>EnableNL2SQL</code> 时，NL2SQL 结果也作为一个独立列表参与融合</li>
+<li>Rerank 返回后，低于 <code>Strategy.MinScore</code> 的文档被过滤，最终受 <code>Strategy.TopK</code> 限制</li>
+</ul>
+<h2 id="3-代码位置"><a href="#3-代码位置" class="headerlink" title="3. 代码位置"></a>3. 代码位置</h2><table>
+<thead>
+<tr>
+<th>职责</th>
+<th>文件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Reranker 接口定义</td>
+<td><code>infra/document/rerank/rerank.go</code></td>
+</tr>
+<tr>
+<td>RRF 核心实现</td>
+<td><code>infra/document/rerank/impl/rrf/rrf.go</code></td>
+</tr>
+<tr>
+<td>Reranker 工厂（按配置选择实现）</td>
+<td><code>infra/document/rerank/impl/impl.go</code></td>
+</tr>
+<tr>
+<td>检索链路调用点</td>
+<td><code>domain/knowledge/service/retrieve.go</code></td>
+</tr>
+<tr>
+<td>Milvus 服务端 RRF（另一处，见 §7）</td>
+<td><code>infra/document/searchstore/impl/milvus/milvus_searchstore.go</code></td>
+</tr>
+</tbody></table>
+<h2 id="4-接口定义"><a href="#4-接口定义" class="headerlink" title="4. 接口定义"></a>4. 接口定义</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// infra/document/rerank/rerank.go</span></span><br><span class="line"><span class="keyword">type</span> Reranker <span class="keyword">interface</span> &#123;</span><br><span class="line">    Rerank(ctx context.Context, req *Request) (*Response, <span class="type">error</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Request <span class="keyword">struct</span> &#123;</span><br><span class="line">    Query <span class="type">string</span>      <span class="comment">// 原始或改写后的查询</span></span><br><span class="line">    Data  [][]*Data   <span class="comment">// 二维结构：多路召回的多个结果列表</span></span><br><span class="line">    TopN  *<span class="type">int64</span>      <span class="comment">// 最终保留条数（来自 Strategy.TopK）</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Response <span class="keyword">struct</span> &#123;</span><br><span class="line">    SortedData []*Data <span class="comment">// 按分数降序</span></span><br><span class="line">    TokenUsage *<span class="type">int64</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Data <span class="keyword">struct</span> &#123;</span><br><span class="line">    Document *schema.Document</span><br><span class="line">    Score    <span class="type">float64</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-核心实现"><a href="#5-核心实现" class="headerlink" title="5. 核心实现"></a>5. 核心实现</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// infra/document/rerank/impl/rrf/rrf.go</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewRRFReranker</span><span class="params">(k <span class="type">int64</span>)</span></span> rerank.Reranker &#123;</span><br><span class="line">    <span class="keyword">if</span> k == <span class="number">0</span> &#123;</span><br><span class="line">        k = <span class="number">60</span> <span class="comment">// 传 0 即使用论文推荐默认值</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> &amp;rrfReranker&#123;k&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(r *rrfReranker)</span></span> Rerank(ctx context.Context, req *rerank.Request) (*rerank.Response, <span class="type">error</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> req == <span class="literal">nil</span> || req.Data == <span class="literal">nil</span> || <span class="built_in">len</span>(req.Data) == <span class="number">0</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, fmt.Errorf(<span class="string">&quot;invalid request: no data provided&quot;</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    id2Score := <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="type">string</span>]<span class="type">float64</span>)</span><br><span class="line">    id2Data := <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="type">string</span>]*rerank.Data)</span><br><span class="line">    <span class="keyword">for</span> _, resultList := <span class="keyword">range</span> req.Data &#123;          <span class="comment">// 遍历每一路召回列表</span></span><br><span class="line">        <span class="keyword">for</span> rank := <span class="keyword">range</span> resultList &#123;              <span class="comment">// rank 为 0-based 名次</span></span><br><span class="line">            result := resultList[rank]</span><br><span class="line">            <span class="keyword">if</span> result != <span class="literal">nil</span> &amp;&amp; result.Document != <span class="literal">nil</span> &#123;</span><br><span class="line">                score := <span class="number">1.0</span> / (<span class="type">float64</span>(rank) + <span class="type">float64</span>(r.k))  <span class="comment">// RRF 公式</span></span><br><span class="line">                <span class="keyword">if</span> score &gt; id2Score[result.Document.ID] &#123;      <span class="comment">// 同 ID 只保留最高分</span></span><br><span class="line">                    id2Score[result.Document.ID] = score</span><br><span class="line">                    id2Data[result.Document.ID] = result</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">var</span> sorted []*rerank.Data</span><br><span class="line">    <span class="keyword">for</span> _, data := <span class="keyword">range</span> id2Data &#123;                  <span class="comment">// map 去重后收集</span></span><br><span class="line">        sorted = <span class="built_in">append</span>(sorted, data)</span><br><span class="line">    &#125;</span><br><span class="line">    sort.Slice(sorted, <span class="function"><span class="keyword">func</span><span class="params">(i, j <span class="type">int</span>)</span></span> <span class="type">bool</span> &#123;        <span class="comment">// 按分数降序</span></span><br><span class="line">        <span class="keyword">return</span> id2Score[sorted[i].Document.ID] &gt; id2Score[sorted[j].Document.ID]</span><br><span class="line">    &#125;)</span><br><span class="line">    topN := <span class="type">int64</span>(<span class="built_in">len</span>(sorted))</span><br><span class="line">    <span class="keyword">if</span> req.TopN != <span class="literal">nil</span> &amp;&amp; ptr.From(req.TopN) != <span class="number">0</span> &amp;&amp; ptr.From(req.TopN) &lt; topN &#123;</span><br><span class="line">        topN = ptr.From(req.TopN)                   <span class="comment">// TopN 截断</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> &amp;rerank.Response&#123;SortedData: sorted[:topN]&#125;, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>执行步骤：</p>
+<ol>
+<li><strong>校验</strong>：空请求直接报错</li>
+<li><strong>打分</strong>：对每路列表中每个文档按 <code>1/(rank+k)</code> 计算分数</li>
+<li><strong>去重</strong>：同一 <code>Document.ID</code> 出现在多个列表时，仅保留其最高得分（见 §6 与标准算法的差异）</li>
+<li><strong>排序</strong>：按融合分数从高到低</li>
+<li><strong>截断</strong>：<code>TopN</code> 有效且小于总数时，只返回前 N 条</li>
+</ol>
+<h2 id="6-与标准-RRF-算法的差异（重要）"><a href="#6-与标准-RRF-算法的差异（重要）" class="headerlink" title="6. 与标准 RRF 算法的差异（重要）"></a>6. 与标准 RRF 算法的差异（重要）</h2><p>标准 RRF（论文及 Elasticsearch 实现）对同一文档在<strong>多个列表中的得分求和</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">RRF(d) = Σ_i  1 / (rank_i(d) + k)      // 标准算法：跨列表累加</span><br></pre></td></tr></table></figure>
+
+<p>本实现改为<strong>取最大值</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">score(d) = max_i  1 / (rank_i(d) + k)  // 本实现：只取最好名次</span><br></pre></td></tr></table></figure>
+
+<p>影响：</p>
+<ul>
+<li><strong>标准算法（求和）</strong>：文档在多路召回中”都出现”会持续加分，鼓励多路一致性——一个文档同时被向量检索和全文检索召回时显著受益</li>
+<li><strong>本实现（取最大）</strong>：只看文档在所有列表中的<strong>最好名次</strong>，多路同时命中不再有叠加收益，效果上更接近”按各路最优名次统一去重排序”</li>
+</ul>
+<p>如需对齐标准 RRF 行为，可将 <code>if score &gt; id2Score[...]</code> 的分支改为累加：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">id2Score[result.Document.ID] += score</span><br><span class="line">id2Data[result.Document.ID] = result</span><br></pre></td></tr></table></figure>
+
+<h2 id="7-k-的取值逻辑"><a href="#7-k-的取值逻辑" class="headerlink" title="7. k 的取值逻辑"></a>7. k 的取值逻辑</h2><h3 id="当前取值：固定-60"><a href="#当前取值：固定-60" class="headerlink" title="当前取值：固定 60"></a>当前取值：固定 60</h3><p><code>k</code> 虽是构造参数，但当前<strong>全项目所有调用点均传 0</strong>，经 <code>NewRRFReranker</code> 内部兜底后等效于硬编码 60：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// infra/document/rerank/impl/impl.go —— RRF 与 default 分支均传 0</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">New</span><span class="params">(conf *config.KnowledgeConfig)</span></span> Reranker &#123;</span><br><span class="line">    <span class="keyword">switch</span> conf.RerankConfig.Type &#123;</span><br><span class="line">    <span class="keyword">case</span> config.RerankType_VikingDB:</span><br><span class="line">        <span class="keyword">return</span> vikingdb.NewReranker(conf.RerankConfig.VikingdbConfig)</span><br><span class="line">    <span class="keyword">case</span> config.RerankType_RRF:</span><br><span class="line">        <span class="keyword">return</span> rrf.NewRRFReranker(<span class="number">0</span>)</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        <span class="keyword">return</span> rrf.NewRRFReranker(<span class="number">0</span>)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>工厂逻辑说明：知识库未配置 Rerank 或配置为 RRF 类型时，均使用本地 RRF（无网络调用、零成本）；配置为 VikingDB 时使用其模型重排序服务。</p>
+<h3 id="k-的数学作用：控制名次间分数的衰减曲线"><a href="#k-的数学作用：控制名次间分数的衰减曲线" class="headerlink" title="k 的数学作用：控制名次间分数的衰减曲线"></a>k 的数学作用：控制名次间分数的衰减曲线</h3><table>
+<thead>
+<tr>
+<th>rank</th>
+<th>k&#x3D;1</th>
+<th>k&#x3D;60</th>
+<th>k&#x3D;1000</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>1.000</td>
+<td>0.01667</td>
+<td>0.001000</td>
+</tr>
+<tr>
+<td>1</td>
+<td>0.500</td>
+<td>0.01639</td>
+<td>0.000999</td>
+</tr>
+<tr>
+<td>10</td>
+<td>0.091</td>
+<td>0.01429</td>
+<td>0.000990</td>
+</tr>
+<tr>
+<td>59</td>
+<td>0.017</td>
+<td>0.00840</td>
+<td>0.000944</td>
+</tr>
+</tbody></table>
+<ul>
+<li><strong>k 小</strong>（如 k&#x3D;1）：头名与次名分数差一倍，单路冠军几乎垄断融合结果</li>
+<li><strong>k&#x3D;60</strong>（默认）：名次间差距被压平（rank 0 与 rank 1 仅差约 0.0003），更看重文档的整体排名稳定性，对单路噪声更鲁棒</li>
+<li><strong>k 极大</strong>：所有名次分数趋近相等，退化为近似”按出现情况排序”</li>
+</ul>
+<h3 id="如何自定义-k"><a href="#如何自定义-k" class="headerlink" title="如何自定义 k"></a>如何自定义 k</h3><p>在 <code>impl.go</code> 调用处传入非零值，或从 <code>KnowledgeConfig</code> 透传配置：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> config.RerankType_RRF:</span><br><span class="line">    <span class="keyword">return</span> rrf.NewRRFReranker(conf.RerankConfig.RRFK) <span class="comment">// 需扩展配置结构</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="8-另一处-RRF：Milvus-服务端混合检索"><a href="#8-另一处-RRF：Milvus-服务端混合检索" class="headerlink" title="8. 另一处 RRF：Milvus 服务端混合检索"></a>8. 另一处 RRF：Milvus 服务端混合检索</h2><p>除应用层 RRF 外，Milvus 向量库内部还有一处服务端 RRF（<code>milvus_searchstore.go</code> 的 <code>HybridSearch</code>）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">searchOption := client.NewHybridSearchOption(m.collectionName, ptr.From(options.TopK), annRequests...).</span><br><span class="line">    WithReranker(client.NewRRFReranker()). <span class="comment">// Milvus SDK 内置，由 Milvus 服务端执行</span></span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+
+<p>这是对<strong>同一 collection 内多个向量索引</strong>（如多 embedding 模型的多个向量字段）做服务端融合，与应用层的多路（Milvus+ES+NL2SQL）融合是两层不同的 RRF，互不影响。</p>
+<h2 id="9-小结"><a href="#9-小结" class="headerlink" title="9. 小结"></a>9. 小结</h2><table>
+<thead>
+<tr>
+<th>项</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>算法</td>
+<td>RRF 倒数排名融合（取最大值变体，见 §6）</td>
+</tr>
+<tr>
+<td>k 默认值</td>
+<td>60（论文推荐，当前不可配置）</td>
+</tr>
+<tr>
+<td>触发条件</td>
+<td>知识库未配置 Reranker，或配置为 RRF 类型</td>
+</tr>
+<tr>
+<td>输入</td>
+<td>多路召回结果列表（向量 &#x2F; ES &#x2F; NL2SQL）</td>
+</tr>
+<tr>
+<td>输出</td>
+<td>去重、按融合分数降序、TopK 截断后的列表</td>
+</tr>
+<tr>
+<td>后处理</td>
+<td><code>MinScore</code> 过滤（retrieve.go）</td>
+</tr>
+<tr>
+<td>成本</td>
+<td>纯本地计算，无网络调用、无模型推理开销</td>
 </tr>
 </tbody></table>
 
