@@ -1,13 +1,13 @@
 # 源码深读笔记 · GitHub Pages
 
-本仓库即 [https://gycxxx.github.io](https://gycxxx.github.io) 的静态站点，由 **Hexo + NexT** 生成，内容来自 `D:/work/2026/deep-dive` 下的 17 篇源码深读笔记。
+本仓库即 [https://gycxxx.github.io](https://gycxxx.github.io) 的静态站点，由 **Hexo + NexT** 生成，内容来自 `D:/work/2026/deep-dive` 下的 18 篇源码深读笔记（2026-10-16 新增 MyBatis）。
 
 > 本站为纯静态产物，不含 Hexo 源工程。源工程在 `D:/work/2026/deep-dive-blog`。
 
 ## 本仓库结构
 
 - `index.html` / `archives/` / `categories/` / `tags/` —— 首页、归档、分类、标签
-- `kafka/` `mysql/` `redis/` `elasticsearch/` `spring-*` `java-*` `jdk/` `rag*` 等 —— 各篇文章
+- `kafka/` `mysql/` `redis/` `elasticsearch/` `spring-*` `mybatis/` `java-*` `jdk/` `rag*` 等 —— 各篇文章
 - `css/` `js/` `images/` `fonts/` —— 主题资源（NexT）
 - `.nojekyll` —— 禁止 GitHub 用 Jekyll 再处理（NexT 已是纯静态）
 
@@ -39,7 +39,7 @@ git push origin master
 
 - **Mermaid 图**：文档里的 150+ 张 mermaid 流程图由 NexT 内置 `mermaid.js` + CDN `mermaid.min.js` 在浏览器端渲染；构建时通过 `highlight.exclude_languages: [mermaid]` 让 mermaid 围栏绕过语法高亮，输出为 `<pre><code class="highlight mermaid">` 供客户端渲染。
 - **老站备份**：部署前 `D:/work/2026/gycxxx.github.io-legacy-backup` 保留了 2017 年老站的完整文件（未含 .git），如需取回可从此处复制。
-- **内部目录锚点**：各文档自带的中文「目录」锚点已与 Hexo 生成的标题 id 对齐（CJK 保留、标点处理一致），点击可正常跳转。
+- **内部目录锚点**：站内导航靠 NexT 自动生成的侧边目录（与标题 id 精确匹配，点击可正常跳转）；文档开头自带的中文「目录」列表按 GitHub 锚点风格编写（去冒号、小写），在 GitHub 页面可跳转，在 Hexo 站点内可能因 slug 规则差异（保留全角标点与大小写）不跳转——不影响阅读，侧边目录可替代。
 
 ## 本地预览
 
