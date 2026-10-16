@@ -18,7 +18,7 @@
 <meta property="og:description" content="对象：Open Match 2（github.com&#x2F;googleforgames&#x2F;open-match2）—— 开源游戏匹配框架的第二代精简实现版本：commit ac392a0576ea65a73d17aa07090519efcdba99cd（2026-01-05）代码规模：22 个 .go 文件，合计约 8597 行（另有 proto &#x2F; docs &#x2F; deploy 若">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-10-16T16:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-16T07:29:40.770Z">
+<meta property="article:modified_time" content="2026-10-16T08:49:05.661Z">
 <meta property="article:author" content="gyc">
 <meta property="article:tag" content="源码">
 <meta property="article:tag" content="Open Match">
@@ -79,6 +79,13 @@
             <a href="/tags"  >
               <i class="icon icon-lg icon-tags"></i>
               标签
+            </a>
+          </li>
+      
+          <li class="waves-block waves-effect">
+            <a href="/learning-map/"  >
+              <i class="icon icon-lg icon-sitemap"></i>
+              思维导图
             </a>
           </li>
       
@@ -202,6 +209,7 @@
 <p>⚠️ <strong>版本基准声明</strong>：本仓库 HEAD 为 <code>ac392a0</code>，但采样时工作区有 2 个文件存在未提交修改（<code>main.go</code> 1402→1491 行、<code>internal/statestore/cache/replicatedticketcache.go</code> 456→461 行），且工作区版本存在重复声明（<code>MMFConnectionManager</code> 在 <code>main.go</code> 中出现两次）<strong>无法编译</strong>。<br><strong>本文所有行号以 HEAD（<code>ac392a0</code>）为准</strong>。读者若想按行号对照，请先执行：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git checkout -- main.go internal/statestore/cache/replicatedticketcache.go</span><br></pre></td></tr></table></figure>
 <p>其余 20 个 <code>.go</code> 文件经确认工作区与 HEAD 完全一致，行号无歧义。</p>
+<p>🔄 <strong>2026-10-16 复核</strong>：<code>git fetch origin</code> 后确认远端默认分支 <code>main</code> <strong>仍停在 <code>ac392a0</code>，没有新提交</strong>。但远端存在一个比 main 更新的<strong>未合入分支</strong> <code>origin/misc-fixes</code>（<code>66e7dd9</code>，2026-02-17，领先 main 4 个提交），其中 4 处改动正好修正了本文记录的若干行为（含一个真实的指标统计 bug 与一处 <code>time.Time</code> 误用）。<br>本文正文行号<strong>仍以 <code>main</code>（<code>ac392a0</code>）为准</strong>（可复现、可编译），上游这 4 处修复单独整理在文末 <a href="#%E9%99%84%E4%B8%8A%E6%B8%B8%E5%BE%85%E5%90%88%E5%85%A5%E4%BF%AE%E5%A4%8Doriginmisc-fixes">附：上游待合入修复（<code>origin/misc-fixes</code>）</a>。</p>
 </blockquote>
 <hr>
 <h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ul>
@@ -437,6 +445,8 @@
 <li><strong>以为 <code>OM_MATCH_TICKET_DEACTIVATION_WAIT=true</code> 就万无一失</strong>：源码明确承认<strong>无法等所有实例</strong>复制完成（<code>main.go:1023-1029</code>），这是最终一致性的固有限制。</li>
 <li><strong><code>WatchAssignments</code> 的性能</strong>：每票一个 goroutine + 1s 轮询，票多时 goroutine 数和 CPU 都是问题（这是它废弃的原因之一）。</li>
 <li><strong>以为 OM 会帮你去重</strong>：不会。要绕开自动 Deactivate，把候选放 <code>Match.extensions</code> 而不是 roster，由 Director 审批后自行 <code>DeactivateTickets</code>（<code>docs/FAQ.md:80-86</code>）。</li>
+<li>**用 <code>==</code> 比 <code>time.Time</code>**：<code>filter.go:79</code> &#x2F; <code>:84</code> 就是这么写的。<code>time.Time</code> 是结构体，<code>==</code> 要求 wall + monotonic + <code>*Location</code> 三者全等；判相等一律用 <code>.Equal()</code>。上游 <code>origin/misc-fixes</code>（<code>1bc2ae6</code>）已修。</li>
+<li><strong>照着 <code>TicketCount</code> 这个指标做容量决策</strong>：<code>replicatedticketcache.go:381</code> 在删票分支里做了 <code>numTickets++</code>，导致<strong>清理过期票时存活计数反而 +1</strong>（<code>:433</code> <code>TicketCount = numTickets</code>）。上游 <code>60c9ddd</code> 已删掉该行；在合入前请自行 patch 或改用 <code>otel</code> 侧别的口径。</li>
 </ol>
 <h3 id="关键数值速记"><a href="#关键数值速记" class="headerlink" title="关键数值速记"></a>关键数值速记</h3><table>
 <thead>
@@ -1059,8 +1069,11 @@
 
 <p><strong>三层过期清理</strong>（每轮更新后立刻执行，<code>:334-455</code>）：</p>
 <p><strong>① InactiveSet 清理</strong>（按 ID 前 13 位时间戳 + TTL），且<strong>连带删 Ticket</strong>（<code>:360-392</code>）：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">360</span>			tc.InactiveSet.Range(<span class="function"><span class="keyword">func</span><span class="params">(id, _ any)</span></span> <span class="type">bool</span> &#123;</span><br><span class="line"><span class="number">369</span>				ticketCreationTime, err := strconv.ParseInt(strings.Split(id.(<span class="type">string</span>), <span class="string">&quot;-&quot;</span>)[<span class="number">0</span>], <span class="number">10</span>, <span class="number">64</span>)</span><br><span class="line"><span class="number">372</span>				<span class="keyword">if</span> (time.Now().UnixMilli() - ticketCreationTime) &gt; <span class="type">int64</span>(tc.Cfg.GetInt(<span class="string">&quot;OM_CACHE_TICKET_TTL_MS&quot;</span>)) &#123;</span><br><span class="line"><span class="number">378</span>					<span class="comment">// Ensure that when expiring a ticket from the inactive set, the ticket is always deleted as well.</span></span><br><span class="line"><span class="number">379</span>					_, existed := tc.Tickets.LoadAndDelete(id)</span><br><span class="line"><span class="number">386</span>					tc.InactiveSet.Delete(id)</span><br></pre></td></tr></table></figure>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">360</span>			tc.InactiveSet.Range(<span class="function"><span class="keyword">func</span><span class="params">(id, _ any)</span></span> <span class="type">bool</span> &#123;</span><br><span class="line"><span class="number">369</span>				ticketCreationTime, err := strconv.ParseInt(strings.Split(id.(<span class="type">string</span>), <span class="string">&quot;-&quot;</span>)[<span class="number">0</span>], <span class="number">10</span>, <span class="number">64</span>)</span><br><span class="line"><span class="number">377</span>				<span class="keyword">if</span> (time.Now().UnixMilli() - ticketCreationTime) &gt; <span class="type">int64</span>(tc.Cfg.GetInt(<span class="string">&quot;OM_CACHE_TICKET_TTL_MS&quot;</span>)) &#123;</span><br><span class="line"><span class="number">378</span>					<span class="comment">// Ensure that when expiring a ticket from the inactive set, the ticket is always deleted as well.</span></span><br><span class="line"><span class="number">379</span>					_, existed := tc.Tickets.LoadAndDelete(id)</span><br><span class="line"><span class="number">380</span>					<span class="keyword">if</span> existed &#123;</span><br><span class="line"><span class="number">381</span>						numTickets++          <span class="comment">// ← BUG，见下</span></span><br><span class="line"><span class="number">386</span>					tc.InactiveSet.Delete(id)</span><br></pre></td></tr></table></figure>
 
+<blockquote>
+<p>🐞 <strong>第 381 行是一个真实的复制粘贴 bug</strong>（提交 <code>60c9ddd</code> “remove cut&#x2F;paste mistake resulting in <strong>ActiveTickets metric inaccuracy</strong>“）：<br>对照 ② 的写法（<code>:395-403</code>）就一目了然 —— 那里是”<strong>没过期就 <code>numTickets++</code>，过期就 <code>numTicketDeletions++</code></strong>“，<code>numTickets</code> 统计的是<strong>存活票</strong>。<br>而 ① 的分支语义是”这张票<strong>刚被删掉</strong>“（<code>:379</code> 的 <code>LoadAndDelete</code> 返回 <code>existed=true</code>），却同样 <code>numTickets++</code>。结果是：<strong>每清理掉一张过期票，<code>TicketCount</code> 反而 +1</strong>（<code>:433</code> <code>TicketCount = numTickets</code>）。<br>影响面：只污染指标上报（<code>otel</code> 侧的 ActiveTickets），不影响匹配正确性 —— 因为票确实已从 <code>tc.Tickets</code> 删除。但你的容量告警会看到一个”越清理票越多”的诡异曲线。上游的修法是<strong>直接删掉这一行</strong>。</p>
+</blockquote>
 <p><strong>② 按 ticket 自带 <code>expiration_time</code> 清理</strong>（<code>:390-403</code>）：</p>
 <figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">390</span>			tc.Tickets.Range(<span class="function"><span class="keyword">func</span><span class="params">(id, ticket any)</span></span> <span class="type">bool</span> &#123;</span><br><span class="line"><span class="number">391</span>				<span class="keyword">if</span> time.Now().After(ticket.(*pb.Ticket).GetExpirationTime().AsTime()) &#123;</span><br><span class="line"><span class="number">392</span>					tc.Tickets.Delete(id)</span><br></pre></td></tr></table></figure>
 
@@ -1160,6 +1173,9 @@
 <p><strong>(a) CreationTimeRangeFilter（含边界开关）</strong> <code>filter.go:60-88</code>：</p>
 <figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">69</span>			<span class="comment">// Created before the filter Start time</span></span><br><span class="line"><span class="number">70</span>			<span class="keyword">if</span> crTime.Before(crTimeFilterStart) &#123;</span><br><span class="line"><span class="number">71</span>				<span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line"><span class="number">72</span>			&#125;</span><br><span class="line"><span class="number">73</span>			<span class="comment">// Created after the filter End time</span></span><br><span class="line"><span class="number">74</span>			<span class="keyword">if</span> crTime.After(crTimeFilterEnd) &#123;</span><br><span class="line"><span class="number">75</span>				<span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line"><span class="number">77</span>			<span class="comment">// Created on the filter Start timestamp</span></span><br><span class="line"><span class="number">78</span>			<span class="keyword">if</span> crTimeFilter.GetBounds() == pb.Pool_EXCLUDE_START || crTimeFilter.GetBounds() == pb.Pool_EXCLUDE_BOTH &#123;</span><br><span class="line"><span class="number">79</span>				<span class="keyword">if</span> crTime == crTimeFilterStart &#123;</span><br><span class="line"><span class="number">80</span>					<span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line"><span class="number">81</span>				&#125;</span><br><span class="line"><span class="number">82</span>			&#125;</span><br></pre></td></tr></table></figure>
 
+<blockquote>
+<p>🐞 <strong>这一行是被上游点名修掉的写法</strong>（提交 <code>1bc2ae6</code> “use more robust time.Equals comparison”）：<code>crTime</code> &#x2F; <code>crTimeFilterStart</code> &#x2F; <code>crTimeFilterEnd</code> 都是 <code>time.Time</code>（<code>filter.go:57</code>、<code>:65-66</code>），而 <code>time.Time</code> 是<strong>结构体</strong>，<code>==</code> 比的是 wall clock + <strong>monotonic clock</strong> + <code>*Location</code> 指针三者全等。<br>当前路径下两者都由 <code>timestamppb.AsTime()</code> 产出（UTC、无单调时钟），所以实际能work；但只要哪天过滤阈值改成 <code>time.Now()</code> 或任何带单调时钟的本地时间，<code>==</code> 就会<strong>静默失效</strong> —— <code>EXCLUDE_START</code> &#x2F; <code>EXCLUDE_END</code> 的”恰好落在边界就排除”语义直接变 no-op，<strong>不报错、不告警</strong>，属于最难排查的那类 bug。<br>上游已改为 <code>crTime.Equal(crTimeFilterStart)</code> &#x2F; <code>crTime.Equal(crTimeFilterEnd)</code>（<code>filter.go:78</code>、<code>:84</code> 两处）。详见文末附录。</p>
+</blockquote>
 <p><strong>(b) DoubleRangeFilter（字段缺失即淘汰）</strong> <code>filter.go:90-115</code>：</p>
 <figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">90</span>		<span class="keyword">for</span> _, filter := <span class="keyword">range</span> pool.GetDoubleRangeFilters() &#123;</span><br><span class="line"><span class="number">91</span>			v, ok := filterableFields.GetDoubleArgs()[filter.GetDoubleArg()]</span><br><span class="line"><span class="number">92</span>			<span class="keyword">if</span> !ok &#123;</span><br><span class="line">				<span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line"><span class="number">94</span>			&#125;</span><br><span class="line"><span class="number">96</span>			<span class="keyword">switch</span> filter.GetBounds() &#123;</span><br><span class="line"><span class="number">97</span>			<span class="keyword">case</span> pb.Pool_EXCLUDE_NONE:</span><br><span class="line"><span class="number">98</span>				<span class="keyword">if</span> !(v &gt;= filter.GetMinimum() &amp;&amp; v &lt;= filter.GetMaximum()) &#123;</span><br><span class="line"><span class="number">99</span>					<span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line"><span class="number">100</span>				&#125;</span><br></pre></td></tr></table></figure>
 
@@ -1763,9 +1779,9 @@
 
   
     <div class="waves-block waves-effect next fr">
-      <a href="/mybatis/" id="post-next" class="post-nav-link">
+      <a href="/learning-path/" id="post-next" class="post-nav-link">
         <div class="tips">Next <i class="icon icon-angle-right icon-lg icon-pl"></i></div>
-        <h4 class="title">MyBatis 源码深度学习笔记</h4>
+        <h4 class="title">源码深读知识体系 · 学习路径与记忆地图</h4>
       </a>
     </div>
   
