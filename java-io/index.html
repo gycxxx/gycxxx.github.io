@@ -1,0 +1,1259 @@
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Java IO 源码深度学习笔记 · 源码深读</title><meta name="description" content="源码级技术笔记：中间件、Spring、Java、存储、云原生与 RAG"><link rel="icon" href="data:,"><link rel="stylesheet" href="/_astro/aqs-lock.BTSF5agR.css"></head> <body> <header class="site-header"> <div class="inner"> <a class="brand" href="/"> <span class="brand-mark">&lt;/&gt;</span> <span class="brand-name">源码深读</span> </a> <nav class="site-nav"> <a href="/" class> 首页 </a><a href="/#principles" class> 原理速查 </a><a href="/animations/" class> 动画 </a><a href="/categories/" class> 分类 </a><a href="/tags/" class> 标签 </a> <a class="nav-gh" href="https://github.com/gycxxx/gycxxx.github.io">GitHub</a> </nav> </div> </header> <main class="main">  <article class="post"> <div class="crumb"> <a href="/">首页</a>  / <a href="/categories/Java/">Java</a>  </div> <div class="post-head"> <h1>Java IO 源码深度学习笔记</h1> <div class="page-meta"> <time datetime="2026-10-19T00:00:00.000Z">2026-10-19</time>  · <a class="chip" href="/tags/IO/">IO</a>  <a class="chip" href="/tags/NIO/">NIO</a>  <a class="chip" href="/tags/%E6%BA%90%E7%A0%81/">源码</a>  </div> </div> <nav class="toc"> <div class="toc-title">目录</div> <ol> <li class="d2"> <a href="#目录">目录</a> </li><li class="d2"> <a href="#〇全景地图">〇、全景地图</a> </li><li class="d2"> <a href="#速览六讲各自做了什么先看这个再进细节">速览：六讲各自做了什么（先看这个再进细节）</a> </li><li class="d2"> <a href="#面试速通java-io-高频问题一页纸">面试速通：Java IO 高频问题一页纸</a> </li><li class="d3"> <a href="#高频-qa先结论">高频 Q&amp;A（先结论）</a> </li><li class="d3"> <a href="#易错点最容易讲错的-8-条">易错点（最容易讲错的 8 条）</a> </li><li class="d3"> <a href="#数值速记">数值速记</a> </li><li class="d2"> <a href="#第一讲字节流骨架--inputstream--outputstream-与-file-流">第一讲：字节流骨架 —— InputStream / OutputStream 与 File 流</a> </li><li class="d3"> <a href="#11-抽象基类所有字节流的合同">1.1 抽象基类：所有字节流的合同</a> </li><li class="d3"> <a href="#12-fileinputstream从-java-到-native-的那一步">1.2 FileInputStream：从 Java 到 native 的那一步</a> </li><li class="d3"> <a href="#13-close-为什么写得这么啰嗦">1.3 close() 为什么写得这么”啰嗦”</a> </li><li class="d3"> <a href="#14-fileoutputstream写侧与-append">1.4 FileOutputStream：写侧与 append</a> </li><li class="d3"> <a href="#15-本讲小结">1.5 本讲小结</a> </li><li class="d2"> <a href="#第二讲缓冲与数据流--bufferedinputstream--datainputstream">第二讲：缓冲与数据流 —— BufferedInputStream / DataInputStream</a> </li><li class="d3"> <a href="#21-bufferedinputstream一块-buf-同时干三件事">2.1 BufferedInputStream：一块 buf 同时干三件事</a> </li><li class="d3"> <a href="#22-datainputstream把基本类型从流里抠出来">2.2 DataInputStream：把基本类型从流里抠出来</a> </li><li class="d3"> <a href="#23-pushbackinputstream流的后悔药">2.3 PushbackInputStream：流的”后悔药”</a> </li><li class="d3"> <a href="#24-本讲小结">2.4 本讲小结</a> </li><li class="d2"> <a href="#第三讲字符流与编解码--streamdecoder-与-bufferedreader">第三讲：字符流与编解码 —— StreamDecoder 与 BufferedReader</a> </li><li class="d3"> <a href="#31-inputstreamreader只是个壳内核是-streamdecoder">3.1 InputStreamReader：只是个壳，内核是 StreamDecoder</a> </li><li class="d3"> <a href="#32-双缓冲字节有残字符也有残">3.2 双缓冲：字节有残、字符也有残</a> </li><li class="d3"> <a href="#33-implreadcoderresult-三态机">3.3 implRead：CoderResult 三态机</a> </li><li class="d3"> <a href="#34-bufferedreader字符流的缓冲层">3.4 BufferedReader：字符流的缓冲层</a> </li><li class="d3"> <a href="#35-写侧outputstreamwriter-与-streamencoder">3.5 写侧：OutputStreamWriter 与 StreamEncoder</a> </li><li class="d3"> <a href="#36-本讲小结">3.6 本讲小结</a> </li><li class="d2"> <a href="#第四讲filerandomaccessfile-与-filesystem-抽象">第四讲：File、RandomAccessFile 与 FileSystem 抽象</a> </li><li class="d3"> <a href="#41-file一个跨平台路径的-java-包装">4.1 File：一个跨平台路径的 Java 包装</a> </li><li class="d3"> <a href="#42-randomaccessfile一个-fd两种方向自由光标">4.2 RandomAccessFile：一个 fd，两种方向，自由光标</a> </li><li class="d3"> <a href="#43-filedescriptornative-fd-的-java-句柄">4.3 FileDescriptor：native fd 的 Java 句柄</a> </li><li class="d3"> <a href="#44-本讲小结">4.4 本讲小结</a> </li><li class="d2"> <a href="#第五讲nio-三件套--buffer--filechannel--selector">第五讲：NIO 三件套 —— Buffer / FileChannel / Selector</a> </li><li class="d3"> <a href="#51-buffer三个指针的不变式">5.1 Buffer：三个指针的不变式</a> </li><li class="d3"> <a href="#52-filechannel六个原语覆盖全部文件-io">5.2 FileChannel：六个原语覆盖全部文件 IO</a> </li><li class="d3"> <a href="#53-selector一根管道唤醒的一千个连接">5.3 Selector：一根管道唤醒的一千个连接</a> </li><li class="d3"> <a href="#54-本讲小结">5.4 本讲小结</a> </li><li class="d2"> <a href="#第六讲序列化与管道--objectinputstream--pipedinputstream">第六讲：序列化与管道 —— ObjectInputStream / PipedInputStream</a> </li><li class="d3"> <a href="#61-序列化协议tc_-字节码流">6.1 序列化协议：TC_* 字节码流</a> </li><li class="d3"> <a href="#62-读侧readobject0-的分派表">6.2 读侧：readObject0 的分派表</a> </li><li class="d3"> <a href="#63-pipedinputstream1024-字节的循环缓冲">6.3 PipedInputStream：1024 字节的循环缓冲</a> </li><li class="d3"> <a href="#64-本讲小结">6.4 本讲小结</a> </li><li class="d2"> <a href="#附学习路线与复习卡汇总">附：学习路线与复习卡汇总</a> </li><li class="d3"> <a href="#建议学习顺序20-讲时">建议学习顺序（20 讲时）</a> </li><li class="d3"> <a href="#复习卡遮答案自测">复习卡（遮答案自测）</a> </li><li class="d3"> <a href="#六讲记忆钩子串烧">六讲记忆钩子串烧</a> </li><li class="d2"> <a href="#涉及文件索引">涉及文件索引</a> </li> </ol> </nav> <div class="markdown-body">  <blockquote>
+<p>基于对 OpenJDK <strong>25</strong>（JDK 24 GA 后的开发线，bug 编号 <code>834xxxx</code> 前缀）<code>java.io</code> 与 <code>java.nio</code> 源码的逐文件精读整理而成。</p>
+<p>源码位于 <code>src/java.base/share/classes/java/io/</code>（IO 流家族）、<code>src/java.base/share/classes/java/nio/</code>（Buffer 家族）、<code>src/java.base/share/classes/sun/nio/ch/</code>（Channel/Selector 实现）、<code>src/java.base/unix/classes/sun/nio/ch/</code>（Linux <code>poll</code> 版 Selector）与 <code>src/java.base/windows/classes/sun/nio/ch/</code>（Windows <code>IOCP</code>/<code>poll</code> 版实现）。</p>
+<p>阅读顺序即学习顺序：字节流骨架 → 缓冲与数据流 → 字符流与编解码 → File/RandomAccessFile → NIO 三件套 → 序列化与管道。</p>
+<p>所有结论均标注了源文件位置（格式 <code>相对路径:行号</code>），行号均经 Read/Grep 实际核对。</p>
+<p><strong>版本基线</strong>：OpenJDK <strong>25 开发线</strong>，<code>git log -1</code> = <code>6c48f4ed707bf0b15f9b6098de30db8aae6fa40f</code>，commit 时间 <code>2025-08-12 17:15:36 +0000</code>。
+<strong>注意</strong>：JDK 源码树中 <code>java/io/</code> 与 <code>java/nio/</code> 都在 <code>src/java.base/share/classes/</code> 下；Selector 的平台实现分 <code>share</code>（抽象）/<code>unix</code>（<code>PollSelectorImpl</code>，Linux）/<code>windows</code>（<code>WindowsSelectorImpl</code>）三处，本文引用默认指 Linux 侧。</p>
+</blockquote>
+<hr>
+<h2 id="目录">目录</h2>
+<ul>
+<li><a href="#%E3%80%87%E5%85%A8%E6%99%AF%E5%9C%B0%E5%9B%BE">〇、全景地图</a></li>
+<li><a href="#%E9%80%9F%E8%A7%88%E5%85%AD%E8%AE%B2%E5%90%84%E8%87%AA%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88%E5%85%88%E7%9C%8B%E8%BF%99%E4%B8%AA%E5%86%8D%E8%BF%9B%E7%BB%86%E8%8A%82">速览：六讲各自做了什么（先看这个再进细节）</a></li>
+<li><a href="#%E9%9D%A2%E8%AF%95%E9%80%9F%E9%80%9Ajava-io-%E9%AB%98%E9%A2%91%E9%97%AE%E9%A2%98%E4%B8%80%E9%A1%B5%E7%BA%B8">面试速通：Java IO 高频问题一页纸</a></li>
+<li><a href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%E5%AD%97%E8%8A%82%E6%B5%81%E9%AA%A8%E6%9E%B6--inputstream--outputstream-%E4%B8%8E-file-%E6%B5%81">第一讲：字节流骨架 —— InputStream / OutputStream 与 File 流</a></li>
+<li><a href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2%E7%BC%93%E5%86%B2%E4%B8%8E%E6%95%B0%E6%8D%AE%E6%B5%81--bufferedinputstream--datainputstream">第二讲：缓冲与数据流 —— BufferedInputStream / DataInputStream</a></li>
+<li><a href="#%E7%AC%AC%E4%B8%89%E8%AE%B2%E5%AD%97%E7%AC%A6%E6%B5%81%E4%B8%8E%E7%BC%96%E8%A7%A3%E7%A0%81--streamdecoder-%E4%B8%8E-bufferedreader">第三讲：字符流与编解码 —— StreamDecoder 与 BufferedReader</a></li>
+<li><a href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2filerandomaccessfile-%E4%B8%8E-filesystem-%E6%8A%BD%E8%B1%A1">第四讲：File、RandomAccessFile 与 FileSystem 抽象</a></li>
+<li><a href="#%E7%AC%AC%E4%BA%94%E8%AE%B2nio-%E4%B8%89%E4%BB%B6%E5%A5%97--buffer--filechannel--selector">第五讲：NIO 三件套 —— Buffer / FileChannel / Selector</a></li>
+<li><a href="#%E7%AC%AC%E5%85%AD%E8%AE%B2%E5%BA%8F%E5%88%97%E5%8C%96%E4%B8%8E%E7%AE%A1%E9%81%93--objectinputstream--pipedinputstream">第六讲：序列化与管道 —— ObjectInputStream / PipedInputStream</a></li>
+<li><a href="#%E9%99%84%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E4%B8%8E%E5%A4%8D%E4%B9%A0%E5%8D%A1%E6%B1%87%E6%80%BB">附：学习路线与复习卡汇总</a></li>
+<li><a href="#%E6%B6%89%E5%8F%8A%E6%96%87%E4%BB%B6%E7%B4%A2%E5%BC%95">涉及文件索引</a></li>
+</ul>
+<hr>
+<h2 id="〇全景地图">〇、全景地图</h2>
+<p>Java IO 在源码层面可以压缩成<strong>两套并行的 API + 一个公共编解码内核 + 一个共享的文件系统抽象</strong>：</p>
+<ul>
+<li><strong>IO 流家族（<code>java.io</code>）</strong>：<code>InputStream</code>/<code>OutputStream</code>（字节）+ <code>Reader</code>/<code>Writer</code>（字符）两个平行继承树，中间用 <code>InputStreamReader</code>/<code>OutputStreamWriter</code> 搭桥，桥里坐着 <code>sun.nio.cs.StreamDecoder</code>/<code>StreamEncoder</code> 这一对编解码内核（它们复用 NIO 的 <code>CharsetDecoder</code>）。</li>
+<li><strong>NIO 家族（<code>java.nio</code>）</strong>：<code>Buffer</code>（容器抽象）+ <code>Channel</code>（双向 IO 端点）+ <code>Selector</code>（多路复用）。<code>FileChannel</code> 底层是 <code>sun.nio.ch.FileChannelImpl</code>，<code>Selector</code> 抽象在 <code>sun.nio.ch.SelectorImpl</code>，Linux 具体实现在 <code>sun.nio.ch.PollSelectorImpl</code>（<code>poll(2)</code>）。</li>
+<li><strong>横切两族的公共设施</strong>：<code>File</code>/<code>FileSystem</code>（路径与文件属性，Unix 侧 <code>UnixFileSystem</code>、Windows 侧 <code>WinNTFileSystem</code>）、<code>FileDescriptor</code>（native fd 的 Java 句柄）、<code>ObjectInputStream</code>/<code>ObjectOutputStream</code>（序列化协议）。</li>
+</ul>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>┌────────────────────── java.io（流家族，同步阻塞） ───────────────────────┐</span></span>
+<span class="line"><span>│                                                                          │</span></span>
+<span class="line"><span>│  InputStream ──┬─ FileInputStream   → native open0/read0/readBytes0     │</span></span>
+<span class="line"><span>│                ├─ ByteArrayInputStream / StringBufferInputStream         │</span></span>
+<span class="line"><span>│                ├─ BufferedInputStream  → buf[] + fill()（:256）           │</span></span>
+<span class="line"><span>│                ├─ DataInputStream     → readInt/readUTF（:389/:554）      │</span></span>
+<span class="line"><span>│                ├─ PushbackInputStream → pos 回推（unread :229）           │</span></span>
+<span class="line"><span>│                └─ PipedInputStream    → 1024 循环缓冲 + receive/awaitSpace│</span></span>
+<span class="line"><span>│                                                                          │</span></span>
+<span class="line"><span>│  Reader ───────┬─ InputStreamReader → StreamDecoder（解码内核）           │</span></span>
+<span class="line"><span>│                ├─ BufferedReader    → readLine()（:320 找 \n/\r）         │</span></span>
+<span class="line"><span>│                └─ PipedReader / CharArrayReader / StringReader            │</span></span>
+<span class="line"><span>│                                                                          │</span></span>
+<span class="line"><span>│  ObjectInputStream / ObjectOutputStream（序列化协议，第六讲）              │</span></span>
+<span class="line"><span>└──────────────────────────────────────────────────────────────────────────┘</span></span>
+<span class="line"><span>                                    │ 共用</span></span>
+<span class="line"><span>┌────────────────────── java.nio（通道 + 缓冲 + 多路复用） ─────────────────┐</span></span>
+<span class="line"><span>│                                                                          │</span></span>
+<span class="line"><span>│  Buffer（java/nio/Buffer.java:217  mark &#x3C;= position &#x3C;= limit &#x3C;= capacity）│</span></span>
+<span class="line"><span>│     HeapByteBuffer（堆内，byte[]）/ DirectByteBuffer（堆外，unsafe 内存）  │</span></span>
+<span class="line"><span>│     MappedByteBuffer（FileChannel.map，DirectByteBuffer 子类 :1412）      │</span></span>
+<span class="line"><span>│                                                                          │</span></span>
+<span class="line"><span>│  FileChannelImpl（sun/nio/ch/FileChannelImpl.java，1774 行）              │</span></span>
+<span class="line"><span>│     read/write（:227/:331） map（:1412） lock（:1669） transferTo（:934）   │</span></span>
+<span class="line"><span>│     → FileDispatcher 抽象 → UnixFileDispatcherImpl / FileDispatcherImpl   │</span></span>
+<span class="line"><span>│                                                                          │</span></span>
+<span class="line"><span>│  SelectorImpl（抽象 :52）── doSelect 钩子 ──→ PollSelectorImpl（Linux）    │</span></span>
+<span class="line"><span>│     pollArray 本地内存 struct pollfd（:53）                              │</span></span>
+<span class="line"><span>│     updateKeys 延迟队列 + processUpdateQueue（:143）                      │</span></span>
+<span class="line"><span>│     wakeup() 靠 pipe 写 1 字节（PipeImpl，:240）                          │</span></span>
+<span class="line"><span>└──────────────────────────────────────────────────────────────────────────┘</span></span>
+<span class="line"><span>                                    │ 共用</span></span>
+<span class="line"><span>┌────────────────────── 横切设施 ──────────────────────────────────────────┐</span></span>
+<span class="line"><span>│  File（java/io/File.java:160 FS = DefaultFileSystem.getFileSystem()）    │</span></span>
+<span class="line"><span>│     ├─ UnixFileSystem（unix/classes/sun/nio/fs/UnixFileSystem.java）      │</span></span>
+<span class="line"><span>│     └─ WinNTFileSystem（windows/classes/sun/nio/fs/WinNTFileSystem.java） │</span></span>
+<span class="line"><span>│  FileDescriptor（java/io/FileDescriptor.java:49，in/out/err 静态三件套）  │</span></span>
+<span class="line"><span>│  RandomAccessFile（java/io/RandomAccessFile.java，seek 自由光标）          │</span></span>
+<span class="line"><span>└──────────────────────────────────────────────────────────────────────────┘</span></span></code></pre>
+<p>一句话记住全景：<strong>IO 流是”一个方向一条管子”，NIO 是”一个双向端点 + 一块缓冲 + 一个多路复用器”</strong>；两者的字符/字节互转都走同一个 <code>StreamDecoder</code>，两者的文件操作都最终落到同一个 native fd。</p>
+<hr>
+<h2 id="速览六讲各自做了什么先看这个再进细节">速览：六讲各自做了什么（先看这个再进细节）</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>讲次</th><th>主题</th><th>核心类</th><th>要回答的问题</th><th>不学会怎样</th></tr></thead><tbody><tr><td>第一讲</td><td>字节流骨架</td><td><code>InputStream</code>/<code>FileInputStream</code></td><td><code>read()</code> 一次读多少、<code>close()</code> 为什么有 <code>closeLock</code></td><td>读文件漏字节、重复 close 踩竞态</td></tr><tr><td>第二讲</td><td>缓冲与数据流</td><td><code>BufferedInputStream</code>/<code>DataInputStream</code></td><td>缓冲为什么省系统调用、<code>readUTF</code> 的改长前缀</td><td>逐字节读慢 100 倍、协议解析错位</td></tr><tr><td>第三讲</td><td>字符流与编解码</td><td><code>StreamDecoder</code>/<code>BufferedReader</code></td><td>半字节缓冲、<code>MalformedInputException</code> 何时抛</td><td>中文乱码、跨块字符被吞</td></tr><tr><td>第四讲</td><td>File 与 RandomAccessFile</td><td><code>File</code>/<code>RandomAccessFile</code></td><td>路径的 OS 差异、<code>seek</code> 与文件锁</td><td>路径拼接错误、随机读写性能差</td></tr><tr><td>第五讲</td><td>NIO 三件套</td><td><code>Buffer</code>/<code>FileChannel</code>/<code>Selector</code></td><td><code>flip</code> 三部曲、<code>map</code> 零拷贝、Selector 的 pollfd</td><td>直接内存 OOM、Selector 空转烧 CPU</td></tr><tr><td>第六讲</td><td>序列化与管道</td><td><code>ObjectInputStream</code>/<code>PipedInputStream</code></td><td>句柄表去重、TC_* 协议分派、管道死锁</td><td>序列化安全漏洞、Piped 死锁</td></tr></tbody></table>
+<hr>
+<h2 id="面试速通java-io-高频问题一页纸">面试速通：Java IO 高频问题一页纸</h2>
+<h3 id="高频-qa先结论">高频 Q&#x26;A（先结论）</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>#</th><th>问题</th><th>一句话结论</th><th>出处</th></tr></thead><tbody><tr><td>1</td><td>BIO 和 NIO 的区别？</td><td>BIO 是<strong>面向流的阻塞</strong>（一个连接一个线程，<code>InputStream.read</code> 阻塞到有数据）；NIO 是<strong>面向缓冲的</strong>（数据先到 <code>Buffer</code>）+ <strong>非阻塞</strong>（<code>Channel</code> 配 <code>Selector</code>，一个线程管多个连接）+ <strong>选择器</strong></td><td><code>java/nio/Buffer.java:217</code>、<code>sun/nio/ch/SelectorImpl.java:52</code></td></tr><tr><td>2</td><td><code>read()</code> 为什么返回 int 不返回 byte？</td><td>需要用 <code>-1</code> 表示 EOF，byte 的取值域不够。<code>InputStream.read():182</code> 注释明说</td><td><code>java/io/InputStream.java:182</code></td></tr><tr><td>3</td><td>一次 <code>read(byte[])</code> 一定读满数组吗？</td><td><strong>不一定</strong>。<code>FileInputStream.read(byte[],off,len):277</code> 直接透传 native <code>readBytes0</code>，底层 <code>read(2)</code> 对普通文件通常读满，但管道/网络随时可能短读；必须循环或用 <code>readNBytes</code></td><td><code>java/io/FileInputStream.java:277</code></td></tr><tr><td>4</td><td><code>BufferedInputStream</code> 为什么快？</td><td>把多次小 <code>read</code> 合并成一次 <code>fill()</code> 批量读（默认 8192 字节缓冲，<code>:62</code>），减少 <code>read(2)</code> 系统调用次数；<code>mark/reset</code> 也靠同一块 <code>buf</code></td><td><code>java/io/BufferedInputStream.java:256</code></td></tr><tr><td>5</td><td><code>mark</code> 之后读超多少会失效？</td><td><code>marklimit</code>（构造第二参数或 <code>mark(readlimit)</code>）。<code>fill()</code> 里若 <code>pos - markpos > marklimit</code> 就丢弃 mark（<code>markpos = -1</code>）</td><td><code>java/io/BufferedInputStream.java:467</code></td></tr><tr><td>6</td><td><code>DataInputStream.readUTF</code> 和 <code>Writer.write("…")</code> 一样吗？</td><td><strong>不一样</strong>。<code>readUTF:632</code> 是<strong>改长的 UTF-8</strong>（2 字节长度前缀 +  supplemental 字符拆成代理对按 3 字节编码、<code>\0</code> 编码成 2 字节），和标准 UTF-8 不兼容，只能和 <code>DataOutputStream.writeUTF:337</code> 配对</td><td><code>java/io/DataInputStream.java:554</code></td></tr><tr><td>7</td><td><code>InputStreamReader</code> 是字节流还是字符流？</td><td><strong>字符流</strong>（<code>extends Reader</code>，<code>java/io/InputStreamReader.java:69</code>），内部持有 <code>StreamDecoder</code>；构造时<strong>立刻读前几个字节探测 BOM/编码</strong>（<code>sd = StreamDecoder.forInputStreamReader(in, this)</code>，<code>:81-89</code>）</td><td><code>java/io/InputStreamReader.java:81</code></td></tr><tr><td>8</td><td>跨 <code>read</code> 调用中文字为什么会乱？</td><td>多字节字符可能被系统调用<strong>切断在两次 read 之间</strong>，<code>StreamDecoder</code> 用 <code>bb</code> 残字节缓冲解决：半字符留在 <code>ByteBuffer</code> 里下次继续解</td><td><code>sun/nio/cs/StreamDecoder.java:123</code></td></tr><tr><td>9</td><td><code>available()</code> 返回值可信吗？</td><td><strong>不可信</strong>。注释原文”an estimate”（<code>:457</code>），普通文件返回剩余字节，网络流返回 0 不代表没数据；不要用它决定”是否读完”</td><td><code>java/io/FileInputStream.java:457</code></td></tr><tr><td>10</td><td><code>File</code> 和 <code>Path</code> 什么关系？</td><td>JDK 7 起 <code>Path</code> 是主力，<code>File</code> 是遗留 API（<code>java.io.File</code> 仍在维护）。<code>File</code> 内部所有操作委托 <code>FileSystem FS</code>（<code>File.java:160</code>），<code>File.toPath():727</code> 两者互转</td><td><code>java/io/File.java:160</code></td></tr><tr><td>11</td><td><code>RandomAccessFile</code> 和 <code>FileInputStream</code> 本质差异？</td><td>它是<strong>同一个 native fd 上既可读又可写、光标可 <code>seek</code> 自由定位</strong>；<code>"rws"</code>/<code>"rwd"</code> 模式控制每次写的元数据/内容同步强度（构造 <code>:130</code>）</td><td><code>java/io/RandomAccessFile.java:130</code></td></tr><tr><td>12</td><td>NIO 的 <code>Buffer</code> 三个指针？</td><td><code>mark &#x3C;= position &#x3C;= limit &#x3C;= capacity</code>（不变量在 <code>Buffer.java:217</code> 注释）；写模式 <code>limit==capacity</code>，读完 <code>flip()</code> 切读模式（<code>limit=position, position=0</code>，<code>:1009</code>），读完再 <code>clear()</code></td><td><code>java/nio/Buffer.java:217</code></td></tr><tr><td>13</td><td><code>HeapByteBuffer</code> 和 <code>DirectByteBuffer</code>？</td><td>前者快在分配（数组）、后者快在 IO（无内核态拷贝）；<code>DirectByteBuffer</code> 受 <code>-XX:MaxDirectMemorySize</code> 限制，靠 <code>Cleaner</code>/<code>Unsafe</code> 释放（<code>Bits.java</code> 管理 reserveMemory）</td><td><code>java/nio/Direct-X-Buffer.java.template</code></td></tr><tr><td>14</td><td><code>FileChannel.map</code> 是什么原理？</td><td><code>mmap(2)</code>：把文件映射进进程地址空间，返回 <code>MappedByteBuffer</code>（<code>FileChannelImpl.map:1412</code>）；读是缺页中断按需加载，写直接落 page cache</td><td><code>sun/nio/ch/FileChannelImpl.java:1412</code></td></tr><tr><td>15</td><td><code>MappedByteBuffer</code> 什么时候被释放？</td><td><strong>不确定</strong>。<code>map</code> 时注册 <code>DefaultUnmapper</code> 到 <code>Cleaner</code>（<code>:1341</code>），GC 触发才 <code>unmap</code>；大文件要用 <code>cleaner().clean()</code> 或 <code>Arena</code> 主动释放，否则 fd 占满</td><td><code>sun/nio/ch/FileChannelImpl.java:1341</code></td></tr><tr><td>16</td><td><code>FileChannel.force()</code> 是 fsync 吗？</td><td>是。<code>force(false)</code> → <code>fsync(2)</code>（数据+元数据）、<code>force(true)</code> → <code>fdatasync</code> 风格只刷数据（<code>:1074</code>）</td><td><code>sun/nio/ch/FileChannelImpl.java:1074</code></td></tr><tr><td>17</td><td><code>transferTo</code>/<code>transferFrom</code> 零拷贝？</td><td>对普通文件会走 <code>FileDispatcher.transferTo</code> → Linux <code>sendfile</code>（一次系统调用、数据不过用户态）；不支持时退化为循环 read/write</td><td><code>sun/nio/ch/FileChannelImpl.java:934</code></td></tr><tr><td>18</td><td>Selector 怎么做到一个线程管多个连接？</td><td>注册时把 fd 和关注事件写进本地内存 <code>pollArray</code>（struct pollfd 数组，<code>PollSelectorImpl.java:53</code>），<code>doSelect</code> 一次 <code>poll(2)</code> 拿所有就绪 fd</td><td><code>sun/nio/ch/PollSelectorImpl.java:97</code></td></tr><tr><td>19</td><td><code>Selector.wakeup()</code> 不阻塞 select 的原理？</td><td>Linux 实现是一根<strong>自建管道</strong>（<code>PipeImpl</code>，fd0/fd1 两个字段 <code>:56-57</code>）：注册读端到 pollArray，<code>wakeup()</code> 往写端写 1 字节，<code>poll</code> 立刻返回</td><td><code>sun/nio/ch/PollSelectorImpl.java:240</code></td></tr><tr><td>20</td><td><code>select()</code> 返回 0 就绪也可能白跑一趟？</td><td>是。<code>wakeup</code> 写的字节、<code>updateKeys</code> 延迟注册都会让 <code>poll</code> 提前返回但<strong>没有就绪事件</strong>，所以 <code>selectNow</code> 后要复查 cancelledKeys</td><td><code>sun/nio/ch/SelectorImpl.java:120</code></td></tr><tr><td>21</td><td>序列化怎么写同一个对象两次？</td><td>第一次 <code>TC_OBJECT</code> 全文，第二次只写 <code>TC_REFERENCE</code> + 句柄号（<code>writeObject0:…</code> 的 <code>handles.assign(obj)</code> 查表）；句柄表 <code>HandleTable</code> 从 0xff71 开始</td><td><code>java/io/ObjectOutputStream.java:180</code></td></tr><tr><td>22</td><td><code>serialVersionUID</code> 不写会怎样？</td><td>运行时按类结构<strong>自动计算</strong>哈希（<code>ObjectStreamClass.computeDefaultSUID</code>），加个字段就变，反序列化直接 <code>InvalidClassException</code>。必须显式声明</td><td><code>java/io/ObjectStreamClass.java</code></td></tr><tr><td>23</td><td><code>readObject</code> 里能强转吗？</td><td><strong>不能直接信</strong>。反序列化是”从不可信字节造对象”的入口，JDK 9+ 提供 <code>ObjectInputFilter</code>（<code>ObjectInputStream.java:1281</code> <code>setObjectInputFilter</code>）做白名单过滤</td><td><code>java/io/ObjectInputStream.java:1281</code></td></tr><tr><td>24</td><td><code>PipedInputStream</code> 死锁怎么发生的？</td><td>写端写满 1024 字节会 <code>awaitSpace</code>（<code>:273</code>）等读端读；读端不读、双方都阻塞就死锁。且读写两端<strong>不是线程安全的同一把锁</strong>，需两个线程</td><td><code>java/io/PipedInputStream.java:273</code></td></tr><tr><td>25</td><td>IO 流用完为什么必须 close？</td><td><code>FileInputStream</code> 的 native fd 是<strong>有限资源</strong>，<code>close():487</code> 用双检 <code>closed</code> + <code>closeLock</code> 保证幂等，同时会关掉关联的 <code>FileChannel</code>（<code>:498</code>）；忘了关靠 <code>Cleaner</code> 兜底但时机不定</td><td><code>java/io/FileInputStream.java:487</code></td></tr></tbody></table>
+<h3 id="易错点最容易讲错的-8-条">易错点（最容易讲错的 8 条）</h3>
+<ol>
+<li><strong><code>read(byte[])</code> 返回 0 ≠ EOF</strong>：0 只可能出现在 <code>len==0</code> 的合法调用；EOF 永远是 <code>-1</code>。循环读必须判 <code>-1</code>。</li>
+<li><strong><code>skip(n)</code> 对普通文件是 <code>lseek</code>、对其他流是读出来扔掉</strong>：<code>FileInputStream.skip:431</code> 走 <code>skip0</code>（native lseek），管道退化为 <code>super.skip</code>（读进 2048 缓冲丢弃，<code>:56</code> <code>MAX_SKIP_BUFFER_SIZE</code>）。</li>
+<li><strong><code>BufferedInputStream.close()</code> 不会关底层流</strong>——它关自己再把底层流<strong>也关掉</strong>（<code>FilterInputStream.close:169</code> → <code>in.close()</code>），套两层时注意顺序。</li>
+<li><strong><code>InputStreamReader</code> 构造就发起 IO</strong>：探测编码需要读流的前几个字节（BOM），所以”包一层 reader 再往流里写”的场景会卡住。</li>
+<li><strong><code>flip()</code> 不是清空</strong>：<code>flip</code> 后 <code>position=0, limit=原position</code>，数据还在；<code>clear()</code> 才是回到写模式（但同样不清数据，只是复位指针）。</li>
+<li><strong><code>DirectByteBuffer</code> 的 <code>array()</code> 抛 <code>UnsupportedOperationException</code></strong>：堆外内存没有 Java 数组视图，<code>hasArray()</code> 永远是 false（<code>Direct-X-Buffer.java.template</code>）。</li>
+<li><strong><code>Selector</code> 的 <code>selectedKeys()</code> 用完必须 <code>remove()</code></strong>：<code>SelectorImpl</code> 的 <code>selectedKeys</code> 不会自动清（<code>select</code> 里 <code>processEvents</code> 按 key 的 <code>nioInterestOps</code> 重新计算，<code>Iterator.remove</code> 是<strong>你的</strong>责任，<code>sun/nio/ch/PollSelectorImpl.java:172</code>）。</li>
+<li><strong>序列化不保存 <code>static</code> 和 <code>transient</code> 字段</strong>：<code>ObjectStreamClass</code> 只收集非 static 非 transient 字段（<code>getDefaultSerialFields</code>），<code>transient</code> 想参与得自己实现 <code>writeObject/readObject</code>（<code>java/io/ObjectOutputStream.java:404</code>）。</li>
+</ol>
+<h3 id="数值速记">数值速记</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>数值</th><th>含义</th><th>出处</th></tr></thead><tbody><tr><td><code>-1</code></td><td><code>read()</code> 的 EOF 信号</td><td><code>java/io/InputStream.java:182</code></td></tr><tr><td><code>8192</code></td><td><code>FileInputStream</code>/<code>BufferedInputStream</code> 默认缓冲</td><td><code>java/io/FileInputStream.java:62</code>、<code>BufferedInputStream.java:62</code></td></tr><tr><td><code>16384</code></td><td><code>InputStream.readAllBytes</code> 首缓冲</td><td><code>java/io/InputStream.java:58</code></td></tr><tr><td><code>2048</code></td><td><code>InputStream.skip</code> 的丢弃缓冲</td><td><code>java/io/InputStream.java:56</code></td></tr><tr><td><code>1024</code></td><td><code>PipedInputStream</code> 循环缓冲大小</td><td><code>java/io/PipedInputStream.java</code></td></tr><tr><td><code>2</code></td><td><code>readUTF</code> 的长度前缀字节数</td><td><code>java/io/DataInputStream.java:554</code></td></tr><tr><td><code>0xff71</code></td><td>序列化句柄表起始 handle</td><td><code>java/io/ObjectOutputStream.java</code>（<code>HandleTable</code>）</td></tr><tr><td><code>2147483647</code></td><td><code>Integer.MAX_VALUE</code>，Buffer position/limit 上限</td><td><code>java/nio/Buffer.java:217</code></td></tr></tbody></table>
+<hr>
+<h2 id="第一讲字节流骨架--inputstream--outputstream-与-file-流">第一讲：字节流骨架 —— InputStream / OutputStream 与 File 流</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：<code>read()</code> 到底把数据从哪搬到哪？<code>FileInputStream</code> 的 native 边界在哪？为什么 <code>close()</code> 写得那么啰嗦（双检 + 锁）？</p>
+</blockquote>
+<h3 id="11-抽象基类所有字节流的合同">1.1 抽象基类：所有字节流的合同</h3>
+<p><code>InputStream</code>（<code>java/io/InputStream.java</code>）是<strong>抽象类不是接口</strong>——因为它给了一堆带实现的公共方法（<code>skip:539</code>、<code>readAllBytes:347</code>、<code>transferTo:790</code>、<code>mark/reset</code>），子类只需实现一个抽象方法：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// java/io/InputStream.java:182</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> abstract</span><span style="color:#D73A49"> int</span><span style="color:#6F42C1"> read</span><span style="color:#24292E">() throws IOException;</span></span></code></pre>
+<p>返回值三态：<code>0~255</code>（一个字节）/ <code>-1</code>（EOF）/ 抛异常。<strong>为什么返回 int 不返回 byte</strong>——byte 表示不了 -1，这个设计从 JDK 1.0 定型至今。</p>
+<p><code>read(byte[] b, int off, int len):283</code> 的默认实现是循环调用单字节 <code>read()</code>（每字节一次 native 调用，极慢），注释明确要求子类覆盖：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// java/io/InputStream.java:283-296</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> int</span><span style="color:#6F42C1"> read</span><span style="color:#24292E">(</span><span style="color:#D73A49">byte</span><span style="color:#24292E">[] b, </span><span style="color:#D73A49">int</span><span style="color:#24292E"> off, </span><span style="color:#D73A49">int</span><span style="color:#24292E"> len) throws IOException {</span></span>
+<span class="line"><span style="color:#24292E">    ...</span></span>
+<span class="line"><span style="color:#D73A49">    int</span><span style="color:#24292E"> c </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> read</span><span style="color:#24292E">();          </span><span style="color:#6A737D">// 子类通常整体覆盖这个方法</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (c </span><span style="color:#D73A49">==</span><span style="color:#D73A49"> -</span><span style="color:#005CC5">1</span><span style="color:#24292E">) </span><span style="color:#D73A49">return</span><span style="color:#D73A49"> -</span><span style="color:#005CC5">1</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">    b[off] </span><span style="color:#D73A49">=</span><span style="color:#24292E"> (</span><span style="color:#D73A49">byte</span><span style="color:#24292E">) c;</span></span>
+<span class="line"><span style="color:#D73A49">    int</span><span style="color:#24292E"> i </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">    ...</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p><code>InputStream</code> 还提供了三个”整个进内存”的方便方法：<code>readAllBytes():347</code>（读到 EOF，内部首缓冲 16384 翻倍增长）、<code>readNBytes(len):396</code>（精确读 len 个，不够就返回已有）、<code>transferTo(out):790</code>（读到 EOF 并写入 out，返回字节数）。</p>
+<p><code>OutputStream</code> 是对称设计：抽象方法 <code>write(int b):56</code>，其余 <code>write(byte[])</code>、<code>flush</code>、<code>close</code> 都有默认实现。</p>
+<h3 id="12-fileinputstream从-java-到-native-的那一步">1.2 FileInputStream：从 Java 到 native 的那一步</h3>
+<p><code>FileInputStream</code>（<code>java/io/FileInputStream.java</code>，584 行）是最常用的字节流，字段先看清：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// java/io/FileInputStream.java:71-87</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> FileDescriptor fd;        </span><span style="color:#6A737D">// native fd 句柄</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> String path;              </span><span style="color:#6A737D">// 打开时的路径（异常信息用）</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> volatile</span><span style="color:#24292E"> FileChannel channel;   </span><span style="color:#6A737D">// 懒加载：getChannel() 才建</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> Object closeLock </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> Object</span><span style="color:#24292E">();  </span><span style="color:#6A737D">// 专门保护 close</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> volatile</span><span style="color:#D73A49"> boolean</span><span style="color:#24292E"> closed;        </span><span style="color:#6A737D">// 关闭标志（volatile 快路径）</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#24292E"> @</span><span style="color:#D73A49">Stable</span><span style="color:#24292E"> Boolean isRegularFile;  </span><span style="color:#6A737D">// 是否普通文件（决定 skip 走 lseek）</span></span></code></pre>
+<p>打开路径 <code>open(String):184</code> 做两件事：<code>open0(name)</code> native 调用（<code>libjava</code> 里 <code>Java_java_io_FileInputStream_open0</code> → <code>handleOpen</code> → <code>os::open</code> + <code>fdval</code>），失败时把 errno 翻译成 <code>FileNotFoundException</code> 并带上 <code>path</code>：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// java/io/FileInputStream.java:184-190</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> open</span><span style="color:#24292E">(String name) throws FileNotFoundException {</span></span>
+<span class="line"><span style="color:#D73A49">    try</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6F42C1">        open0</span><span style="color:#24292E">(name);</span></span>
+<span class="line"><span style="color:#24292E">    } </span><span style="color:#D73A49">catch</span><span style="color:#24292E"> (IOException </span><span style="color:#E36209">e</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">        ...</span></span>
+<span class="line"><span style="color:#D73A49">        throw</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> FileNotFoundException</span><span style="color:#24292E">(... </span><span style="color:#D73A49">+</span><span style="color:#24292E"> path ...);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>读的原语分三档（都声明为 <code>private native</code>，实现在 <code>src/java.base/share/native/libjava/FileInputStream.c</code>）：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Java 方法</th><th>native 方法</th><th>用途</th></tr></thead><tbody><tr><td><code>read():197</code></td><td><code>read0():204</code></td><td>单字节（内部还是 read(2) 一次读 1 字节）</td></tr><tr><td><code>read(b,off,len):277</code></td><td><code>readBytes0():230</code></td><td>批量（<code>read(2)</code> 一次最多 len）</td></tr><tr><td><code>readAllBytes():285</code></td><td>同上循环</td><td>读到 EOF</td></tr></tbody></table>
+<p><code>readAllBytes():285</code> 值得单独看——它<strong>先试 <code>transferTo</code> 到 <code>ByteArrayOutputStream</code></strong>，失败了才退回循环 <code>read</code>，是一个小优化。</p>
+<p><strong>JFR 追踪</strong>：<code>traceRead0():206</code> / <code>traceReadBytes():232</code> 在 <code>jfrTracing</code> 打开时给每次 IO 打点（<code>:68</code> 静态开关，<code>Class.forName("jdk.jfr.FlightRecorder")</code> 探测），生产排查 IO 慢时打开 JFR 能看到每条 FileInputStream 读事件。</p>
+<h3 id="13-close-为什么写得这么啰嗦">1.3 close() 为什么写得这么”啰嗦”</h3>
+<p>这是面试高频点。看完整实现：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// java/io/FileInputStream.java:487-510</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> close</span><span style="color:#24292E">() throws IOException {</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (closed) {                 </span><span style="color:#6A737D">// ① 无锁快路径：绝大多数重复 close 直接返回</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#D73A49">    synchronized</span><span style="color:#24292E"> (closeLock) {    </span><span style="color:#6A737D">// ② 只有并发竞争时才进锁</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (closed) {             </span><span style="color:#6A737D">// ③ 双检：两个线程同时通过①时只有一个能置位</span></span>
+<span class="line"><span style="color:#D73A49">            return</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">        closed </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> true</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">    FileChannel fc </span><span style="color:#D73A49">=</span><span style="color:#24292E"> channel;</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (fc </span><span style="color:#D73A49">!=</span><span style="color:#005CC5"> null</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">        fc.</span><span style="color:#6F42C1">close</span><span style="color:#24292E">();               </span><span style="color:#6A737D">// ④ 关流连带关 channel（channel.close 会回头关流）</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">    ...</span></span>
+<span class="line"><span style="color:#6F42C1">    close0</span><span style="color:#24292E">();                     </span><span style="color:#6A737D">// ⑤ 真正 close(fd)</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>为什么不能只用一个 <code>synchronized close()</code>？因为 <strong><code>close()</code> 可能和 <code>read()</code> 并发</strong>：线程 A 在读、线程 B 在关，<code>fd</code> 被 <code>close0</code> 释放后 A 的 <code>read0</code> 行为未定义（在 Linux 上 fd 号可能已被复用，读到别的文件！）。<code>closeLock</code> 的真正用途在 native 层：<code>close0</code> 前持有锁，<code>read0</code> 内部也持有同一把锁才能发起系统调用，保证”读”和”关”互斥。</p>
+<p>注意 ④ 的顺序细节：<strong>先关 channel 再关 fd</strong>。因为 <code>FileChannelImpl.close</code> 会设置 fd 为 -1 并回调 <code>implCloseChannel</code>，反过来再关流就会重入——所以注释特意提醒”subclasses should be prepared to handle possible reentrant invocation”（<code>:482</code>）。</p>
+<h3 id="14-fileoutputstream写侧与-append">1.4 FileOutputStream：写侧与 append</h3>
+<p><code>FileOutputStream</code> 与输入流对称，差异点：</p>
+<ul>
+<li>构造多一个 <code>boolean append</code> 参数（<code>FileOutputStream(String,boolean):145</code>），append 时 native <code>open</code> 传 <code>O_APPEND</code>；</li>
+<li><code>write(int):286</code> → native <code>write</code>；<code>write(byte[],off,len):346</code> → native <code>writeBytes</code>；</li>
+<li><strong>没有 <code>flush()</code> 语义问题</strong>：文件流 <code>flush</code> 是空操作（<code>FileOutputStream.flush</code> 不 override，基类默认啥也不做，<code>OutputStream.java:190</code>），数据在 <code>write(2)</code> 调用时已交给内核。</li>
+</ul>
+<h3 id="15-本讲小结">1.5 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>结论</th></tr></thead><tbody><tr><td>结构</td><td><code>InputStream</code> 抽象类提供 15+ 个公共方法，子类只需实现单字节 <code>read():182</code></td></tr><tr><td>关键实现</td><td><code>FileInputStream</code> 三档 native 读（read0/readBytes0/skip0），JFR 可插拔打点</td></tr><tr><td>并发</td><td><code>close()</code> 双检 + <code>closeLock</code>，保证与 <code>read()</code> 互斥、重复 close 幂等</td></tr><tr><td>关联</td><td>流与 <code>FileChannel</code> 双向关联，先关 channel 再关 fd，防重入</td></tr><tr><td>性能</td><td>单字节 <code>read()</code> 每字节一次系统调用，务必包 <code>BufferedInputStream</code></td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“read 返回 int 是为了给 -1 留位，close 上锁是为了给并发留命。”</em></p>
+<hr>
+<h2 id="第二讲缓冲与数据流--bufferedinputstream--datainputstream">第二讲：缓冲与数据流 —— BufferedInputStream / DataInputStream</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：加一层缓冲为什么能快一个数量级？<code>mark/reset</code> 在缓冲里怎么实现？<code>readUTF</code> 的”改长 UTF-8”长什么样？</p>
+</blockquote>
+<h3 id="21-bufferedinputstream一块-buf-同时干三件事">2.1 BufferedInputStream：一块 buf 同时干三件事</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// java/io/BufferedInputStream.java:90-161</span></span>
+<span class="line"><span style="color:#D73A49">protected</span><span style="color:#D73A49"> volatile</span><span style="color:#D73A49"> byte</span><span style="color:#24292E">[] buf;    </span><span style="color:#6A737D">// 缓冲数组（volatile：多线程可见）</span></span>
+<span class="line"><span style="color:#D73A49">protected</span><span style="color:#D73A49"> int</span><span style="color:#24292E"> count;              </span><span style="color:#6A737D">// buf 中有效数据末尾（exclusive）</span></span>
+<span class="line"><span style="color:#D73A49">protected</span><span style="color:#D73A49"> int</span><span style="color:#24292E"> pos;                </span><span style="color:#6A737D">// 下一个要读的下标</span></span>
+<span class="line"><span style="color:#D73A49">protected</span><span style="color:#D73A49"> int</span><span style="color:#24292E"> markpos </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> -</span><span style="color:#005CC5">1</span><span style="color:#24292E">;       </span><span style="color:#6A737D">// mark 位置，-1 表示无 mark</span></span>
+<span class="line"><span style="color:#D73A49">protected</span><span style="color:#D73A49"> int</span><span style="color:#24292E"> marklimit;          </span><span style="color:#6A737D">// mark 后最多可读字节数</span></span></code></pre>
+<p><code>fill():256</code> 是唯一的”下沉”动作——一次 <code>in.read(buf, 0, count)</code> 尽量填满：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// java/io/BufferedInputStream.java:256-262</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> fill</span><span style="color:#24292E">() throws IOException {</span></span>
+<span class="line"><span style="color:#D73A49">    byte</span><span style="color:#24292E">[] buffer </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> getBufIfOpen</span><span style="color:#24292E">();     </span><span style="color:#6A737D">// 流关闭则抛 IOException</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (markpos </span><span style="color:#D73A49">&#x3C;</span><span style="color:#005CC5"> 0</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">        pos </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 0</span><span style="color:#24292E">;                       </span><span style="color:#6A737D">// 无 mark：从头覆盖</span></span>
+<span class="line"><span style="color:#D73A49">    else</span><span style="color:#D73A49"> if</span><span style="color:#24292E"> (pos </span><span style="color:#D73A49">>=</span><span style="color:#24292E"> buffer.length)     </span><span style="color:#6A737D">// 有 mark 且已到数组末尾</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (markpos </span><span style="color:#D73A49">></span><span style="color:#005CC5"> 0</span><span style="color:#24292E">) {             </span><span style="color:#6A737D">// 且有回退空间</span></span>
+<span class="line"><span style="color:#D73A49">            int</span><span style="color:#24292E"> sz </span><span style="color:#D73A49">=</span><span style="color:#24292E"> pos </span><span style="color:#D73A49">-</span><span style="color:#24292E"> markpos;</span></span>
+<span class="line"><span style="color:#24292E">            System.</span><span style="color:#6F42C1">arraycopy</span><span style="color:#24292E">(buffer, markpos, buffer, </span><span style="color:#005CC5">0</span><span style="color:#24292E">, sz);  </span><span style="color:#6A737D">// 数据搬到头部</span></span>
+<span class="line"><span style="color:#24292E">            pos </span><span style="color:#D73A49">=</span><span style="color:#24292E"> sz; markpos </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 0</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">        } </span><span style="color:#D73A49">else</span><span style="color:#D73A49"> if</span><span style="color:#24292E"> (...) { </span><span style="color:#6A737D">/* 扩大数组或丢弃 mark */</span><span style="color:#24292E"> }</span></span>
+<span class="line"><span style="color:#24292E">    count </span><span style="color:#D73A49">=</span><span style="color:#24292E"> pos;</span></span>
+<span class="line"><span style="color:#D73A49">    int</span><span style="color:#24292E"> n </span><span style="color:#D73A49">=</span><span style="color:#24292E"> in.</span><span style="color:#6F42C1">read</span><span style="color:#24292E">(buffer, pos, buffer.length </span><span style="color:#D73A49">-</span><span style="color:#24292E"> pos);   </span><span style="color:#6A737D">// 一次批量读</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (n </span><span style="color:#D73A49">></span><span style="color:#005CC5"> 0</span><span style="color:#24292E">) count </span><span style="color:#D73A49">=</span><span style="color:#24292E"> n </span><span style="color:#D73A49">+</span><span style="color:#24292E"> pos;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p><strong>一次 <code>fill()</code> 把 N 次 <code>read(2)</code> 变成 1 次</strong>——这就是”快”的全部秘密。代价是 8192 字节内存和”读多了”的语义（读文件时会把文件数据提前搬进用户态）。</p>
+<p><code>mark/reset</code>（<code>:467/:488</code>）完全在这块 buf 里玩指针游戏：<code>mark</code> 记录 <code>markpos = pos</code>；<code>reset</code> 把 <code>pos</code> 拨回 <code>markpos</code>；超限判定在 <code>read1():319</code> 里——<code>pos - markpos > marklimit</code> 时置 <code>markpos = -1</code>，之后 <code>reset</code> 抛 <code>IOException("Resetting to invalid mark")</code>。</p>
+<p><strong>缓冲数组还能长大</strong>：<code>getBufIfOpen(boolean allocateIfEmpty):179</code> 在需要时扩容（JDK 17+ 行为），避免”mark 后大数据把 mark 挤掉”。</p>
+<h3 id="22-datainputstream把基本类型从流里抠出来">2.2 DataInputStream：把基本类型从流里抠出来</h3>
+<p><code>DataInputStream</code>（<code>java/io/DataInputStream.java</code>）的核心是一族 <code>readXxx</code>：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>方法</th><th>行为</th><th>行号</th></tr></thead><tbody><tr><td><code>readBoolean():158</code></td><td>读 1 字节，非 0 为 true</td><td></td></tr><tr><td><code>readInt():389</code></td><td>高字节在前（big-endian），四次 <code>read()</code> 拼 int</td><td></td></tr><tr><td><code>readLong():411</code></td><td>八次拼 long</td><td></td></tr><tr><td><code>readFloat():434</code></td><td><code>readInt</code> + <code>intBitsToFloat</code></td><td></td></tr><tr><td><code>readUTF():554</code></td><td>改长 UTF-8（见下）</td><td></td></tr><tr><td><code>readFully(b):183</code></td><td>精确读满数组，中途 EOF 抛 <code>EOFException</code></td><td></td></tr></tbody></table>
+<p><strong><code>readUTF</code> 是面试重灾区</strong>。它不是标准 UTF-8：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// java/io/DataInputStream.java:554-674（节选）</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> String </span><span style="color:#6F42C1">readUTF</span><span style="color:#24292E">() throws IOException {</span></span>
+<span class="line"><span style="color:#D73A49">    int</span><span style="color:#24292E"> utflen </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> readUnsignedShort</span><span style="color:#24292E">();     </span><span style="color:#6A737D">// 2 字节长度前缀（0~65535）</span></span>
+<span class="line"><span style="color:#24292E">    ...</span></span>
+<span class="line"><span style="color:#6A737D">    // 每个字符 1~3 字节；\0 编成 0xC0 0x80（两字节！），</span></span>
+<span class="line"><span style="color:#6A737D">    // supplementary 字符按代理对拆成两个 3 字节序列</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>三个”和标准 UTF-8 不同”的点：<strong>2 字节长度前缀</strong>、<code>\u0000</code> 用两字节表示（所以能表达嵌 <code>\0</code> 的字符串）、<strong>增补平面字符被拆成代理对</strong>按 6 字节存。所以它只能和 <code>DataOutputStream.writeUTF:337</code> 配对使用，跨语言协议（JSON/Protobuf）不要碰它。</p>
+<p><code>readFully(b):183</code> 和 <code>read(b)</code> 的差异是面试常考：前者<strong>要么读满要么抛 <code>EOFException</code></strong>（循环调 <code>read</code> 直到 <code>b.length</code>），后者可能短读返回。协议解析必须用 <code>readFully</code> 系列。</p>
+<h3 id="23-pushbackinputstream流的后悔药">2.3 PushbackInputStream：流的”后悔药”</h3>
+<p><code>PushbackInputStream</code>（<code>java/io/PushbackInputStream.java</code>）内部一个 <code>byte[] buf</code> + <code>pos</code>，<code>unread(b,off,len):229</code> 把字节塞回流头部，下次 <code>read</code> 先吐这些。典型用途：<strong>解析时需要多看一个字节再决定</strong>——如判断文件头是不是 GIF，读完 6 字节发现不是，<code>unread</code> 回去让上层按别的格式处理。</p>
+<h3 id="24-本讲小结">2.4 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>结论</th></tr></thead><tbody><tr><td>结构</td><td><code>BufferedInputStream</code> = <code>InputStream</code> + <code>byte[] buf</code> + 三指针（pos/count/markpos）</td></tr><tr><td>关键实现</td><td><code>fill():256</code> 一次批量读填满 buf，<code>mark/reset</code> 是 buf 内指针回退</td></tr><tr><td>并发</td><td><code>read/skip/available/mark/reset</code> 全部 <code>synchronized</code>（<code>:306</code> 起），多线程读同一缓冲流会串行化</td></tr><tr><td>协议</td><td><code>DataInputStream.readUTF:632</code> 是改长 UTF-8（2 字节前缀 + <code>\0</code> 两字节 + 代理对），非标准 UTF-8</td></tr><tr><td>陷阱</td><td><code>readFully</code> 才保证读满；<code>read</code> 会短读；<code>fill</code> 会提前消费上游数据</td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“缓冲流一块数组三指针：pos 走到 count 就 fill，mark 只是记个 markpos，超限就作废。”</em></p>
+<hr>
+<hr>
+<h2 id="第三讲字符流与编解码--streamdecoder-与-bufferedreader">第三讲：字符流与编解码 —— StreamDecoder 与 BufferedReader</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：字节怎么变成字符？为什么一次 <code>read</code> 能把中文”切成两半”而 <code>InputStreamReader</code> 不会乱码？<code>BufferedReader.readLine</code> 比 <code>Scanner</code> 快在哪？</p>
+</blockquote>
+<h3 id="31-inputstreamreader只是个壳内核是-streamdecoder">3.1 InputStreamReader：只是个壳，内核是 StreamDecoder</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// java/io/InputStreamReader.java:69-70</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> InputStreamReader</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> Reader</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> StreamDecoder sd;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p><strong>所有方法原样转发给 <code>sd</code></strong>（<code>read():174</code> → <code>sd.read()</code>，<code>close():197</code> → <code>sd.close()</code>）。真正的逻辑在 <code>sun.nio.cs.StreamDecoder</code>——它和 <code>java.nio</code> 共用一套编解码内核，这是”IO 流”和”NIO”在源码层最早的交汇点。</p>
+<p>构造时立刻做一件<strong>有副作用</strong>的事：读流的前几个字节探测编码（BOM）。<code>InputStreamReader(InputStream):81</code> 直接调 <code>StreamDecoder.forInputStreamReader(in, this)</code>（<code>StreamDecoder.java:69</code>），内部按 charset 创建 <code>CharsetDecoder</code> 并<strong>首次 <code>readBytes()</code></strong> 把字节灌进 <code>bb</code>。所以”先包 reader 再写流”会卡死——写端在等 reader 消费，reader 在等写端给字节。</p>
+<h3 id="32-双缓冲字节有残字符也有残">3.2 双缓冲：字节有残、字符也有残</h3>
+<p><code>StreamDecoder</code> 维护<strong>两套残量</strong>，这是跨 read 调用不乱码的关键：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// sun/nio/cs/StreamDecoder.java:227-230</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> Charset cs;</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> CharsetDecoder decoder;</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> ByteBuffer bb;                 </span><span style="color:#6A737D">// 未解码完的字节（残字节）</span></span>
+<span class="line"><span style="color:#6A737D">// :63-64</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> boolean</span><span style="color:#24292E"> haveLeftoverChar </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> false</span><span style="color:#24292E">;    </span><span style="color:#6A737D">// 未消费的字符（残字符）</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> char</span><span style="color:#24292E"> leftoverChar;</span></span></code></pre>
+<ul>
+<li><strong>残字节 <code>bb</code></strong>：一次 <code>read(2)</code> 拿到的字节可能以半个中文字符结尾（UTF-8 一个汉字 3 字节，系统调用可能在 1 字节处切断），剩下的 1~2 字节留在 <code>bb</code>，下次 <code>readBytes():265</code> 续读后一起解；</li>
+<li><strong>残字符 <code>leftoverChar</code></strong>：<code>read()</code> 单字符 API 一次解码 2 个字符（因为 UTF-16 代理对必须成对处理），第二个存起来下次返回（<code>read0():123-148</code>）。</li>
+</ul>
+<h3 id="33-implreadcoderresult-三态机">3.3 implRead：CoderResult 三态机</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// sun/nio/cs/StreamDecoder.java:298-336（节选）</span></span>
+<span class="line"><span style="color:#D73A49">int</span><span style="color:#6F42C1"> implRead</span><span style="color:#24292E">(</span><span style="color:#D73A49">char</span><span style="color:#24292E">[] cbuf, </span><span style="color:#D73A49">int</span><span style="color:#24292E"> off, </span><span style="color:#D73A49">int</span><span style="color:#24292E"> end) throws IOException {</span></span>
+<span class="line"><span style="color:#D73A49">    assert</span><span style="color:#24292E"> (end </span><span style="color:#D73A49">-</span><span style="color:#24292E"> off </span><span style="color:#D73A49">></span><span style="color:#005CC5"> 1</span><span style="color:#24292E">);            </span><span style="color:#6A737D">// 至少要求能放 2 个字符（代理对）</span></span>
+<span class="line"><span style="color:#24292E">    CharBuffer cb </span><span style="color:#D73A49">=</span><span style="color:#24292E"> CharBuffer.</span><span style="color:#6F42C1">wrap</span><span style="color:#24292E">(cbuf, off, end </span><span style="color:#D73A49">-</span><span style="color:#24292E"> off);</span></span>
+<span class="line"><span style="color:#D73A49">    boolean</span><span style="color:#24292E"> eof </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> false</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#24292E"> (;;) {</span></span>
+<span class="line"><span style="color:#24292E">        CoderResult cr </span><span style="color:#D73A49">=</span><span style="color:#24292E"> decoder.</span><span style="color:#6F42C1">decode</span><span style="color:#24292E">(bb, cb, eof);   </span><span style="color:#6A737D">// :314 核心解码调用</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (cr.</span><span style="color:#6F42C1">isUnderflow</span><span style="color:#24292E">()) {          </span><span style="color:#6A737D">// 字节不够解一个字符</span></span>
+<span class="line"><span style="color:#D73A49">            if</span><span style="color:#24292E"> (eof) </span><span style="color:#D73A49">break</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#D73A49">            if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">cb.</span><span style="color:#6F42C1">hasRemaining</span><span style="color:#24292E">()) </span><span style="color:#D73A49">break</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#D73A49">            if</span><span style="color:#24292E"> ((cb.</span><span style="color:#6F42C1">position</span><span style="color:#24292E">() </span><span style="color:#D73A49">></span><span style="color:#005CC5"> 0</span><span style="color:#24292E">) </span><span style="color:#D73A49">&#x26;&#x26;</span><span style="color:#D73A49"> !</span><span style="color:#6F42C1">inReady</span><span style="color:#24292E">()) </span><span style="color:#D73A49">break</span><span style="color:#24292E">;   </span><span style="color:#6A737D">// 不阻塞：有点收获就走</span></span>
+<span class="line"><span style="color:#D73A49">            int</span><span style="color:#24292E"> n </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> readBytes</span><span style="color:#24292E">();          </span><span style="color:#6A737D">// :265 再从底层流捞字节</span></span>
+<span class="line"><span style="color:#D73A49">            if</span><span style="color:#24292E"> (n </span><span style="color:#D73A49">&#x3C;</span><span style="color:#005CC5"> 0</span><span style="color:#24292E">) { eof </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> true</span><span style="color:#24292E">; ... }</span></span>
+<span class="line"><span style="color:#D73A49">            continue</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (cr.</span><span style="color:#6F42C1">isOverflow</span><span style="color:#24292E">()) { </span><span style="color:#D73A49">break</span><span style="color:#24292E">; }   </span><span style="color:#6A737D">// 字符缓冲满了</span></span>
+<span class="line"><span style="color:#24292E">        cr.</span><span style="color:#6F42C1">throwException</span><span style="color:#24292E">();              </span><span style="color:#6A737D">// MALFORMED / UNMAPPABLE → 抛异常</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (eof) { decoder.</span><span style="color:#6F42C1">reset</span><span style="color:#24292E">(); }         </span><span style="color:#6A737D">// flush：丢弃半字符并复位</span></span>
+<span class="line"><span style="color:#24292E">    ...</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>三个 <code>CoderResult</code> 状态对应三种”暂停”：<strong>UNDERFLOW = 缺字节</strong>（去读）、<strong>OVERFLOW = 缺空间</strong>（返回）、<strong>MALFORMED = 字节序列非法</strong>（抛 <code>MalformedInputException</code>，如 GBK 字节按 UTF-8 解）。注意 <code>inReady()</code> 的判断（<code>:357</code>）：<strong>已经解出一些字符且底层没就绪时立刻返回</strong>，不干等——这是 <code>InputStreamReader</code> 不无故阻塞的原因。</p>
+<p><code>readBytes():265</code> 还有一个安全设计：<code>fillZeroToPosition():218</code> 在 close 路径上把 <code>bb</code> 里”已读但未解码”的字节清零——防止敏感数据（如密码）残留在堆内存里被 dump 出来。</p>
+<h3 id="34-bufferedreader字符流的缓冲层">3.4 BufferedReader：字符流的缓冲层</h3>
+<p><code>BufferedReader</code>（<code>java/io/BufferedReader.java</code>）和 <code>BufferedInputStream</code> 同思路：一块 <code>char[] cb</code>（默认 8192 字符），<code>fill()</code> 从底层 Reader 批量读，<code>readLine():399</code> 在缓冲里扫 <code>\n</code>/<code>\r</code>。</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// java/io/BufferedReader.java:320</span></span>
+<span class="line"><span style="color:#24292E">String </span><span style="color:#6F42C1">readLine</span><span style="color:#24292E">(</span><span style="color:#D73A49">boolean</span><span style="color:#24292E"> ignoreLF, </span><span style="color:#D73A49">boolean</span><span style="color:#24292E">[] term) throws IOException {</span></span>
+<span class="line"><span style="color:#24292E">    ...</span></span>
+<span class="line"><span style="color:#6A737D">    // 三种行终止符：\n、\r、\r\n（:337-395 内联扫描，不走正则）</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p><code>readLine</code> 的结束符处理比 <code>Scanner.nextLine</code> 精细：<code>\r\n</code> 被当成<strong>一个</strong>换行而不是两个；<code>term</code> 输出参数告诉调用方看到的是哪种。这也是它比 <code>Scanner</code> 快的原因——<code>Scanner</code> 每次 <code>next</code> 都走正则匹配和 <code>Pattern</code> 编译，<code>BufferedReader</code> 是纯字符比较。</p>
+<h3 id="35-写侧outputstreamwriter-与-streamencoder">3.5 写侧：OutputStreamWriter 与 StreamEncoder</h3>
+<p>写侧完全对称：<code>OutputStreamWriter</code> 持有 <code>StreamEncoder</code>（<code>sun/nio/cs/StreamEncoder.java</code>），<code>write(String,off,len)</code> → <code>implWrite</code> → <code>encoder.encode(cb, bb, eof)</code> → <code>writeBytes()</code> 批量 <code>write(2)</code>。<code>flush()</code> 时 <code>encoder.flush(bb)</code> 把 <code>writeBytes</code> 写完再 <code>out.flush()</code>——所以<strong>字符流的 flush 比字节流多一层语义</strong>（还有未编码完的字符缓冲要冲下去）。</p>
+<h3 id="36-本讲小结">3.6 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>结论</th></tr></thead><tbody><tr><td>结构</td><td><code>InputStreamReader</code> 是壳，<code>StreamDecoder</code>（<code>sun/nio/cs</code>）是内核，与 NIO 共用 <code>CharsetDecoder</code></td></tr><tr><td>关键实现</td><td><code>implRead():298</code> 的 <code>CoderResult</code> 三态机：UNDERFLOW 去读、OVERFLOW 返回、MALFORMED 抛异常</td></tr><tr><td>并发</td><td><code>StreamDecoder</code> 全部方法 <code>synchronized (lock)</code>（<code>:123</code> 起），字符流本身线程安全但性能差</td></tr><tr><td>协议</td><td>跨 read 不乱码靠双残量：残字节 <code>bb</code> + 残字符 <code>leftoverChar</code></td></tr><tr><td>陷阱</td><td>构造 <code>InputStreamReader</code> 会立刻读流探测编码；<code>close</code> 路径 <code>fillZeroToPosition():218</code> 清零防泄漏</td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“字符流 = 字节缓冲 bb + 字符残量 leftover，解码三态：缺字节去读、缺空间返回、不合法就扔异常。”</em></p>
+<hr>
+<h2 id="第四讲filerandomaccessfile-与-filesystem-抽象">第四讲：File、RandomAccessFile 与 FileSystem 抽象</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：<code>new File("a/b.txt")</code> 到底做了什么 native 调用？为什么 Windows 和 Linux 的路径分隔符能统一处理？<code>RandomAccessFile</code> 凭什么能”既读又写还能跳”？</p>
+</blockquote>
+<h3 id="41-file一个跨平台路径的-java-包装">4.1 File：一个跨平台路径的 Java 包装</h3>
+<p><code>File</code>（<code>java/io/File.java</code>）<strong>不持有 fd，也不是 IO 端点</strong>——它只是”一个路径字符串 + 跨平台语义”，所有真实操作最终委托 native：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// java/io/File.java:160</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> FileSystem FS </span><span style="color:#D73A49">=</span><span style="color:#24292E"> DefaultFileSystem.</span><span style="color:#6F42C1">getFileSystem</span><span style="color:#24292E">();</span></span></code></pre>
+<p><code>DefaultFileSystem</code>（<code>unix/classes/java/io/DefaultFileSystem.java:37</code>）在类加载时按 OS 返回 <code>new UnixFileSystem()</code> 或 <code>new WinNTFileSystem()</code>——<strong>一次判断，全局复用</strong>。<code>File</code> 的所有方法（<code>exists</code>、<code>length</code>、<code>list</code>、<code>mkdir</code>、<code>delete</code>…）都是 <code>FS.xxx(this)</code> 的一层转发，再进 native：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>File 方法</th><th>UnixFileSystem 转发</th><th>native</th></tr></thead><tbody><tr><td><code>getCanonicalPath():615</code></td><td><code>canonicalize0</code>（<code>UnixFileSystem.java:166</code>）</td><td><code>realpath(3)</code></td></tr><tr><td><code>createNewFile():945</code></td><td><code>createFileExclusively</code></td><td>`open(O_CREAT</td></tr><tr><td><code>delete():966</code></td><td><code>delete0</code></td><td><code>unlink(2)</code>/<code>rmdir(2)</code></td></tr><tr><td><code>list():1031</code></td><td><code>list0</code></td><td><code>opendir/readdir</code></td></tr><tr><td><code>lastModified():892</code></td><td><code>getLastModifiedTime0</code>（<code>UnixFileSystem.java:201</code>）</td><td><code>stat(2)</code></td></tr></tbody></table>
+<p><strong>路径规范化</strong>（<code>UnixFileSystem.normalize:93</code>）处理 <code>//</code>、<code>/./</code>、<code>..</code> 等，是纯字符串操作，不碰文件系统；<code>resolve(String,String):118</code> 把父子路径拼起来（注意 Windows 侧会加盘符判断，<code>WinNTFileSystem.java:130</code>）。这就是跨平台路径统一的原因：<strong>差异全部封在 <code>FileSystem</code> 实现类里</strong>。</p>
+<p>一个常见误解：<code>File.exists()</code> 不是”问内核”，而是每次调用都是 <code>stat(2)</code>（<code>exists():786</code> → <code>FS.exists</code> → native）——<strong>高频循环里调 <code>exists</code> 是性能杀手</strong>，且存在 TOCTOU 竞态（查到存在、用时已被删）。</p>
+<h3 id="42-randomaccessfile一个-fd两种方向自由光标">4.2 RandomAccessFile：一个 fd，两种方向，自由光标</h3>
+<p><code>RandomAccessFile</code>（<code>java/io/RandomAccessFile.java</code>）的独特之处在<strong>它不继承 <code>InputStream</code>/<code>OutputStream</code></strong>，自成一体：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// java/io/RandomAccessFile.java:130</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#6F42C1"> RandomAccessFile</span><span style="color:#24292E">(String pathname, String mode) throws FileNotFoundException {</span></span>
+<span class="line"><span style="color:#24292E">    ...</span></span>
+<span class="line"><span style="color:#6A737D">    // mode: "r" / "rw" / "rws" / "rwd"</span></span>
+<span class="line"><span style="color:#6A737D">    //  rws = 每次写都同步内容+元数据（O_SYNC 风格）</span></span>
+<span class="line"><span style="color:#6A737D">    //  rwd = 每次写只同步内容（fdatasync 风格）</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>四个 native 原语（<code>RandomAccessFile.java</code>）：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Java</th><th>native</th><th>作用</th></tr></thead><tbody><tr><td><code>open0(name,mode):322</code></td><td><code>open(2)</code></td><td>按 mode 组合 <code>O_RDONLY/O_RDWR/O_SYNC/O_DSYNC</code></td></tr><tr><td><code>seek0(pos):678</code></td><td><code>lseek(2)</code></td><td>移动文件光标</td></tr><tr><td><code>readBytes0(b,off,len):398</code></td><td><code>pread/read</code></td><td>从当前光标读</td></tr><tr><td><code>writeBytes0(b,off,len):619</code></td><td><code>pwrite/write</code></td><td>从当前光标写</td></tr></tbody></table>
+<p>它还有 <code>getFilePointer():655</code>（<code>lseek(0,SEEK_CUR)</code>）、<code>setLength(newLength):718</code>（<code>ftruncate</code>）、<code>getFD():269</code>。<code>readFully(b):476</code> 循环读到满（和 <code>DataInputStream.readFully</code> 同样语义）。</p>
+<p><strong>典型用法</strong>：读大文件的某一段（<code>seek(offset)</code> + <code>read(buf)</code> 只读需要的位置，不用把整个文件读进内存）、追加写日志、实现简易数据库的页读取。</p>
+<h3 id="43-filedescriptornative-fd-的-java-句柄">4.3 FileDescriptor：native fd 的 Java 句柄</h3>
+<p><code>FileDescriptor</code>（<code>java/io/FileDescriptor.java</code>）本身几乎没有逻辑，就是 fd 号的持有者：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// java/io/FileDescriptor.java:151-168</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> FileDescriptor in  </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> FileDescriptor</span><span style="color:#24292E">(</span><span style="color:#005CC5">0</span><span style="color:#24292E">);   </span><span style="color:#6A737D">// stdin</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> FileDescriptor out </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> FileDescriptor</span><span style="color:#24292E">(</span><span style="color:#005CC5">1</span><span style="color:#24292E">);   </span><span style="color:#6A737D">// stdout</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> FileDescriptor err </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> FileDescriptor</span><span style="color:#24292E">(</span><span style="color:#005CC5">2</span><span style="color:#24292E">);   </span><span style="color:#6A737D">// stderr</span></span></code></pre>
+<p>三个静态常量在 <code>&#x3C;clinit></code> 里初始化，这就是 <code>System.in/out/err</code> 的底层来源。<code>sync():209</code> 对应 <code>fsync(2)</code>（对 fd 调用）。类里的 <code>set</code>/<code>get</code> 静态内部类（<code>:69-111</code>）是 JDK 内部偷改 fd 的后门（<code>FileInputStream.setFD</code> 给 <code>System.in</code> 换流用），业务代码用不到。</p>
+<h3 id="44-本讲小结">4.4 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>结论</th></tr></thead><tbody><tr><td>结构</td><td><code>File</code> = 路径字符串 + <code>FileSystem</code> 策略（Unix/WinNT 两套实现），无 fd</td></tr><tr><td>关键实现</td><td><code>File</code> 每个方法转 native 系统调用（canonicalize→realpath、list→readdir、exists→stat）</td></tr><tr><td>并发</td><td><code>File.exists</code> 每次 stat，高频调用有 TOCTOU 竞态；<code>RandomAccessFile</code> 的 <code>seek+read</code> 不是原子的</td></tr><tr><td>协议</td><td><code>RandomAccessFile</code> 四模式 <code>r/rw/rws/rwd</code>，同步强度递增；不继承流家族</td></tr><tr><td>陷阱</td><td><code>File</code> 的 <code>getCanonicalPath</code> 会解软链、<code>getAbsolutePath</code> 不会；<code>exists()</code> ≠ <code>canOpen()</code></td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“File 只是路径，fd 在流里；RandomAccessFile 是一个 fd 既读又写还能 lseek。”</em></p>
+<hr>
+<hr>
+<h2 id="第五讲nio-三件套--buffer--filechannel--selector">第五讲：NIO 三件套 —— Buffer / FileChannel / Selector</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：<code>flip</code> 到底翻转了什么？<code>FileChannel.map</code> 为什么叫”零拷贝”？Selector 用一次 <code>poll(2)</code> 管一千个连接的内部结构长什么样？</p>
+</blockquote>
+<h3 id="51-buffer三个指针的不变式">5.1 Buffer：三个指针的不变式</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// java/nio/Buffer.java:217（注释）</span></span>
+<span class="line"><span style="color:#6A737D">// Invariants: mark &#x3C;= position &#x3C;= limit &#x3C;= capacity</span></span></code></pre>
+<p>所有 Buffer 子类（<code>ByteBuffer</code>/<code>CharBuffer</code>/<code>IntBuffer</code>…<code>MappedByteBuffer</code>）都遵守这个不变量，四个方法的语义必须闭上眼睛都能背：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>方法</th><th>行号</th><th>效果</th></tr></thead><tbody><tr><td><code>clear():455</code></td><td></td><td><code>position=0, limit=capacity, mark=-1</code> → <strong>切回写模式</strong></td></tr><tr><td><code>flip():484</code></td><td></td><td><code>limit=position, position=0, mark=-1</code> → <strong>写完切读模式</strong></td></tr><tr><td><code>rewind():507</code></td><td></td><td><code>position=0, mark=-1</code>（不动 limit）→ 重读</td></tr><tr><td><code>compact()</code></td><td></td><td>未读数据搬到开头，<code>position=剩余长度, limit=capacity</code> → 半写半读时用</td></tr></tbody></table>
+<p><code>position()</code>/<code>limit()</code> 都是 <code>final</code> 方法（<code>:307</code> 起），子类<strong>不能改语义</strong>。读越界检查走 <code>checkIndex(i, nb):777</code> → <code>Preconditions.checkIndex</code>，<code>BufferUnderflowException</code> 从这里抛。</p>
+<p><strong>堆内 vs 堆外</strong>：<code>HeapByteBuffer</code> 底层 <code>byte[]</code>（分配快、GC 管）；<code>DirectByteBuffer</code> 底层 <code>unsafe.allocateMemory</code> 的堆外内存（IO 快，无内核态拷贝，但要手工/靠 Cleaner 释放，受 <code>-XX:MaxDirectMemorySize</code> 控制）。<code>hasArray()</code> 对 Direct 永远 false，<code>array()</code> 直接抛异常——这是 NIO 新手最常踩的坑。</p>
+<h3 id="52-filechannel六个原语覆盖全部文件-io">5.2 FileChannel：六个原语覆盖全部文件 IO</h3>
+<p><code>FileChannelImpl</code>（<code>sun/nio/ch/FileChannelImpl.java</code>，1774 行）是文件通道的唯一实现，核心方法：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>方法</th><th>行号</th><th>系统调用</th><th>说明</th></tr></thead><tbody><tr><td><code>read(ByteBuffer):227</code></td><td></td><td><code>read(2)</code>/<code>pread</code></td><td>从光标读，返回读到的字节数</td></tr><tr><td><code>write(ByteBuffer):331</code></td><td></td><td><code>write(2)</code>/<code>pwrite</code></td><td>从光标写，推进光标</td></tr><tr><td><code>read(dst,position):1148</code></td><td></td><td><code>pread</code></td><td><strong>绝对定位读</strong>，不动共享光标</td></tr><tr><td><code>write(src,position):1212</code></td><td></td><td><code>pwrite</code></td><td><strong>绝对定位写</strong></td></tr><tr><td><code>map(mode,pos,size):1412</code></td><td></td><td><code>mmap(2)</code></td><td>内存映射，返回 <code>MappedByteBuffer</code></td></tr><tr><td><code>force(metaData):633</code></td><td></td><td><code>fsync(2)</code></td><td>刷盘；<code>false</code>=只数据</td></tr><tr><td><code>lock(pos,size,shared):1669</code></td><td></td><td><code>fcntl(F_SETLK)</code></td><td>文件锁</td></tr><tr><td><code>transferTo(pos,cnt,target):934</code></td><td></td><td><code>sendfile(2)</code></td><td>通道间搬运，尽量零拷贝</td></tr></tbody></table>
+<p><strong><code>map</code> 的内部动作</strong>（<code>:1412</code> 起）：<code>map0</code> native 调 <code>mmap</code> 拿地址 → 包成 <code>DirectByteBuffer</code> 子类 <code>MappedByteBuffer</code> → <strong>注册 <code>DefaultUnmapper</code> 到 <code>Cleaner</code></strong>（<code>:1341</code>）：GC 回收这个 Buffer 时才 <code>munmap</code>。这就是”MMap 大文件可能 OOM/fd 泄漏”的根源——<strong>映射不主动释放，靠 GC 不确定</strong>。JDK 里正确的用法是 <code>map</code> 完立刻 <code>buffer.cleaner().clean()</code>（hack）或用 JDK 19+ 的 <code>Arena</code>/<code>MemorySegment</code> 作用域 API。</p>
+<p><strong><code>transferTo</code> 的两级策略</strong>（<code>:806</code> <code>transferToDirect</code> → <code>:789</code> <code>transferToDirectInternal</code>）：目标也是 <code>FileChannel</code> 时走 <code>sendfile</code>（数据直接在内核态从源 fd 到目标 fd，<strong>一次系统调用不过用户态</strong>，Kafka/Netty 零拷贝下载就是靠它）；否则退化成”读进 DirectBuffer 再写出去”。</p>
+<h3 id="53-selector一根管道唤醒的一千个连接">5.3 Selector：一根管道唤醒的一千个连接</h3>
+<p>Selector 家族三层：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>SelectorImpl（抽象，sun/nio/ch/SelectorImpl.java:52）</span></span>
+<span class="line"><span>   │  ├─ keys / selectedKeys / publicSelectedKeys / cancelledKeys（:56-66）</span></span>
+<span class="line"><span>   │  ├─ select(timeout):139 / selectNow():151 / select(action):156</span></span>
+<span class="line"><span>   │  ├─ lockAndDoSelect(action, timeout):120  ← 加 publicSelectedKeys 锁再调 doSelect</span></span>
+<span class="line"><span>   │  └─ abstract doSelect(action, timeout):117  ← 平台差异全在这里</span></span>
+<span class="line"><span>   ▼</span></span>
+<span class="line"><span>PollSelectorImpl（Linux，unix/classes/sun/nio/ch/PollSelectorImpl.java）</span></span>
+<span class="line"><span>   │  ├─ pollArray: AllocatedNativeObject ← 本地内存 struct pollfd 数组（:53）</span></span>
+<span class="line"><span>   │  ├─ fd0 / fd1: 自建管道两端（:56-57）</span></span>
+<span class="line"><span>   │  ├─ pollKeys: pollfd 槽位 → SelectionKeyImpl（:60）</span></span>
+<span class="line"><span>   │  ├─ updateKeys: 待生效的兴趣集合（:64）</span></span>
+<span class="line"><span>   │  └─ doSelect(action, timeout):97</span></span></code></pre>
+<p><code>doSelect</code>（<code>:97-141</code>）四步：</p>
+<ol>
+<li><code>processUpdateQueue():143</code> —— 把 <code>updateKeys</code> 里排队的注册/兴趣变更刷进 <code>pollArray</code>（为什么需要延迟？<code>register</code> 时 poll 可能正持有锁，刷进去会破坏数组一致性）；</li>
+<li><code>poll(pollArray.address(), pollArraySize, to)</code>（<code>:384</code> native <code>poll(2)</code>）—— <strong>一次系统调用等所有 fd</strong>，<code>Blocker.begin/end</code> 包住以便被中断时能退出；</li>
+<li>被信号打断（<code>INTERRUPTED</code>）且是定时 poll → 扣掉已耗时间重试（<code>:121-131</code>）；</li>
+<li><code>processEvents(action):172</code> —— 扫 pollArray 的 revent 字段，算出就绪的 <code>SelectionKey</code>，加进 <code>selectedKeys</code>。</li>
+</ol>
+<p><strong><code>wakeup()</code> 的机关</strong>（<code>:240</code>）：往 fd1 管道写 1 字节。读端 fd0 也注册在 pollArray 里，于是阻塞的 <code>poll</code> 立刻返回 → <code>select</code> 返回 → 调用方复查。这根管道是每个 Selector 一条（<code>INITIAL_CAPACITY = 16</code> 个 pollfd 起步，<code>:48</code>）。</p>
+<p><strong>三个高频坑</strong>（源码里都能看到）：</p>
+<ul>
+<li><code>selectedKeys</code> 集合用完后<strong>必须 <code>iterator.remove()</code></strong>，否则下一轮 <code>select</code> 还带着旧 key；</li>
+<li><code>register</code> 之后不会立刻生效——兴趣变更排在 <code>updateKeys</code>，下次 <code>select</code> 才进 pollArray；</li>
+<li><code>select()</code> 返回 0 不一定超时：可能是 <code>wakeup</code> 的字节或纯注册变更，所以业务循环不能假设”返回>0 一定有 IO”。</li>
+</ul>
+<h3 id="54-本讲小结">5.4 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>结论</th></tr></thead><tbody><tr><td>结构</td><td><code>Buffer</code>（<code>mark&#x3C;=position&#x3C;=limit&#x3C;=capacity</code>，<code>java/nio/Buffer.java:217</code>）+ <code>FileChannelImpl</code> + <code>SelectorImpl/PollSelectorImpl</code></td></tr><tr><td>关键实现</td><td><code>map:1412</code> = mmap + Cleaner 兜底；<code>doSelect:97</code> = processUpdateQueue → <code>poll(2)</code> → processEvents</td></tr><tr><td>并发</td><td><code>lockAndDoSelect:120</code> 持 <code>publicSelectedKeys</code> 锁；<code>wakeup</code> 靠自建管道 fd0/fd1（<code>:56-57</code>）</td></tr><tr><td>协议</td><td>绝对定位 read/write 用 <code>pread/pwrite</code>，不碰共享光标——多线程同通道安全的前提</td></tr><tr><td>陷阱</td><td><code>selectedKeys</code> 要手动 remove；DirectBuffer 无 <code>array()</code>；<code>map</code> 不主动 unmap 会泄漏</td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“flip 切读、clear 切写、compact 半读半写；Selector 是一条自建管道把阻塞的 poll 叫醒。”</em></p>
+<hr>
+<h2 id="第六讲序列化与管道--objectinputstream--pipedinputstream">第六讲：序列化与管道 —— ObjectInputStream / PipedInputStream</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：同一个对象写两次为什么第二次只有几字节？<code>readObject</code> 靠什么把字节还原成对象图？管道流为什么会死锁？</p>
+</blockquote>
+<h3 id="61-序列化协议tc_-字节码流">6.1 序列化协议：TC_* 字节码流</h3>
+<p><code>ObjectOutputStream</code>（<code>java/io/ObjectOutputStream.java</code>）写的不是”对象”，是一条带类型标签的字节流。核心分派在 <code>writeObject0</code>：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// java/io/ObjectOutputStream.java:1006-1015（节选）</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> writeObject0</span><span style="color:#24292E">(Object obj, </span><span style="color:#D73A49">boolean</span><span style="color:#24292E"> unshared) throws IOException {</span></span>
+<span class="line"><span style="color:#D73A49">    boolean</span><span style="color:#24292E"> oldMode </span><span style="color:#D73A49">=</span><span style="color:#24292E"> bout.</span><span style="color:#6F42C1">setBlockDataMode</span><span style="color:#24292E">(</span><span style="color:#005CC5">false</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">    depth</span><span style="color:#D73A49">++</span><span style="color:#24292E">;                                        </span><span style="color:#6A737D">// 递归深度保护</span></span>
+<span class="line"><span style="color:#D73A49">    try</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> ((obj </span><span style="color:#D73A49">=</span><span style="color:#24292E"> subs.</span><span style="color:#6F42C1">lookup</span><span style="color:#24292E">(obj)) </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> null</span><span style="color:#24292E">) { </span><span style="color:#6F42C1">writeNull</span><span style="color:#24292E">(); </span><span style="color:#D73A49">return</span><span style="color:#24292E">; }</span></span>
+<span class="line"><span style="color:#D73A49">        else</span><span style="color:#D73A49"> if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">unshared </span><span style="color:#D73A49">&#x26;&#x26;</span><span style="color:#24292E"> (h </span><span style="color:#D73A49">=</span><span style="color:#24292E"> handles.</span><span style="color:#6F42C1">lookup</span><span style="color:#24292E">(obj)) </span><span style="color:#D73A49">!=</span><span style="color:#D73A49"> -</span><span style="color:#005CC5">1</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#6F42C1">            writeHandle</span><span style="color:#24292E">(h);                         </span><span style="color:#6A737D">// ★ 同一个对象第二次出现：只写句柄</span></span>
+<span class="line"><span style="color:#D73A49">            return</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">        ...</span></span>
+<span class="line"><span style="color:#6A737D">        // 剩余情况按类型分派：</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (obj </span><span style="color:#D73A49">instanceof</span><span style="color:#24292E"> String)        </span><span style="color:#6F42C1">writeString</span><span style="color:#24292E">(...);        </span><span style="color:#6A737D">// :1072</span></span>
+<span class="line"><span style="color:#D73A49">        else</span><span style="color:#D73A49"> if</span><span style="color:#24292E"> (cl.</span><span style="color:#6F42C1">isArray</span><span style="color:#24292E">())            </span><span style="color:#6F42C1">writeArray</span><span style="color:#24292E">(...);         </span><span style="color:#6A737D">// :1075</span></span>
+<span class="line"><span style="color:#D73A49">        else</span><span style="color:#D73A49"> if</span><span style="color:#24292E"> (obj </span><span style="color:#D73A49">instanceof</span><span style="color:#24292E"> Enum)     </span><span style="color:#6F42C1">writeEnum</span><span style="color:#24292E">(...);          </span><span style="color:#6A737D">// :1078</span></span>
+<span class="line"><span style="color:#D73A49">        else</span><span style="color:#D73A49"> if</span><span style="color:#24292E"> (obj </span><span style="color:#D73A49">instanceof</span><span style="color:#24292E"> Serializable) </span><span style="color:#6F42C1">writeOrdinaryObject</span><span style="color:#24292E">(...);  </span><span style="color:#6A737D">// :1081</span></span>
+<span class="line"><span style="color:#D73A49">        else</span><span style="color:#D73A49"> throw</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> NotSerializableException</span><span style="color:#24292E">(cl.</span><span style="color:#6F42C1">getName</span><span style="color:#24292E">());</span></span>
+<span class="line"><span style="color:#24292E">    } </span><span style="color:#D73A49">finally</span><span style="color:#24292E"> { depth</span><span style="color:#D73A49">--</span><span style="color:#24292E">; bout.</span><span style="color:#6F42C1">setBlockDataMode</span><span style="color:#24292E">(oldMode); }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p><code>writeHandle</code>:1105 只写两个东西：<code>TC_REFERENCE</code> 标签 + <code>baseWireHandle + handle</code>（一个 int）。<strong>这就是”循环引用也能序列化、同一个对象只写一次”的全部机制</strong>。</p>
+<p>句柄表在 <code>HandleTable</code>（<code>:2067</code>）：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// java/io/ObjectOutputStream.java:2098</span></span>
+<span class="line"><span style="color:#D73A49">int</span><span style="color:#6F42C1"> assign</span><span style="color:#24292E">(Object obj) { ... }   </span><span style="color:#6A737D">// 给对象分配 handle（从 0xff71 起，:190 附近常量）</span></span>
+<span class="line"><span style="color:#6A737D">// :2222</span></span>
+<span class="line"><span style="color:#24292E">Object </span><span style="color:#6F42C1">lookup</span><span style="color:#24292E">(Object obj) { ... } </span><span style="color:#6A737D">// 查对象是否已分配</span></span></code></pre>
+<p>写侧顺序：<code>writeOrdinaryObject:1295</code> → <code>writeClassDesc:1121</code>（类元数据，也走 handles.assign <code>:1143</code>）→ <code>writeNonProxyDesc:1164</code>（类名/SUID/字段数/字段描述）→ <code>defaultWriteObject</code>（非 transient 字段值）。</p>
+<h3 id="62-读侧readobject0-的分派表">6.2 读侧：readObject0 的分派表</h3>
+<p><code>readObject0</code>（<code>java/io/ObjectInputStream.java:1552</code>）是镜像：按 <code>bin.peekByte()</code> 拿到的 TC 标签分派——<code>TC_NULL</code>/<code>TC_REFERENCE</code>（<code>readHandle</code>，<code>:1738</code> <code>handles.lookupObject</code>）/<code>TC_CLASS</code>/<code>TC_CLASSDESC</code>/<code>TC_STRING</code>/<code>TC_ARRAY</code>（<code>readArray:1983</code>）/<code>TC_ENUM</code>/<code>TC_OBJECT</code>（<code>readOrdinaryObject:2094</code>）。</p>
+<p><code>readOrdinaryObject:2094</code> 的核心动作：查 <code>ObjectStreamClass</code> 缓存（本地 <code>Caches</code>，<code>:257</code>）→ 反射创建实例（<code>getSerializableConstructor:1318</code>，无参构造）→ 按字段描述逐个读值写字段。<code>readObject</code> 开头的块数据检查（<code>:1553-1568</code>）处理”自定义 <code>writeObject</code> 里写的块数据”边界（<code>TC_ENDBLOCKDATA</code>），这也是 <code>OptionalDataException</code> 的来源。</p>
+<p><strong>安全</strong>：反序列化本质是”执行字节码指定的对象构造”。JDK 9+ 的 <code>ObjectInputFilter</code>（<code>setObjectInputFilter:1281</code>）可按类名/深度/引用数白名单过滤，生产环境<strong>必须配</strong>。</p>
+<h3 id="63-pipedinputstream1024-字节的循环缓冲">6.3 PipedInputStream：1024 字节的循环缓冲</h3>
+<p><code>PipedInputStream</code>（<code>java/io/PipedInputStream.java</code>）不是线程安全容器，而是<strong>跨线程信箱</strong>：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// java/io/PipedInputStream.java:61-64</span></span>
+<span class="line"><span style="color:#24292E">Thread readSide;                          </span><span style="color:#6A737D">// 当前读线程</span></span>
+<span class="line"><span style="color:#24292E">Thread writeSide;                         </span><span style="color:#6A737D">// 当前写线程</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> final</span><span style="color:#D73A49"> int</span><span style="color:#24292E"> DEFAULT_PIPE_SIZE </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 1024</span><span style="color:#24292E">;   </span><span style="color:#6A737D">// 循环缓冲大小</span></span></code></pre>
+<p><code>receive(int b):207</code>（写端调）：<code>writeSide = Thread.currentThread()</code>，缓冲满则 <code>awaitSpace():273</code> —— <code>notifyAll()</code> 后 <code>wait(1000)</code>，<strong>带超时</strong>地等读端腾地方（超时是为了防”读端死了没人 notify”永久挂起）。读端 <code>read():310</code> 反过来 <code>notifyAll()</code> 叫醒写端。</p>
+<p><strong>死锁的经典场景</strong>：单线程里”先写 2000 字节再读”——写满 1024 后 <code>awaitSpace</code> 阻塞，而读的代码在同一线程后面，永远执行不到。<strong>管道必须两个线程</strong>，这是 <code>PipedInputStream</code> 文档开头就警告的。</p>
+<h3 id="64-本讲小结">6.4 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>结论</th></tr></thead><tbody><tr><td>结构</td><td>序列化 = TC_* 标签流 + <code>HandleTable</code> 句柄表（<code>ObjectOutputStream.java:2067</code>）</td></tr><tr><td>关键实现</td><td><code>writeObject0:1006</code> 按类型分派；第二次遇到同一对象只写 <code>TC_REFERENCE</code>+handle（<code>writeHandle:1105</code>）</td></tr><tr><td>并发</td><td><code>PipedInputStream</code> 用 <code>readSide/writeSide</code> 记录对端线程，<code>awaitSpace:273</code> 带 1s 超时 wait</td></tr><tr><td>协议</td><td>只序列化非 static 非 transient 字段；<code>serialVersionUID</code> 必须显式声明</td></tr><tr><td>陷阱</td><td>反序列化是安全重灾区（配 <code>ObjectInputFilter</code>）；管道单线程使用必死锁</td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“句柄表让循环引用不死、同对象只写一次；管道是 1024 字节信箱，写满就等、读空就 notify，单线程用必锁死。”</em></p>
+<hr>
+<h2 id="附学习路线与复习卡汇总">附：学习路线与复习卡汇总</h2>
+<h3 id="建议学习顺序20-讲时">建议学习顺序（20 讲时）</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>阶段</th><th>内容</th><th>时长建议</th><th>产出</th></tr></thead><tbody><tr><td>第 1 天</td><td>第一、二讲（字节流 + 缓冲/数据流）</td><td>3h</td><td>能手写一个”按行读文件 + 统计”不调 read() 单字节</td></tr><tr><td>第 3 天</td><td>第三讲（字符流/编解码）</td><td>2h</td><td>解释一次 UTF-8 跨 read 乱码故障</td></tr><tr><td>第 7 天</td><td>第四讲（File/RAF）</td><td>2h</td><td>用 RAF 实现大文件分页读</td></tr><tr><td>第 14 天</td><td>第五讲（NIO 三件套）</td><td>4h</td><td>写出 Buffer flip 三部曲 + Selector echo server</td></tr><tr><td>第 30 天</td><td>第六讲（序列化/管道）</td><td>3h</td><td>说清句柄表与反序列化过滤方案</td></tr></tbody></table>
+<h3 id="复习卡遮答案自测">复习卡（遮答案自测）</h3>
+<ol>
+<li><code>read()</code> 为什么返回 <code>int</code>？<code>-1</code> 表示什么？</li>
+<li><code>close()</code> 的双检锁 + <code>closeLock</code> 各自防什么？</li>
+<li><code>fill()</code> 里 mark 相关的三种分支（<code>markpos&#x3C;0</code> / <code>pos>=buf.length</code> 且 <code>markpos>0</code> / 其他）分别做什么？</li>
+<li><code>readUTF</code> 和标准 UTF-8 的三个差异？</li>
+<li><code>InputStreamReader</code> 构造时为什么会读流？</li>
+<li><code>CoderResult</code> 三态各触发什么动作？</li>
+<li><code>File.exists()</code> 的底层调用和竞态？</li>
+<li><code>"rws"</code> 和 <code>"rwd"</code> 的差异？</li>
+<li>Buffer 的 <code>flip/clear/compact</code> 各把指针拨成什么样？</li>
+<li><code>map</code> 出来的 <code>MappedByteBuffer</code> 什么时候释放？怎么主动释放？</li>
+<li>Selector 的 <code>wakeup</code> 靠什么？<code>register</code> 后为什么下次 select 才生效？</li>
+<li>同一个对象序列化两次，第二次写什么？</li>
+<li><code>serialVersionUID</code> 不声明会怎样？</li>
+<li><code>PipedInputStream</code> 单线程使用为什么死锁？</li>
+<li><code>readFully</code> 和 <code>read(byte[])</code> 的语义差异？</li>
+</ol>
+<h3 id="六讲记忆钩子串烧">六讲记忆钩子串烧</h3>
+<p><em>“read 返回 int 是为了给 -1 留位，close 上锁是为了给并发留命”</em> → <em>“缓冲流一块数组三指针”</em> → <em>“字符流 = bb 残字节 + leftover 残字符，解码三态”</em> → <em>“File 只是路径，fd 在流里”</em> → <em>“flip 切读、clear 切写；一条自建管道叫醒 poll”</em> → <em>“句柄表让循环引用不死；管道是 1024 字节信箱，单线程用必锁死”</em></p>
+<hr>
+<h2 id="涉及文件索引">涉及文件索引</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>文件</th><th>行数</th><th>本笔记引用次数</th></tr></thead><tbody><tr><td><code>java/io/InputStream.java</code></td><td>900+</td><td>高（read 合同、skip/transferTo/readAllBytes）</td></tr><tr><td><code>java/io/FileInputStream.java</code></td><td>584</td><td>高（native 三档、close 双检）</td></tr><tr><td><code>java/io/FileOutputStream.java</code></td><td>400+</td><td>中</td></tr><tr><td><code>java/io/BufferedInputStream.java</code></td><td>520+</td><td>高（fill/mark/reset）</td></tr><tr><td><code>java/io/DataInputStream.java</code></td><td>674</td><td>高（readInt/readUTF/readFully）</td></tr><tr><td><code>java/io/DataOutputStream.java</code></td><td>200+</td><td>中（writeUTF）</td></tr><tr><td><code>java/io/PushbackInputStream.java</code></td><td>300+</td><td>低</td></tr><tr><td><code>java/io/InputStreamReader.java</code></td><td>210</td><td>中</td></tr><tr><td><code>java/io/BufferedReader.java</code></td><td>700+</td><td>中（readLine）</td></tr><tr><td><code>sun/nio/cs/StreamDecoder.java</code></td><td>400+</td><td>高（implRead 三态机）</td></tr><tr><td><code>java/io/File.java</code></td><td>2500+</td><td>中</td></tr><tr><td><code>java/io/RandomAccessFile.java</code></td><td>1000+</td><td>高（open0/seek0）</td></tr><tr><td><code>java/io/FileDescriptor.java</code></td><td>230</td><td>低</td></tr><tr><td><code>unix/classes/java/io/UnixFileSystem.java</code></td><td>500+</td><td>中</td></tr><tr><td><code>unix/classes/java/io/DefaultFileSystem.java</code></td><td>40</td><td>低</td></tr><tr><td><code>java/nio/Buffer.java</code></td><td>800+</td><td>高（flip/clear/compact）</td></tr><tr><td><code>sun/nio/ch/FileChannelImpl.java</code></td><td>1774</td><td>高（map/force/transferTo）</td></tr><tr><td><code>sun/nio/ch/SelectorImpl.java</code></td><td>324</td><td>中</td></tr><tr><td><code>unix/classes/sun/nio/ch/PollSelectorImpl.java</code></td><td>389</td><td>高（doSelect/wakeup）</td></tr><tr><td><code>java/io/ObjectOutputStream.java</code></td><td>2300+</td><td>高（writeObject0/HandleTable）</td></tr><tr><td><code>java/io/ObjectInputStream.java</code></td><td>2800+</td><td>高（readObject0 分派）</td></tr><tr><td><code>java/io/PipedInputStream.java</code></td><td>454</td><td>中（receive/awaitSpace）</td></tr></tbody></table>  </div> <div class="post-nav"> <span><a href="/distributed-tx/">← 分布式事务（Seata）源码深度学习笔记</a></span> <span></span> </div> </article>  </main> <footer class="site-footer"> <div class="inner"> <div class="foot-brand"> <span class="brand-mark">&lt;/&gt;</span> <b>源码深读</b> <span>逐文件、逐函数地读源码，结论都带 文件:行号</span> </div> <div class="foot-links"> <a href="/#principles">原理速查</a> <a href="/animations/">动画</a> <a href="/categories/">分类</a> <a href="/tags/">标签</a> <a href="https://github.com/gycxxx/gycxxx.github.io">GitHub</a> </div> <p class="foot-note">由 Astro 静态生成 · 内容以 Markdown 源码笔记为唯一事实源</p> </div> </footer> </body></html> <script type="module" src="/_astro/PostLayout.astro_astro_type_script_index_0_lang.B4vzteL_.js"></script>

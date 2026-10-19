@@ -1,0 +1,1198 @@
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Sentinel 源码深度学习笔记 · 源码深读</title><meta name="description" content="源码级技术笔记：中间件、Spring、Java、存储、云原生与 RAG"><link rel="icon" href="data:,"><link rel="stylesheet" href="/_astro/aqs-lock.BTSF5agR.css"></head> <body> <header class="site-header"> <div class="inner"> <a class="brand" href="/"> <span class="brand-mark">&lt;/&gt;</span> <span class="brand-name">源码深读</span> </a> <nav class="site-nav"> <a href="/" class> 首页 </a><a href="/#principles" class> 原理速查 </a><a href="/animations/" class> 动画 </a><a href="/categories/" class> 分类 </a><a href="/tags/" class> 标签 </a> <a class="nav-gh" href="https://github.com/gycxxx/gycxxx.github.io">GitHub</a> </nav> </div> </header> <main class="main">  <article class="post"> <div class="crumb"> <a href="/">首页</a>  / <a href="/categories/%E4%B8%AD%E9%97%B4%E4%BB%B6/">中间件</a>  </div> <div class="post-head"> <h1>Sentinel 源码深度学习笔记</h1> <div class="page-meta"> <time datetime="2026-10-19T00:00:00.000Z">2026-10-19</time>  · <a class="chip" href="/tags/Sentinel/">Sentinel</a>  <a class="chip" href="/tags/%E9%99%90%E6%B5%81/">限流</a>  <a class="chip" href="/tags/%E7%86%94%E6%96%AD/">熔断</a>  <a class="chip" href="/tags/%E6%BA%90%E7%A0%81/">源码</a>  </div> </div> <nav class="toc"> <div class="toc-title">目录</div> <ol> <li class="d2"> <a href="#目录">目录</a> </li><li class="d2"> <a href="#〇全景地图">〇、全景地图</a> </li><li class="d2"> <a href="#速览六讲各自做了什么先看这个再进细节">速览：六讲各自做了什么（先看这个再进细节）</a> </li><li class="d2"> <a href="#面试速通sentinel-高频问题一页纸">面试速通：Sentinel 高频问题一页纸</a> </li><li class="d3"> <a href="#高频-qa先结论">高频 Q&amp;A（先结论）</a> </li><li class="d3"> <a href="#易错点最容易讲错的-8-条">易错点（最容易讲错的 8 条）</a> </li><li class="d3"> <a href="#数值速记">数值速记</a> </li><li class="d2"> <a href="#第一讲slotchain-责任链--一次-entry-的完整旅程">第一讲：SlotChain 责任链 —— 一次 entry 的完整旅程</a> </li><li class="d3"> <a href="#11-入口ctsph-的三道闸">1.1 入口：CtSph 的三道闸</a> </li><li class="d3"> <a href="#12-链的构建与缓存copyonwrite-式换-map">1.2 链的构建与缓存：CopyOnWrite 式换 Map</a> </li><li class="d3"> <a href="#13-默认链的九个环节按-order">1.3 默认链的九个环节（按 order）</a> </li><li class="d3"> <a href="#14-三个值得记住的顺序理由">1.4 三个值得记住的顺序理由</a> </li><li class="d3"> <a href="#15-本讲小结">1.5 本讲小结</a> </li><li class="d2"> <a href="#第二讲node-与统计--leaparray-滑动窗口">第二讲：Node 与统计 —— LeapArray 滑动窗口</a> </li><li class="d3"> <a href="#21-三级节点树">2.1 三级节点树</a> </li><li class="d3"> <a href="#22-statisticnode六个指标">2.2 StatisticNode：六个指标</a> </li><li class="d3"> <a href="#23-leaparray无锁循环桶">2.3 LeapArray：无锁循环桶</a> </li><li class="d3"> <a href="#24-本讲小结">2.4 本讲小结</a> </li><li class="d2"> <a href="#第三讲flowslot-限流--三种-trafficshapingcontroller">第三讲：FlowSlot 限流 —— 三种 TrafficShapingController</a> </li><li class="d3"> <a href="#31-flowslot--flowrulechecker--controller">3.1 FlowSlot → FlowRuleChecker → Controller</a> </li><li class="d3"> <a href="#32-三种-controller">3.2 三种 Controller</a> </li><li class="d3"> <a href="#33-调用方维度limitapp-三种策略">3.3 调用方维度：limitApp 三种策略</a> </li><li class="d3"> <a href="#34-本讲小结">3.4 本讲小结</a> </li><li class="d2"> <a href="#第四讲degradeslot-熔断--circuitbreaker-状态机">第四讲：DegradeSlot 熔断 —— CircuitBreaker 状态机</a> </li><li class="d3"> <a href="#41-degradeslot链尾的守门人">4.1 DegradeSlot：链尾的守门人</a> </li><li class="d3"> <a href="#42-responsetimecircuitbreaker慢调用比例">4.2 ResponseTimeCircuitBreaker：慢调用比例</a> </li><li class="d3"> <a href="#43-状态机与半开探测">4.3 状态机与半开探测</a> </li><li class="d3"> <a href="#44-本讲小结">4.4 本讲小结</a> </li><li class="d2"> <a href="#第五讲systemslot--authorityslot--paramflowslot">第五讲：SystemSlot / AuthoritySlot / ParamFlowSlot</a> </li><li class="d3"> <a href="#51-systemslot五种系统指标--bbr">5.1 SystemSlot：五种系统指标 + BBR</a> </li><li class="d3"> <a href="#52-authorityslot来源黑白名单">5.2 AuthoritySlot：来源黑白名单</a> </li><li class="d3"> <a href="#53-paramflowslot热点参数限流">5.3 ParamFlowSlot：热点参数限流</a> </li><li class="d3"> <a href="#54-本讲小结">5.4 本讲小结</a> </li><li class="d2"> <a href="#第六讲规则推送与集群限流--datasource--transport--tokenservice">第六讲：规则推送与集群限流 —— DataSource / Transport / TokenService</a> </li><li class="d3"> <a href="#61-规则热更sentinelproperty-观察者模式">6.1 规则热更：SentinelProperty 观察者模式</a> </li><li class="d3"> <a href="#62-集群限流tokenservice-协议">6.2 集群限流：TokenService 协议</a> </li><li class="d3"> <a href="#63-transport规则下发--监控上报">6.3 Transport：规则下发 + 监控上报</a> </li><li class="d3"> <a href="#64-本讲小结">6.4 本讲小结</a> </li><li class="d2"> <a href="#附学习路线与复习卡汇总">附：学习路线与复习卡汇总</a> </li><li class="d3"> <a href="#建议学习顺序15-讲时">建议学习顺序（15 讲时）</a> </li><li class="d3"> <a href="#复习卡遮答案自测">复习卡（遮答案自测）</a> </li><li class="d3"> <a href="#六讲记忆钩子串烧">六讲记忆钩子串烧</a> </li><li class="d2"> <a href="#涉及文件索引">涉及文件索引</a> </li> </ol> </nav> <div class="markdown-body">  <blockquote>
+<p>基于对 Alibaba Sentinel 源码（<code>com.alibaba.csp.sentinel</code>）的逐文件精读整理而成。</p>
+<p>源码位于 <code>sentinel-core/</code>（核心：SlotChain + Node 统计 + 全部内置 Slot）、<code>sentinel-extension/</code>（数据源、参数流控、注解）、<code>sentinel-cluster/</code>（集群限流 server/client）、<code>sentinel-adapter/</code>（Web/Dubbo/gRPC 等适配）、<code>sentinel-dashboard/</code>（控制台）。</p>
+<p>阅读顺序即学习顺序：责任链总览 → 统计与节点 → 限流 → 熔断 → 系统/授权/热点 → 规则推送与集群限流。</p>
+<p>所有结论均标注了源文件位置（格式 <code>模块/相对路径:行号</code>），行号均经 Read/Grep 实际核对。</p>
+<p><strong>版本基线</strong>：<code>1.8.11-SNAPSHOT</code>（根 <code>pom.xml:43</code>），commit <code>a3f40ba</code>（<code>chore: bump version to 1.8.11-SNAPSHOT (#3623)</code>）。
+<strong>注意</strong>：Sentinel 的 slot 通过 SPI（<code>@Spi(order=...)</code>）装配，本文引用的是<strong>默认顺序</strong>；<code>ParamFlowSlot</code> 在 <code>sentinel-extension/sentinel-parameter-flow-control</code>（非 core），<code>ORDER</code> 常量在 <code>Constants.java:76-84</code>。</p>
+</blockquote>
+<hr>
+<h2 id="目录">目录</h2>
+<ul>
+<li><a href="#%E3%80%87%E5%85%A8%E6%99%AF%E5%9C%B0%E5%9B%BE">〇、全景地图</a></li>
+<li><a href="#%E9%80%9F%E8%A7%88%E5%85%AD%E8%AE%B2%E5%90%84%E8%87%AA%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88%E5%85%88%E7%9C%8B%E8%BF%99%E4%B8%AA%E5%86%8D%E8%BF%9B%E7%BB%86%E8%8A%82">速览：六讲各自做了什么（先看这个再进细节）</a></li>
+<li><a href="#%E9%9D%A2%E8%AF%95%E9%80%9F%E9%80%9Asentinel-%E9%AB%98%E9%A2%91%E9%97%AE%E9%A2%98%E4%B8%80%E9%A1%B5%E7%BA%B8">面试速通：Sentinel 高频问题一页纸</a></li>
+<li><a href="#%E7%AC%AC%E4%B8%80%E8%AE%B2slotchain-%E8%B4%A3%E4%BB%BB%E9%93%BE--%E4%B8%80%E6%AC%A1-entry-%E7%9A%84%E5%AE%8C%E6%95%B4%E6%97%85%E7%A8%8B">第一讲：SlotChain 责任链 —— 一次 entry 的完整旅程</a></li>
+<li><a href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2node-%E4%B8%8E%E7%BB%9F%E8%AE%A1--leaparray-%E6%BB%91%E5%8A%A8%E7%AA%97%E5%8F%A3">第二讲：Node 与统计 —— LeapArray 滑动窗口</a></li>
+<li><a href="#%E7%AC%AC%E4%B8%89%E8%AE%B2flowslot-%E9%99%90%E6%B5%81--%E4%B8%89%E7%A7%8D-trafficshapingcontroller">第三讲：FlowSlot 限流 —— 三种 TrafficShapingController</a></li>
+<li><a href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2degradeslot-%E7%86%94%E6%96%AD--circuitbreaker-%E7%8A%B6%E6%80%81%E6%9C%BA">第四讲：DegradeSlot 熔断 —— CircuitBreaker 状态机</a></li>
+<li><a href="#%E7%AC%AC%E4%BA%94%E8%AE%B2systemslot--authorityslot--paramflowslot">第五讲：SystemSlot / AuthoritySlot / ParamFlowSlot</a></li>
+<li><a href="#%E7%AC%AC%E5%85%AD%E8%AE%B2%E8%A7%84%E5%88%99%E6%8E%A8%E9%80%81%E4%B8%8E%E9%9B%86%E7%BE%A4%E9%99%90%E6%B5%81--datasource--transport--tokenservice">第六讲：规则推送与集群限流 —— DataSource / Transport / TokenService</a></li>
+<li><a href="#%E9%99%84%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E4%B8%8E%E5%A4%8D%E4%B9%A0%E5%8D%A1%E6%B1%87%E6%80%BB">附：学习路线与复习卡汇总</a></li>
+<li><a href="#%E6%B6%89%E5%8F%8A%E6%96%87%E4%BB%B6%E7%B4%A2%E5%BC%95">涉及文件索引</a></li>
+</ul>
+<hr>
+<h2 id="〇全景地图">〇、全景地图</h2>
+<p>Sentinel 的核心可以压缩成<strong>一条责任链 + 一棵统计树 + 三种规则</strong>：</p>
+<ul>
+<li><strong>责任链（SlotChain）</strong>：每个资源一条 <code>ProcessorSlotChain</code>，<code>CtSph.entry()</code> 触发依次执行 8~9 个 slot——先选节点（NodeSelector）、建集群节点（ClusterBuilder）、再统计（Statistic），然后才轮到各种规则检查（Authority → System → Flow → 熔断 → Degrade → 热点）。</li>
+<li><strong>统计树（Node）</strong>：<code>DefaultNode</code>（按上下文分）→ 共享一个 <code>ClusterNode</code>（按资源名）→ <code>StatisticNode</code> 用 <code>LeapArray</code> 滑动窗口统计秒级/分钟级 QPS、RT、线程数、异常数。<strong>所有规则的数据源都是这棵树</strong>。</li>
+<li><strong>规则（Rule）</strong>：<code>FlowRule</code>（限流）/ <code>DegradeRule</code>（熔断）/ <code>SystemRule</code>（系统自适应）/ <code>AuthorityRule</code>（授权）/ <code>ParamFlowRule</code>（热点参数）+ 集群规则。规则由 <code>RuleManager</code> 持有，通过 <code>SentinelProperty</code> 监听数据源变更。</li>
+</ul>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>┌──────────────── SphU.entry(resource) ────────────────┐</span></span>
+<span class="line"><span>│                                                       │</span></span>
+<span class="line"><span>│  CtSph.entryWithPriority:132                          │</span></span>
+<span class="line"><span>│    ├─ NullContext？→ 只建 CtEntry 不检查（:118）        │</span></span>
+<span class="line"><span>│    ├─ Constants.ON？→ 全局开关关闭则直接放行（:129）     │</span></span>
+<span class="line"><span>│    ├─ lookProcessChain:194（chainMap 缓存，CopyOnWrite  │</span></span>
+<span class="line"><span>│    │   式换 Map；超 MAX_SLOT_CHAIN_SIZE 返回 null 放行）│</span></span>
+<span class="line"><span>│    └─ chain.entry(...)  ↓（slot 按 @Spi order 排序）    │</span></span>
+<span class="line"><span>└───────────────────────────────────────────────────────┘</span></span>
+<span class="line"><span>                          │</span></span>
+<span class="line"><span>   -10000 NodeSelectorSlot   ── 按 context 建 DefaultNode + 挂调用树</span></span>
+<span class="line"><span>   -9000 ClusterBuilderSlot  ── 按资源名建/取 ClusterNode（全局唯一）</span></span>
+<span class="line"><span>   -8000 LogSlot             ── 打日志</span></span>
+<span class="line"><span>   -7000 StatisticSlot       ── entry 记账（pass/thread），exit 记账（rt/exception）</span></span>
+<span class="line"><span>   -6000 AuthoritySlot       ── 来源黑白名单</span></span>
+<span class="line"><span>   -5000 SystemSlot          ── 系统负载/QPS/线程/CPU/RT 自适应（BBR）</span></span>
+<span class="line"><span>   -3000 ParamFlowSlot       ── 热点参数（extension 模块）</span></span>
+<span class="line"><span>   -2000 FlowSlot            ── 限流：DefaultController / WarmUp / Throttling</span></span>
+<span class="line"><span>   -1500 DefaultCircuitBreakerSlot ── 熔断</span></span>
+<span class="line"><span>   -1000 DegradeSlot         ── 熔断规则检查</span></span>
+<span class="line"><span>                          │</span></span>
+<span class="line"><span>                          ▼</span></span>
+<span class="line"><span>              Node 统计树（LeapArray 秒级 + 分钟级双窗口）</span></span>
+<span class="line"><span>                          ▲</span></span>
+<span class="line"><span>              规则数据源（SentinelProperty ← DataSource）</span></span></code></pre>
+<p>一句话记住全景：<strong>“链定顺序、树记数据、规则读树”</strong>——slot 顺序由 SPI order 决定，统计全在 Node 树，规则检查只读统计不下写。</p>
+<hr>
+<h2 id="速览六讲各自做了什么先看这个再进细节">速览：六讲各自做了什么（先看这个再进细节）</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>讲次</th><th>主题</th><th>核心类</th><th>要回答的问题</th><th>不学会怎样</th></tr></thead><tbody><tr><td>第一讲</td><td>SlotChain 总览</td><td><code>CtSph</code>/<code>DefaultSlotChainBuilder</code></td><td>一次 entry 走几个 slot、顺序凭什么</td><td>自定义 slot 插不进去</td></tr><tr><td>第二讲</td><td>Node 与统计</td><td><code>LeapArray</code>/<code>StatisticNode</code></td><td>滑动窗口怎么做到无锁高并发</td><td>看不懂 dashboard 数字</td></tr><tr><td>第三讲</td><td>FlowSlot 限流</td><td><code>DefaultController</code> 家族</td><td>三种 controller 差异、匀速怎么实现</td><td>限流配置只会抄</td></tr><tr><td>第四讲</td><td>DegradeSlot 熔断</td><td><code>ResponseTimeCircuitBreaker</code></td><td>半开探测、慢调用比例怎么算</td><td>熔断策略选错</td></tr><tr><td>第五讲</td><td>系统/授权/热点</td><td><code>SystemSlot</code> 家族</td><td>BBR 自适应是什么、热点参数限流</td><td>系统保护配不来</td></tr><tr><td>第六讲</td><td>规则与集群</td><td><code>NacosDataSource</code>/<code>TokenService</code></td><td>规则怎么热更新、集群限流走什么协议</td><td>生产只会单机 file</td></tr></tbody></table>
+<hr>
+<h2 id="面试速通sentinel-高频问题一页纸">面试速通：Sentinel 高频问题一页纸</h2>
+<h3 id="高频-qa先结论">高频 Q&#x26;A（先结论）</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>#</th><th>问题</th><th>一句话结论</th><th>出处</th></tr></thead><tbody><tr><td>1</td><td>Sentinel 和 Hystrix 差异？</td><td>Sentinel 是<strong>控制台+规则热更+多维度流控</strong>（并发不隔离、用信号量做隔离）；Hystrix 是<strong>线程池隔离+熔断器先行者</strong>（已停更）</td><td>设计对比</td></tr><tr><td>2</td><td>slot 执行顺序？</td><td>固定顺序：NodeSelector → ClusterBuilder → Log → Statistic → Authority → System → ParamFlow → Flow → CircuitBreaker → Degrade</td><td><code>Constants.java:76-84</code></td></tr><tr><td>3</td><td>slot 顺序怎么定制？</td><td>实现 <code>ProcessorSlot</code> + <code>@Spi(order=...)</code>，或自定义 <code>SlotChainBuilder</code>（SPI 覆盖 <code>DefaultSlotChainBuilder</code>）</td><td><code>DefaultSlotChainBuilder.java:37</code></td></tr><tr><td>4</td><td>限流有几种效果？</td><td><code>DefaultController</code>（快速失败）+ <code>WarmUpController</code>（冷启动预热）+ <code>ThrottlingController</code>/<code>WarmUpRateLimiterController</code>（<strong>匀速排队</strong>，基于令牌桶+未来预支）</td><td><code>slots/block/flow/controller/</code></td></tr><tr><td>5</td><td>流控有几种策略？</td><td>按调用方（<code>STRATEGY_DIRECT</code>/<code>RELATE</code>/<code>CHAIN</code>）与按阈值类型（QPS/线程数）组合；集群模式由 TC 的 TokenService 裁决</td><td><code>FlowRule.java</code></td></tr><tr><td>6</td><td>熔断有哪几种？</td><td>慢调用比例（<code>DEGRADE_GRADE_RT</code>）、异常比例（<code>DEGRADE_GRADE_EXCEPTION_RATIO</code>）、异常数（<code>DEGRADE_GRADE_EXCEPTION_COUNT</code>）</td><td><code>DegradeRule.java</code></td></tr><tr><td>7</td><td>熔断半开怎么探测？</td><td><code>HALF_OPEN</code> 放行<strong>一个</strong>探测请求：成功 → <code>fromHalfOpenToClose</code>（关闭熔断），失败/慢 → <code>fromHalfOpenToOpen</code>（重新打开）</td><td><code>ResponseTimeCircuitBreaker.java:82-95</code></td></tr><tr><td>8</td><td>熔断和限流的区别？</td><td>限流是”入口控制流量”（对<strong>所有</strong>请求生效）；熔断是”出口保护”（对<strong>满足统计条件</strong>的资源暂停放行，有自动恢复）</td><td><code>DegradeSlot.java:41</code></td></tr><tr><td>9</td><td>统计窗口多大？</td><td>秒级 <code>ArrayMetric(SAMPLE_COUNT=2, 1000ms)</code> + 分钟级 <code>ArrayMetric(60, 60000ms)</code>，底层 <code>LeapArray</code> 循环桶</td><td><code>StatisticNode.java:96</code></td></tr><tr><td>10</td><td><code>LeapArray</code> 并发安全吗？</td><td>桶数组用 <code>AtomicReferenceArray</code> + <strong>CAS 换桶</strong>（<code>array.compareAndSet(idx, null, window)</code>），统计值用 <code>LongAdder</code>——无锁</td><td><code>LeapArray.java:116</code></td></tr><tr><td>11</td><td>规则怎么热更新？</td><td><code>RuleManager</code> 监听 <code>SentinelProperty</code>；<code>NacosDataSource</code> 等实现把远程配置推成 property 更新，<code>loadRules</code> 重建</td><td><code>NacosDataSource.java:71</code></td></tr><tr><td>12</td><td>集群限流原理？</td><td>每个 TokenClient 向 TokenServer 申请配额；<code>TokenServer</code> 是独立进程（或嵌入），本地规则只做兜底；超限返回 <code>TokenResultStatus.BLOCKED</code></td><td><code>TokenService.java:36</code></td></tr><tr><td>13</td><td><code>@SentinelResource</code> 两个属性？</td><td><code>value</code>（资源名）+ <code>blockHandler</code>（限流降级方法，<strong>方法签名要与原方法一致</strong>）+ <code>fallback</code>（业务异常）</td><td><code>annotation/SentinelResource.java</code></td></tr><tr><td>14</td><td>上下文超限会怎样？</td><td>超过 <code>Constants.MAX_CONTEXT_NAME_SIZE</code>（默认 2000）后新入口进 <code>NullContext</code>，<strong>只建 entry 不做规则检查</strong></td><td><code>CtSph.java:118</code></td></tr><tr><td>15</td><td>热点参数限流限什么？</td><td>按<strong>参数值</strong>分别统计：同一资源下 <code>paramIdx=0</code> 的 <code>userId=10086</code> 单独一个计数器，可设单参数值阈值 + 全局阈值</td><td><code>ParamFlowSlot.java:50</code></td></tr><tr><td>16</td><td>系统自适应 BBR 是什么？</td><td>参考 Google BBR：当 load 超阈值时，若并发线程 > <code>maxSuccessQps × minRt / 1000</code>（理论最优并发）则拒绝——<strong>过载时只放进”最优并发数”的请求</strong></td><td><code>SystemRuleManager.java:337</code></td></tr><tr><td>17</td><td><code>entry</code> 抛了非 BlockException 怎么办？</td><td><code>CtSph:155-159</code> 只记录日志继续返回 entry——<strong>Sentinel 自身异常不拖垮业务</strong>（fail-open）</td><td><code>CtSph.java:155</code></td></tr><tr><td>18</td><td><code>SphU.entry</code> 忘了 exit 会怎样？</td><td>线程数统计泄漏（<code>increaseThreadNum</code> 加了不减），最终所有请求被线程数规则拒——<strong>必须 try-finally</strong></td><td><code>StatisticSlot.java:62</code></td></tr></tbody></table>
+<h3 id="易错点最容易讲错的-8-条">易错点（最容易讲错的 8 条）</h3>
+<ol>
+<li><strong>slot 顺序不是”先 Flow 后 System”</strong>：System（-5000）在 Flow（-2000）<strong>之前</strong>——系统级保护优先于资源级限流。</li>
+<li><strong>StatisticSlot 在规则之前</strong>：统计先行，规则读到的才是本次请求之前的数据。</li>
+<li><strong><code>DegradeSlot</code> 在链尾但熔断器在链中</strong>：<code>DefaultCircuitBreakerSlot</code>（-1500）只负责”探测请求恢复”，真正的规则检查在 <code>DegradeSlot</code>（-1000）。</li>
+<li><strong>熔断的 <code>minRequestAmount</code> 不是请求数下限</strong>：是”统计窗口内至少这么多请求才计算比例”，防止 1/1 异常 = 100% 误熔。</li>
+<li><strong>异常数熔断（<code>DEGRADE_GRADE_EXCEPTION_COUNT</code>）在 1.8 已废弃</strong>，用异常比例替代——写 <code>count</code> 语义要小心。</li>
+<li><strong>匀速排队会 sleep</strong>：<code>ThrottlingController</code> 超过阈值的请求不是拒绝而是 <code>sleep(waitInMs)</code>（<code>DefaultController.java:60</code> 里 prioritized 分支同理）——<strong>高并发下会堆积业务线程</strong>。</li>
+<li><strong>集群限流的 <code>flowId</code> 必须全局唯一</strong>：不同资源同一个 flowId 会互相抢配额。</li>
+<li><strong><code>ContextUtil</code> 入口名不是资源名</strong>：一个入口下多个资源共享 context；<code>NullContext</code> 时所有规则静默失效。</li>
+</ol>
+<h3 id="数值速记">数值速记</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>数值</th><th>含义</th><th>出处</th></tr></thead><tbody><tr><td><code>-10000 / -9000 / -8000 / -7000</code></td><td>前四个 slot 的 order</td><td><code>Constants.java:76-79</code></td></tr><tr><td><code>-6000 / -5000 / -3000 / -2000</code></td><td>Authority/System/ParamFlow/Flow 的 order</td><td><code>Constants.java:80-82</code></td></tr><tr><td><code>-1500 / -1000</code></td><td>CircuitBreaker/Degrade 的 order</td><td><code>Constants.java:83-84</code></td></tr><tr><td><code>2000</code></td><td>最大上下文数 <code>MAX_CONTEXT_NAME_SIZE</code></td><td><code>Constants.java</code></td></tr><tr><td><code>1000ms</code></td><td>秒级统计窗口</td><td><code>StatisticNode.java:96</code></td></tr><tr><td><code>60000ms</code></td><td>分钟级统计窗口</td><td><code>StatisticNode.java:103</code></td></tr><tr><td><code>2</code></td><td>秒级窗口桶数（<code>SAMPLE_COUNT</code>）</td><td><code>StatisticNode.java:96</code></td></tr></tbody></table>
+<hr>
+<h2 id="第一讲slotchain-责任链--一次-entry-的完整旅程">第一讲：SlotChain 责任链 —— 一次 entry 的完整旅程</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：<code>SphU.entry("demo")</code> 这行代码进去以后，到底依次敲了哪些门？门的顺序凭什么这么定？</p>
+</blockquote>
+<h3 id="11-入口ctsph-的三道闸">1.1 入口：CtSph 的三道闸</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// CtSph.java:132（entryWithPriority 节选）</span></span>
+<span class="line"><span style="color:#24292E">Context context </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ContextUtil.</span><span style="color:#6F42C1">getContext</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">if</span><span style="color:#24292E"> (context </span><span style="color:#D73A49">instanceof</span><span style="color:#24292E"> NullContext) {</span></span>
+<span class="line"><span style="color:#6A737D">    // 上下文数量超限 → 只建 entry，不检查规则</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> CtEntry</span><span style="color:#24292E">(resourceWrapper, </span><span style="color:#005CC5">null</span><span style="color:#24292E">, context);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"><span style="color:#D73A49">if</span><span style="color:#24292E"> (context </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> null</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">    context </span><span style="color:#D73A49">=</span><span style="color:#24292E"> InternalContextUtil.</span><span style="color:#6F42C1">internalEnter</span><span style="color:#24292E">(Constants.CONTEXT_DEFAULT_NAME);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"><span style="color:#6A737D">// Global switch is close, no rule checking will do.</span></span>
+<span class="line"><span style="color:#D73A49">if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">Constants.ON) {</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> CtEntry</span><span style="color:#24292E">(resourceWrapper, </span><span style="color:#005CC5">null</span><span style="color:#24292E">, context);       </span><span style="color:#6A737D">// 全局开关关闭</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"><span style="color:#24292E">ProcessorSlot&#x3C;</span><span style="color:#D73A49">Object</span><span style="color:#24292E">> chain </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> lookProcessChain</span><span style="color:#24292E">(resourceWrapper);</span></span>
+<span class="line"><span style="color:#D73A49">if</span><span style="color:#24292E"> (chain </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> null</span><span style="color:#24292E">) {                                           </span><span style="color:#6A737D">// 资源数超 MAX_SLOT_CHAIN_SIZE</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> CtEntry</span><span style="color:#24292E">(resourceWrapper, </span><span style="color:#005CC5">null</span><span style="color:#24292E">, context);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"><span style="color:#24292E">Entry e </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> CtEntry</span><span style="color:#24292E">(resourceWrapper, chain, context, count, args);</span></span>
+<span class="line"><span style="color:#D73A49">try</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">    chain.</span><span style="color:#6F42C1">entry</span><span style="color:#24292E">(context, resourceWrapper, </span><span style="color:#005CC5">null</span><span style="color:#24292E">, count, prioritized, args);</span></span>
+<span class="line"><span style="color:#24292E">} </span><span style="color:#D73A49">catch</span><span style="color:#24292E"> (BlockException </span><span style="color:#E36209">e1</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">    e.</span><span style="color:#6F42C1">exit</span><span style="color:#24292E">(count, args);                                       </span><span style="color:#6A737D">// 被拒也要 exit 一次（补统计）</span></span>
+<span class="line"><span style="color:#D73A49">    throw</span><span style="color:#24292E"> e1;</span></span>
+<span class="line"><span style="color:#24292E">} </span><span style="color:#D73A49">catch</span><span style="color:#24292E"> (Throwable </span><span style="color:#E36209">e1</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">    RecordLog.</span><span style="color:#6F42C1">info</span><span style="color:#24292E">(</span><span style="color:#032F62">"Sentinel unexpected exception"</span><span style="color:#24292E">, e1);        </span><span style="color:#6A737D">// ★ fail-open：内部异常不抛给业务</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"><span style="color:#D73A49">return</span><span style="color:#24292E"> e;</span></span></code></pre>
+<p>三道闸（NullContext / 全局开关 / 资源数上限）的哲学一致：<strong>Sentinel 自己出问题时静默放行，绝不拖垮业务</strong>。这也是它和 Hystrix 设计哲学的差异之一。</p>
+<h3 id="12-链的构建与缓存copyonwrite-式换-map">1.2 链的构建与缓存：CopyOnWrite 式换 Map</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// CtSph.java:194（lookProcessChain）</span></span>
+<span class="line"><span style="color:#24292E">ProcessorSlot&#x3C;</span><span style="color:#D73A49">Object</span><span style="color:#24292E">> chain </span><span style="color:#D73A49">=</span><span style="color:#24292E"> chainMap.</span><span style="color:#6F42C1">get</span><span style="color:#24292E">(resourceWrapper);</span></span>
+<span class="line"><span style="color:#D73A49">if</span><span style="color:#24292E"> (chain </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> null</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">    synchronized</span><span style="color:#24292E"> (LOCK) {</span></span>
+<span class="line"><span style="color:#24292E">        chain </span><span style="color:#D73A49">=</span><span style="color:#24292E"> chainMap.</span><span style="color:#6F42C1">get</span><span style="color:#24292E">(resourceWrapper);                 </span><span style="color:#6A737D">// 双检</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (chain </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> null</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">            if</span><span style="color:#24292E"> (chainMap.</span><span style="color:#6F42C1">size</span><span style="color:#24292E">() </span><span style="color:#D73A49">>=</span><span style="color:#24292E"> Constants.MAX_SLOT_CHAIN_SIZE) {</span></span>
+<span class="line"><span style="color:#D73A49">                return</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;                                   </span><span style="color:#6A737D">// 资源数上限 → 放行</span></span>
+<span class="line"><span style="color:#24292E">            }</span></span>
+<span class="line"><span style="color:#24292E">            chain </span><span style="color:#D73A49">=</span><span style="color:#24292E"> SlotChainProvider.</span><span style="color:#6F42C1">newSlotChain</span><span style="color:#24292E">();          </span><span style="color:#6A737D">// SPI 构建新链</span></span>
+<span class="line"><span style="color:#24292E">            Map&#x3C;</span><span style="color:#D73A49">ResourceWrapper</span><span style="color:#24292E">, </span><span style="color:#D73A49">ProcessorSlotChain</span><span style="color:#24292E">> newMap </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#24292E"> HashMap&#x3C;>(chainMap.</span><span style="color:#6F42C1">size</span><span style="color:#24292E">() </span><span style="color:#D73A49">+</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">            newMap.</span><span style="color:#6F42C1">putAll</span><span style="color:#24292E">(chainMap);</span></span>
+<span class="line"><span style="color:#24292E">            newMap.</span><span style="color:#6F42C1">put</span><span style="color:#24292E">(resourceWrapper, chain);</span></span>
+<span class="line"><span style="color:#24292E">            chainMap </span><span style="color:#D73A49">=</span><span style="color:#24292E"> newMap;                                 </span><span style="color:#6A737D">// ★ 整体换 Map，读无锁</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p><code>chainMap</code> 用<strong>不可变替换</strong>而不是 <code>ConcurrentHashMap</code>——读路径完全无锁，写路径才加 <code>LOCK</code>。<strong>同一个资源全局共享一条链</strong>（注释原文：no matter in which Context）。</p>
+<p><code>DefaultSlotChainBuilder.build()</code>（<code>slots/DefaultSlotChainBuilder.java:36</code>）通过 <code>SpiLoader.of(ProcessorSlot.class).loadInstanceListSorted()</code> 按 <code>@Spi(order)</code> 排序装配，非 <code>AbstractLinkedProcessorSlot</code> 的直接 warn 跳过——<strong>想插自定义 slot，实现 <code>ProcessorSlot</code> 接口 + 打 <code>@Spi</code> 注解即可，不用改任何源码</strong>。</p>
+<h3 id="13-默认链的九个环节按-order">1.3 默认链的九个环节（按 order）</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>order</th><th>Slot</th><th>位置</th><th>entry 干什么</th><th>exit 干什么</th></tr></thead><tbody><tr><td>-10000</td><td><code>NodeSelectorSlot</code></td><td><code>slots/nodeselector/</code></td><td>按 context 建 <code>DefaultNode</code>、挂调用树、<code>setCurNode</code></td><td>无</td></tr><tr><td>-9000</td><td><code>ClusterBuilderSlot</code></td><td><code>slots/clusterbuilder/</code></td><td>按资源名建/取全局唯一 <code>ClusterNode</code></td><td>无</td></tr><tr><td>-8000</td><td><code>LogSlot</code></td><td><code>slots/logger/</code></td><td>打印 entry 日志</td><td>打印 exit 日志</td></tr><tr><td>-7000</td><td><code>StatisticSlot</code></td><td><code>slots/statistic/</code></td><td><code>increaseThreadNum</code> + <code>addPassRequest</code></td><td>记 RT、exception、complete</td></tr><tr><td>-6000</td><td><code>AuthoritySlot</code></td><td><code>slots/block/authority/</code></td><td>来源黑白名单</td><td>无</td></tr><tr><td>-5000</td><td><code>SystemSlot</code></td><td><code>slots/system/</code></td><td><code>SystemRuleManager.checkSystem</code></td><td>无</td></tr><tr><td>-3000</td><td><code>ParamFlowSlot</code></td><td>extension</td><td>热点参数检查</td><td>无</td></tr><tr><td>-2000</td><td><code>FlowSlot</code></td><td><code>slots/block/flow/</code></td><td><code>FlowRuleChecker.checkFlow</code></td><td>无</td></tr><tr><td>-1500</td><td><code>DefaultCircuitBreakerSlot</code></td><td><code>slots/block/degrade/circuitbreaker/</code></td><td>注册熔断器回调</td><td>无</td></tr><tr><td>-1000</td><td><code>DegradeSlot</code></td><td><code>slots/block/degrade/</code></td><td><code>cb.tryPass(context)</code></td><td><code>cb.onRequestComplete(context)</code></td></tr></tbody></table>
+<h3 id="14-三个值得记住的顺序理由">1.4 三个值得记住的顺序理由</h3>
+<ol>
+<li><strong>NodeSelector 最先</strong>：没有 Node 后面的统计和规则都无从谈起；</li>
+<li><strong>Statistic 在规则之前</strong>：规则读到的永远是”不含本次请求”的历史数据，避免自触发；</li>
+<li><strong>System 在 Flow 之前</strong>：机器都快挂了，先做系统级削减（全局），再谈单资源限流；</li>
+<li><strong>Degrade 在最后但熔断统计在 exit</strong>：<code>DegradeSlot.exit</code> 里调 <code>onRequestComplete</code> 把本次 RT/异常喂给熔断器——<strong>熔断判断发生在请求结束时，影响的是下一个请求</strong>。</li>
+</ol>
+<h3 id="15-本讲小结">1.5 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>结论</th></tr></thead><tbody><tr><td>结构</td><td><code>CtSph.entryWithPriority:132</code> 三道闸 → <code>lookProcessChain:194</code> 缓存链 → <code>chain.entry</code> 依次过 slot</td></tr><tr><td>关键实现</td><td>链按 <code>@Spi(order)</code> 装配（<code>DefaultSlotChainBuilder.java:37</code>），<code>chainMap</code> 用整体换 Map 实现无锁读</td></tr><tr><td>并发</td><td>写链加 <code>LOCK</code> 双检；读完全无锁；统计值用 <code>LongAdder</code></td></tr><tr><td>协议</td><td>被拒时 <code>e.exit(count, args)</code> 补记账；内部异常 fail-open 只记日志</td></tr><tr><td>陷阱</td><td><code>MAX_SLOT_CHAIN_SIZE</code> 超限后新资源<strong>直接放行不检查</strong>；<code>NullContext</code> 同样静默失效</td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“三道闸放行为王，一条链按 order 排队；统计先行、系统优先、熔断垫后。”</em></p>
+<hr>
+<h2 id="第二讲node-与统计--leaparray-滑动窗口">第二讲：Node 与统计 —— LeapArray 滑动窗口</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：dashboard 上的 QPS/RT/线程数从哪来？为什么统计不给业务加锁？</p>
+</blockquote>
+<h3 id="21-三级节点树">2.1 三级节点树</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>EntranceNode（入口，Constants.ENTRY_NODE）</span></span>
+<span class="line"><span> └─ DefaultNode（每个 context 一个：NodeSelectorSlot 按 context name 建，:127 @Spi）</span></span>
+<span class="line"><span>      └─ ClusterNode（每个资源名一个，全局唯一：ClusterBuilderSlot）</span></span>
+<span class="line"><span>           └─ StatisticNode（统计实现）</span></span>
+<span class="line"><span>                ├─ rollingCounterInSecond   = ArrayMetric(2, 1000ms)   // 秒级双桶</span></span>
+<span class="line"><span>                └─ rollingCounterInMinute   = ArrayMetric(60, 60000ms) // 分钟级 60 桶</span></span></code></pre>
+<p><code>NodeSelectorSlot</code> 的注释解释了为什么要区分 DefaultNode 和 ClusterNode（<code>slots/nodeselector/NodeSelectorSlot.java:136</code>）：<strong>同一资源在不同 context 下要分开统计（调用链分析），又要能合并出资源级总量</strong>——后者就是 <code>ClusterNode</code> 的职责，所有同资源的 DefaultNode 共享它。</p>
+<h3 id="22-statisticnode六个指标">2.2 StatisticNode：六个指标</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// StatisticNode.java:90-103</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> StatisticNode</span><span style="color:#D73A49"> implements</span><span style="color:#6F42C1"> Node</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#D73A49"> transient</span><span style="color:#D73A49"> volatile</span><span style="color:#24292E"> Metric rollingCounterInSecond </span><span style="color:#D73A49">=</span></span>
+<span class="line"><span style="color:#D73A49">        new</span><span style="color:#6F42C1"> ArrayMetric</span><span style="color:#24292E">(SampleCountProperty.SAMPLE_COUNT, IntervalProperty.INTERVAL);   </span><span style="color:#6A737D">// 默认 2 桶 × 500ms</span></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#D73A49"> transient</span><span style="color:#D73A49"> volatile</span><span style="color:#24292E"> Metric rollingCounterInMinute </span><span style="color:#D73A49">=</span></span>
+<span class="line"><span style="color:#D73A49">        new</span><span style="color:#6F42C1"> ArrayMetric</span><span style="color:#24292E">(</span><span style="color:#005CC5">60</span><span style="color:#24292E">, </span><span style="color:#005CC5">60</span><span style="color:#D73A49"> *</span><span style="color:#005CC5"> 1000</span><span style="color:#24292E">, </span><span style="color:#005CC5">false</span><span style="color:#24292E">);                                          </span><span style="color:#6A737D">// 60 桶 × 1s</span></span></code></pre>
+<p>每个桶（<code>MetricNode</code>）用 <code>LongAdder</code> 记六组数：<code>pass</code>（放行）、<code>block</code>（拦截）、<code>success</code>、<code>exception</code>、<code>rt</code>（总耗时）、<code>thread</code>（并发线程）。<code>StatisticSlot</code> 的写入点：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>时机</th><th>方法</th><th>记什么</th></tr></thead><tbody><tr><td>entry 通过</td><td><code>entry:55</code> → <code>node.increaseThreadNum()</code> + <code>node.addPassRequest(count)</code>（<code>:62-63</code>）</td><td>线程数 +1、pass +count</td></tr><tr><td>entry 被拒</td><td><code>:82</code> <code>node.increaseThreadNum()</code>；<code>:101</code> <code>node.increaseBlockQps(count)</code></td><td>线程数 +1（然后减）、block +count</td></tr><tr><td>exit 正常</td><td><code>exit:126</code> → 减线程数、加 RT、success +count</td><td>rt、success</td></tr><tr><td>exit 异常</td><td><code>:163</code> <code>node.increaseExceptionQps(batchCount)</code></td><td>exception</td></tr></tbody></table>
+<p><code>passQps()</code>（<code>StatisticNode.java:166</code>）= <code>rollingCounterInSecond.pass() / windowInterval</code>——<strong>秒级窗口总数除以窗口长度</strong>，这就是 dashboard 上 QPS 的算法。</p>
+<h3 id="23-leaparray无锁循环桶">2.3 LeapArray：无锁循环桶</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// LeapArray.java:116（currentWindow 节选）</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#24292E"> WindowWrap</span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">T</span><span style="color:#D73A49">></span><span style="color:#6F42C1"> currentWindow</span><span style="color:#24292E">(</span><span style="color:#D73A49">long</span><span style="color:#24292E"> timeMillis) {</span></span>
+<span class="line"><span style="color:#D73A49">    int</span><span style="color:#24292E"> idx </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> calculateTimeIdx</span><span style="color:#24292E">(timeMillis);</span></span>
+<span class="line"><span style="color:#D73A49">    long</span><span style="color:#24292E"> windowStart </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> calculateWindowStart</span><span style="color:#24292E">(timeMillis);</span></span>
+<span class="line"><span style="color:#D73A49">    while</span><span style="color:#24292E"> (</span><span style="color:#005CC5">true</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">        WindowWrap&#x3C;</span><span style="color:#D73A49">T</span><span style="color:#24292E">> old </span><span style="color:#D73A49">=</span><span style="color:#24292E"> array.</span><span style="color:#6F42C1">get</span><span style="color:#24292E">(idx);</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (old </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> null</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">            WindowWrap&#x3C;</span><span style="color:#D73A49">T</span><span style="color:#24292E">> window </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#24292E"> WindowWrap&#x3C;>(windowLengthInMs, windowStart, </span><span style="color:#6F42C1">newEmptyBucket</span><span style="color:#24292E">(timeMillis));</span></span>
+<span class="line"><span style="color:#D73A49">            if</span><span style="color:#24292E"> (array.</span><span style="color:#6F42C1">compareAndSet</span><span style="color:#24292E">(idx, </span><span style="color:#005CC5">null</span><span style="color:#24292E">, window)) {   </span><span style="color:#6A737D">// ★ CAS 换桶，只有一线程成功</span></span>
+<span class="line"><span style="color:#D73A49">                return</span><span style="color:#24292E"> window;</span></span>
+<span class="line"><span style="color:#24292E">            }</span></span>
+<span class="line"><span style="color:#24292E">        } </span><span style="color:#D73A49">else</span><span style="color:#D73A49"> if</span><span style="color:#24292E"> (windowStart </span><span style="color:#D73A49">==</span><span style="color:#24292E"> old.</span><span style="color:#6F42C1">windowStart</span><span style="color:#24292E">()) {</span></span>
+<span class="line"><span style="color:#D73A49">            return</span><span style="color:#24292E"> old;                                     </span><span style="color:#6A737D">// 当前桶</span></span>
+<span class="line"><span style="color:#24292E">        } </span><span style="color:#D73A49">else</span><span style="color:#D73A49"> if</span><span style="color:#24292E"> (windowStart </span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E"> old.</span><span style="color:#6F42C1">windowStart</span><span style="color:#24292E">()) {</span></span>
+<span class="line"><span style="color:#D73A49">            return</span><span style="color:#D73A49"> new</span><span style="color:#24292E"> WindowWrap&#x3C;>(windowLengthInMs, windowStart, </span><span style="color:#6F42C1">newEmptyBucket</span><span style="color:#24292E">(timeMillis));  </span><span style="color:#6A737D">// 时钟回拨</span></span>
+<span class="line"><span style="color:#24292E">        } </span><span style="color:#D73A49">else</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6A737D">            // 桶过期 → CAS 换新桶</span></span>
+<span class="line"><span style="color:#D73A49">            if</span><span style="color:#24292E"> (array.</span><span style="color:#6F42C1">compareAndSet</span><span style="color:#24292E">(idx, old, window)) { </span><span style="color:#D73A49">return</span><span style="color:#24292E"> window; }</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>三个设计点：</p>
+<ol>
+<li><strong><code>idx = (time / windowLength) % sampleCount</code></strong>——时间戳直接算出桶下标，天然循环；</li>
+<li><strong>CAS 换桶</strong>解决并发建桶；失败方自旋重试；</li>
+<li><strong>时钟回拨</strong>（<code>windowStart &#x3C; old.windowStart()</code>）不覆盖旧桶，直接丢弃统计返回空桶——防 NTP 校时把数据打乱。</li>
+</ol>
+<p>秒级用 2 个桶 × 500ms 而不是 1×1000ms，是为了<strong>窗口切换时旧桶数据还能被 <code>previousWindow</code> 读到</strong>（<code>StatisticNode.java:171</code> <code>previousWindowBlock</code>），避免边界跳变。</p>
+<h3 id="24-本讲小结">2.4 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>结论</th></tr></thead><tbody><tr><td>结构</td><td>三级树：DefaultNode（按 context）→ ClusterNode（按资源，全局唯一）→ StatisticNode（双窗口）</td></tr><tr><td>关键实现</td><td><code>LeapArray.currentWindow:116</code> CAS 换桶；桶值 <code>LongAdder</code>；QPS = 窗口 pass / 窗口秒数</td></tr><tr><td>并发</td><td>全程无锁（CAS + LongAdder）；时钟回拨走空桶不覆盖</td></tr><tr><td>协议</td><td>秒级 2×500ms + 分钟级 60×1s；<code>previousWindow</code> 解决边界跳变</td></tr><tr><td>陷阱</td><td><code>entry</code> 后不 <code>exit</code> → 线程数只增不减，最终被线程规则全拒</td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“时间戳算下标、CAS 换桶、LongAdder 记账；同一资源一个 ClusterNode，同一入口多个 DefaultNode。”</em></p>
+<hr>
+<h2 id="第三讲flowslot-限流--三种-trafficshapingcontroller">第三讲：FlowSlot 限流 —— 三种 TrafficShapingController</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：<code>QPS > 10</code> 到底怎么判断超没超？匀速排队和快速失败在源码层差在哪？</p>
+</blockquote>
+<h3 id="31-flowslot--flowrulechecker--controller">3.1 FlowSlot → FlowRuleChecker → Controller</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// FlowSlot.java:160</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> entry</span><span style="color:#24292E">(Context context, ResourceWrapper resourceWrapper, DefaultNode node, </span><span style="color:#D73A49">int</span><span style="color:#24292E"> count,</span></span>
+<span class="line"><span style="color:#D73A49">                  boolean</span><span style="color:#24292E"> prioritized, Object... args) throws Throwable {</span></span>
+<span class="line"><span style="color:#6F42C1">    checkFlow</span><span style="color:#24292E">(resourceWrapper, context, node, count, prioritized);</span></span>
+<span class="line"><span style="color:#6F42C1">    fireEntry</span><span style="color:#24292E">(context, resourceWrapper, node, count, prioritized, args);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// FlowRuleChecker.java:44</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> checkFlow</span><span style="color:#24292E">(Function</span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">String, Collection</span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">FlowRule</span><span style="color:#D73A49">>></span><span style="color:#24292E"> ruleProvider, ResourceWrapper resource,</span></span>
+<span class="line"><span style="color:#24292E">                      Context context, DefaultNode node, </span><span style="color:#D73A49">int</span><span style="color:#24292E"> count, </span><span style="color:#D73A49">boolean</span><span style="color:#24292E"> prioritized) throws BlockException {</span></span>
+<span class="line"><span style="color:#24292E">    Collection&#x3C;</span><span style="color:#D73A49">FlowRule</span><span style="color:#24292E">> rules </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ruleProvider.</span><span style="color:#6F42C1">apply</span><span style="color:#24292E">(resource.</span><span style="color:#6F42C1">getName</span><span style="color:#24292E">());</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (rules </span><span style="color:#D73A49">!=</span><span style="color:#005CC5"> null</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">        for</span><span style="color:#24292E"> (FlowRule rule </span><span style="color:#D73A49">:</span><span style="color:#24292E"> rules) {</span></span>
+<span class="line"><span style="color:#D73A49">            if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#6F42C1">canPassCheck</span><span style="color:#24292E">(rule, context, node, count, prioritized)) {</span></span>
+<span class="line"><span style="color:#D73A49">                throw</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> FlowException</span><span style="color:#24292E">(rule.</span><span style="color:#6F42C1">getLimitApp</span><span style="color:#24292E">(), rule);</span></span>
+<span class="line"><span style="color:#24292E">            }</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p><strong>规则遍历是”与”语义</strong>：同一资源多条规则，任何一条不过就抛 <code>FlowException</code>。<code>canPassCheck:64</code> 按 <code>rule.isClusterMode()</code> 分本地/集群两条路，本地走 <code>passLocalCheck:78</code>——按 <code>strategy</code>（调用方维度）选出对应的 Node，再交给 <code>rule.getController().canPass(node, count)</code>。</p>
+<h3 id="32-三种-controller">3.2 三种 Controller</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// DefaultController.java:49（快速失败）</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> boolean</span><span style="color:#6F42C1"> canPass</span><span style="color:#24292E">(Node node, </span><span style="color:#D73A49">int</span><span style="color:#24292E"> acquireCount, </span><span style="color:#D73A49">boolean</span><span style="color:#24292E"> prioritized) {</span></span>
+<span class="line"><span style="color:#D73A49">    int</span><span style="color:#24292E"> curCount </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> avgUsedTokens</span><span style="color:#24292E">(node);</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (curCount </span><span style="color:#D73A49">+</span><span style="color:#24292E"> acquireCount </span><span style="color:#D73A49">></span><span style="color:#24292E"> count) {</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (prioritized </span><span style="color:#D73A49">&#x26;&#x26;</span><span style="color:#24292E"> grade </span><span style="color:#D73A49">==</span><span style="color:#24292E"> RuleConstant.FLOW_GRADE_QPS) {</span></span>
+<span class="line"><span style="color:#6A737D">            // 高优先级请求：尝试占用未来令牌，等一小会儿再进来</span></span>
+<span class="line"><span style="color:#D73A49">            long</span><span style="color:#24292E"> waitInMs </span><span style="color:#D73A49">=</span><span style="color:#24292E"> node.</span><span style="color:#6F42C1">tryOccupyNext</span><span style="color:#24292E">(currentTime, acquireCount, count);</span></span>
+<span class="line"><span style="color:#24292E">            ...</span></span>
+<span class="line"><span style="color:#6F42C1">            sleep</span><span style="color:#24292E">(waitInMs);                                   </span><span style="color:#6A737D">// ★ 优先级请求是"等"不是"拒"</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#005CC5"> false</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#005CC5"> true</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Controller</th><th>算法</th><th>超限行为</th><th>场景</th></tr></thead><tbody><tr><td><code>DefaultController</code></td><td>当前 QPS + count > 阈值</td><td><strong>直接拒绝</strong></td><td>大多数场景</td></tr><tr><td><code>WarmUpController</code></td><td>阈值按 <code>coldFactor</code> 从低往高爬</td><td>冷启动阶段阈值低，逐步升到配置值</td><td>服务刚启动防流量打死</td></tr><tr><td><code>ThrottlingController</code> / <code>WarmUpRateLimiterController</code></td><td>令牌桶 + <strong>未来时间预支</strong>（<code>tryOccupyNext</code>）</td><td>拒绝（或 prioritized 时 sleep 等待）</td><td>严格匀速</td></tr></tbody></table>
+<p><code>WarmUpController</code>（<code>slots/block/flow/controller/WarmUpController.java:64</code>）的核心是 <code>warningToken</code> 曲线：阈值从 <code>count / coldFactor</code> 开始，经过 <code>warningToken / (count - count/coldFactor)</code> 时间爬到 <code>count</code>——<strong>冷启动 10 秒内限流阈值只有配置的 1/3，防止缓存未热被打死</strong>。</p>
+<p>匀速排队的实现细节在 <code>Node.tryOccupyNext</code>（<code>node/Node.java</code> 的 <code>OccupySupport</code>）：算出”要等多少毫秒才有令牌”，<code>addWaitingRequest</code> 记账，然后 <code>sleep(waitInMs)</code> 再当次请求放行——<strong>业务线程会真的睡</strong>，所以匀速队列长度受业务线程数约束。</p>
+<h3 id="33-调用方维度limitapp-三种策略">3.3 调用方维度：limitApp 三种策略</h3>
+<p><code>FlowRule.limitApp</code>（<code>strategy</code>）决定统计哪个 Node：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>策略</th><th>含义</th><th>选中的 Node</th></tr></thead><tbody><tr><td><code>STRATEGY_DIRECT</code>（默认）</td><td>按调用方来源</td><td>本资源的 caller Node（按 origin）</td></tr><tr><td><code>STRATEGY_RELATE</code></td><td>关联资源</td><td>关联资源的 Node</td></tr><tr><td><code>STRATEGY_CHAIN</code></td><td>入口链路</td><td>从 EntranceNode 往下按链路找</td></tr></tbody></table>
+<p><code>default</code> 表示不限调用方。集群模式下 <code>limitApp</code> 变成”按服务分组”，由 TokenServer 裁决。</p>
+<h3 id="34-本讲小结">3.4 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>结论</th></tr></thead><tbody><tr><td>结构</td><td><code>FlowSlot.entry:160</code> → <code>FlowRuleChecker.checkFlow:44</code>（多条规则”与”）→ Controller</td></tr><tr><td>关键实现</td><td><code>DefaultController.canPass:49</code> 快速失败；<code>WarmUpController:64</code> 冷启动爬坡；<code>ThrottlingController</code> 匀速睡眠</td></tr><tr><td>并发</td><td>读 <code>avgUsedTokens</code> 是滑动窗口值；<code>tryOccupyNext</code> 预支未来令牌</td></tr><tr><td>协议</td><td>策略 = 阈值类型（QPS/线程数）× 调用方（DIRECT/RELATE/CHAIN）</td></tr><tr><td>陷阱</td><td>prioritized 匀速会 <code>sleep</code> 业务线程；WarmUp 前几秒阈值只有 1/coldFactor</td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“快速失败拒、冷启动爬、匀速睡；限流是入口闸，多条规则是与关系。”</em></p>
+<hr>
+<h2 id="第四讲degradeslot-熔断--circuitbreaker-状态机">第四讲：DegradeSlot 熔断 —— CircuitBreaker 状态机</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：熔断器的三态怎么转？半开为什么只放一个请求？慢调用比例的分子分母是什么？</p>
+</blockquote>
+<h3 id="41-degradeslot链尾的守门人">4.1 DegradeSlot：链尾的守门人</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// DegradeSlot.java:37-45</span></span>
+<span class="line"><span style="color:#24292E">@</span><span style="color:#D73A49">Spi</span><span style="color:#24292E">(</span><span style="color:#005CC5">order</span><span style="color:#D73A49"> =</span><span style="color:#24292E"> Constants.ORDER_DEGRADE_SLOT)</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> DegradeSlot</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> AbstractLinkedProcessorSlot</span><span style="color:#24292E">&#x3C;</span><span style="color:#D73A49">DefaultNode</span><span style="color:#24292E">> {</span></span>
+<span class="line"><span style="color:#24292E">    @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> entry</span><span style="color:#24292E">(Context </span><span style="color:#E36209">context</span><span style="color:#24292E">, ResourceWrapper </span><span style="color:#E36209">resourceWrapper</span><span style="color:#24292E">, DefaultNode </span><span style="color:#E36209">node</span><span style="color:#24292E">, </span><span style="color:#D73A49">int</span><span style="color:#E36209"> count</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#D73A49">                      boolean</span><span style="color:#E36209"> prioritized</span><span style="color:#24292E">, Object... </span><span style="color:#E36209">args</span><span style="color:#24292E">) </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> Throwable {</span></span>
+<span class="line"><span style="color:#6F42C1">        performChecking</span><span style="color:#24292E">(context, resourceWrapper);          </span><span style="color:#6A737D">// 逐个熔断器 tryPass</span></span>
+<span class="line"><span style="color:#6F42C1">        fireEntry</span><span style="color:#24292E">(context, resourceWrapper, node, count, prioritized, args);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#D73A49">    void</span><span style="color:#6F42C1"> performChecking</span><span style="color:#24292E">(Context </span><span style="color:#E36209">context</span><span style="color:#24292E">, ResourceWrapper </span><span style="color:#E36209">r</span><span style="color:#24292E">) </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> BlockException {</span></span>
+<span class="line"><span style="color:#24292E">        List&#x3C;</span><span style="color:#D73A49">CircuitBreaker</span><span style="color:#24292E">> circuitBreakers </span><span style="color:#D73A49">=</span><span style="color:#24292E"> DegradeRuleManager.</span><span style="color:#6F42C1">getCircuitBreakers</span><span style="color:#24292E">(r.</span><span style="color:#6F42C1">getName</span><span style="color:#24292E">());</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (circuitBreakers </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> null</span><span style="color:#D73A49"> ||</span><span style="color:#24292E"> circuitBreakers.</span><span style="color:#6F42C1">isEmpty</span><span style="color:#24292E">()) { </span><span style="color:#D73A49">return</span><span style="color:#24292E">; }</span></span>
+<span class="line"><span style="color:#D73A49">        for</span><span style="color:#24292E"> (CircuitBreaker cb </span><span style="color:#D73A49">:</span><span style="color:#24292E"> circuitBreakers) {</span></span>
+<span class="line"><span style="color:#D73A49">            if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">cb.</span><span style="color:#6F42C1">tryPass</span><span style="color:#24292E">(context)) {</span></span>
+<span class="line"><span style="color:#D73A49">                throw</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> DegradeException</span><span style="color:#24292E">(cb.</span><span style="color:#6F42C1">getRule</span><span style="color:#24292E">().</span><span style="color:#6F42C1">getLimitApp</span><span style="color:#24292E">(), cb.</span><span style="color:#6F42C1">getRule</span><span style="color:#24292E">());</span></span>
+<span class="line"><span style="color:#24292E">            }</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span></code></pre>
+<p><code>DegradeRuleManager</code> 在规则加载时就把 <code>DegradeRule</code> 转成 <code>CircuitBreaker</code> 对象（<code>DefaultCircuitBreakerRuleManager</code>）——<strong>规则变、熔断器跟着重建</strong>，热更新因此是原子的。</p>
+<h3 id="42-responsetimecircuitbreaker慢调用比例">4.2 ResponseTimeCircuitBreaker：慢调用比例</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// ResponseTimeCircuitBreaker.java:34-115（节选）</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> final</span><span style="color:#D73A49"> long</span><span style="color:#24292E"> maxAllowedRt;          </span><span style="color:#6A737D">// 慢调用阈值 RT（ms）</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> final</span><span style="color:#D73A49"> double</span><span style="color:#24292E"> maxSlowRequestRatio; </span><span style="color:#6A737D">// 慢调用比例阈值</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> final</span><span style="color:#D73A49"> int</span><span style="color:#24292E"> minRequestAmount;       </span><span style="color:#6A737D">// 窗口内最少请求数</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> LeapArray&#x3C;</span><span style="color:#D73A49">SlowRequestCounter</span><span style="color:#24292E">> slidingCounter;   </span><span style="color:#6A737D">// 1 个桶 × statIntervalMs</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> onRequestComplete</span><span style="color:#24292E">(Context context) {           </span><span style="color:#6A737D">// exit 时回调</span></span>
+<span class="line"><span style="color:#24292E">    SlowRequestCounter counter </span><span style="color:#D73A49">=</span><span style="color:#24292E"> slidingCounter.</span><span style="color:#6F42C1">currentWindow</span><span style="color:#24292E">().</span><span style="color:#6F42C1">value</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">    long</span><span style="color:#24292E"> rt </span><span style="color:#D73A49">=</span><span style="color:#24292E"> completeTime </span><span style="color:#D73A49">-</span><span style="color:#24292E"> entry.</span><span style="color:#6F42C1">getCreateTimestamp</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (rt </span><span style="color:#D73A49">></span><span style="color:#24292E"> maxAllowedRt) { counter.slowCount.</span><span style="color:#6F42C1">add</span><span style="color:#24292E">(</span><span style="color:#005CC5">1</span><span style="color:#24292E">); }    </span><span style="color:#6A737D">// 慢调用 +1</span></span>
+<span class="line"><span style="color:#24292E">    counter.totalCount.</span><span style="color:#6F42C1">add</span><span style="color:#24292E">(</span><span style="color:#005CC5">1</span><span style="color:#24292E">);                              </span><span style="color:#6A737D">// 总调用 +1</span></span>
+<span class="line"><span style="color:#6F42C1">    handleStateChangeWhenThresholdExceeded</span><span style="color:#24292E">(rt);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> handleStateChangeWhenThresholdExceeded</span><span style="color:#24292E">(</span><span style="color:#D73A49">long</span><span style="color:#24292E"> rt) {</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (currentState.</span><span style="color:#6F42C1">get</span><span style="color:#24292E">() </span><span style="color:#D73A49">==</span><span style="color:#24292E"> State.OPEN) { </span><span style="color:#D73A49">return</span><span style="color:#24292E">; }</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (currentState.</span><span style="color:#6F42C1">get</span><span style="color:#24292E">() </span><span style="color:#D73A49">==</span><span style="color:#24292E"> State.HALF_OPEN) {</span></span>
+<span class="line"><span style="color:#6A737D">        // In detecting request</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (rt </span><span style="color:#D73A49">></span><span style="color:#24292E"> maxAllowedRt) { </span><span style="color:#6F42C1">fromHalfOpenToOpen</span><span style="color:#24292E">(</span><span style="color:#005CC5">1.0d</span><span style="color:#24292E">); }   </span><span style="color:#6A737D">// 探测请求也慢 → 重新打开</span></span>
+<span class="line"><span style="color:#D73A49">        else</span><span style="color:#24292E"> { </span><span style="color:#6F42C1">fromHalfOpenToClose</span><span style="color:#24292E">(); }                        </span><span style="color:#6A737D">// 探测成功 → 关闭熔断</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">    List&#x3C;</span><span style="color:#D73A49">SlowRequestCounter</span><span style="color:#24292E">> counters </span><span style="color:#D73A49">=</span><span style="color:#24292E"> slidingCounter.</span><span style="color:#6F42C1">values</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">    long</span><span style="color:#24292E"> slowCount </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 0</span><span style="color:#24292E">, totalCount </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 0</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#24292E"> (SlowRequestCounter c </span><span style="color:#D73A49">:</span><span style="color:#24292E"> counters) { slowCount </span><span style="color:#D73A49">+=</span><span style="color:#24292E"> c.slowCount.</span><span style="color:#6F42C1">sum</span><span style="color:#24292E">(); totalCount </span><span style="color:#D73A49">+=</span><span style="color:#24292E"> c.totalCount.</span><span style="color:#6F42C1">sum</span><span style="color:#24292E">(); }</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (totalCount </span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E"> minRequestAmount) { </span><span style="color:#D73A49">return</span><span style="color:#24292E">; }            </span><span style="color:#6A737D">// 样本不够不算</span></span>
+<span class="line"><span style="color:#D73A49">    double</span><span style="color:#24292E"> currentRatio </span><span style="color:#D73A49">=</span><span style="color:#24292E"> slowCount </span><span style="color:#D73A49">*</span><span style="color:#005CC5"> 1.0d</span><span style="color:#D73A49"> /</span><span style="color:#24292E"> totalCount;</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (currentRatio </span><span style="color:#D73A49">></span><span style="color:#24292E"> maxSlowRequestRatio) { </span><span style="color:#6F42C1">transformToOpen</span><span style="color:#24292E">(currentRatio); }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>三个关键数：<strong><code>maxAllowedRt</code>（RT 阈值）、<code>maxSlowRequestRatio</code>（比例）、<code>minRequestAmount</code>（样本下限）</strong>。配置 <code>grade=RT, count=200ms, slowRatioThreshold=0.5, minRequestAmount=10, statIntervalMs=10s</code> 的含义是：10 秒窗口内至少 10 个请求，其中超过一半 RT > 200ms 就熔断 10 秒（<code>timeWindow</code>）。</p>
+<h3 id="43-状态机与半开探测">4.3 状态机与半开探测</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>CLOSED ──统计超阈值──► OPEN ──timeWindow 到──► HALF_OPEN ──探测请求──┬──成功──► CLOSED</span></span>
+<span class="line"><span>   ▲                                                              └──失败/慢──► OPEN</span></span>
+<span class="line"><span>   └────────────────────── fromHalfOpenToClose ──────────────────────┘</span></span></code></pre>
+<ul>
+<li><code>OPEN</code> 持续 <code>rule.getTimeWindow()</code> 秒后由 <code>AbstractCircuitBreaker</code> 的定时任务转 <code>HALF_OPEN</code>（<code>DefaultCircuitBreakerSlot</code> 注册的 observer）；</li>
+<li><code>HALF_OPEN</code> 只放<strong>一个探测请求</strong>（源码注释 “In detecting request”），结果直接决定回 <code>CLOSED</code> 还是重新 <code>OPEN</code>；</li>
+<li><code>fromHalfOpenToOpen(1.0d)</code> 传 1.0 表示”探测失败视为 100% 慢比例”。</li>
+</ul>
+<p><code>ExceptionCircuitBreaker</code>（异常比例/异常数）同构，只是统计维度换成 <code>exception</code> 与 <code>total</code>，且异常判定可以排除业务自己声明的 <code>exceptionsToIgnore</code>（<code>BlockException</code> 默认不算——<strong>被 Sentinel 拒的请求不算异常</strong>，否则熔断会自我激励）。</p>
+<h3 id="44-本讲小结">4.4 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>结论</th></tr></thead><tbody><tr><td>结构</td><td><code>DegradeSlot.performChecking:41</code> 逐个 <code>CircuitBreaker.tryPass</code>；规则热更 = 重建熔断器对象</td></tr><tr><td>关键实现</td><td><code>onRequestComplete:62</code> 喂慢调用计数；<code>handleStateChangeWhenThresholdExceeded:81</code> 三态流转</td></tr><tr><td>并发</td><td>统计用 <code>LeapArray</code> 单桶；状态用 <code>AtomicReference&#x3C;State></code>；observer 注册在 <code>EventObserverRegistry</code></td></tr><tr><td>协议</td><td>慢调用 = RT > <code>maxAllowedRt</code>；比例 = slow/total；<code>minRequestAmount</code> 防小样本误判</td></tr><tr><td>陷阱</td><td>半开只放一个请求；<code>BlockException</code> 不计入异常熔断；异常数熔断已废弃</td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“熔断三态 CLOSED→OPEN→HALF_OPEN，半开一箭定生死；慢调用比例 = 慢数/总数，样本不够不熔。”</em></p>
+<hr>
+<h2 id="第五讲systemslot--authorityslot--paramflowslot">第五讲：SystemSlot / AuthoritySlot / ParamFlowSlot</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：机器快挂了 Sentinel 怎么自适应？按调用方放行/拒绝怎么配？热点参数限流的”热点”限在哪？</p>
+</blockquote>
+<h3 id="51-systemslot五种系统指标--bbr">5.1 SystemSlot：五种系统指标 + BBR</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// SystemRuleManager.java:290（checkSystem）</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> checkSystem</span><span style="color:#24292E">(ResourceWrapper resourceWrapper, </span><span style="color:#D73A49">int</span><span style="color:#24292E"> count) throws BlockException {</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">checkSystemStatus.</span><span style="color:#6F42C1">get</span><span style="color:#24292E">()) { </span><span style="color:#D73A49">return</span><span style="color:#24292E">; }                       </span><span style="color:#6A737D">// 开关</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (resourceWrapper.</span><span style="color:#6F42C1">getEntryType</span><span style="color:#24292E">() </span><span style="color:#D73A49">!=</span><span style="color:#24292E"> EntryType.IN) { </span><span style="color:#D73A49">return</span><span style="color:#24292E">; } </span><span style="color:#6A737D">// 只拦入口流量</span></span>
+<span class="line"><span style="color:#6A737D">    // ① 全局 QPS</span></span>
+<span class="line"><span style="color:#D73A49">    double</span><span style="color:#24292E"> currentQps </span><span style="color:#D73A49">=</span><span style="color:#24292E"> Constants.ENTRY_NODE.</span><span style="color:#6F42C1">passQps</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (currentQps </span><span style="color:#D73A49">+</span><span style="color:#24292E"> count </span><span style="color:#D73A49">></span><span style="color:#24292E"> qps) { </span><span style="color:#D73A49">throw</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> SystemBlockException</span><span style="color:#24292E">(resourceWrapper.</span><span style="color:#6F42C1">getName</span><span style="color:#24292E">(), </span><span style="color:#032F62">"qps"</span><span style="color:#24292E">); }</span></span>
+<span class="line"><span style="color:#6A737D">    // ② 全局线程数</span></span>
+<span class="line"><span style="color:#D73A49">    int</span><span style="color:#24292E"> currentThread </span><span style="color:#D73A49">=</span><span style="color:#24292E"> Constants.ENTRY_NODE.</span><span style="color:#6F42C1">curThreadNum</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (currentThread </span><span style="color:#D73A49">></span><span style="color:#24292E"> maxThread) { </span><span style="color:#D73A49">throw</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> SystemBlockException</span><span style="color:#24292E">(resourceWrapper.</span><span style="color:#6F42C1">getName</span><span style="color:#24292E">(), </span><span style="color:#032F62">"thread"</span><span style="color:#24292E">); }</span></span>
+<span class="line"><span style="color:#6A737D">    // ③ 全局平均 RT</span></span>
+<span class="line"><span style="color:#D73A49">    double</span><span style="color:#24292E"> rt </span><span style="color:#D73A49">=</span><span style="color:#24292E"> Constants.ENTRY_NODE.</span><span style="color:#6F42C1">avgRt</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (rt </span><span style="color:#D73A49">></span><span style="color:#24292E"> maxRt) { </span><span style="color:#D73A49">throw</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> SystemBlockException</span><span style="color:#24292E">(resourceWrapper.</span><span style="color:#6F42C1">getName</span><span style="color:#24292E">(), </span><span style="color:#032F62">"rt"</span><span style="color:#24292E">); }</span></span>
+<span class="line"><span style="color:#6A737D">    // ④ 系统负载（BBR）</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (highestSystemLoadIsSet </span><span style="color:#D73A49">&#x26;&#x26;</span><span style="color:#6F42C1"> getCurrentSystemAvgLoad</span><span style="color:#24292E">() </span><span style="color:#D73A49">></span><span style="color:#24292E"> highestSystemLoad) {</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#6F42C1">checkBbr</span><span style="color:#24292E">(currentThread)) { </span><span style="color:#D73A49">throw</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> SystemBlockException</span><span style="color:#24292E">(resourceWrapper.</span><span style="color:#6F42C1">getName</span><span style="color:#24292E">(), </span><span style="color:#032F62">"load"</span><span style="color:#24292E">); }</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#6A737D">    // ⑤ CPU 使用率</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (highestCpuUsageIsSet </span><span style="color:#D73A49">&#x26;&#x26;</span><span style="color:#6F42C1"> getCurrentCpuUsage</span><span style="color:#24292E">() </span><span style="color:#D73A49">></span><span style="color:#24292E"> highestCpuUsage) {</span></span>
+<span class="line"><span style="color:#D73A49">        throw</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> SystemBlockException</span><span style="color:#24292E">(resourceWrapper.</span><span style="color:#6F42C1">getName</span><span style="color:#24292E">(), </span><span style="color:#032F62">"cpu"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> boolean</span><span style="color:#6F42C1"> checkBbr</span><span style="color:#24292E">(</span><span style="color:#D73A49">int</span><span style="color:#24292E"> currentThread) {</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (currentThread </span><span style="color:#D73A49">></span><span style="color:#005CC5"> 1</span><span style="color:#D73A49"> &#x26;&#x26;</span></span>
+<span class="line"><span style="color:#24292E">        currentThread </span><span style="color:#D73A49">></span><span style="color:#24292E"> Constants.ENTRY_NODE.</span><span style="color:#6F42C1">maxSuccessQps</span><span style="color:#24292E">() </span><span style="color:#D73A49">*</span><span style="color:#24292E"> Constants.ENTRY_NODE.</span><span style="color:#6F42C1">minRt</span><span style="color:#24292E">() </span><span style="color:#D73A49">/</span><span style="color:#005CC5"> 1000</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#005CC5"> false</span><span style="color:#24292E">;                                                </span><span style="color:#6A737D">// 超过理论最优并发 → 拒</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#005CC5"> true</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p><strong>五道系统指标</strong>全部读 <code>Constants.ENTRY_NODE</code>（全局入口节点）的统计——所以系统规则天然是”全局视角”，与具体资源无关。<code>EntryType.IN</code> 的判断保证只拦入口流量，内部调用不受系统规则影响。</p>
+<p><strong>BBR 那行是这个仓库最有含量的代码</strong>（<code>:337</code> <code>checkBbr</code>）：<code>maxSuccessQps × minRt / 1000</code> 是<strong>理论最优并发数</strong>（Little’s law：并发 = 吞吐 × 延迟）。当机器 load 超阈值时，只放进”最优并发”以内的请求——<strong>等价于”让每个请求以最低 RT 跑，而不是把线程全占满”</strong>，这正是 Google BBR 的思想。</p>
+<p><code>SystemRuleManager</code> 还维护 <code>highestSystemLoad</code>（<code>Double.MAX_VALUE</code>，<code>:68</code>）——启动后由 <code>checkSystemStatus</code> 控制首次探测，把当前 load 记为基线（<code>:194-215</code> 的重置逻辑），避免重启进程时把历史高水位当成本限。</p>
+<h3 id="52-authorityslot来源黑白名单">5.2 AuthoritySlot：来源黑白名单</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// AuthoritySlot.java:34</span></span>
+<span class="line"><span style="color:#24292E">@</span><span style="color:#D73A49">Spi</span><span style="color:#24292E">(</span><span style="color:#005CC5">order</span><span style="color:#D73A49"> =</span><span style="color:#24292E"> Constants.ORDER_AUTHORITY_SLOT)</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> AuthoritySlot</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> AbstractLinkedProcessorSlot</span><span style="color:#24292E">&#x3C;</span><span style="color:#D73A49">DefaultNode</span><span style="color:#24292E">> {</span></span>
+<span class="line"><span style="color:#6A737D">    // entry: 从 ContextUtil 取 origin，按 AuthorityRule 的 strategy</span></span>
+<span class="line"><span style="color:#6A737D">    //（AUTHORITY_WHITE=0 白名单 / AUTHORITY_BLACK=1 黑名单）判定</span></span>
+<span class="line"><span style="color:#6A737D">    // 不匹配 → throw new AuthorityException()</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>判定依据是 <code>ContextUtil.getContext().getOrigin()</code>——<strong>origin 来自调用方注册</strong>（<code>SphU.entry(name, type, count, origin)</code> 或适配器从请求头取），所以 AuthoritySlot 的可靠性取决于 origin 是否可信（内部服务之间可信，外部流量要防伪造）。注意<strong>没有配 AuthorityRule 的资源完全放行</strong>。</p>
+<h3 id="53-paramflowslot热点参数限流">5.3 ParamFlowSlot：热点参数限流</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// ParamFlowSlot.java:34（sentinel-extension/sentinel-parameter-flow-control）</span></span>
+<span class="line"><span style="color:#24292E">@</span><span style="color:#D73A49">Spi</span><span style="color:#24292E">(</span><span style="color:#005CC5">order</span><span style="color:#D73A49"> =</span><span style="color:#D73A49"> -</span><span style="color:#005CC5">3000</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> ParamFlowSlot</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> AbstractLinkedProcessorSlot</span><span style="color:#24292E">&#x3C;</span><span style="color:#D73A49">DefaultNode</span><span style="color:#24292E">> {</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> entry</span><span style="color:#24292E">(...) </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> Throwable {</span></span>
+<span class="line"><span style="color:#6A737D">        // rule.getParamIdx()：第几个参数（0 起；负数表示"从后往前数"）</span></span>
+<span class="line"><span style="color:#D73A49">        int</span><span style="color:#24292E"> paramIdx </span><span style="color:#D73A49">=</span><span style="color:#24292E"> rule.</span><span style="color:#6F42C1">getParamIdx</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (paramIdx </span><span style="color:#D73A49">&#x3C;</span><span style="color:#005CC5"> 0</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">            if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">-</span><span style="color:#24292E">paramIdx </span><span style="color:#D73A49">&#x3C;=</span><span style="color:#24292E"> length) { ... }</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#6A737D">        // 按"参数值"分别建 ParameterMetric（key=参数值）</span></span>
+<span class="line"><span style="color:#6A737D">        // 先查单参数值阈值 paramIdx + paramValue 的计数，再查资源级总阈值</span></span>
+<span class="line"><span style="color:#6A737D">        // 任一超限 → ParamFlowException</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>两级阈值：<strong>单参数值阈值</strong>（<code>paramFlowRule.getCount()</code>，某个热点值专属）+ <strong>资源级总阈值</strong>（<code>rule.getBurstCount()</code> 之外还有一个”所有参数值合计”的默认统计）。典型配置：“接口总阈值 500 QPS，但 <code>userId=10086</code> 这个热点值单限 10 QPS”。</p>
+<p>热点统计用 <code>ParameterMetric</code>（每个参数值一个 <code>ParameterMetricIdentifier</code> → 一组 <code>LeapArray</code>），所以热点限流的开销与”参数值基数”成正比——<strong>高基数字段（如订单号）做热点限流会内存爆炸</strong>，这是它只适合低基数枚举值（userId 少量热号、商品 id 少量爆款）的原因。</p>
+<h3 id="54-本讲小结">5.4 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>结论</th></tr></thead><tbody><tr><td>结构</td><td>SystemSlot 读 <code>ENTRY_NODE</code> 全局统计；AuthoritySlot 读 <code>Context.origin</code>；ParamFlowSlot 按参数值分桶</td></tr><tr><td>关键实现</td><td><code>checkBbr:337</code> = 理论最优并发（<code>maxSuccessQps × minRt / 1000</code>）；参数值分别统计</td></tr><tr><td>并发</td><td><code>highestSystemLoad</code> 启动时探测基线（<code>:194</code>）；热点计数器随基数线性增长</td></tr><tr><td>协议</td><td>系统五指标（QPS/线程/RT/load/CPU）+ BBR；origin 黑白名单；paramIdx 支持负索引</td></tr><tr><td>陷阱</td><td>系统规则只拦 <code>EntryType.IN</code>；高基数参数禁做热点限流；origin 可伪造需网关层保证</td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“系统保护看全局入口节点，BBR 只放进最优并发的请求；热点限的是低基数的参数值。”</em></p>
+<hr>
+<h2 id="第六讲规则推送与集群限流--datasource--transport--tokenservice">第六讲：规则推送与集群限流 —— DataSource / Transport / TokenService</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：控制台改的规则怎么秒级生效到几百个实例？集群限流为什么还要一个 TokenServer？</p>
+</blockquote>
+<h3 id="61-规则热更sentinelproperty-观察者模式">6.1 规则热更：SentinelProperty 观察者模式</h3>
+<p>所有 <code>RuleManager</code> 都遵循同一模式：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// FlowRuleManager.java（同构于 SystemRuleManager.register2Property:107）</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> register2Property</span><span style="color:#24292E">(SentinelProperty</span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">List</span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">FlowRule</span><span style="color:#D73A49">>></span><span style="color:#24292E"> property) {</span></span>
+<span class="line"><span style="color:#D73A49">    synchronized</span><span style="color:#24292E"> (listener) {</span></span>
+<span class="line"><span style="color:#24292E">        RecordLog.</span><span style="color:#6F42C1">info</span><span style="color:#24292E">(</span><span style="color:#032F62">"[FlowRuleManager] Registering new property to flow rule manager"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">        currentProperty.</span><span style="color:#6F42C1">removeListener</span><span style="color:#24292E">(listener);</span></span>
+<span class="line"><span style="color:#24292E">        property.</span><span style="color:#6F42C1">addListener</span><span style="color:#24292E">(listener);</span></span>
+<span class="line"><span style="color:#24292E">        currentProperty </span><span style="color:#D73A49">=</span><span style="color:#24292E"> property;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p><code>listener</code> 是 <code>PropertyListener&#x3C;List&#x3C;FlowRule>></code>：<code>configUpdate(newValue)</code> 里做 <code>flowRules.clear() + addAll(newValue)</code> + 重建 <code>FlowRuleMap</code>（规则按资源名分组的 Map）。<strong>换 property 是原子的</strong>，更新期间规则读取不受影响。</p>
+<p>数据源家族（<code>sentinel-extension/</code>）负责把远程配置变成 property：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>DataSource</th><th>机制</th><th>文件</th></tr></thead><tbody><tr><td><code>FileRefreshableDataSource</code></td><td>定时读本地文件（默认 30s）</td><td>core</td></tr><tr><td><code>NacosDataSource</code></td><td>Nacos 监听 + <code>readSource():137</code> 拉全量</td><td><code>sentinel-extension/sentinel-datasource-nacos/src/main/java/com/alibaba/csp/sentinel/datasource/nacos/NacosDataSource.java:71</code></td></tr><tr><td><code>ZookeeperDataSource</code></td><td>ZK 节点监听</td><td><code>sentinel-datasource-zookeeper/</code></td></tr><tr><td><code>ApolloDataSource</code></td><td>Apollo 长轮询</td><td><code>sentinel-datasource-apollo/</code></td></tr><tr><td><code>RedisDataSource</code></td><td>Pub/Sub</td><td><code>sentinel-datasource-redis/</code></td></tr><tr><td>控制台推送</td><td>HTTP 长连接（<code>sentinel-transport-simple-http</code>）</td><td><code>sentinel-transport/</code></td></tr></tbody></table>
+<p><strong>配置格式约定</strong>：dataId = <code>应用名-规则类型.json</code>（如 <code>order-service-flow-rules</code>），内容是规则 JSON 数组。Nacos 的 <code>readSource</code> 拉一次全量覆盖——所以规则是<strong>最终一致的全量替换</strong>，不是增量。</p>
+<h3 id="62-集群限流tokenservice-协议">6.2 集群限流：TokenService 协议</h3>
+<p>单机限流的死穴是”每台机器阈值独立，集群总量不可控”。Sentinel 的解法是<strong>全局统计、本地预留</strong>：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>TokenClient（业务进程内）</span></span>
+<span class="line"><span>  └─ ClusterTokenClient（sentinel-core/.../cluster/client/ClusterTokenClient.java）</span></span>
+<span class="line"><span>       └─ TokenService.requestToken(ruleId, acquireCount, prioritized)   // :36</span></span>
+<span class="line"><span>            └─ 向 TokenServer 发请求（Netty / envoy-rls）</span></span>
+<span class="line"><span>                 ├─ 允许 → TokenResult(OK)</span></span>
+<span class="line"><span>                 ├─ 拒绝 → TokenResult(BLOCKED)</span></span>
+<span class="line"><span>                 └─ Server 不可用 → 降级为本地限流（Fallback）</span></span></code></pre>
+<p><code>FlowRule</code> 配 <code>clusterMode = true</code> 时，<code>FlowRuleChecker.canPassCheck:67</code> 走 <code>passClusterCheck</code>：先问 TokenServer，Server 不在线就<strong>退回本地 <code>passLocalCheck</code></strong>（fail-open 到单机限流）——<strong>集群限流永远不应该比单机限流更严格地拖垮业务</strong>。</p>
+<p><code>DefaultEmbeddedTokenServer</code>（<code>sentinel-cluster/sentinel-cluster-server-default/src/main/java/com/alibaba/csp/sentinel/cluster/server/DefaultEmbeddedTokenServer.java:47</code>）是嵌入模式：TokenServer 跑在某个业务进程里（或独立进程），用 <code>GlobalQuotaManager</code> 按 <code>flowId</code> 维护全局令牌桶，<code>requestToken</code> 返回剩余配额。两种部署：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>模式</th><th>部署</th><th>一致性</th></tr></thead><tbody><tr><td>独立 TokenServer</td><td>单独进程集群</td><td>强一致（单点统计）</td></tr><tr><td>嵌入模式</td><td>选一台业务机兼职</td><td>弱（兼职机挂则降级）</td></tr></tbody></table>
+<h3 id="63-transport规则下发--监控上报">6.3 Transport：规则下发 + 监控上报</h3>
+<p><code>sentinel-transport</code> 系列负责两件事：<strong>规则推送通道</strong>（控制台 → 客户端，HTTP long-polling）和<strong>监控上报</strong>（客户端 → 控制台，<code>sentinel-transport-common</code> 的 <code>HeartbeatSender</code> 定时发心跳 + metric）。dashboard 看到的实时曲线来自客户端的秒级统计聚合上报——<strong>所以 dashboard 断线只影响展示，不影响限流熔断本身</strong>（规则在客户端本地生效）。</p>
+<h3 id="64-本讲小结">6.4 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>结论</th></tr></thead><tbody><tr><td>结构</td><td><code>RuleManager.register2Property:107</code> 观察者模式；DataSource 家族产 property；TokenClient/Server 管集群</td></tr><tr><td>关键实现</td><td>规则更新 = 整体替换 + 重建 Map；<code>readSource:137</code> 全量覆盖；<code>requestToken:36</code> 集群裁决</td></tr><tr><td>并发</td><td>换 property 原子；TokenServer 单点统计、客户端 fail-open 回退本地</td></tr><tr><td>协议</td><td>dataId 约定 <code>应用-规则类型.json</code>；集群规则按 <code>flowId</code> 全局唯一</td></tr><tr><td>陷阱</td><td>嵌入 TokenServer 是单点；dashboard 断线不限流；高 QPS 下集群 RTT 是损耗</td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“规则走 property 观察者、远程全量替换；集群限流先问 TokenServer，问不到退回本地。”</em></p>
+<hr>
+<h2 id="附学习路线与复习卡汇总">附：学习路线与复习卡汇总</h2>
+<h3 id="建议学习顺序15-讲时">建议学习顺序（15 讲时）</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>阶段</th><th>内容</th><th>时长建议</th><th>产出</th></tr></thead><tbody><tr><td>第 1 天</td><td>第一、二讲（责任链 + 统计）</td><td>4h</td><td>默写 slot 顺序与理由</td></tr><tr><td>第 3 天</td><td>第三讲（限流三种 controller）</td><td>3h</td><td>说清匀速与预热差异</td></tr><tr><td>第 7 天</td><td>第四讲（熔断状态机）</td><td>3h</td><td>画出三态转换与半开探测</td></tr><tr><td>第 14 天</td><td>第五、六讲（系统/热点/集群）</td><td>4h</td><td>给出生产规则配置清单</td></tr></tbody></table>
+<h3 id="复习卡遮答案自测">复习卡（遮答案自测）</h3>
+<ol>
+<li><code>SphU.entry</code> 的三道闸是什么？各自的放行理由？</li>
+<li>slot 默认顺序（写得出 order 值）？为什么 Statistic 在规则前？</li>
+<li><code>chainMap</code> 为什么用整体换 Map 而不是 CHM？</li>
+<li><code>LeapArray</code> 怎么算桶下标？并发建桶怎么解决？时钟回拨怎么办？</li>
+<li>QPS 在源码里怎么算的（分子分母）？</li>
+<li>三种限流 controller 的差异与适用场景？</li>
+<li><code>WarmUpController</code> 前几秒的阈值是多少？</li>
+<li>匀速排队超限时业务线程在干什么？</li>
+<li>熔断三态转换条件？半开放几个请求？</li>
+<li>慢调用比例的分子分母？<code>minRequestAmount</code> 防什么？</li>
+<li>为什么 <code>BlockException</code> 不算异常熔断？</li>
+<li>BBR 那行的公式含义？</li>
+<li>系统规则为什么只拦 <code>EntryType.IN</code>？</li>
+<li>热点参数限流为什么不能用于高基数字段？</li>
+<li>规则热更的机制？TokenServer 挂了会怎样？</li>
+</ol>
+<h3 id="六讲记忆钩子串烧">六讲记忆钩子串烧</h3>
+<p><em>“三道闸放行为王，统计先行、系统优先、熔断垫后”</em> → <em>“时间戳算下标、CAS 换桶、LongAdder 记账”</em> → <em>“快速失败拒、冷启动爬、匀速睡”</em> → <em>“熔断三态，半开一箭定生死”</em> → <em>“系统保护看全局入口，BBR 只放进最优并发”</em> → <em>“规则全量替换，集群先问 Server、问不到退回本地”</em></p>
+<hr>
+<h2 id="涉及文件索引">涉及文件索引</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>模块</th><th>文件</th><th>本笔记引用次数</th></tr></thead><tbody><tr><td>core</td><td><code>sentinel-core/src/main/java/com/alibaba/csp/sentinel/CtSph.java</code></td><td>高</td></tr><tr><td>core</td><td><code>.../Constants.java</code>（order 常量、MAX_CONTEXT_NAME_SIZE）</td><td>高</td></tr><tr><td>core</td><td><code>.../slotchain/DefaultSlotChainBuilder.java</code>、<code>.../slotchain/AbstractLinkedProcessorSlot.java</code>、<code>.../slotchain/ProcessorSlotChain.java</code></td><td>高</td></tr><tr><td>core</td><td><code>.../slots/DefaultSlotChainBuilder.java</code>、<code>.../slots/nodeselector/NodeSelectorSlot.java</code>、<code>.../slots/clusterbuilder/ClusterBuilderSlot.java</code>、<code>.../slots/logger/LogSlot.java</code></td><td>高</td></tr><tr><td>core</td><td><code>.../slots/statistic/StatisticSlot.java</code>、<code>.../slots/statistic/base/LeapArray.java</code>、<code>.../slots/statistic/metric/ArrayMetric.java</code></td><td>高</td></tr><tr><td>core</td><td><code>.../node/StatisticNode.java</code>、<code>.../node/DefaultNode.java</code>、<code>.../node/ClusterNode.java</code>、<code>.../node/Node.java</code></td><td>高</td></tr><tr><td>core</td><td><code>.../slots/block/flow/FlowSlot.java</code>、<code>.../FlowRuleChecker.java</code>、<code>.../FlowRule.java</code></td><td>高</td></tr><tr><td>core</td><td><code>.../slots/block/flow/controller/{DefaultController,WarmUpController,ThrottlingController,TrafficShapingController}.java</code></td><td>高</td></tr><tr><td>core</td><td><code>.../slots/block/degrade/DegradeSlot.java</code>、<code>.../circuitbreaker/{ResponseTimeCircuitBreaker,ExceptionCircuitBreaker,AbstractCircuitBreaker}.java</code>、<code>.../DefaultCircuitBreakerRuleManager.java</code></td><td>高</td></tr><tr><td>core</td><td><code>.../slots/system/SystemSlot.java</code>、<code>.../SystemRuleManager.java</code></td><td>高</td></tr><tr><td>core</td><td><code>.../slots/block/authority/AuthoritySlot.java</code></td><td>中</td></tr><tr><td>core</td><td><code>.../cluster/TokenService.java</code>、<code>.../cluster/client/ClusterTokenClient.java</code>、<code>.../cluster/server/DefaultEmbeddedTokenServer.java</code></td><td>中</td></tr><tr><td>extension</td><td><code>sentinel-extension/sentinel-parameter-flow-control/.../ParamFlowSlot.java</code></td><td>中</td></tr><tr><td>extension</td><td><code>sentinel-extension/sentinel-extension/sentinel-datasource-nacos/src/main/java/com/alibaba/csp/sentinel/datasource/nacos/NacosDataSource.java</code>、<code>sentinel-datasource-zookeeper</code>/<code>apollo</code>/<code>redis</code></td><td>中</td></tr><tr><td>adapter</td><td><code>sentinel-adapter/</code>（spring-webmvc、dubbo、grpc、reactor 等）</td><td>低</td></tr><tr><td>cluster</td><td><code>sentinel-cluster/sentinel-cluster-server-default/.../DefaultEmbeddedTokenServer.java</code>、<code>sentinel-cluster-client-default/</code></td><td>中</td></tr><tr><td>dashboard</td><td><code>sentinel-dashboard/</code>（规则 CRUD + 监控展示）</td><td>低</td></tr></tbody></table>  </div> <div class="post-nav"> <span><a href="/agones/">← Agones 源码深读笔记</a></span> <span><a href="/distributed-tx/">分布式事务（Seata）源码深度学习笔记 →</a></span> </div> </article>  </main> <footer class="site-footer"> <div class="inner"> <div class="foot-brand"> <span class="brand-mark">&lt;/&gt;</span> <b>源码深读</b> <span>逐文件、逐函数地读源码，结论都带 文件:行号</span> </div> <div class="foot-links"> <a href="/#principles">原理速查</a> <a href="/animations/">动画</a> <a href="/categories/">分类</a> <a href="/tags/">标签</a> <a href="https://github.com/gycxxx/gycxxx.github.io">GitHub</a> </div> <p class="foot-note">由 Astro 静态生成 · 内容以 Markdown 源码笔记为唯一事实源</p> </div> </footer> </body></html> <script type="module" src="/_astro/PostLayout.astro_astro_type_script_index_0_lang.B4vzteL_.js"></script>

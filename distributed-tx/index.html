@@ -1,0 +1,1144 @@
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>分布式事务（Seata）源码深度学习笔记 · 源码深读</title><meta name="description" content="源码级技术笔记：中间件、Spring、Java、存储、云原生与 RAG"><link rel="icon" href="data:,"><link rel="stylesheet" href="/_astro/aqs-lock.BTSF5agR.css"></head> <body> <header class="site-header"> <div class="inner"> <a class="brand" href="/"> <span class="brand-mark">&lt;/&gt;</span> <span class="brand-name">源码深读</span> </a> <nav class="site-nav"> <a href="/" class> 首页 </a><a href="/#principles" class> 原理速查 </a><a href="/animations/" class> 动画 </a><a href="/categories/" class> 分类 </a><a href="/tags/" class> 标签 </a> <a class="nav-gh" href="https://github.com/gycxxx/gycxxx.github.io">GitHub</a> </nav> </div> </header> <main class="main">  <article class="post"> <div class="crumb"> <a href="/">首页</a>  / <a href="/categories/%E4%B8%AD%E9%97%B4%E4%BB%B6/">中间件</a>  </div> <div class="post-head"> <h1>分布式事务（Seata）源码深度学习笔记</h1> <div class="page-meta"> <time datetime="2026-10-19T00:00:00.000Z">2026-10-19</time>  · <a class="chip" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/">分布式事务</a>  <a class="chip" href="/tags/Seata/">Seata</a>  <a class="chip" href="/tags/AT/">AT</a>  <a class="chip" href="/tags/TCC/">TCC</a>  <a class="chip" href="/tags/%E6%BA%90%E7%A0%81/">源码</a>  </div> </div> <nav class="toc"> <div class="toc-title">目录</div> <ol> <li class="d2"> <a href="#目录">目录</a> </li><li class="d2"> <a href="#〇全景地图">〇、全景地图</a> </li><li class="d2"> <a href="#速览六讲各自做了什么先看这个再进细节">速览：六讲各自做了什么（先看这个再进细节）</a> </li><li class="d2"> <a href="#面试速通分布式事务高频问题一页纸">面试速通：分布式事务高频问题一页纸</a> </li><li class="d3"> <a href="#高频-qa先结论">高频 Q&amp;A（先结论）</a> </li><li class="d3"> <a href="#易错点最容易讲错的-8-条">易错点（最容易讲错的 8 条）</a> </li><li class="d3"> <a href="#数值速记">数值速记</a> </li><li class="d2"> <a href="#第一讲全局图景与-tm--一个-globaltransactional-的一生">第一讲：全局图景与 TM —— 一个 @GlobalTransactional 的一生</a> </li><li class="d3"> <a href="#11-拦截器注解只是入口">1.1 拦截器：注解只是入口</a> </li><li class="d3"> <a href="#12-transactionaltemplate七种传播性--五步骨架">1.2 TransactionalTemplate：七种传播性 + 五步骨架</a> </li><li class="d3"> <a href="#13-defaultglobaltransaction角色决定行为">1.3 DefaultGlobalTransaction：角色决定行为</a> </li><li class="d3"> <a href="#14-一条完整链路带状态变迁">1.4 一条完整链路（带状态变迁）</a> </li><li class="d3"> <a href="#15-本讲小结">1.5 本讲小结</a> </li><li class="d2"> <a href="#第二讲tc-协调核心--defaultcoordinator--defaultcore--globalsession">第二讲：TC 协调核心 —— DefaultCoordinator / DefaultCore / GlobalSession</a> </li><li class="d3"> <a href="#21-两个类的分工">2.1 两个类的分工</a> </li><li class="d3"> <a href="#22-状态机globalstatus-的一生">2.2 状态机：GlobalStatus 的一生</a> </li><li class="d3"> <a href="#23-五个定时任务failure-恢复的全部机关">2.3 五个定时任务：failure 恢复的全部机关</a> </li><li class="d3"> <a href="#24-分支注册与全局锁">2.4 分支注册与全局锁</a> </li><li class="d3"> <a href="#25-本讲小结">2.5 本讲小结</a> </li><li class="d2"> <a href="#第三讲at-模式--datasourceproxy-与-undo_log-两阶段">第三讲：AT 模式 —— DataSourceProxy 与 undo_log 两阶段</a> </li><li class="d3"> <a href="#31-代理链从-datasource-到-statement-的五层包装">3.1 代理链：从 DataSource 到 Statement 的五层包装</a> </li><li class="d3"> <a href="#32-一阶段前镜像--执行--后镜像--undo_log">3.2 一阶段：前镜像 → 执行 → 后镜像 → undo_log</a> </li><li class="d3"> <a href="#33-本地提交register--flushundologs--commit">3.3 本地提交：register + flushUndoLogs + commit</a> </li><li class="d3"> <a href="#34-二阶段tc-指令--rm-执行">3.4 二阶段：TC 指令 → RM 执行</a> </li><li class="d3"> <a href="#35-本讲小结">3.5 本讲小结</a> </li><li class="d2"> <a href="#第四讲tcc-模式与-fence-防悬挂">第四讲：TCC 模式与 fence 防悬挂</a> </li><li class="d3"> <a href="#41-tcc-的三个方法与被拦截的只有-try">4.1 TCC 的三个方法与被拦截的只有 Try</a> </li><li class="d3"> <a href="#42-fence一张表解决三个问题">4.2 fence：一张表解决三个问题</a> </li><li class="d3"> <a href="#43-和-at-的对比选型依据">4.3 和 AT 的对比（选型依据）</a> </li><li class="d3"> <a href="#44-本讲小结">4.4 本讲小结</a> </li><li class="d2"> <a href="#第五讲saga-状态机与-xa-模式">第五讲：Saga 状态机与 XA 模式</a> </li><li class="d3"> <a href="#51-sagajson-定义的状态机">5.1 Saga：JSON 定义的状态机</a> </li><li class="d3"> <a href="#52-xa走数据库标准协议">5.2 XA：走数据库标准协议</a> </li><li class="d3"> <a href="#53-本讲小结">5.3 本讲小结</a> </li><li class="d2"> <a href="#第六讲存储与集群--sessionmanager--lockmanager--raft">第六讲：存储与集群 —— SessionManager / LockManager / Raft</a> </li><li class="d3"> <a href="#61-sessionmanager-家族同一抽象四种存储">6.1 SessionManager 家族：同一抽象四种存储</a> </li><li class="d3"> <a href="#62-三种部署形态">6.2 三种部署形态</a> </li><li class="d3"> <a href="#63-raftcoordinator多-tc-的协调者">6.3 RaftCoordinator：多 TC 的协调者</a> </li><li class="d3"> <a href="#64-本讲小结">6.4 本讲小结</a> </li><li class="d2"> <a href="#附学习路线与复习卡汇总">附：学习路线与复习卡汇总</a> </li><li class="d3"> <a href="#建议学习顺序15-讲时">建议学习顺序（15 讲时）</a> </li><li class="d3"> <a href="#复习卡遮答案自测">复习卡（遮答案自测）</a> </li><li class="d3"> <a href="#六讲记忆钩子串烧">六讲记忆钩子串烧</a> </li><li class="d2"> <a href="#涉及文件索引">涉及文件索引</a> </li> </ol> </nav> <div class="markdown-body">  <blockquote>
+<p>基于对 Apache Seata 源码（<code>org.apache.seata</code> 包名，已完成 Apache 捐赠迁移）的逐文件精读整理而成。</p>
+<p>源码位于 <code>tm/</code>（TransactionManager）、<code>rm/</code>（ResourceManager）、<code>rm-datasource/</code>（AT 模式数据源代理）、<code>tcc/</code>（TCC 模式）、<code>saga/</code>（Saga 状态机）、<code>integration-tx-api/</code>（注解与拦截器）、<code>server/</code>（TC 事务协调器）。</p>
+<p>阅读顺序即学习顺序：全局图景与 TM → TC 协调核心 → AT 模式 → TCC 与 fence → Saga 与 XA → 存储与集群。</p>
+<p>所有结论均标注了源文件位置（格式 <code>模块/相对路径:行号</code>），行号均经 Read/Grep 实际核对。</p>
+<p><strong>版本基线</strong>：commit <code>50ca2d9</code>（<code>test: isolate Redis registry background tasks between fixtures (#8307)</code>）。
+<strong>注意</strong>：server 模块的 raft 集群部分仍在 <code>io.seata.server.cluster.raft</code> 旧包名下（迁移未完成），引用时以实际文件为准。</p>
+</blockquote>
+<hr>
+<h2 id="目录">目录</h2>
+<ul>
+<li><a href="#%E3%80%87%E5%85%A8%E6%99%AF%E5%9C%B0%E5%9B%BE">〇、全景地图</a></li>
+<li><a href="#%E9%80%9F%E8%A7%88%E5%85%AD%E8%AE%B2%E5%90%84%E8%87%AA%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88%E5%85%88%E7%9C%8B%E8%BF%99%E4%B8%AA%E5%86%8D%E8%BF%9B%E7%BB%86%E8%8A%82">速览：六讲各自做了什么（先看这个再进细节）</a></li>
+<li><a href="#%E9%9D%A2%E8%AF%95%E9%80%9F%E9%80%9A%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1%E9%AB%98%E9%A2%91%E9%97%AE%E9%A2%98%E4%B8%80%E9%A1%B5%E7%BA%B8">面试速通：分布式事务高频问题一页纸</a></li>
+<li><a href="#%E7%AC%AC%E4%B8%80%E8%AE%B2%E5%85%A8%E5%B1%80%E5%9B%BE%E6%99%AF%E4%B8%8E-tm--%E4%B8%80%E4%B8%AA-globaltransactional-%E7%9A%84%E4%B8%80%E7%94%9F">第一讲：全局图景与 TM —— 一个 @GlobalTransactional 的一生</a></li>
+<li><a href="#%E7%AC%AC%E4%BA%8C%E8%AE%B2tc-%E5%8D%8F%E8%B0%83%E6%A0%B8%E5%BF%83--defaultcoordinator--defaultcore--globalsession">第二讲：TC 协调核心 —— DefaultCoordinator / DefaultCore / GlobalSession</a></li>
+<li><a href="#%E7%AC%AC%E4%B8%89%E8%AE%B2at-%E6%A8%A1%E5%BC%8F--datasourceproxy-%E4%B8%8E-undo_log-%E4%B8%A4%E9%98%B6%E6%AE%B5">第三讲：AT 模式 —— DataSourceProxy 与 undo_log 两阶段</a></li>
+<li><a href="#%E7%AC%AC%E5%9B%9B%E8%AE%B2tcc-%E6%A8%A1%E5%BC%8F%E4%B8%8E-fence-%E9%98%B2%E6%82%AC%E6%8C%82">第四讲：TCC 模式与 fence 防悬挂</a></li>
+<li><a href="#%E7%AC%AC%E4%BA%94%E8%AE%B2saga-%E7%8A%B6%E6%80%81%E6%9C%BA%E4%B8%8E-xa-%E6%A8%A1%E5%BC%8F">第五讲：Saga 状态机与 XA 模式</a></li>
+<li><a href="#%E7%AC%AC%E5%85%AD%E8%AE%B2%E5%AD%98%E5%82%A8%E4%B8%8E%E9%9B%86%E7%BE%A4--sessionmanager--lockmanager--raft">第六讲：存储与集群 —— SessionManager / LockManager / Raft</a></li>
+<li><a href="#%E9%99%84%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E4%B8%8E%E5%A4%8D%E4%B9%A0%E5%8D%A1%E6%B1%87%E6%80%BB">附：学习路线与复习卡汇总</a></li>
+<li><a href="#%E6%B6%89%E5%8F%8A%E6%96%87%E4%BB%B6%E7%B4%A2%E5%BC%95">涉及文件索引</a></li>
+</ul>
+<hr>
+<h2 id="〇全景地图">〇、全景地图</h2>
+<p>Seata 的分布式事务可以压缩成<strong>三个角色 + 一张状态机 + 四种分支模式</strong>：</p>
+<ul>
+<li><strong>TM（Transaction Manager，事务发起方）</strong>：<code>tm/</code> 模块。解析 <code>@GlobalTransactional</code> 注解（<code>GlobalTransactionalInterceptorHandler</code>），按传播性决定”加入还是新建”（<code>TransactionalTemplate</code>），向 TC 发 <code>GlobalBegin</code>，业务结束后发 <code>GlobalCommit</code>/<code>GlobalRollback</code>。</li>
+<li><strong>RM（Resource Manager，资源管理方）</strong>：<code>rm/</code> + <code>rm-datasource/</code>。拦截 JDBC 连接（AT）、拦截 TCC 方法、持有 XA 资源；一阶段干活时向 TC 注册分支（<code>BranchRegister</code>）拿 <code>branchId</code>，二阶段等 TC 指令做 <code>BranchCommit</code>/<code>BranchRollback</code>。</li>
+<li><strong>TC（Transaction Coordinator，事务协调者）</strong>：<code>server/</code> 模块。持有全局事务会话（<code>GlobalSession</code>），驱动 20+ 状态的流转，管理分支注册、全局锁、超时检查、失败重试；持久化到 file/db/redis/raft。</li>
+</ul>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>┌─────────────────────────── TM（业务进程内） ───────────────────────────┐</span></span>
+<span class="line"><span>│  @GlobalTransactional                                                 │</span></span>
+<span class="line"><span>│    └─ GlobalTransactionalInterceptorHandler:164 (invoke)              │</span></span>
+<span class="line"><span>│         └─ handleGlobalTransaction:188                                │</span></span>
+<span class="line"><span>│              └─ TransactionalTemplate.execute:190                     │</span></span>
+<span class="line"><span>│                   ├─ 传播性分派 REQUIRED/NESTED/REQUIRES_NEW...  :192  │</span></span>
+<span class="line"><span>│                   ├─ beginTransaction → DefaultGlobalTransaction:190   │</span></span>
+<span class="line"><span>│                   │     └─ transactionManager.begin → GlobalBeginRequest│</span></span>
+<span class="line"><span>│                   ├─ business.execute()                               │</span></span>
+<span class="line"><span>│                   ├─ commitTransaction:330 → tx.commit():300           │</span></span>
+<span class="line"><span>│                   └─ completeTransactionAfterThrowing:318 → rollback   │</span></span>
+<span class="line"><span>└────────────────────────────────────────────────────────────────────────┘</span></span>
+<span class="line"><span>              │ RPC（Netty，BatchMessage / 单条 Request）        ▲</span></span>
+<span class="line"><span>              ▼                                                  │ 回报</span></span>
+<span class="line"><span>┌─────────────────────────── TC（server/ 独立进程） ─────────────────────┐</span></span>
+<span class="line"><span>│  DefaultCoordinator（协调者门面，:759 init）                            │</span></span>
+<span class="line"><span>│    ├─ doGlobalBegin:321  ── 建 GlobalSession（Begin）                  │</span></span>
+<span class="line"><span>│    ├─ doBranchRegister:369 ── 挂 BranchSession + 抢全局锁              │</span></span>
+<span class="line"><span>│    ├─ doGlobalCommit:340 / doGlobalRollback:347                        │</span></span>
+<span class="line"><span>│    ├─ timeoutCheck:406 ───── 定时扫超时会话 → Rollbacking              │</span></span>
+<span class="line"><span>│    ├─ handleRetryRollbacking:451 / handleRetryCommitting:487           │</span></span>
+<span class="line"><span>│    ├─ handleAsyncCommitting:524 ── 一阶段成功即可异步提交               │</span></span>
+<span class="line"><span>│    └─ undoLogDelete:549 ───── 通知 RM 删 undo_log（默认保留 7 天）      │</span></span>
+<span class="line"><span>│  DefaultCore（分支模式路由，CORE_MAP:59）                               │</span></span>
+<span class="line"><span>│    └─ begin:222 / commit:237 / rollback:401 / branchRegister:105       │</span></span>
+<span class="line"><span>│  GlobalSession（:62）── xid + status + branchSessions + locks          │</span></span>
+<span class="line"><span>└────────────────────────────────────────────────────────────────────────┘</span></span>
+<span class="line"><span>              │ RPC                                              ▲</span></span>
+<span class="line"><span>              ▼                                                  │ 上报</span></span>
+<span class="line"><span>┌─────────────────────────── RM（业务进程内） ───────────────────────────┐</span></span>
+<span class="line"><span>│  AT  : DataSourceProxy:50 → ExecuteTemplate:60                          │</span></span>
+<span class="line"><span>│        → AbstractDMLBaseExecutor:97（beforeImage/afterImage/undoLog）   │</span></span>
+<span class="line"><span>│        → ConnectionProxy.commit:185 → doCommit:227 → register:267       │</span></span>
+<span class="line"><span>│  TCC : TccActionInterceptorHandler（try 方法拦截 + ActionContext 传递）  │</span></span>
+<span class="line"><span>│  XA  : ConnectionProxyXA → XAResource.prepare/commit/rollback           │</span></span>
+<span class="line"><span>│  Saga: StateMachineEngine.start:40                                      │</span></span>
+<span class="line"><span>└────────────────────────────────────────────────────────────────────────┘</span></span>
+<span class="line"><span>                     │                        │</span></span>
+<span class="line"><span>                     ▼                        ▼</span></span>
+<span class="line"><span>         storage/file（本地文件）    storage/db / storage/redis / storage/raft</span></span>
+<span class="line"><span>         （FileSessionManager       （分布式会话；raft = RaftCoordinator 多 TC</span></span>
+<span class="line"><span>          + FileLocker）             强一致复制）</span></span></code></pre>
+<p>一句话记住全景：<strong>TM 说”开始/结束”，RM 说”我干了什么/听指令回滚”，TC 说”都记下了，我说了算”</strong>。</p>
+<hr>
+<h2 id="速览六讲各自做了什么先看这个再进细节">速览：六讲各自做了什么（先看这个再进细节）</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>讲次</th><th>主题</th><th>核心类</th><th>要回答的问题</th><th>不学会怎样</th></tr></thead><tbody><tr><td>第一讲</td><td>全局图景与 TM</td><td><code>TransactionalTemplate</code></td><td><code>@GlobalTransactional</code> 怎么变成两次 RPC</td><td>只会用注解，不懂传播性与参与者</td></tr><tr><td>第二讲</td><td>TC 协调核心</td><td><code>DefaultCoordinator</code></td><td>20+ 状态怎么流转、五个定时任务各干什么</td><td>悬挂/空回滚/幂等说不清</td></tr><tr><td>第三讲</td><td>AT 模式</td><td><code>DataSourceProxy</code></td><td>前后镜像怎么生成、undo_log 怎么回滚</td><td>全局锁死锁、脏写无法解释</td></tr><tr><td>第四讲</td><td>TCC 与 fence</td><td><code>DefaultCommonFenceHandler</code></td><td>防悬挂、防空回滚、幂等的表结构</td><td>TCC 接入只会抄 demo</td></tr><tr><td>第五讲</td><td>Saga 与 XA</td><td><code>StateMachineEngine</code></td><td>长事务怎么编排、XA 和 AT 差异</td><td>选错模式背锅</td></tr><tr><td>第六讲</td><td>存储与集群</td><td><code>SessionManager</code> 家族</td><td>会话存哪、锁怎么实现、多 TC 怎么一致</td><td>生产只会单机 file 模式</td></tr></tbody></table>
+<hr>
+<h2 id="面试速通分布式事务高频问题一页纸">面试速通：分布式事务高频问题一页纸</h2>
+<h3 id="高频-qa先结论">高频 Q&#x26;A（先结论）</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>#</th><th>问题</th><th>一句话结论</th><th>出处</th></tr></thead><tbody><tr><td>1</td><td>Seata 三个角色？</td><td>TM 发起/结束全局事务；RM 管理分支资源、执行二阶段；TC 持会话、驱动状态、管全局锁</td><td><code>server/src/main/java/org/apache/seata/server/coordinator/DefaultCoordinator.java</code></td></tr><tr><td>2</td><td>XID 怎么跨服务传递？</td><td><code>RootContext</code> 的 ThreadLocal + RPC  Filter 把 xid 塞进请求头；下游 <code>RootContext.getXID()</code> 非空就是 Participant</td><td><code>tm/src/main/java/org/apache/seata/tm/api/DefaultGlobalTransaction.java:235</code></td></tr><tr><td>3</td><td>AT 一阶段做了什么？</td><td>解析 SQL → 查<strong>前镜像</strong> → 执行 → 查<strong>后镜像</strong> → 生成 undo_log → 写业务表和 undo_log <strong>同一本地事务</strong>提交 → 注册分支</td><td><code>rm-datasource/src/main/java/org/apache/seata/rm/datasource/exec/AbstractDMLBaseExecutor.java:97</code></td></tr><tr><td>4</td><td>AT 二阶段回滚原理？</td><td>TC 发 <code>BranchRollback</code> → RM 按 undo_log 的 <code>rollback_info</code> 反向生成 SQL 执行；<strong>回滚完才删 undo_log</strong>，保证可重入</td><td><code>rm-datasource/src/main/java/org/apache/seata/rm/datasource/undo/AbstractUndoLogManager.java:89</code></td></tr><tr><td>5</td><td>AT 二阶段提交做什么？</td><td>删 undo_log（异步，<code>Phase two committing</code> 阶段不做业务操作）；一阶段成功即可认为事务完成</td><td><code>server/src/main/java/org/apache/seata/server/coordinator/DefaultCoordinator.java:549</code></td></tr><tr><td>6</td><td>全局锁什么时候拿？</td><td>RM 注册分支时把 <code>lockKeys</code>（表名+主键值）报给 TC，TC 的 <code>LockManager</code> 抢先到先得；写冲突抛 <code>LockConflictException</code> 重试</td><td><code>server/src/main/java/org/apache/seata/server/storage/db/lock/DataBaseLockManager.java</code></td></tr><tr><td>7</td><td>脏写怎么防？</td><td>本地事务提交前 <code>checkLock</code> 校验全局锁——如果这行记录被别的事务的全局锁占着，本地提交直接失败</td><td><code>rm-datasource/src/main/java/org/apache/seata/rm/datasource/ConnectionProxy.java:237</code></td></tr><tr><td>8</td><td>AT 的隔离级别？</td><td><strong>读未提交（RU）</strong>——一阶段提交后别的事务就能读到未全局提交的数据；Seata 默认只加写锁，读靠 undo_log 的 <code>afterImage</code> 做补偿查询（<code>@GlobalLock</code>）</td><td>设计取舍</td></tr><tr><td>9</td><td>空回滚是什么？</td><td>TC 决定回滚但 RM 根本没收到过一阶段（没注册分支）→ RM 要能识别”这个 xid+branchId 我没见过”并不报错</td><td><code>tcc/fence</code></td></tr><tr><td>10</td><td>悬挂是什么？</td><td>RM 一阶段网络拥堵，TC 先回滚完（空回滚）， RM 的一阶段后到 → 不回滚就悬挂。fence 表靠 <code>status</code> 状态机挡住</td><td><code>integration-tx-api/src/main/java/org/apache/seata/integration/tx/api/fence/DefaultCommonFenceHandler.java:24</code></td></tr><tr><td>11</td><td>TCC 的幂等靠什么？</td><td><code>confirm/cancel</code> 必须幂等实现；fence 表记录 <code>xid+branchId+action</code> 的状态（<code>PREPARED/COMMITTED/ROLLBACKED</code>），重复调用直接返回上次结果</td><td>同上 <code>:53</code></td></tr><tr><td>12</td><td>Saga 和 TCC 差异？</td><td>TCC 三个方法都要业务写；Saga 是<strong>状态机 JSON 编排</strong>，正向服务 + 补偿服务，长事务/遗留系统友好</td><td><code>saga/seata-saga-engine/src/main/java/org/apache/seata/saga/engine/StateMachineEngine.java:29</code></td></tr><tr><td>13</td><td>XA 模式和 AT 差异？</td><td>XA 是数据库标准协议（<code>XAResource.prepare/commit</code>），<strong>业务无侵入但依赖库支持、性能差</strong>；AT 靠 undo_log 补偿，无侵入且快</td><td><code>rm-datasource/src/main/java/org/apache/seata/rm/datasource/xa/ConnectionProxyXA.java</code></td></tr><tr><td>14</td><td>TC 挂了正在跑的事务怎么办？</td><td>TC 重启后从存储 reload 会话（<code>SessionHolder.reload</code>），继续驱动到终态；RM 有 <code>report</code> 重试</td><td><code>server/src/main/java/org/apache/seata/server/session/SessionHolder.java</code></td></tr><tr><td>15</td><td><code>@GlobalTransactional</code> 传播性有哪些？</td><td>七种：<code>REQUIRED/SUPPORTS/MANDATORY/REQUIRES_NEW/NOT_SUPPORTED/NEVER/NESTED</code>，和 Spring 同名同义</td><td><code>tm/src/main/java/org/apache/seata/tm/api/TransactionalTemplate.java:192</code></td></tr><tr><td>16</td><td>参与者（Participant）能回滚吗？</td><td><strong>不能</strong>。<code>rollbackTransaction:395</code> 开头就判断 <code>role != Launcher</code> 直接忽略——只有发起方有权结束全局事务</td><td><code>tm/src/main/java/org/apache/seata/tm/api/TransactionalTemplate.java:395</code></td></tr><tr><td>17</td><td>全局事务超时了会怎样？</td><td>TC <code>timeoutCheck:406</code> 扫到超时会话 → <code>TimeoutRollbacking</code> → 逐分支回滚；RM 提交时若 TC 已判超时，<code>commit(xid)</code> 返回 <code>TimeoutRollbacking</code> 转为回滚</td><td><code>server/src/main/java/org/apache/seata/server/coordinator/DefaultCore.java:242</code></td></tr><tr><td>18</td><td>二阶段提交失败会无限重试吗？</td><td>不会。有 <code>MAX_COMMIT_RETRY_TIMEOUT</code>（<code>:165</code>）/<code>MAX_ROLLBACK_RETRY_TIMEOUT</code>（<code>:168</code>）和 <code>RETRY_DEAD_THRESHOLD</code>（<code>:177</code>），超过进人工处理（告警）</td><td><code>server/src/main/java/org/apache/seata/server/coordinator/DefaultCoordinator.java:165</code></td></tr><tr><td>19</td><td>为什么 AT 要求业务表必须有主键？</td><td>前后镜像按主键定位行；<code>isMultiPk():114</code> 还会对复合主键做特殊处理</td><td><code>rm-datasource/src/main/java/org/apache/seata/rm/datasource/exec/AbstractDMLBaseExecutor.java:114</code></td></tr><tr><td>20</td><td>批量插入为什么特殊？</td><td>批量没有 beforeImage，回滚只能按主键删；<code>InsertExecutor</code>/<code>MySQLInsertExecutor</code> 专门处理自增列和 <code>on duplicate update</code></td><td><code>rm-datasource/src/main/java/org/apache/seata/rm/datasource/exec/InsertExecutor.java</code></td></tr></tbody></table>
+<h3 id="易错点最容易讲错的-8-条">易错点（最容易讲错的 8 条）</h3>
+<ol>
+<li><strong>AT 的 undo_log 和业务 SQL 是同一个本地事务</strong>——所以业务成功 undo 必然存在，业务失败 undo 必然不存在，天然原子。</li>
+<li><strong>全局锁是 TC 端的，不是数据库行锁</strong>：TC 锁冲突只阻塞/重试写方，不阻塞读方（RU 隔离）。</li>
+<li><strong><code>GlobalCommit</code> 到 TC 时如果分支还没注册完</strong>：<code>commit()</code> 会先 <code>close()</code> 会话（<code>DefaultCore.java:246</code> 注释 “Firstly, close the session, then no more branch can be registered”），后续迟到的 <code>BranchRegister</code> 被拒——<strong>防的就是提交后还有分支进来</strong>。</li>
+<li><strong>回滚失败不等于事务结束</strong>：RM 回滚失败会 <code>report(false)</code>，TC 把分支置 <code>RollbackRetrying</code>，由 <code>handleRetryRollbacking:451</code> 定时重扫继续回滚。</li>
+<li><strong>fence 表是 TCC 的，不是 AT 的</strong>：AT 靠 undo_log 天然幂等，TCC 靠 fence 表。</li>
+<li><strong>Saga 没有”准备”阶段</strong>：服务调用直接生效，失败了才跑补偿；所以补偿必须幂等、可重入。</li>
+<li><strong>XA 模式下 prepare 后连接不能释放</strong>：<code>prepare</code> 意味着”挂起”，连接必须保持到 TC 的二阶段指令，连接池容易被占满。</li>
+<li><strong><code>undo_log_delete</code> 由 TC 通知、RM 执行</strong>（<code>DefaultCoordinator.java:549</code>）：TC 只是广播”该删了”，真正删除在 RM 本地，因为 undo_log 存在业务库。</li>
+</ol>
+<h3 id="数值速记">数值速记</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>数值</th><th>含义</th><th>出处</th></tr></thead><tbody><tr><td><code>7</code> 天</td><td>undo_log 默认保留天数</td><td><code>server/src/main/java/org/apache/seata/server/coordinator/DefaultCoordinator.java:557</code></td></tr><tr><td><code>5000</code></td><td>分支异步队列大小 <code>DEFAULT_BRANCH_ASYNC_QUEUE_SIZE</code></td><td><code>DefaultCoordinator.java:158</code></td></tr><tr><td><code>2 × CPU</code></td><td>分支异步线程池大小</td><td><code>DefaultCoordinator.java:163</code></td></tr><tr><td><code>0</code></td><td><code>ALWAYS_RETRY_BOUNDARY</code>（无限重试标记）</td><td><code>DefaultCoordinator.java:153</code></td></tr><tr><td><code>5000ms</code></td><td>定时任务关闭最大等待</td><td><code>DefaultCoordinator.java:108</code></td></tr></tbody></table>
+<hr>
+<h2 id="第一讲全局图景与-tm--一个-globaltransactional-的一生">第一讲：全局图景与 TM —— 一个 @GlobalTransactional 的一生</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：业务方法上加一个 <code>@GlobalTransactional</code>，到 TC 再回来，中间到底发生了几次 RPC、状态怎么变？</p>
+</blockquote>
+<h3 id="11-拦截器注解只是入口">1.1 拦截器：注解只是入口</h3>
+<p><code>@GlobalTransactional</code> 的织入由 <code>GlobalTransactionalInterceptorHandler</code>（<code>integration-tx-api/</code>）完成，核心分派：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// integration-tx-api/src/main/java/org/apache/seata/integration/tx/api/interceptor/handler/GlobalTransactionalInterceptorHandler.java:164</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#6F42C1"> handleGlobalTransaction</span><span style="color:#24292E">(invocation, transactional);</span></span>
+<span class="line"><span style="color:#6A737D">// :188</span></span>
+<span class="line"><span style="color:#24292E">Object </span><span style="color:#6F42C1">handleGlobalTransaction</span><span style="color:#24292E">(...) {</span></span>
+<span class="line"><span style="color:#6A737D">    // 1. 读事务属性（超时、传播性、回滚规则）</span></span>
+<span class="line"><span style="color:#6A737D">    // 2. 构造 TransactionalTemplate</span></span>
+<span class="line"><span style="color:#6A737D">    // 3. template.execute(business)</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>注意区分两个 handler：<code>GlobalTransactionalInterceptorHandler</code>（全局事务）和 <code>TccActionInterceptorHandler</code>（TCC 的 try 方法），<code>CombineTransactionalInterceptorHandler</code> 管两者叠加的场景。</p>
+<h3 id="12-transactionaltemplate七种传播性--五步骨架">1.2 TransactionalTemplate：七种传播性 + 五步骨架</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// tm/src/main/java/org/apache/seata/tm/api/TransactionalTemplate.java:190（节选）</span></span>
+<span class="line"><span style="color:#6A737D">    // 1.2 Handle the transaction propagation.</span></span>
+<span class="line"><span style="color:#24292E">    Propagation propagation </span><span style="color:#D73A49">=</span><span style="color:#24292E"> txInfo.</span><span style="color:#6F42C1">getPropagation</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">    switch</span><span style="color:#24292E"> (propagation) {</span></span>
+<span class="line"><span style="color:#D73A49">        case</span><span style="color:#24292E"> NOT_SUPPORTED</span><span style="color:#D73A49">:</span><span style="color:#24292E">  tx.</span><span style="color:#6F42C1">suspend</span><span style="color:#24292E">(</span><span style="color:#005CC5">false</span><span style="color:#24292E">); </span><span style="color:#D73A49">return</span><span style="color:#24292E"> business.</span><span style="color:#6F42C1">execute</span><span style="color:#24292E">();   </span><span style="color:#6A737D">// 挂起后裸跑</span></span>
+<span class="line"><span style="color:#D73A49">        case</span><span style="color:#24292E"> REQUIRES_NEW</span><span style="color:#D73A49">:</span><span style="color:#24292E">   suspend </span><span style="color:#D73A49">+</span><span style="color:#24292E"> tx </span><span style="color:#D73A49">=</span><span style="color:#24292E"> GlobalTransactionContext.</span><span style="color:#6F42C1">createNew</span><span style="color:#24292E">();  </span><span style="color:#6A737D">// 挂旧起新</span></span>
+<span class="line"><span style="color:#D73A49">        case</span><span style="color:#24292E"> SUPPORTS</span><span style="color:#D73A49">:</span><span style="color:#6F42C1">       notExistingTransaction</span><span style="color:#24292E">(tx) </span><span style="color:#D73A49">?</span><span style="color:#24292E"> business.</span><span style="color:#6F42C1">execute</span><span style="color:#24292E">() </span><span style="color:#D73A49">:</span><span style="color:#24292E"> 继续;</span></span>
+<span class="line"><span style="color:#D73A49">        case</span><span style="color:#24292E"> REQUIRED</span><span style="color:#D73A49">:</span><span style="color:#24292E">       tx </span><span style="color:#D73A49">=</span><span style="color:#24292E"> GlobalTransactionContext.</span><span style="color:#6F42C1">getCurrentOrCreate</span><span style="color:#24292E">();   </span><span style="color:#6A737D">// 最常用</span></span>
+<span class="line"><span style="color:#D73A49">        case</span><span style="color:#24292E"> NEVER</span><span style="color:#D73A49">:</span><span style="color:#6F42C1">          existingTransaction</span><span style="color:#24292E">(tx) </span><span style="color:#D73A49">?</span><span style="color:#D73A49"> throw</span><span style="color:#D73A49"> :</span><span style="color:#24292E"> business.</span><span style="color:#6F42C1">execute</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">        case</span><span style="color:#24292E"> MANDATORY</span><span style="color:#D73A49">:</span><span style="color:#6F42C1">      notExistingTransaction</span><span style="color:#24292E">(tx) </span><span style="color:#D73A49">?</span><span style="color:#D73A49"> throw</span><span style="color:#D73A49"> :</span><span style="color:#24292E"> 继续;</span></span>
+<span class="line"><span style="color:#D73A49">        case</span><span style="color:#24292E"> NESTED</span><span style="color:#D73A49">:</span><span style="color:#24292E">         ...</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">    ...</span></span>
+<span class="line"><span style="color:#D73A49">    try</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6F42C1">        beginTransaction</span><span style="color:#24292E">(txInfo, tx);        </span><span style="color:#6A737D">// 2. Launcher 才发 GlobalBegin</span></span>
+<span class="line"><span style="color:#24292E">        Object rs </span><span style="color:#D73A49">=</span><span style="color:#24292E"> business.</span><span style="color:#6F42C1">execute</span><span style="color:#24292E">();      </span><span style="color:#6A737D">// 3. 业务</span></span>
+<span class="line"><span style="color:#6F42C1">        commitTransaction</span><span style="color:#24292E">(tx, txInfo);       </span><span style="color:#6A737D">// 4. 发 GlobalCommit/GlobalRollback</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#24292E"> rs;</span></span>
+<span class="line"><span style="color:#24292E">    } </span><span style="color:#D73A49">finally</span><span style="color:#24292E"> { </span><span style="color:#6F42C1">resumeGlobalLockConfig</span><span style="color:#24292E">(...); }</span></span></code></pre>
+<p>五步骨架：<strong>传播性分派 → begin → business → commit/rollback → 清理</strong>。Participant（XID 非空）在 <code>beginTransaction</code> 里啥也不发（<code>tm/src/main/java/org/apache/seata/tm/api/DefaultGlobalTransaction.java:232</code> 注释 “Participants don’t initiate transactions”），只挂 hook。</p>
+<h3 id="13-defaultglobaltransaction角色决定行为">1.3 DefaultGlobalTransaction：角色决定行为</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// tm/src/main/java/org/apache/seata/tm/api/DefaultGlobalTransaction.java:235</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> begin</span><span style="color:#24292E">(</span><span style="color:#D73A49">int</span><span style="color:#24292E"> timeout, String name) throws TransactionException {</span></span>
+<span class="line"><span style="color:#005CC5">    this</span><span style="color:#24292E">.createTime </span><span style="color:#D73A49">=</span><span style="color:#24292E"> System.</span><span style="color:#6F42C1">currentTimeMillis</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#6A737D">    // Participants don't initiate transactions, they just join existing ones</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (role </span><span style="color:#D73A49">!=</span><span style="color:#24292E"> GlobalTransactionRole.Launcher) {</span></span>
+<span class="line"><span style="color:#6F42C1">        assertXIDNotNull</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">        ...</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#24292E">;                       </span><span style="color:#6A737D">// ★ 参与者直接返回，不发 RPC</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">    ...</span></span>
+<span class="line"><span style="color:#24292E">    xid </span><span style="color:#D73A49">=</span><span style="color:#24292E"> transactionManager.</span><span style="color:#6F42C1">begin</span><span style="color:#24292E">(applicationId, transactionServiceGroup, name, timeout);</span></span>
+<span class="line"><span style="color:#24292E">    RootContext.</span><span style="color:#6F42C1">bind</span><span style="color:#24292E">(xid);             </span><span style="color:#6A737D">// 绑进 ThreadLocal，后续 RM 靠它取</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p><code>commit():300</code> 和 <code>rollback():387</code> 同样先判角色——<strong>Participant 调 commit/rollback 是静默忽略的</strong>（<code>TransactionalTemplate.rollbackTransaction:395</code> 开头那段），这是”只有 launcher 能结束全局事务”的源码级保证。</p>
+<h3 id="14-一条完整链路带状态变迁">1.4 一条完整链路（带状态变迁）</h3>
+<p>以 <code>订单服务 → 库存服务</code> 为例：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>① 订单服务 @GlobalTransactional 方法进入</span></span>
+<span class="line"><span>   TM: TransactionalTemplate → GlobalBegin</span></span>
+<span class="line"><span>   TC: DefaultCore.begin:222 → GlobalSession(Begin) + 分配 xid</span></span>
+<span class="line"><span>       SessionHolder 持久化（file/db/redis/raft）</span></span>
+<span class="line"><span>② 订单服务本地写订单（DataSourceProxy 拦截）</span></span>
+<span class="line"><span>   RM: beforeImage → INSERT → afterImage → undo_log → 本地事务提交</span></span>
+<span class="line"><span>   RM: ConnectionProxy.doCommit:227 → register():267 → BranchRegister(xid, lockKeys)</span></span>
+<span class="line"><span>   TC: doBranchRegister:369 → 挂 BranchSession + LockManager 抢锁</span></span>
+<span class="line"><span>③ 订单服务 RPC 调库存服务（Filter 透传 xid）</span></span>
+<span class="line"><span>   库存服务 RootContext 有 xid → Participant，不 begin</span></span>
+<span class="line"><span>   库存服务本地扣减 → register 分支</span></span>
+<span class="line"><span>④ 订单服务业务正常返回</span></span>
+<span class="line"><span>   TM: commitTransaction → DefaultGlobalTransaction.commit():300</span></span>
+<span class="line"><span>       → GlobalCommit RPC</span></span>
+<span class="line"><span>   TC: DefaultCore.commit:237 → close() → Committing</span></span>
+<span class="line"><span>       → 逐分支 BranchCommit（异步场景 asyncCommit）</span></span>
+<span class="line"><span>       → GlobalSession 转 Committed → 删会话 → undoLogDelete 广播</span></span>
+<span class="line"><span>⑤ 若 ② 或 ③ 抛异常</span></span>
+<span class="line"><span>   TM: completeTransactionAfterThrowing:318 → 匹配 RollbackRule</span></span>
+<span class="line"><span>       → tx.rollback() → GlobalRollback</span></span>
+<span class="line"><span>   TC: 转 Rollbacking → 逐分支 BranchRollback</span></span>
+<span class="line"><span>       → RM 按 undo_log 反向 SQL 恢复 → report</span></span>
+<span class="line"><span>       → Rollbacked → 删会话</span></span></code></pre>
+<h3 id="15-本讲小结">1.5 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>结论</th></tr></thead><tbody><tr><td>结构</td><td><code>@GlobalTransactional</code> → <code>GlobalTransactionalInterceptorHandler:164</code> → <code>TransactionalTemplate:190</code> → <code>DefaultGlobalTransaction:235</code></td></tr><tr><td>关键实现</td><td>五步骨架：传播性 → begin → business → commit/rollback → finally 清理；Participant 全程不发 begin</td></tr><tr><td>并发</td><td>XID 存 <code>RootContext</code> ThreadLocal；Participant 与 Launcher 的行为差异是源码级 if 判断</td></tr><tr><td>协议</td><td>正常 2 次 RPC（Begin + Commit），异常多 1 次（Rollback）；RM 每分支 2 次（Register + Report/Commit）</td></tr><tr><td>陷阱</td><td><code>NESTED</code> 在 Seata 里是”嵌套全局事务”（部分支持），别和 Spring 的本地嵌套混淆</td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“Launcher 发号施令，Participant 只管干活；一次全局事务 = Begin + N×Register + Commit/Rollback。”</em></p>
+<hr>
+<hr>
+<h2 id="第二讲tc-协调核心--defaultcoordinator--defaultcore--globalsession">第二讲：TC 协调核心 —— DefaultCoordinator / DefaultCore / GlobalSession</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：TC 凭什么当”协调者”？20+ 个状态是谁在拨弄？五个定时任务在 failure 恢复里各扮演什么角色？</p>
+</blockquote>
+<h3 id="21-两个类的分工">2.1 两个类的分工</h3>
+<p><code>DefaultCoordinator</code>（<code>server/src/main/java/org/apache/seata/server/coordinator/DefaultCoordinator.java</code>，930 行）是<strong>门面 + 定时任务</strong>：它处理 RPC 入口（<code>doGlobalBegin:321</code>/<code>doBranchRegister:369</code>/<code>doGlobalCommit:340</code>/<code>doGlobalRollback:347</code>），并持有五个定时线程池：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// DefaultCoordinator.java:182-200</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> ScheduledThreadPoolExecutor retryRollbacking </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ...   </span><span style="color:#6A737D">// 回滚重试</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> ScheduledThreadPoolExecutor retryCommitting  </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ...   </span><span style="color:#6A737D">// 提交重试</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> ScheduledThreadPoolExecutor asyncCommitting   </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ...   </span><span style="color:#6A737D">// 异步提交</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> ScheduledThreadPoolExecutor timeoutCheck      </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ...   </span><span style="color:#6A737D">// 超时检查</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> ScheduledThreadPoolExecutor undoLogDelete     </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ...   </span><span style="color:#6A737D">// undo_log 删除</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> ScheduledThreadPoolExecutor syncProcessing    </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ...   </span><span style="color:#6A737D">// raft 同步</span></span></code></pre>
+<p><code>DefaultCore</code>（<code>DefaultCore.java</code>，552 行）是<strong>分支模式路由</strong>：<code>CORE_MAP</code>（<code>:59</code>）按 <code>BranchType</code>（AT/TCC/SAGA/XA）找到对应的 <code>AbstractCore</code> 实现，把 <code>branchCommit/branchRollback/branchRegister</code> 分发下去。这种设计让新增一种事务模式不用改 TC 主流程。</p>
+<h3 id="22-状态机globalstatus-的一生">2.2 状态机：GlobalStatus 的一生</h3>
+<p><code>GlobalSession</code>（<code>server/src/main/java/org/apache/seata/server/session/GlobalSession.java</code>）持有一个 <code>volatile GlobalStatus status</code>（<code>:97</code>），核心状态流转：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>Begin ──commit──► Committing ──全部成功──► Committed（终态，删会话）</span></span>
+<span class="line"><span>  │                  │</span></span>
+<span class="line"><span>  │                  └─有分支失败─► CommitRetrying ──重试──► Committed</span></span>
+<span class="line"><span>  │</span></span>
+<span class="line"><span>  ├──rollback──► Rollbacking ──全部成功──► Rollbacked（终态，删会话）</span></span>
+<span class="line"><span>  │                  │</span></span>
+<span class="line"><span>  │                  └─有分支失败─► RollbackRetrying ──重试──► Rollbacked</span></span>
+<span class="line"><span>  │</span></span>
+<span class="line"><span>  └──timeoutCheck──► TimeoutRollbacking ──► TimeoutRollbacked</span></span>
+<span class="line"><span>                     （超时回滚，RM 侧收到 TimeoutRollbacking 后</span></span>
+<span class="line"><span>                       未提交的分支必须放弃提交转为回滚）</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>AsyncCommitting ──► Committed（一阶段成功即最终一致，批量异步删 undo_log）</span></span></code></pre>
+<p><code>commit()</code> 的一个关键细节（<code>DefaultCore.java:246</code>）：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// DefaultCore.java:246-249</span></span>
+<span class="line"><span style="color:#D73A49">if</span><span style="color:#24292E"> (globalSession.</span><span style="color:#6F42C1">getStatus</span><span style="color:#24292E">() </span><span style="color:#D73A49">==</span><span style="color:#24292E"> GlobalStatus.Begin) {</span></span>
+<span class="line"><span style="color:#6A737D">    // Highlight: Firstly, close the session, then no more branch can be registered.</span></span>
+<span class="line"><span style="color:#24292E">    globalSession.</span><span style="color:#6F42C1">close</span><span style="color:#24292E">();                       </span><span style="color:#6A737D">// ① 先关门</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (globalSession.</span><span style="color:#6F42C1">canBeCommittedAsync</span><span style="color:#24292E">()) {</span></span>
+<span class="line"><span style="color:#24292E">        globalSession.</span><span style="color:#6F42C1">asyncCommit</span><span style="color:#24292E">();             </span><span style="color:#6A737D">// ② 一阶段都成功 → 异步提交</span></span>
+<span class="line"><span style="color:#24292E">    } </span><span style="color:#D73A49">else</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">        globalSession.</span><span style="color:#6F42C1">changeGlobalStatus</span><span style="color:#24292E">(GlobalStatus.Committing);  </span><span style="color:#6A737D">// ③ 正常二阶段</span></span>
+<span class="line"><span style="color:#24292E">        shouldCommitNow </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> true</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">    globalSession.</span><span style="color:#6F42C1">clean</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p><strong>先 close 再提交</strong>：close 之后迟到的 <code>BranchRegister</code> 全部被拒——防止”都开始提交了还有新分支进来”。<code>canBeCommittedAsync()</code>（<code>GlobalSession.java:165</code>）判据是所有分支都已 <code>Phase two Committing</code>（即 RM 一阶段成功并 report 过），这种事务直接进 <code>AsyncCommitting</code> 让 RM 异步删 undo_log，<strong>不用 TC 逐个发 BranchCommit</strong>——这是 Seata 高性能的关键路径。</p>
+<h3 id="23-五个定时任务failure-恢复的全部机关">2.3 五个定时任务：failure 恢复的全部机关</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>任务</th><th>行号</th><th>扫什么状态</th><th>干什么</th></tr></thead><tbody><tr><td><code>timeoutCheck</code></td><td><code>:406</code></td><td><code>Begin</code></td><td><code>isTimeout()</code> 为真 → <code>close()</code> + <code>TimeoutRollbacking</code></td></tr><tr><td><code>handleRetryRollbacking</code></td><td><code>:451</code></td><td><code>Rollbacking</code> + <code>RollbackRetrying</code></td><td>超 <code>MAX_ROLLBACK_RETRY_TIMEOUT</code> 就 <code>endRollbackFailed</code>（转人工）；否则 <code>core.doGlobalRollback(session, true)</code> 重试</td></tr><tr><td><code>handleRetryCommitting</code></td><td><code>:487</code></td><td><code>CommitRetrying</code></td><td>同上逻辑，超时转 <code>CommitRetryTimeout</code> 人工处理</td></tr><tr><td><code>handleAsyncCommitting</code></td><td><code>:524</code></td><td><code>AsyncCommitting</code></td><td>逐个分支发异步提交指令</td></tr><tr><td><code>undoLogDelete</code></td><td><code>:549</code></td><td>—</td><td>向所有 RM 广播”删 undo_log”（默认保留 7 天，<code>:557</code>）</td></tr></tbody></table>
+<p><code>isRetryTimeout(now, MAX_..., beginTime)</code>（<code>:177</code> 的 <code>RETRY_DEAD_THRESHOLD</code> 相关）是<strong>重试死亡线</strong>：超过就不再自动重试，把会话置终态失败并告警——<strong>防止无限重试把 TC 拖死</strong>。</p>
+<p><code>SessionHelper.forEach(..., lambda)</code>（<code>:461</code>）是带并行度的遍历（内部线程池分批处理大量会话），<code>setLazyLoadBranch(true)</code> 表示只加载会话列表、不加载分支（分支在真正要回滚时才查）——<strong>大集群下这是内存保护</strong>。</p>
+<h3 id="24-分支注册与全局锁">2.4 分支注册与全局锁</h3>
+<p><code>doBranchRegister:369</code> 做两件事：<code>GlobalSession.add(branchSession)</code>（<code>:129</code>）+ <code>LockManager</code> 抢锁。<code>DataBaseLockManager</code>（<code>server/src/main/java/org/apache/seata/server/storage/db/lock/DataBaseLockManager.java</code>）把 <code>lockKeys</code>（<code>表名:主键值</code> 格式）转成 <code>lock_table</code> 行记录，靠数据库唯一索引保证互斥；file 模式用 <code>FileLocker</code>（本地文件锁）；redis 模式用 Lua 脚本（<code>RedisLuaLocker</code>）。</p>
+<p><strong>注册失败的传播</strong>：RM 的 <code>register():267</code> 拿不到 branchId 会抛 <code>TransactionException</code>，<code>processGlobalTransactionCommit</code> 里 <code>recognizeLockKeyConflictException</code> 把它翻译成 <code>LockConflictException</code> → <code>LockRetryPolicy</code>（<code>AbstractDMLBaseExecutor.java:185</code>）按配置重试，超过 <code>lock.retryTimes</code> 抛 <code>LockWaitTimeoutException</code> 让业务失败——<strong>这就是 AT 写冲突时的完整链路</strong>。</p>
+<h3 id="25-本讲小结">2.5 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>结论</th></tr></thead><tbody><tr><td>结构</td><td><code>DefaultCoordinator</code> = RPC 门面 + 5 个定时线程池；<code>DefaultCore</code> = <code>CORE_MAP:59</code> 按 BranchType 路由</td></tr><tr><td>关键实现</td><td><code>commit()</code> 先 <code>close()</code> 再提交（<code>DefaultCore.java:246</code>）；<code>canBeCommittedAsync</code> 走高性能异步路径</td></tr><tr><td>并发</td><td><code>SessionHolder.lockAndExecute</code> 给单会话加执行锁；<code>SessionHelper.forEach</code> 并行处理大批会话</td></tr><tr><td>协议</td><td>分支注册 = add + 抢全局锁；锁键格式 <code>表名:主键值</code>；重试死亡线 <code>RETRY_DEAD_THRESHOLD</code></td></tr><tr><td>陷阱</td><td>超时事务走 <code>TimeoutRollbacking</code>，RM 未提交分支必须放弃提交；重试超限进人工态不会自愈</td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“TC 五个定时任务：超时扫、回滚重扫、提交重扫、异步提交扫、删日志广播——failure 恢复全靠扫存储。”</em></p>
+<hr>
+<h2 id="第三讲at-模式--datasourceproxy-与-undo_log-两阶段">第三讲：AT 模式 —— DataSourceProxy 与 undo_log 两阶段</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：不改业务代码怎么实现事务？前后镜像长什么样？为什么 undo_log 和业务 SQL 必须同一个本地事务？</p>
+</blockquote>
+<h3 id="31-代理链从-datasource-到-statement-的五层包装">3.1 代理链：从 DataSource 到 Statement 的五层包装</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>DataSourceProxy（:50）                    ← 用户注入的 Bean</span></span>
+<span class="line"><span> └─ getConnection():211 → new ConnectionProxy(this, targetConnection)（:213）</span></span>
+<span class="line"><span>     └─ prepareStatement(sql) → PreparedStatementProxy</span></span>
+<span class="line"><span>         └─ ExecuteTemplate.execute:60（:78 重载收 sqlRecognizers）</span></span>
+<span class="line"><span>             └─ SQLVisitorFactory.get(sql, dbType) 解析成 SQLRecognizer</span></span>
+<span class="line"><span>                 └─ new UpdateExecutor/InsertExecutor/DeleteExecutor...</span></span>
+<span class="line"><span>                     └─ AbstractDMLBaseExecutor.executeAutoCommitTrue:146 / False:97</span></span></code></pre>
+<p><code>ExecuteTemplate.execute</code> 第一行就是<strong>快速通道</strong>：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// ExecuteTemplate.java:82-84</span></span>
+<span class="line"><span style="color:#D73A49">if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">RootContext.</span><span style="color:#6F42C1">requireGlobalLock</span><span style="color:#24292E">() </span><span style="color:#D73A49">&#x26;&#x26;</span><span style="color:#24292E"> BranchType.AT </span><span style="color:#D73A49">!=</span><span style="color:#24292E"> RootContext.</span><span style="color:#6F42C1">getBranchType</span><span style="color:#24292E">()) {</span></span>
+<span class="line"><span style="color:#6A737D">    // Just work as original statement</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#24292E"> statementCallback.</span><span style="color:#6F42C1">execute</span><span style="color:#24292E">(statementProxy.</span><span style="color:#6F42C1">getTargetStatement</span><span style="color:#24292E">(), args);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p><strong>没有全局事务上下文时，直接放行走原生 Statement</strong>——Seata 对无事务业务的零损耗就是这么保证的。</p>
+<h3 id="32-一阶段前镜像--执行--后镜像--undo_log">3.2 一阶段：前镜像 → 执行 → 后镜像 → undo_log</h3>
+<p><code>AbstractDMLBaseExecutor.executeAutoCommitFalse:97</code> 是 AT 的心脏：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// AbstractDMLBaseExecutor.java:97-108</span></span>
+<span class="line"><span style="color:#D73A49">protected</span><span style="color:#24292E"> T </span><span style="color:#6F42C1">executeAutoCommitFalse</span><span style="color:#24292E">(</span><span style="color:#D73A49">Object</span><span style="color:#24292E">[] args) throws Exception {</span></span>
+<span class="line"><span style="color:#D73A49">    try</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">        TableRecords beforeImage </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> beforeImage</span><span style="color:#24292E">();          </span><span style="color:#6A737D">// ① SELECT 前镜像</span></span>
+<span class="line"><span style="color:#24292E">        T result </span><span style="color:#D73A49">=</span><span style="color:#24292E"> statementCallback.</span><span style="color:#6F42C1">execute</span><span style="color:#24292E">(statementProxy.</span><span style="color:#6F42C1">getTargetStatement</span><span style="color:#24292E">(), args);  </span><span style="color:#6A737D">// ② 真执行</span></span>
+<span class="line"><span style="color:#24292E">        TableRecords afterImage </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> afterImage</span><span style="color:#24292E">(beforeImage); </span><span style="color:#6A737D">// ③ SELECT 后镜像</span></span>
+<span class="line"><span style="color:#6F42C1">        prepareUndoLog</span><span style="color:#24292E">(beforeImage, afterImage);           </span><span style="color:#6A737D">// ④ 拼 undo_log</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#24292E"> result;</span></span>
+<span class="line"><span style="color:#24292E">    } </span><span style="color:#D73A49">catch</span><span style="color:#24292E"> (TableMetaException </span><span style="color:#E36209">e</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#6A737D">        // 表结构缓存过期 → 刷新重来</span></span>
+<span class="line"><span style="color:#24292E">        statementProxy.</span><span style="color:#6F42C1">getConnectionProxy</span><span style="color:#24292E">().</span><span style="color:#6F42C1">getDataSourceProxy</span><span style="color:#24292E">().</span><span style="color:#6F42C1">tableMetaRefreshEvent</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">        throw</span><span style="color:#24292E"> e;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>以一条 <code>UPDATE product SET stock = stock - 1 WHERE id = 100</code> 为例（<code>UpdateExecutor.beforeImage:67</code> 会把 WHERE 条件拼成 <code>SELECT ... WHERE id = 100</code>）：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="json"><code><span class="line"><span style="color:#6A737D">// undo_log.rollback_info（BeforeImage/AferImage 序列化）</span></span>
+<span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#005CC5">  "@class"</span><span style="color:#24292E">: </span><span style="color:#032F62">"org.apache.seata.rm.datasource.undo.BranchUndoLog"</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#005CC5">  "xbranch"</span><span style="color:#24292E">: </span><span style="color:#005CC5">987654321</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#005CC5">  "undoItems"</span><span style="color:#24292E">: [{</span></span>
+<span class="line"><span style="color:#005CC5">    "tableName"</span><span style="color:#24292E">: </span><span style="color:#032F62">"product"</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#005CC5">    "sqlType"</span><span style="color:#24292E">: </span><span style="color:#032F62">"UPDATE"</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#005CC5">    "beforeImage"</span><span style="color:#24292E">: {</span><span style="color:#005CC5">"rows"</span><span style="color:#24292E">: [{</span><span style="color:#005CC5">"fields"</span><span style="color:#24292E">: [{</span><span style="color:#005CC5">"name"</span><span style="color:#24292E">:</span><span style="color:#032F62">"id"</span><span style="color:#24292E">,</span><span style="color:#005CC5">"value"</span><span style="color:#24292E">:</span><span style="color:#005CC5">100</span><span style="color:#24292E">},{</span><span style="color:#005CC5">"name"</span><span style="color:#24292E">:</span><span style="color:#032F62">"stock"</span><span style="color:#24292E">,</span><span style="color:#005CC5">"value"</span><span style="color:#24292E">:</span><span style="color:#005CC5">10</span><span style="color:#24292E">}]}]},</span></span>
+<span class="line"><span style="color:#005CC5">    "afterImage"</span><span style="color:#24292E">:  {</span><span style="color:#005CC5">"rows"</span><span style="color:#24292E">: [{</span><span style="color:#005CC5">"fields"</span><span style="color:#24292E">: [{</span><span style="color:#005CC5">"name"</span><span style="color:#24292E">:</span><span style="color:#032F62">"id"</span><span style="color:#24292E">,</span><span style="color:#005CC5">"value"</span><span style="color:#24292E">:</span><span style="color:#005CC5">100</span><span style="color:#24292E">},{</span><span style="color:#005CC5">"name"</span><span style="color:#24292E">:</span><span style="color:#032F62">"stock"</span><span style="color:#24292E">,</span><span style="color:#005CC5">"value"</span><span style="color:#24292E">:</span><span style="color:#005CC5">9</span><span style="color:#24292E">}]}]}</span></span>
+<span class="line"><span style="color:#24292E">  }]</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>回滚时 <code>MySQLUndoLogManager</code>（<code>rm-datasource/src/main/java/org/apache/seata/rm/datasource/undo/mysql/MySQLUndoLogManager.java:47</code>）读 <code>rollback_info</code>，比对当前值和 <code>afterImage</code>：<strong>一致才回滚</strong>（防脏写），然后按 <code>beforeImage</code> 反向生成 <code>UPDATE product SET stock = 10 WHERE id = 100</code> 执行。</p>
+<p><strong>四条关键设计</strong>：</p>
+<ol>
+<li><strong>自动提交关闭</strong>：<code>changeAutoCommit()</code>（<code>ConnectionProxy.java:296</code>）把连接的 autocommit 设 false——保证”业务 SQL + undo_log INSERT”在<strong>同一个本地事务</strong>里，要么都成功要么都回滚；</li>
+<li><strong>主键必需</strong>：<code>isMultiPk():114</code> 会检查主键列数，无主键表直接抛异常——因为镜像按主键定位；</li>
+<li><strong>insert 无前镜像</strong>：<code>BaseInsertExecutor</code> 回滚就是按主键删；</li>
+<li><strong>批量 SQL</strong>：<code>MultiUpdateExecutor</code>/<code>MultiDeleteExecutor</code> 按行拆分记录镜像，<code>on duplicate update</code> 有专门的 <code>MySQLInsertOnDuplicateUpdateExecutor</code>。</li>
+</ol>
+<h3 id="33-本地提交register--flushundologs--commit">3.3 本地提交：register + flushUndoLogs + commit</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// ConnectionProxy.java:227-245</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> doCommit</span><span style="color:#24292E">() throws SQLException {</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (context.</span><span style="color:#6F42C1">inGlobalTransaction</span><span style="color:#24292E">()) {</span></span>
+<span class="line"><span style="color:#6F42C1">        processGlobalTransactionCommit</span><span style="color:#24292E">();        </span><span style="color:#6A737D">// 全局事务路径</span></span>
+<span class="line"><span style="color:#24292E">    } </span><span style="color:#D73A49">else</span><span style="color:#D73A49"> if</span><span style="color:#24292E"> (context.</span><span style="color:#6F42C1">isGlobalLockRequire</span><span style="color:#24292E">()) {</span></span>
+<span class="line"><span style="color:#6F42C1">        processLocalCommitWithGlobalLocks</span><span style="color:#24292E">();     </span><span style="color:#6A737D">// @GlobalLock 路径：checkLock 后裸提交</span></span>
+<span class="line"><span style="color:#24292E">    } </span><span style="color:#D73A49">else</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">        targetConnection.</span><span style="color:#6F42C1">commit</span><span style="color:#24292E">();               </span><span style="color:#6A737D">// 普通路径</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> processGlobalTransactionCommit</span><span style="color:#24292E">() throws SQLException {</span></span>
+<span class="line"><span style="color:#D73A49">    try</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6F42C1">        register</span><span style="color:#24292E">();                              </span><span style="color:#6A737D">// ① BranchRegister 拿 branchId + 占全局锁</span></span>
+<span class="line"><span style="color:#24292E">    } </span><span style="color:#D73A49">catch</span><span style="color:#24292E"> (TransactionException </span><span style="color:#E36209">e</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#6F42C1">        recognizeLockKeyConflictException</span><span style="color:#24292E">(e, context.</span><span style="color:#6F42C1">buildLockKeys</span><span style="color:#24292E">());  </span><span style="color:#6A737D">// 锁冲突翻译</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#D73A49">    try</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">        UndoLogManagerFactory.</span><span style="color:#6F42C1">getUndoLogManager</span><span style="color:#24292E">(</span><span style="color:#005CC5">this</span><span style="color:#24292E">.</span><span style="color:#6F42C1">getDbType</span><span style="color:#24292E">()).</span><span style="color:#6F42C1">flushUndoLogs</span><span style="color:#24292E">(</span><span style="color:#005CC5">this</span><span style="color:#24292E">);  </span><span style="color:#6A737D">// ② INSERT undo_log</span></span>
+<span class="line"><span style="color:#24292E">        targetConnection.</span><span style="color:#6F42C1">commit</span><span style="color:#24292E">();               </span><span style="color:#6A737D">// ③ 业务+undo 同一个本地事务提交</span></span>
+<span class="line"><span style="color:#24292E">    } </span><span style="color:#D73A49">catch</span><span style="color:#24292E"> (Throwable </span><span style="color:#E36209">ex</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#6F42C1">        report</span><span style="color:#24292E">(</span><span style="color:#005CC5">false</span><span style="color:#24292E">);                           </span><span style="color:#6A737D">// 失败上报 TC：这个分支要回滚</span></span>
+<span class="line"><span style="color:#D73A49">        throw</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> SQLException</span><span style="color:#24292E">(ex);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (IS_REPORT_SUCCESS_ENABLE) {</span></span>
+<span class="line"><span style="color:#6F42C1">        report</span><span style="color:#24292E">(</span><span style="color:#005CC5">true</span><span style="color:#24292E">);                            </span><span style="color:#6A737D">// ④ 成功上报：让 TC 知道一阶段完成</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">    context.</span><span style="color:#6F42C1">reset</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p><strong>顺序的精髓</strong>：先 register（占全局锁）→ 再 flush undo → 最后本地 commit。为什么 register 要在本地事务提交前？因为<strong>锁必须在数据可见之前拿到</strong>——否则别人读到未提交数据还改了，undo_log 就失效了。<code>report(true)</code> 让 TC 把分支置 <code>Phase two Committing</code>，这是 <code>canBeCommittedAsync</code> 的前提。</p>
+<h3 id="34-二阶段tc-指令--rm-执行">3.4 二阶段：TC 指令 → RM 执行</h3>
+<p>TC 发 <code>BranchCommit</code>：RM 直接删 undo_log（<code>AbstractUndoLogManager.deleteUndoLog</code>，SQL 在 <code>:93</code> <code>DELETE_UNDO_LOG_SQL</code>）——<strong>AT 的提交不做业务补偿</strong>，因为业务已经提交，只是清理现场。</p>
+<p>TC 发 <code>BranchRollback</code>：RM 按 <code>SELECT_UNDO_LOG_SQL</code>（<code>:89</code>）查 undo_log → 校验 <code>afterImage</code> 与当前一致 → 反向 SQL 回滚 → 删 undo_log。全部失败会 <code>report(false)</code>，TC 的 <code>handleRetryRollbacking:451</code> 接手重试。</p>
+<p><code>AsyncWorker</code>（<code>rm-datasource/src/main/java/org/apache/seata/rm/datasource/AsyncWorker.java</code>）把 undo_log 的删除做成异步批处理——<strong>删日志不阻塞二阶段返回</strong>，这是 AT 提交快的另一个原因。</p>
+<h3 id="35-本讲小结">3.5 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>结论</th></tr></thead><tbody><tr><td>结构</td><td>五层代理：DataSourceProxy → ConnectionProxy → StatementProxy → ExecuteTemplate → Executor</td></tr><tr><td>关键实现</td><td>一阶段四步（前镜像→执行→后镜像→undo）在同一本地事务；<code>register</code> 在本地 commit 前</td></tr><tr><td>并发</td><td>autocommit 被强改 false；全局锁冲突 → <code>LockRetryPolicy</code> 重试 → <code>LockWaitTimeoutException</code></td></tr><tr><td>协议</td><td>undo_log 与业务同库同事务；<code>report(true/false)</code> 驱动 TC 的 async 判定</td></tr><tr><td>陷阱</td><td>无主键表不能用 AT；<code>afterImage</code> 不一致说明有脏写，回滚会失败</td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“AT = 前镜像 + 后镜像 + undo_log 三件套，注册在提交前，undo 与业务同事务。”</em></p>
+<hr>
+<hr>
+<h2 id="第四讲tcc-模式与-fence-防悬挂">第四讲：TCC 模式与 fence 防悬挂</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：TCC 为什么需要业务写三个方法？防悬挂/防空回滚/幂等这三座大山，Seata 用什么表、什么状态机挡住？</p>
+</blockquote>
+<h3 id="41-tcc-的三个方法与被拦截的只有-try">4.1 TCC 的三个方法与被拦截的只有 Try</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// tcc/src/main/java/org/apache/seata/rm/tcc/api/TwoPhaseBusinessAction.java:47</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#24292E"> @</span><span style="color:#D73A49">interface</span><span style="color:#D73A49"> TwoPhaseBusinessAction</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">    String </span><span style="color:#6F42C1">name</span><span style="color:#24292E">();                          </span><span style="color:#6A737D">// 分支动作名</span></span>
+<span class="line"><span style="color:#24292E">    Class</span><span style="color:#D73A49">&#x3C;?></span><span style="color:#24292E">[] </span><span style="color:#6F42C1">commitMethod</span><span style="color:#24292E">() </span><span style="color:#D73A49">default</span><span style="color:#24292E"> {};   </span><span style="color:#6A737D">// 二阶段提交方法</span></span>
+<span class="line"><span style="color:#24292E">    Class</span><span style="color:#D73A49">&#x3C;?></span><span style="color:#6F42C1"> rollbackMethod</span><span style="color:#24292E">() </span><span style="color:#D73A49">default</span><span style="color:#24292E"> {};   </span><span style="color:#6A737D">// 二阶段回滚方法（默认约定同名 cancel）</span></span>
+<span class="line"><span style="color:#D73A49">    boolean</span><span style="color:#6F42C1"> useTCCFence</span><span style="color:#24292E">() </span><span style="color:#D73A49">default</span><span style="color:#005CC5"> false</span><span style="color:#24292E">;    </span><span style="color:#6A737D">// 是否启用 fence 防悬挂</span></span>
+<span class="line"><span style="color:#24292E">    ...</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p><code>TccActionInterceptorHandler</code>（<code>tcc/src/main/java/org/apache/seata/rm/tcc/interceptor/TccActionInterceptorHandler.java:48</code>）只代理 <strong>Try</strong> 方法（<code>methodsToProxy</code>，构造时由 <code>TccActionInterceptorParser</code> 解析注解得到）。执行链路：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>Try 方法调用</span></span>
+<span class="line"><span> ├─ 解析 @TwoPhaseBusinessAction → BusinessActionContext（xid、branchId、actionName、参数快照）</span></span>
+<span class="line"><span> ├─ 构造 ActionContext（JSON 序列化，随二阶段 RPC 传给 confirm/cancel）</span></span>
+<span class="line"><span> ├─ 调 TCC RM 注册分支（BranchType.TCC）</span></span>
+<span class="line"><span> ├─ 执行真正的 Try 业务</span></span>
+<span class="line"><span> └─ 方法上 @CommitMethod 的所在 Bean 由框架托管（confirm/cancel 由 TC 二阶段 RPC 驱动调用）</span></span></code></pre>
+<p><strong>ActionContext 的传递是 TCC 最容易出错的地方</strong>：Try 的入参必须能序列化进上下文，confirm/cancel 才能还原（<code>ActionContextUtil</code>）。参数里有不可序列化对象（如 <code>HttpServletRequest</code>）时，TCC 会直接失败——这是 TCC 侵入性大于 AT 的根本原因。</p>
+<h3 id="42-fence一张表解决三个问题">4.2 fence：一张表解决三个问题</h3>
+<p>Seata 1.5+ 的 <code>useTCCFence</code> 把”防悬挂、防空回滚、幂等”收进一张本地表 <code>tcc_fence_log</code>：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// integration-tx-api/src/main/java/org/apache/seata/integration/tx/api/fence/constant/CommonFenceConstant.java:32-47</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> final</span><span style="color:#D73A49"> int</span><span style="color:#24292E"> STATUS_TRIED     </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">;   </span><span style="color:#6A737D">// try 已执行</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> final</span><span style="color:#D73A49"> int</span><span style="color:#24292E"> STATUS_COMMITTED </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 2</span><span style="color:#24292E">;   </span><span style="color:#6A737D">// confirm 已完成</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> final</span><span style="color:#D73A49"> int</span><span style="color:#24292E"> STATUS_ROLLBACKED </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 3</span><span style="color:#24292E">;  </span><span style="color:#6A737D">// cancel 已完成</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> final</span><span style="color:#D73A49"> int</span><span style="color:#24292E"> STATUS_SUSPENDED </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 4</span><span style="color:#24292E">;   </span><span style="color:#6A737D">// 悬挂（try 迟到，已被回滚）</span></span></code></pre>
+<p>核心 SQL（<code>integration-tx-api/src/main/java/org/apache/seata/integration/tx/api/fence/store/db/sql/CommonFenceStoreSqls.java</code>）：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// :45  INSERT_LOCAL_TCC_LOG —— try 时插入一行（status=TRIED）</span></span>
+<span class="line"><span style="color:#032F62">"insert into tcc_fence_log (xid, branch_id, action_name, status, gmt_create, gmt_modified) values (?, ?, ?, ?, ?, ?)"</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// :49  QUERY_BY_BRANCH_ID_AND_XID —— confirm/cancel 先查（for update 行锁）</span></span>
+<span class="line"><span style="color:#032F62">"select xid, branch_id, status, ... from tcc_fence_log where xid = ? and branch_id = ? for update"</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// :81  UPDATE_STATUS_BY_BRANCH_ID_AND_XID —— 带旧状态的 CAS 式更新</span></span>
+<span class="line"><span style="color:#032F62">"update tcc_fence_log set status = ?, gmt_modified = ? where xid = ? and branch_id = ? and status = ?"</span></span></code></pre>
+<p><code>update ... and status = ?</code> 这个<strong>带旧状态的条件</strong>就是幂等的全部机关：confirm 只能把 <code>TRIED(1) → COMMITTED(2)</code>，重复 confirm 时旧状态已是 <code>2</code>，更新影响 0 行 → 框架直接返回”已处理过”。DAO 层对应 <code>CommonFenceStoreDataBaseDAO.updateCommonFenceDO:146</code>。</p>
+<p>三个问题的挡法：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>问题</th><th>场景</th><th>fence 怎么挡</th></tr></thead><tbody><tr><td><strong>空回滚</strong></td><td>TC 回滚时 RM 没执行过 try（没这行记录）</td><td>cancel 查不到记录 → 插入一条 <code>SUSPENDED(4)</code> 记录，<strong>告诉后面的 try”我已经回滚过了”</strong></td></tr><tr><td><strong>悬挂</strong></td><td>try 迟于 cancel 到达</td><td>try 时先查：已有 <code>ROLLBACKED</code> 或 <code>SUSPENDED</code> 记录 → <strong>拒绝执行 try 业务</strong>，只记日志</td></tr><tr><td><strong>幂等</strong></td><td>TC 重试导致 confirm/cancel 重复调用</td><td>带旧状态的 update 影响 0 行 → 视为已处理，直接返回成功</td></tr></tbody></table>
+<p>清理任务 <code>initCommonFenceCleanTask:187</code> 定期删终态行（<code>queryEndStatusXidsByDate:96</code> + <code>deleteTCCFenceDO:183</code>），SQL 里 <code>QUERY_END_STATUS_BY_DATE</code>（<code>:53</code>）只删 <code>gmt_modified</code> 过期的终态记录——<strong>同事务其他分支还在非终态的行不会被误删</strong>（源码注释专门强调了这一点，<code>:100-103</code>）。</p>
+<h3 id="43-和-at-的对比选型依据">4.3 和 AT 的对比（选型依据）</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>AT</th><th>TCC</th></tr></thead><tbody><tr><td>业务侵入</td><td>零（换 DataSource）</td><td>高（三个方法 + ActionContext）</td></tr><tr><td>隔离性</td><td>RU（一阶段提交即可见）</td><td>由 Try 的资源预留程度决定</td></tr><tr><td>性能</td><td>好（无预留，undo 补偿）</td><td>中（预留资源，锁持有到二阶段）</td></tr><tr><td>适用</td><td>普通关系型数据库 CRUD</td><td>非数据库资源（消息、第三方 API、Redis）</td></tr><tr><td>幂等</td><td>undo_log 天然幂等</td><td><strong>业务自己保证</strong>（fence 是兜底）</td></tr></tbody></table>
+<h3 id="44-本讲小结">4.4 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>结论</th></tr></thead><tbody><tr><td>结构</td><td><code>TwoPhaseBusinessAction:47</code> 声明三方法；只有 Try 被拦截（<code>TccActionInterceptorHandler:48</code>）</td></tr><tr><td>关键实现</td><td>fence 表四状态（TRIED/COMMITTED/ROLLBACKED/SUSPENDED）+ 带旧状态的 CAS update</td></tr><tr><td>并发</td><td><code>QUERY_BY_BRANCH_ID_AND_XID</code> 用 <code>for update</code> 行锁串行化同一分支的二阶段</td></tr><tr><td>协议</td><td>ActionContext 序列化随 RPC 传递；confirm/cancel 由 TC 驱动</td></tr><tr><td>陷阱</td><td>悬挂的根治靠”SUSPENDED 占位”；清理任务不能删非终态的同 xid 行</td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“fence 一张表四状态：TRIED 起步、CAS 保幂等、SUSPENDED 占位挡悬挂。”</em></p>
+<hr>
+<h2 id="第五讲saga-状态机与-xa-模式">第五讲：Saga 状态机与 XA 模式</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：几百个服务的长事务怎么编排？XA 和 AT 在源码层的分界线在哪？</p>
+</blockquote>
+<h3 id="51-sagajson-定义的状态机">5.1 Saga：JSON 定义的状态机</h3>
+<p><code>StateMachineEngine</code>（<code>saga/seata-saga-engine/src/main/java/org/apache/seata/saga/engine/StateMachineEngine.java:29</code>）是接口，<code>ProcessCtrlStateMachineEngine</code>（<code>.../engine/impl/ProcessCtrlStateMachineEngine.java:60</code>）是实现：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// ProcessCtrlStateMachineEngine.java:75</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#24292E"> StateMachineInstance </span><span style="color:#6F42C1">start</span><span style="color:#24292E">(String stateMachineName, String tenantId, Map</span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">String, Object</span><span style="color:#D73A49">></span><span style="color:#24292E"> startParams)</span></span>
+<span class="line"><span style="color:#6A737D">// :223</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#24292E"> StateMachineInstance </span><span style="color:#6F42C1">forward</span><span style="color:#24292E">(String stateMachineInstId, Map</span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">String, Object</span><span style="color:#D73A49">></span><span style="color:#24292E"> replaceParams)   </span><span style="color:#6A737D">// 继续推进</span></span>
+<span class="line"><span style="color:#6A737D">// :235</span></span>
+<span class="line"><span style="color:#D73A49">protected</span><span style="color:#24292E"> StateMachineInstance </span><span style="color:#6F42C1">forwardInternal</span><span style="color:#24292E">(...)   </span><span style="color:#6A737D">// 核心循环：找下一个状态 → 执行 → 持久化</span></span></code></pre>
+<p>一个 Saga 状态机就是一份 JSON：<code>States</code>（<code>ServiceTask</code>/<code>Choice</code>/<code>Succeed</code>/<code>Fail</code>/<code>SubStateMachine</code>）+ <code>StartState</code> + 每个状态的 <code>Input/Output</code> 表达式。执行模型：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>start() → 建 StateMachineInstance（持久化到 state_machine_inst 表）</span></span>
+<span class="line"><span>   → forwardInternal:256</span></span>
+<span class="line"><span>       ├─ 找"上次成功状态的下一跳"（:271）</span></span>
+<span class="line"><span>       ├─ 执行 ServiceTask（调本地服务或 HTTP）</span></span>
+<span class="line"><span>       ├─ 成功 → 记 StateInstance（state_inst 表）→ 推下一跳</span></span>
+<span class="line"><span>       └─ 失败 → 进入补偿模式：按执行栈逆序逐个调 compensator</span></span></code></pre>
+<p><strong>和 TCC 的本质差异</strong>：Saga 没有”预留”，服务调用<strong>直接生效</strong>；失败后靠补偿服务（<code>compensateState</code>）逆序回滚。所以 Saga 的补偿必须幂等、可重入——<code>state_inst</code> 表记录的正是”哪些状态执行过、补偿到哪了”，崩溃后靠它续跑（<code>:335</code> 注释 “skip forward” 就是续跑判定）。</p>
+<h3 id="52-xa走数据库标准协议">5.2 XA：走数据库标准协议</h3>
+<p>XA 模式的代理在 <code>rm-datasource/src/main/java/org/apache/seata/rm/datasource/xa/ConnectionProxyXA.java</code>，与 AT <strong>共用 DataSourceProxy 外壳、换掉内核</strong>：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// ConnectionProxyXA.java:345（一阶段）</span></span>
+<span class="line"><span style="color:#D73A49">int</span><span style="color:#24292E"> prepare </span><span style="color:#D73A49">=</span><span style="color:#24292E"> xaResource.</span><span style="color:#6F42C1">prepare</span><span style="color:#24292E">(xaBranchXid);</span></span>
+<span class="line"><span style="color:#D73A49">if</span><span style="color:#24292E"> (prepare </span><span style="color:#D73A49">==</span><span style="color:#24292E"> XAResource.XA_RDONLY) { ... }   </span><span style="color:#6A737D">// 只读分支，直接结束</span></span>
+<span class="line"><span style="color:#6A737D">// prepareTime 记录（:65/:409）——TC 靠它判断分支是否处于 prepared 悬挂态</span></span></code></pre>
+<p>链路差异：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>阶段</th><th>AT</th><th>XA</th></tr></thead><tbody><tr><td>一阶段</td><td>前后镜像 + undo_log + 本地 commit</td><td><code>XAResource.end/prepare</code>（<strong>不 commit</strong>，连接挂起）</td></tr><tr><td>二阶段提交</td><td>删 undo_log</td><td><code>XAResource.commit(xaBranchXid, false)</code></td></tr><tr><td>二阶段回滚</td><td>undo 反向 SQL</td><td><code>XAResource.rollback(xaBranchXid)</code></td></tr><tr><td>资源占用</td><td>无（提交即释放）</td><td><strong>prepare 后连接不能归还池</strong>，二阶段结束才释放</td></tr></tbody></table>
+<p><code>commit():229</code> 开头那几个检查（<code>combine</code>/<code>currentAutoCommitStatus</code>/<code>xaActive</code>）说明 XA 连接有严格状态机：autocommit 会话和只读事务直接跳过；非 active 会话调用 commit 抛 <code>SQLSTATE_XA_NOT_END</code>。</p>
+<p><strong>XA 的坑</strong>：<code>prepare</code> 后如果 TC 一直不发二阶段指令，连接永远挂起 → 连接池打满 → 业务雪崩。Seata 靠 <code>prepareTime</code> + TC 超时检查缓解，但生产上 XA 模式集群规模通常明显小于 AT。</p>
+<h3 id="53-本讲小结">5.3 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>结论</th></tr></thead><tbody><tr><td>结构</td><td>Saga = <code>ProcessCtrlStateMachineEngine:60</code> + JSON 状态机 + state_inst 持久化；XA = <code>ConnectionProxyXA</code> + <code>XAResource</code></td></tr><tr><td>关键实现</td><td><code>forwardInternal:235</code> 的”找下一跳 → 执行 → 持久化”循环；XA <code>prepare</code> 在 <code>:345</code></td></tr><tr><td>并发</td><td>Saga 状态实例有状态校验（<code>:256</code> <code>checkStatus</code>），防并发 forward；XA prepare 后连接独占</td></tr><tr><td>协议</td><td>Saga 补偿逆序执行；XA 二阶段靠 TC 指令驱动 <code>commit/rollback</code></td></tr><tr><td>陷阱</td><td>Saga 补偿必须幂等；XA prepare 后连接挂起是容量杀手</td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“Saga 没有预留、失败补；XA 有 prepare、连接挂；AT 有镜像、undo 偿。”</em></p>
+<hr>
+<h2 id="第六讲存储与集群--sessionmanager--lockmanager--raft">第六讲：存储与集群 —— SessionManager / LockManager / Raft</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：TC 单机存文件、集群存什么？多 TC 之间怎么保证同一个 xid 只有一个协调者？</p>
+</blockquote>
+<h3 id="61-sessionmanager-家族同一抽象四种存储">6.1 SessionManager 家族：同一抽象四种存储</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>SessionManager（接口）</span></span>
+<span class="line"><span> └─ AbstractSessionManager（模板方法：add/remove/find 的公共逻辑）</span></span>
+<span class="line"><span>     ├─ FileSessionManager（server/src/main/java/org/apache/seata/server/session/FileSessionManager.java）—— 本地文件，单机</span></span>
+<span class="line"><span>     ├─ DataBaseSessionManager（server/src/main/java/org/apache/seata/server/storage/db/session/DataBaseSessionManager.java:43）—— MySQL</span></span>
+<span class="line"><span>     ├─ RedisSessionManager（server/src/main/java/org/apache/seata/server/storage/redis/session/RedisSessionManager.java:41）—— Redis + Lua</span></span>
+<span class="line"><span>     └─ RaftSessionManager（server/src/main/java/org/apache/seata/server/storage/raft/session/RaftSessionManager.java:52）</span></span>
+<span class="line"><span>         └─ extends FileSessionManager —— 本地文件 + Raft 复制，多 TC 强一致</span></span></code></pre>
+<p><code>SessionHolder</code>（<code>server/src/main/java/org/apache/seata/server/session/SessionHolder.java</code>）是静态门面：<code>reload(Collection&#x3C;GlobalSession>, SessionMode)</code>（<code>:175</code>）在 TC 启动时把存储里的会话<strong>全部加载回内存</strong>，<code>findGlobalSession(xid):373</code> 走内存 Map，<code>distributedLockAndExecute:428</code> 给跨节点的操作加分布式锁。</p>
+<p>LockManager 与之一一对应：<code>FileLocker</code>（本地）/<code>DataBaseLockManager</code>（唯一索引）/<code>RedisLuaLocker</code>（Lua）/<code>RaftLockManager</code>。</p>
+<h3 id="62-三种部署形态">6.2 三种部署形态</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>形态</th><th>存储</th><th>一致性</th><th>适用</th></tr></thead><tbody><tr><td>单机 file</td><td>本地文件（<code>data/sessionStore</code>）</td><td>无</td><td>开发/测试</td></tr><tr><td>db/redis</td><td>共享数据库/Redis</td><td>依赖外部组件</td><td>中小生产（最常见）</td></tr><tr><td>raft</td><td>本地文件 + Raft 日志复制</td><td><strong>强一致（Raft 选主 + 多数派）</strong></td><td>大生产、不依赖外部组件</td></tr></tbody></table>
+<h3 id="63-raftcoordinator多-tc-的协调者">6.3 RaftCoordinator：多 TC 的协调者</h3>
+<p><code>RaftCoordinator</code>（<code>server/src/main/java/org/apache/seata/server/coordinator/RaftCoordinator.java:37</code>）继承 <code>DefaultCoordinator</code>，把每个事务操作（<code>AddGlobalSession</code>/<code>RemoveGlobalSession</code>/<code>AddBranchSession</code>/<code>BranchReleaseLock</code>…）封装成 Raft 日志条目（<code>server/cluster/raft/execute/</code> 下的 <code>*Execute</code> 类），走 <code>RaftServer</code>（<code>server/cluster/raft/RaftServer.java</code>）复制到多数派后才应用。</p>
+<p><code>GROUP_PREVENT</code>（<code>:39</code>）+ <code>onApplicationEvent:76</code> 监听 <code>ClusterChangeEvent</code>：<strong>leader 切换时阻止旧 group 的写</strong>，防止脑裂（两个 TC 同时认为自己是协调者）。这是 raft 模式比 db 模式强的关键——db 模式下靠数据库锁和 <code>distributedLockAndExecute</code> 弱保证。</p>
+<h3 id="64-本讲小结">6.4 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>结论</th></tr></thead><tbody><tr><td>结构</td><td><code>SessionManager</code> 四实现（file/db/redis/raft）+ 对应 <code>LockManager</code>；<code>SessionHolder</code> 静态门面</td></tr><tr><td>关键实现</td><td>TC 启动 <code>reload:175</code> 全量加载；<code>RaftSessionManager:52</code> 本地文件 + raft 复制</td></tr><tr><td>并发</td><td><code>distributedLockAndExecute:428</code> 跨节点串行化；raft leader 切换用 <code>GROUP_PREVENT</code> 防脑裂</td></tr><tr><td>协议</td><td>事务操作 = Raft 日志条目，多数派落盘才应用</td></tr><tr><td>陷阱</td><td>file 模式换机器丢事务；db 模式性能瓶颈在 lock_table 行锁</td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“会话内存查、存储持久化；file 单机、db/redis 共享、raft 强一致还防脑裂。”</em></p>
+<hr>
+<h2 id="附学习路线与复习卡汇总">附：学习路线与复习卡汇总</h2>
+<h3 id="建议学习顺序15-讲时">建议学习顺序（15 讲时）</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>阶段</th><th>内容</th><th>时长建议</th><th>产出</th></tr></thead><tbody><tr><td>第 1 天</td><td>第一、二讲（TM + TC 协调）</td><td>4h</td><td>画出一次全局事务的全部 RPC 与状态变迁</td></tr><tr><td>第 3 天</td><td>第三讲（AT 模式）</td><td>4h</td><td>手写一条 UPDATE 的前后镜像与回滚 SQL</td></tr><tr><td>第 7 天</td><td>第四讲（TCC + fence）</td><td>3h</td><td>说清悬挂/空回滚/幂等各自的挡法</td></tr><tr><td>第 14 天</td><td>第五、六讲（Saga/XA/存储）</td><td>4h</td><td>给出三种模式的选型表</td></tr></tbody></table>
+<h3 id="复习卡遮答案自测">复习卡（遮答案自测）</h3>
+<ol>
+<li>TM 一次成功全局事务发几次 RPC？各是什么？</li>
+<li>Participant 调 <code>commit()</code> 会发生什么？源码在哪一行？</li>
+<li><code>commit()</code> 为什么先 <code>close()</code> 再改状态？</li>
+<li><code>canBeCommittedAsync</code> 的判据是什么？命中后走什么路径？</li>
+<li>五个定时任务分别扫什么状态、做什么动作？</li>
+<li>AT 一阶段四个动作的顺序，为什么 register 在本地 commit 前？</li>
+<li>undo_log 和业务 SQL 为什么必须同一本地事务？</li>
+<li>AT 回滚前为什么要比对 <code>afterImage</code>？</li>
+<li>fence 表四个状态的含义与流转？</li>
+<li>“update … where status = ?” 这行 SQL 解决了什么问题？</li>
+<li>Saga 和 TCC 的三个核心差异？</li>
+<li>XA prepare 之后连接处于什么状态？有什么风险？</li>
+<li><code>SessionHolder.reload</code> 在 TC 启动时做什么？</li>
+<li>raft 模式怎么防脑裂？</li>
+<li>AT 为什么要求主键？无主键表怎么办？</li>
+</ol>
+<h3 id="六讲记忆钩子串烧">六讲记忆钩子串烧</h3>
+<p><em>“Launcher 发号施令，Participant 只管干活”</em> → <em>“TC 五个定时任务，failure 恢复全靠扫存储”</em> → <em>“AT = 前镜像 + 后镜像 + undo_log 三件套”</em> → <em>“fence 一张表四状态，SUSPENDED 占位挡悬挂”</em> → <em>“Saga 没有预留、失败补；XA 有 prepare、连接挂”</em> → <em>“会话内存查、存储持久化；file 单机、db/redis 共享、raft 强一致”</em></p>
+<hr>
+<h2 id="涉及文件索引">涉及文件索引</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>模块</th><th>文件</th><th>本笔记引用次数</th></tr></thead><tbody><tr><td>tm</td><td><code>tm/src/main/java/org/apache/seata/tm/api/TransactionalTemplate.java</code>（543 行）</td><td>高</td></tr><tr><td>tm</td><td><code>tm/src/main/java/org/apache/seata/tm/api/DefaultGlobalTransaction.java</code>（581 行）</td><td>高</td></tr><tr><td>tm</td><td><code>tm/src/main/java/org/apache/seata/tm/DefaultTransactionManager.java</code></td><td>中</td></tr><tr><td>integration-tx-api</td><td><code>.../interceptor/handler/GlobalTransactionalInterceptorHandler.java</code></td><td>高</td></tr><tr><td>integration-tx-api</td><td><code>.../fence/DefaultCommonFenceHandler.java</code>、<code>.../fence/store/db/sql/CommonFenceStoreSqls.java</code>、<code>.../fence/constant/CommonFenceConstant.java</code></td><td>高</td></tr><tr><td>server</td><td><code>server/src/main/java/org/apache/seata/server/coordinator/DefaultCoordinator.java</code>（930 行）</td><td>高</td></tr><tr><td>server</td><td><code>.../coordinator/DefaultCore.java</code>（552 行）</td><td>高</td></tr><tr><td>server</td><td><code>.../coordinator/RaftCoordinator.java</code></td><td>中</td></tr><tr><td>server</td><td><code>.../session/GlobalSession.java</code>、<code>.../session/SessionHolder.java</code>、<code>.../session/BranchSession.java</code></td><td>高</td></tr><tr><td>server</td><td><code>.../storage/db/lock/DataBaseLockManager.java</code>、<code>.../storage/file/lock/FileLocker.java</code></td><td>中</td></tr><tr><td>server</td><td><code>.../storage/{db,redis,raft,file}/session/*SessionManager.java</code></td><td>中</td></tr><tr><td>rm-datasource</td><td><code>rm-datasource/src/main/java/org/apache/seata/rm/datasource/DataSourceProxy.java</code></td><td>高</td></tr><tr><td>rm-datasource</td><td><code>.../rm/datasource/ConnectionProxy.java</code></td><td>高</td></tr><tr><td>rm-datasource</td><td><code>.../rm/datasource/exec/ExecuteTemplate.java</code>、<code>.../exec/AbstractDMLBaseExecutor.java</code>、<code>.../exec/UpdateExecutor.java</code>、<code>.../exec/InsertExecutor.java</code></td><td>高</td></tr><tr><td>rm-datasource</td><td><code>.../rm/datasource/undo/AbstractUndoLogManager.java</code>、<code>.../undo/mysql/MySQLUndoLogManager.java</code></td><td>高</td></tr><tr><td>rm-datasource</td><td><code>.../rm/datasource/xa/ConnectionProxyXA.java</code>、<code>.../xa/AbstractConnectionProxyXA.java</code></td><td>中</td></tr><tr><td>tcc</td><td><code>tcc/src/main/java/org/apache/seata/rm/tcc/api/TwoPhaseBusinessAction.java</code>、<code>.../interceptor/TccActionInterceptorHandler.java</code></td><td>中</td></tr><tr><td>saga</td><td><code>saga/seata-saga-engine/src/main/java/org/apache/seata/saga/engine/StateMachineEngine.java</code>、<code>.../engine/impl/ProcessCtrlStateMachineEngine.java</code></td><td>中</td></tr></tbody></table>  </div> <div class="post-nav"> <span><a href="/sentinel/">← Sentinel 源码深度学习笔记</a></span> <span><a href="/java-io/">Java IO 源码深度学习笔记 →</a></span> </div> </article>  </main> <footer class="site-footer"> <div class="inner"> <div class="foot-brand"> <span class="brand-mark">&lt;/&gt;</span> <b>源码深读</b> <span>逐文件、逐函数地读源码，结论都带 文件:行号</span> </div> <div class="foot-links"> <a href="/#principles">原理速查</a> <a href="/animations/">动画</a> <a href="/categories/">分类</a> <a href="/tags/">标签</a> <a href="https://github.com/gycxxx/gycxxx.github.io">GitHub</a> </div> <p class="foot-note">由 Astro 静态生成 · 内容以 Markdown 源码笔记为唯一事实源</p> </div> </footer> </body></html> <script type="module" src="/_astro/PostLayout.astro_astro_type_script_index_0_lang.B4vzteL_.js"></script>
