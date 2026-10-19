@@ -3,6 +3,7 @@ import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import "../styles/home.css";
 import { sortByDateDesc, groupByCategory, allTags, href, excerpt } from "../lib/docs";
+import principles from "../data/principles.json";
 
 const docs = sortByDateDesc(await getCollection("docs"));
 const groups = groupByCategory(docs);
@@ -21,27 +22,13 @@ const META: Record<string, { color: string; mark: string; blurb: string }> = {
   学习路线: { color: "#4a7fb5", mark: "路", blurb: "按记忆曲线排的阅读顺序与全景导图" },
 };
 const meta = (c: string) => META[c] ?? { color: "#8a9298", mark: "·", blurb: "" };
+const catColor: Record<string, string> = Object.fromEntries(
+  Object.entries(META).map(([k, v]) => [k, v.color])
+);
 
-const TOOLS = [
-  {
-    href: "/learning-map/",
-    name: "思维导图",
-    desc: "19 份文档、111 讲，按 6 阶段学习顺序铺开，可折叠可搜索",
-    icon: "M4 6h6M4 12h6M4 18h6M14 9h6M14 15h6",
-  },
-  {
-    href: "/learning-path/",
-    name: "学习路线",
-    desc: "16 周排期 + 间隔重复复习点，每组配一句记忆钩子",
-    icon: "M3 18h18M6 14l4-6 4 4 4-8",
-  },
-  {
-    href: "/chm-resize-animation/",
-    name: "CHM 扩容动画",
-    desc: "ConcurrentHashMap 协作扩容的 64 桶分段认领，可单步播放",
-    icon: "M3 5h18v6H3zM3 13h18v6H3zM9 5v6M15 13v6",
-  },
-];
+const pcats = [...new Set(principles.map((p) => p.c))].sort(
+  (a, b) => principles.filter((p) => p.c === b).length - principles.filter((p) => p.c === a).length
+);
 
 const index = docs.map((d) => ({
   t: d.data.title,
@@ -52,7 +39,7 @@ const index = docs.map((d) => ({
 }));
 ---
 
-<BaseLayout title="首页" description="源码级技术笔记合集" bleed>
+<BaseLayout title="首页" description="源码级技术笔记合集 · 305 条可检索原理结论" bleed>
   <!-- ============ HERO ============ -->
   <section class="hero">
     <div class="hero-grid" aria-hidden="true"></div>
@@ -66,8 +53,8 @@ const index = docs.map((d) => ({
           <code>文件:行号</code>，并由脚本逐条回源码校验。
         </p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="/learning-path/">按学习路线读 →</a>
-          <a class="btn btn-ghost" href="/learning-map/">打开思维导图</a>
+          <a class="btn btn-primary" href="#principles">浏览 {principles.length} 条原理结论 ↓</a>
+          <a class="btn btn-ghost" href="/categories/">按分类读 →</a>
         </div>
       </div>
 
@@ -89,7 +76,7 @@ const index = docs.map((d) => ({
     <div class="hero-stats">
       <div class="stat"><b>{docs.length}</b><span>篇笔记</span></div>
       <div class="stat"><b>{groups.length}</b><span>个分类</span></div>
-      <div class="stat"><b>{allTags(docs).length}</b><span>个标签</span></div>
+      <div class="stat"><b>{principles.length}</b><span>条原理结论</span></div>
       <div class="stat"><b>3565</b><span>条可校验引用</span></div>
     </div>
   </section>
@@ -104,12 +91,34 @@ const index = docs.map((d) => ({
       <input
         id="q"
         type="search"
-        placeholder="搜索笔记标题、分类或标签…（如 扩容 / Redis / AQS）"
+        placeholder="搜索笔记或原理结论…（如 扩容 / AQS / 循环依赖 / Raft）"
         autocomplete="off"
       />
       <kbd>/</kbd>
     </div>
     <div id="result" class="search-result" hidden></div>
+  </section>
+
+  <!-- ============ PRINCIPLES ============ -->
+  <section class="wrap sec" id="principles">
+    <div class="sec-head">
+      <h2>核心原理速查</h2>
+      <span class="sec-note">
+        从各篇笔记「高频 Q&A」抽取，全部可回原文展开 · 共 {principles.length} 条
+      </span>
+    </div>
+    <div class="p-filters" id="p-filters">
+      <button class="p-chip on" data-cat="全部">全部 <em>{principles.length}</em></button>
+      {
+        pcats.map((c) => (
+          <button class="p-chip" data-cat={c} style={`--accent:${meta(c).color}`}>
+            {c} <em>{principles.filter((p) => p.c === c).length}</em>
+          </button>
+        ))
+      }
+    </div>
+    <div class="p-list" id="p-list"></div>
+    <button class="p-more" id="p-more">展开更多 ↓</button>
   </section>
 
   <!-- ============ CATEGORIES ============ -->
@@ -151,6 +160,20 @@ const index = docs.map((d) => ({
     </div>
   </section>
 
+  <!-- ============ ANIMATION PROMO ============ -->
+  <section class="wrap sec">
+    <a class="promo" href="/chm-resize-animation/">
+      <span class="promo-ico">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v6H3zM3 13h18v6H3zM9 5v6M15 13v6"></path></svg>
+      </span>
+      <span class="promo-body">
+        <b>ConcurrentHashMap 协作扩容 · 分段认领动画</b>
+        <i>64 个桶、stride=16、三个线程抢段，可单步播放每一段是谁搬的</i>
+      </span>
+      <span class="promo-go">打开 →</span>
+    </a>
+  </section>
+
   <!-- ============ RECENT ============ -->
   <section class="wrap sec">
     <div class="sec-head">
@@ -180,26 +203,6 @@ const index = docs.map((d) => ({
     </ul>
   </section>
 
-  <!-- ============ TOOLS ============ -->
-  <section class="wrap sec">
-    <div class="sec-head">
-      <h2>工具与入口</h2>
-    </div>
-    <div class="tool-grid">
-      {
-        TOOLS.map((t) => (
-          <a class="tool" href={t.href}>
-            <span class="tool-ico">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d={t.icon} /></svg>
-            </span>
-            <b>{t.name}</b>
-            <span>{t.desc}</span>
-          </a>
-        ))
-      }
-    </div>
-  </section>
-
   <!-- ============ TAGS ============ -->
   <section class="wrap sec">
     <div class="sec-head">
@@ -219,11 +222,53 @@ const index = docs.map((d) => ({
   </section>
 </BaseLayout>
 
-<script define:vars={{ index }}>
+<script define:vars={{ index, principles, catColor }}>
   const q = document.getElementById("q");
   const box = document.getElementById("result");
+  const list = document.getElementById("p-list");
+  const more = document.getElementById("p-more");
+  const filters = document.getElementById("p-filters");
   const norm = (s) => (s || "").toLowerCase();
+  const esc = (s) =>
+    (s || "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
+  /* ---------- 原理速查 ---------- */
+  const STEP = 12;
+  let pCat = "全部";
+  let pLimit = STEP;
+
+  function pRender() {
+    const all = pCat === "全部" ? principles : principles.filter((p) => p.c === pCat);
+    const slice = all.slice(0, pLimit);
+    list.innerHTML = slice
+      .map(
+        (p) =>
+          `<article class="p-item" style="--accent:${catColor[p.c] || "#8a9298"}"><h3>${esc(p.q)}</h3>` +
+          `<p>${esc(p.a)}</p>` +
+          `<a class="p-src" href="/${p.s}/">${esc(p.t)}${p.d ? " · " + esc(p.d) : ""} →</a></article>`
+      )
+      .join("");
+    more.hidden = pLimit >= all.length;
+    more.textContent = `展开更多（还有 ${Math.max(all.length - pLimit, 0)} 条）↓`;
+  }
+
+  filters.addEventListener("click", (e) => {
+    const b = e.target.closest(".p-chip");
+    if (!b) return;
+    pCat = b.dataset.cat;
+    pLimit = STEP;
+    [...filters.children].forEach((c) => c.classList.toggle("on", c === b));
+    pRender();
+  });
+
+  more.addEventListener("click", () => {
+    pLimit += STEP;
+    pRender();
+  });
+
+  pRender();
+
+  /* ---------- 搜索：笔记 + 原理 ---------- */
   function render(kw) {
     kw = norm(kw.trim());
     if (!kw) {
@@ -231,22 +276,39 @@ const index = docs.map((d) => ({
       box.innerHTML = "";
       return;
     }
-    const hits = index.filter(
+    const dHits = index.filter(
       (d) => norm(d.t).includes(kw) || norm(d.c).includes(kw) || norm(d.g).includes(kw)
     );
-    box.hidden = false;
-    if (!hits.length) {
-      box.innerHTML = `<p class="sr-empty">没有匹配 “${kw}” 的笔记，换个关键词试试。</p>`;
-      return;
+    const pHits = principles.filter((p) => norm(p.q + p.a + p.t).includes(kw));
+
+    let html = "";
+    if (pHits.length) {
+      html +=
+        `<p class="sr-count">原理结论 ${pHits.length} 条</p>` +
+        pHits
+          .slice(0, 20)
+          .map(
+            (p) =>
+              `<a class="sr-item" href="/${p.s}/"><b>${esc(p.q)}</b><span>${esc(p.c)}</span><i>${esc(p.a)}</i></a>`
+          )
+          .join("") +
+        (pHits.length > 20 ? `<p class="sr-count">… 还有 ${pHits.length - 20} 条</p>` : "");
     }
-    box.innerHTML =
-      `<p class="sr-count">命中 ${hits.length} 篇</p>` +
-      hits
-        .map(
-          (d) =>
-            `<a class="sr-item" href="${d.u}"><b>${d.t}</b><span>${d.c}</span><i>${d.x}</i></a>`
-        )
-        .join("");
+    if (dHits.length) {
+      html +=
+        `<p class="sr-count">笔记 ${dHits.length} 篇</p>` +
+        dHits
+          .map(
+            (d) =>
+              `<a class="sr-item" href="${d.u}"><b>${esc(d.t)}</b><span>${esc(d.c)}</span><i>${esc(d.x)}</i></a>`
+          )
+          .join("");
+    }
+    if (!html) {
+      html = `<p class="sr-empty">没有匹配 “${esc(kw)}” 的内容，换个关键词试试。</p>`;
+    }
+    box.hidden = false;
+    box.innerHTML = html;
   }
 
   q.addEventListener("input", (e) => render(e.target.value));

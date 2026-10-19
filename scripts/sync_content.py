@@ -19,7 +19,6 @@ os.makedirs(DOCS_DIR, exist_ok=True)
 
 STATIC_PAGES = [
     ("CHM协作扩容_分段认领动画.html", "chm-resize-animation"),
-    ("learning-map.html", "learning-map"),
 ]
 
 # (relpath, slug, date, categories, tags)
@@ -45,7 +44,9 @@ DOCS = [
     ("agent/ingestion-deep-dive.md", "ragflow-ingestion", "2026-09-30", ["RAG"], ["RAGFlow", "RAG", "源码"]),
     ("agent/rag.md", "rag", "2026-09-30", ["RAG"], ["RAG", "OpenCoze"]),
     ("agent/rrf.md", "rrf", "2026-09-30", ["RAG"], ["RRF", "检索"]),
-    ("learning-path.md", "learning-path", "2026-10-17", ["学习路线"], ["思维导图", "学习路径", "记忆方法"]),
+    # 已下架：learning-path.md（学习路线）与 learning-map.html（思维导图）
+    # 源文件仍在 D:/work/2026/deep-dive/，需要时把这两行加回来即可重新发布。
+    # ("learning-path.md", "learning-path", "2026-10-17", ["学习路线"], ["思维导图", "学习路径", "记忆方法"]),
 ]
 
 

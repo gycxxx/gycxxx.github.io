@@ -18,10 +18,9 @@ const SITE = "源码深读";
 const path = Astro.url.pathname;
 const nav = [
   { href: "/", label: "首页" },
+  { href: "/#principles", label: "原理速查" },
   { href: "/categories/", label: "分类" },
   { href: "/tags/", label: "标签" },
-  { href: "/learning-path/", label: "学习路线" },
-  { href: "/learning-map/", label: "思维导图" },
 ];
 const isOn = (h: string) => (h === "/" ? path === "/" : path.startsWith(h));
 ---
@@ -67,10 +66,10 @@ const isOn = (h: string) => (h === "/" ? path === "/" : path.startsWith(h));
           <span>逐文件、逐函数地读源码，结论都带 文件:行号</span>
         </div>
         <div class="foot-links">
+          <a href="/#principles">原理速查</a>
           <a href="/categories/">分类</a>
           <a href="/tags/">标签</a>
-          <a href="/learning-path/">学习路线</a>
-          <a href="/learning-map/">思维导图</a>
+          <a href="https://github.com/gycxxx/gycxxx.github.io">GitHub</a>
         </div>
         <p class="foot-note">由 Astro 静态生成 · 内容以 Markdown 源码笔记为唯一事实源</p>
       </div>
