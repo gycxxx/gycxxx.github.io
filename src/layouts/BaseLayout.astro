@@ -19,6 +19,7 @@ const path = Astro.url.pathname;
 const nav = [
   { href: "/", label: "首页" },
   { href: "/#principles", label: "原理速查" },
+  { href: "/animations/", label: "动画" },
   { href: "/categories/", label: "分类" },
   { href: "/tags/", label: "标签" },
 ];
@@ -67,6 +68,7 @@ const isOn = (h: string) => (h === "/" ? path === "/" : path.startsWith(h));
         </div>
         <div class="foot-links">
           <a href="/#principles">原理速查</a>
+          <a href="/animations/">动画</a>
           <a href="/categories/">分类</a>
           <a href="/tags/">标签</a>
           <a href="https://github.com/gycxxx/gycxxx.github.io">GitHub</a>

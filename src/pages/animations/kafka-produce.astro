@@ -1,0 +1,144 @@
+---
+import AnimLayout from "../../layouts/AnimLayout.astro";
+
+const STEPS = [
+  {
+    t: "producer 攒批并发出 ProduceRequest",
+    d: "record 先进入 RecordAccumulator 的 orders-1 批次，Sender 线程凑批后发出 ProduceRequest(acks=1)。",
+    src: "RecordAccumulator / Sender",
+    log: "producer: 批次 orders-1 → ProduceRequest(acks=1)",
+    st: { net: ["producer", "Acceptor", "Processor3", "reqQueue", "Handler7"], leo: 99, hw: 99, purg: 0, conn: "idle", hl: "producer" },
+  },
+  {
+    t: "Acceptor → Processor3：收包并 mute 连接",
+    d: "Acceptor 早已把连接 round-robin 给 Processor 3；poll 到可读事件、解析出 RequestHeader(apiKey=PRODUCE)，投进 requestQueue，并 mute 该连接停止继续读。",
+    src: "SocketServer.scala:1040-1041",
+    log: "Processor3: 解析 PRODUCE → requestQueue，连接 mute",
+    st: { net: ["producer", "Acceptor", "Processor3", "reqQueue", "Handler7"], leo: 99, hw: 99, purg: 0, conn: "muted", hl: "Processor3" },
+  },
+  {
+    t: "Handler-7 取请求并分发",
+    d: "KafkaRequestHandler 从 requestQueue 取走请求，KafkaApis.handle 按 ApiKeys 分发到 handleProduceRequest。",
+    src: "KafkaApis.scala:170, :396",
+    log: "Handler7: handleProduceRequest",
+    st: { net: ["producer", "Acceptor", "Processor3", "reqQueue", "Handler7"], leo: 99, hw: 99, purg: 0, conn: "muted", hl: "Handler7" },
+  },
+  {
+    t: "写入 leader 本地日志，得到 offset 100",
+    d: "replicaManager.handleProduceAppend → appendRecords → UnifiedLog.appendAsLeader 写进活动 segment，返回 baseOffset=100。",
+    src: "UnifiedLog.appendAsLeader（第三讲）",
+    log: "leader 落盘：offset=100（LEO 99→100）",
+    st: { net: ["producer", "Acceptor", "Processor3", "reqQueue", "Handler7"], leo: 100, hw: 99, purg: 0, conn: "muted", hl: "Handler7" },
+  },
+  {
+    t: "acks=1 也要进 Purgatory",
+    d: "即便条件已满足，框架统一构造 DelayedProduce（初始状态 REQUEST_TIMED_OUT）挂到 key orders-1 上，由事件驱动完成。",
+    src: "DelayedProduce.java:110-120",
+    log: "DelayedProduce 挂入 Purgatory(key=orders-1)",
+    st: { net: ["producer", "Acceptor", "Processor3", "reqQueue", "Handler7"], leo: 100, hw: 99, purg: 1, conn: "muted", hl: "Purgatory" },
+  },
+  {
+    t: "follower 追上，HW 推进",
+    d: "broker 2 的 ReplicaFetcherThread 拉到 offset 100，leader 把 HW 推进到 101，并 checkAndComplete(orders-1) 触发唤醒。",
+    src: "ReplicaManager.scala:862",
+    log: "follower 拉取 offset 100 → HW 99→101 → checkAndComplete",
+    st: { net: ["producer", "Acceptor", "Processor3", "reqQueue", "Handler7"], leo: 100, hw: 101, purg: 1, conn: "muted", hl: "Purgatory" },
+  },
+  {
+    t: "tryComplete 满足条件，触发回调",
+    d: "本地 offset 100 ≥ requiredOffset 100 且 ISR 满足 → 从 Purgatory 移除，responseCallback 在 Handler 线程被调用。",
+    src: "DelayedProduce.tryComplete",
+    log: "tryComplete ✓ → PartitionResponse(baseOffset=100, NONE)",
+    st: { net: ["producer", "Acceptor", "Processor3", "reqQueue", "Handler7"], leo: 100, hw: 101, purg: 0, conn: "muted", hl: "Handler7" },
+  },
+  {
+    t: "配额检查后发响应",
+    d: "sendResponseCallback 记录带宽配额，未超限则 requestChannel.sendResponse(ProduceResponse)。",
+    src: "KafkaApis.scala:492, :527",
+    log: "配额 OK → sendResponse(ProduceResponse)",
+    st: { net: ["producer", "Acceptor", "Processor3", "reqQueue", "Handler7"], leo: 100, hw: 101, purg: 0, conn: "muted", hl: "Handler7" },
+  },
+  {
+    t: "回到 Processor3 写回 socket 并 unmute",
+    d: "响应进 Processor3 的 responseQueue，下一轮 processNewResponses 注册写事件，写完 processCompletedSends 触发 unmute 恢复读。",
+    src: "RequestChannel.scala:456-457 / SocketServer.scala:1077-1078",
+    log: "写回 socket → unmute 连接",
+    st: { net: ["producer", "Acceptor", "Processor3", "reqQueue", "Handler7"], leo: 100, hw: 101, purg: 0, conn: "unmuted", hl: "Processor3" },
+  },
+  {
+    t: "producer 收到 offset，唤醒 future",
+    d: "Sender.handleProduceResponse 把 offset 100 填进 RecordMetadata，等待的 future 被唤醒。",
+    src: "Sender.handleProduceResponse",
+    log: "producer: RecordMetadata(offset=100)，future 完成",
+    st: { net: ["producer", "Acceptor", "Processor3", "reqQueue", "Handler7"], leo: 100, hw: 101, purg: 0, conn: "unmuted", hl: "producer" },
+  },
+];
+---
+
+<AnimLayout
+  title="Kafka 一条 produce 请求的旅程"
+  sub="acks=1 · 1 Acceptor + N Processor + M Handler 三段流水线，条件不齐就挂 Purgatory"
+  back="https://gycxxx.github.io/kafka/"
+>
+  <div class="note">
+    <h3>这张图的三个关键点</h3>
+    <ul>
+      <li>
+        <b>mute/unmute 是全局流控轴</b>：收到请求就 mute 停止读，响应写完才 unmute；
+        限流时直接 mute 到 throttle 时间点——Processor 无需理解业务语义就实现了背压。
+      </li>
+      <li>
+        <b>HW 与 LEO 是两回事</b>：写入后 LEO 立刻前进（本例 100），但要等 ISR 里的 follower 追上，
+        HW 才推进到 101——<b>消费者能看到的界线是 HW，不是 LEO</b>。
+      </li>
+      <li>
+        <b>回调必须回到 Handler 线程</b>：<code>wrapAsyncCallback</code> 用 ThreadLocal 检测当前线程，
+        跨线程就重新入 callbackQueue，这是 Kafka 异步正确性的基石。
+      </li>
+    </ul>
+    <p style="margin:10px 0 0">
+      场景设定：topic <code>orders</code> 3 分区，分区 1 leader 在 broker 1，ISR={1,2}，
+      <code>min.insync.replicas=1</code>。详见
+      <a href="https://gycxxx.github.io/kafka/">《Kafka 深读》第一讲端到端演算</a>。
+    </p>
+  </div>
+</AnimLayout>
+
+<script define:vars={{ STEPS }}>
+  const NET = ["producer", "Acceptor", "Processor3", "requestQueue", "Handler-7"];
+
+  Anim.create({
+    steps: STEPS,
+    onStep(step, i) {
+      const s = step.st;
+      const nodes = NET.map((n, k) => {
+        const cur = s.hl === NET[k] || s.hl === n;
+        return '<span class="qn ' + (cur ? "hot" : "") + '">' + n + "</span>";
+      }).join('<span class="arrow">→</span>');
+
+      document.getElementById("stage").innerHTML =
+        '<p class="s-title">网络流水线</p>' +
+        '<div class="qnodes">' + nodes + "</div>" +
+        '<div class="qnodes" style="margin-top:10px">' +
+        '<span class="qn ' + (s.hl === "Purgatory" ? "hot" : "dim") + '">Purgatory（DelatedProduce ×' + s.purg + ")</span>" +
+        '<span class="arrow">⇄</span>' +
+        '<span class="qn ' + (s.hl === "Handler7" ? "hot" : "") + '">checkAndComplete 唤醒</span>' +
+        "</div>" +
+        '<p class="s-title" style="margin-top:18px">分区 orders-1</p>' +
+        '<div class="s-row">' +
+        '<div class="box"><b>LEO（日志末端）</b><code>' + s.leo + "</code></div>" +
+        '<div class="box ' + (s.hw > 99 ? "ok" : "") + '"><b>HW（消费可见界）</b><code>' + s.hw + "</code></div>" +
+        '<div class="box"><b>ISR</b><code>{1, 2}</code></div>' +
+        '<div class="box ' + (s.conn === "muted" ? "hot" : s.conn === "unmuted" ? "ok" : "") + '"><b>连接</b><code>' + s.conn + "</code></div>" +
+        "</div>";
+
+      Anim.kv([
+        ["LEO", String(s.leo), s.leo > 99],
+        ["HW", String(s.hw), s.hw > 99],
+        ["Purgatory 挂起", String(s.purg), s.purg > 0],
+        ["连接状态", s.conn, true],
+      ]);
+      Anim.log(STEPS, i);
+    },
+  });
+</script>

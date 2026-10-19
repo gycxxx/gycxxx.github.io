@@ -402,6 +402,8 @@ addSingletonFactory(beanName, () -> {                     // :1172
 
 **三级缓存的准确位置**（这是全 Spring 最被面试问、也最常被讲错的地方）：
 
+> 🎬 配套动画：[Spring 三级缓存救循环依赖](/animations/spring-circular/) —— 12 步单步播放，看 A↔B 的调用栈与三张缓存的变化。
+
 | 缓存 | 行号 | 内容 | 写入时机 |
 | --- | --- | --- | --- |
 | `singletonObjects` 一级 | `:86` | 成品 bean | 创建全部完成后 `addSingleton` |

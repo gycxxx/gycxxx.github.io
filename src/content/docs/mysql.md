@@ -2314,6 +2314,8 @@ binlog::Binlog_recovery &binlog::Binlog_recovery::recover() {
 
 ### 6.9 端到端演算 ②：一次事务提交的两阶段提交与崩溃恢复
 
+> 🎬 配套动画：[MySQL 两阶段提交与崩溃恢复](/animations/mysql-2pc/) —— 25 步单步播放，含“崩在第 12 步之后”的完整恢复分支。
+
 场景：`BEGIN; UPDATE a ...; UPDATE b ...; COMMIT;`，开了 binlog，两个 UPDATE 都已写完 redo/undo。
 
 **正常路径**：

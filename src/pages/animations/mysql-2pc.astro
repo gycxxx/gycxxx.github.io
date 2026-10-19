@@ -1,0 +1,242 @@
+---
+import AnimLayout from "../../layouts/AnimLayout.astro";
+
+const STEPS = [
+  {
+    t: "客户端发来 COMMIT",
+    d: "BEGIN 后的两个 UPDATE 已经改完内存页、写好了 redo/undo，现在只差提交这一步。",
+    src: "sql/sql_parse.cc:2011",
+    log: "客户端 → COM_QUERY(COMMIT)",
+    st: { trx: "ACTIVE", redo: "已写 buffer", binlog: "cache 中", srv: "收到 COMMIT", bl: "空闲", inno: "事务进行中", hl: "srv" },
+  },
+  {
+    t: "trans_commit",
+    d: "mysql_execute_command 的 SQLCOM_COMMIT 分支进入事务提交总入口。",
+    src: "sql/transaction.cc:233",
+    log: "trans_commit()",
+    st: { trx: "ACTIVE", redo: "已写 buffer", binlog: "cache 中", srv: "trans_commit", bl: "空闲", inno: "事务进行中", hl: "srv" },
+  },
+  {
+    t: "ha_commit_trans",
+    d: "存储引擎层的提交入口，接下来所有 2PC 的编排都在这里。",
+    src: "sql/handler.cc:1608",
+    log: "ha_commit_trans(thd, all=true)",
+    st: { trx: "ACTIVE", redo: "已写 buffer", binlog: "cache 中", srv: "ha_commit_trans", bl: "空闲", inno: "事务进行中", hl: "srv" },
+  },
+  {
+    t: "是否走 2PC 的判定",
+    d: "!no_2pc && rw_ha_count > 1 —— 开了 binlog 且引擎支持 2PC 才启用；否则直接单阶段提交。",
+    src: "sql/handler.cc:1765",
+    log: "2PC 判定成立 → 进入两阶段",
+    st: { trx: "ACTIVE", redo: "已写 buffer", binlog: "cache 中", srv: "判定：走 2PC", bl: "空闲", inno: "事务进行中", hl: "srv" },
+  },
+  {
+    t: "阶段一：tc_log->prepare",
+    d: "仲裁者 binlog 先让引擎进入 prepare。注意 tc_log 就是 binlog，它同时是参与者和裁判。",
+    src: "sql/binlog.cc:8037",
+    log: "MYSQL_BIN_LOG::prepare",
+    st: { trx: "PREPARING", redo: "已写 buffer", binlog: "cache 中", srv: "调 prepare", bl: "MYSQL_BIN_LOG::prepare", inno: "等待 prepare", hl: "bl" },
+  },
+  {
+    t: "prepare 阶段故意不 fsync redo",
+    d: "设 HA_IGNORE_DURABILITY，把 redo 的刷盘推迟到第二阶段——2PC 只需要两次 fsync，不是三次。",
+    src: "sql/binlog.cc:8051",
+    log: "HA_IGNORE_DURABILITY：prepare 不 fsync",
+    st: { trx: "PREPARING", redo: "buffer（不 fsync）", binlog: "cache 中", srv: "标记忽略持久化", bl: "prepare 中", inno: "等待 prepare", hl: "bl" },
+  },
+  {
+    t: "下沉到 InnoDB：trx_prepare",
+    d: "ha_prepare_low → innobase_xa_prepare → trx_prepare，一路进到 InnoDB 的事务层。",
+    src: "sql/handler.cc:2286 / ha_innodb.cc:20017 / trx0trx.cc:3004",
+    log: "ha_prepare_low → innobase_xa_prepare → trx_prepare",
+    st: { trx: "PREPARING", redo: "buffer", binlog: "cache 中", srv: "等待", bl: "等待", inno: "trx_prepare", hl: "inno" },
+  },
+  {
+    t: "InnoDB 置 TRX_STATE_PREPARED",
+    d: "写 prepare undo 段并记下状态。此刻事务进入“可提交也可回滚”的中间态——这是 2PC 能成立的关键。",
+    src: "trx0trx.cc:2942 / :865",
+    log: "★ TRX_STATE_PREPARED（中间态）",
+    st: { trx: "PREPARED", redo: "prepare undo 已写", binlog: "cache 中", srv: "等待", bl: "等待", inno: "状态 = PREPARED", hl: "inno" },
+  },
+  {
+    t: "阶段二：tc_log->commit",
+    d: "prepare 完成，回到 binlog 走第二阶段。",
+    src: "sql/handler.cc:1781 / sql/binlog.cc:8090",
+    log: "MYSQL_BIN_LOG::commit",
+    st: { trx: "PREPARED", redo: "prepare undo 已写", binlog: "cache 中", srv: "调 commit", bl: "MYSQL_BIN_LOG::commit", inno: "PREPARED", hl: "bl" },
+  },
+  {
+    t: "补上 Xid_log_event",
+    d: "binlog_cache_data::finalize 把 XID 事件追加进事务的 binlog 缓存——这个 XID 就是崩溃恢复时的仲裁凭据。",
+    src: "sql/binlog.cc:2310, 2330",
+    log: "finalize() 追加 Xid_log_event（XID=…）",
+    st: { trx: "PREPARED", redo: "prepare undo 已写", binlog: "cache + Xid event", srv: "等待", bl: "写 Xid event", inno: "PREPARED", hl: "bl" },
+  },
+  {
+    t: "ordered_commit 三阶段组提交",
+    d: "FLUSH / SYNC / COMMIT 三个阶段各自带一个队列和 leader，多个事务合并刷盘，把多次 fsync 摊成一次。",
+    src: "sql/binlog.cc:8855",
+    log: "ordered_commit：Stage #0/#1/#2/#3",
+    st: { trx: "PREPARED", redo: "prepare undo 已写", binlog: "flush 中", srv: "等待", bl: "ordered_commit", inno: "PREPARED", hl: "bl" },
+  },
+  {
+    t: "★ Stage #2：fsync binlog（仲裁点）",
+    d: "这一步一旦完成，事务在“仲裁者”眼里就已经提交了。崩溃恢复时判断的正是“XID 在不在 binlog 里”。",
+    src: "sql/binlog.cc:9000",
+    log: "★ binlog fsync 完成 —— 仲裁凭据落地",
+    st: { trx: "PREPARED", redo: "prepare undo 已写", binlog: "已 fsync ✓", srv: "等待", bl: "SYNC 完成", inno: "PREPARED", hl: "bl" },
+  },
+  {
+    t: "Stage #3：通知引擎真正提交",
+    d: "finish_transaction_in_engines → innobase_commit_low，把“提交”这个决定交代给引擎。",
+    src: "sql/binlog.cc:8556 / ha_innodb.cc:5713",
+    log: "finish_transaction_in_engines → innobase_commit_low",
+    st: { trx: "COMMITTING", redo: "prepare undo 已写", binlog: "已 fsync ✓", srv: "等待", bl: "COMMIT 阶段", inno: "innobase_commit_low", hl: "inno" },
+  },
+  {
+    t: "trx_commit_low：写序列化信息",
+    d: "trx_write_serialisation_history 写 commit 相关的 undo/系统页，再 mtr_commit 收尾。",
+    src: "trx0trx.cc:2164",
+    log: "trx_commit_low → mtr_commit",
+    st: { trx: "COMMITTING", redo: "commit 记录已写", binlog: "已 fsync ✓", srv: "等待", bl: "等待", inno: "trx_commit_low", hl: "inno" },
+  },
+  {
+    t: "fsync redo",
+    d: "被推迟的那次 redo fsync 在这里补上——此时 redo 与 binlog 都已持久化，两边一致。",
+    src: "log0write.cc:1086",
+    log: "log_write_up_to → redo fsync ✓",
+    st: { trx: "COMMITTING", redo: "已 fsync ✓", binlog: "已 fsync ✓", srv: "等待", bl: "等待", inno: "redo fsync", hl: "inno" },
+  },
+  {
+    t: "trx_commit_in_memory：释放锁",
+    d: "内存里把事务标记为 COMMITTED_IN_MEMORY 并释放行锁，其他事务此刻才看得见新版本。",
+    src: "trx0trx.cc:1962",
+    log: "COMMITTED_IN_MEMORY，释放锁",
+    st: { trx: "COMMITTED", redo: "已 fsync ✓", binlog: "已 fsync ✓", srv: "等待", bl: "完成", inno: "锁已释放", hl: "inno" },
+  },
+  {
+    t: "返回 OK 包，提交完成",
+    d: "客户端拿到 OK。正常路径到此结束：两次 fsync，一次仲裁。",
+    src: "sql/protocol_classic.cc:1297",
+    log: "→ OK 包，COMMIT 完成",
+    st: { trx: "COMMITTED", redo: "已 fsync ✓", binlog: "已 fsync ✓", srv: "发 OK 包", bl: "完成", inno: "完成", hl: "srv" },
+  },
+  {
+    t: "⚡ 假如崩在这里（第 12 步之后、13 之前）",
+    d: "redo 已 prepare、binlog 已 fsync，但引擎还没真正 commit。进程没了，磁盘上留下一个“半截”的事务。",
+    src: "崩溃时间点",
+    log: "⚡ 崩溃！redo=PREPARED，binlog 有 XID，引擎未 commit",
+    st: { trx: "PREPARED（悬而未决）", redo: "prepare 已落盘", binlog: "已 fsync ✓", srv: "进程终止", bl: "已落盘", inno: "未 commit", hl: "crash" },
+  },
+  {
+    t: "重启：定位 checkpoint",
+    d: "recv_recovery_from_checkpoint_start 找到最后一个 checkpoint，确定从 redo 的哪里开始扫。",
+    src: "log0recv.cc:3767",
+    log: "recv_recovery_from_checkpoint_start",
+    st: { trx: "PREPARED", redo: "扫描起点已定", binlog: "已 fsync ✓", srv: "启动中", bl: "待检查", inno: "恢复中", hl: "inno" },
+  },
+  {
+    t: "扫描并按页哈希 redo",
+    d: "recv_scan_log_recs 把 redo 记录按 (space, page_no) 哈希分批，为的是同一页的多次修改能合并着应用。",
+    src: "log0recv.cc:3353",
+    log: "recv_scan_log_recs：按页哈希",
+    st: { trx: "PREPARED", redo: "已解析", binlog: "已 fsync ✓", srv: "启动中", bl: "待检查", inno: "恢复中", hl: "inno" },
+  },
+  {
+    t: "应用 redo：两个 UPDATE 的页修改被重做",
+    d: "物理层面先把页恢复到崩溃前的样子——注意这一步会把“未提交”的改动也重做进去，后面靠 undo/binlog 仲裁。",
+    src: "log0recv.cc:1121",
+    log: "recv_apply_hashed_log_recs：重放页修改",
+    st: { trx: "PREPARED", redo: "已应用", binlog: "已 fsync ✓", srv: "启动中", bl: "待检查", inno: "页已重做", hl: "inno" },
+  },
+  {
+    t: "复活未决事务",
+    d: "trx_lists_init_at_db_start → trx_resurrect：从 prepare undo 里把崩溃时的事务“复活”回来。",
+    src: "trx0trx.cc:1084 / :1019",
+    log: "trx_resurrect → TRX_STATE_PREPARED",
+    st: { trx: "PREPARED（已复活）", redo: "已应用", binlog: "已 fsync ✓", srv: "启动中", bl: "待检查", inno: "事务已复活", hl: "inno" },
+  },
+  {
+    t: "扫 binlog 收集 XID",
+    d: "server 层 Binlog_recovery::recover() 扫描最后一个 binlog 文件，把所有 XID 收集成集合。",
+    src: "sql/binlog/recovery.cc:59",
+    log: "Binlog_recovery::recover() → 收集 XID 集合",
+    st: { trx: "PREPARED", redo: "已应用", binlog: "扫描中…", srv: "启动中", bl: "收集 XID", inno: "等待仲裁", hl: "bl" },
+  },
+  {
+    t: "★ 仲裁：XID 在 binlog 里 → 提交",
+    d: "ha_recover 拿复活事务的 XID 去比对：在集合里就提交，不在就回滚。本例 XID 存在，决定提交。",
+    src: "sql/binlog/recovery.cc:112",
+    log: "★ XID 命中 → 决定提交（若在则提交，不在则回滚）",
+    st: { trx: "→ 提交", redo: "已应用", binlog: "XID 命中 ✓", srv: "仲裁完成", bl: "仲裁者", inno: "等待提交", hl: "bl" },
+  },
+  {
+    t: "补完提交，两边一致",
+    d: "trx_commit_for_mysql / innobase_commit_by_xid 把事务走完，redo 与 binlog 最终一致。",
+    src: "trx0trx.cc:2442 / ha_innodb.cc:1521",
+    log: "完成提交 → redo 与 binlog 一致 ✓",
+    st: { trx: "COMMITTED", redo: "已 fsync ✓", binlog: "XID 命中 ✓", srv: "就绪", bl: "一致", inno: "一致", hl: "ok" },
+  },
+];
+---
+
+<AnimLayout
+  title="MySQL 两阶段提交 · 与崩溃恢复"
+  sub="binlog 是仲裁者：redo 保证物理一致，undo 保证逻辑可回退，XID 在不在 binlog 里决定提交还是回滚"
+  back="https://gycxxx.github.io/mysql/"
+>
+  <div class="note">
+    <h3>2PC 的本质一句话</h3>
+    <ul>
+      <li>
+        <b>prepare 制造中间态</b>：InnoDB 先变成 <code>TRX_STATE_PREPARED</code>——既可提交也可回滚，
+        这个中间态是两阶段能成立的前提。
+      </li>
+      <li>
+        <b>binlog 的 fsync 是仲裁凭据</b>：恢复时扫 binlog 收集 XID，事务的 XID 在里面就提交，不在就回滚。
+        <b>崩在第 12 步之前（binlog 还没 fsync）会回滚</b>，之后则提交。
+      </li>
+      <li>
+        <b>只有两次 fsync</b>：prepare 阶段刻意设 <code>HA_IGNORE_DURABILITY</code> 不刷 redo，
+        把刷盘推迟到 Stage #3，再靠 <code>ordered_commit</code> 的组提交把多个事务的 fsync 合并。
+      </li>
+    </ul>
+    <p style="margin:10px 0 0">
+      完整 17 步正常路径 + R1–R15 恢复路径表格见
+      <a href="https://gycxxx.github.io/mysql/">《MySQL 深读》第六讲 6.9</a>。
+    </p>
+  </div>
+</AnimLayout>
+
+<script define:vars={{ STEPS }}>
+  function col(title, text, hot) {
+    return '<div class="s-col"><div class="box ' + (hot || "") + '"><b>' + title + "</b>" + text + "</div></div>";
+  }
+
+  Anim.create({
+    steps: STEPS,
+    onStep(step, i) {
+      const s = step.st;
+      const h = (k) => (s.hl === k ? "hot" : s.hl === "ok" ? "ok" : s.hl === "crash" ? "bad" : "");
+      document.getElementById("stage").innerHTML =
+        '<p class="s-title">两阶段提交 · 三个角色</p>' +
+        '<div class="s-row">' +
+        col("Server 层<br><code style='font-size:11px'>sql/handler.cc</code>", s.srv, h("srv")) +
+        col("binlog（仲裁者）<br><code style='font-size:11px'>sql/binlog.cc</code>", s.bl, h("bl")) +
+        col("InnoDB（引擎）<br><code style='font-size:11px'>storage/innobase</code>", s.inno, h("inno")) +
+        "</div>" +
+        '<p class="s-title" style="margin-top:18px">持久化凭据</p>' +
+        '<div class="s-row">' +
+        '<div class="box ' + (s.redo.indexOf("✓") >= 0 ? "ok" : "") + '"><b>redo fsync</b><code>' + s.redo + "</code></div>" +
+        '<div class="box ' + (s.binlog.indexOf("✓") >= 0 ? "ok" : "") + '"><b>binlog fsync</b><code>' + s.binlog + "</code></div>" +
+        "</div>";
+
+      Anim.kv([
+        ["事务状态", s.trx, true],
+        ["redo", s.redo, s.redo.indexOf("✓") >= 0],
+        ["binlog", s.binlog, s.binlog.indexOf("✓") >= 0],
+      ]);
+      Anim.log(STEPS, i);
+    },
+  });
+</script>

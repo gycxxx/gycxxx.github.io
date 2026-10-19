@@ -1,0 +1,57 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { ANIMATIONS } from "../../data/animations";
+
+const ITEMS = ANIMATIONS;
+---
+
+<BaseLayout title="流程动画" description="把源码里最绕的流程做成可单步播放的动画" wide>
+  <div class="panel">
+    <h1 class="page-title">流程动画</h1>
+    <p class="page-meta">
+      把源码里那些「一步错就全错」的复杂流程做成可单步播放的动画。
+      每个动画都能用 ← → 单步、空格播放、拖进度条跳转，右侧同步显示状态变量与事件流；
+      每一步都标了 <code>文件:行号</code>，可以回原文对照。
+    </p>
+
+    <div class="tool-grid">
+      {
+        ITEMS.map((it) => (
+          <a class="tool" href={it.href} style={`--accent:${it.color}`}>
+            <span class="tool-ico">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 5h18v6H3zM3 13h18v6H3zM9 5v6M15 13v6"></path>
+              </svg>
+            </span>
+            <b>{it.name}</b>
+            <span>{it.desc}</span>
+            <span class="anim-meta">
+              <em class="cat-pill">{it.cat}</em>
+              <em>{it.steps}</em>
+            </span>
+          </a>
+        ))
+      }
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .anim-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 10px;
+  }
+  .anim-meta em {
+    font-style: normal;
+    font-size: 11.5px;
+    color: var(--text-light);
+  }
+  .cat-pill {
+    padding: 1px 9px;
+    border-radius: 999px;
+    color: #fff !important;
+    background: var(--accent);
+  }
+</style>

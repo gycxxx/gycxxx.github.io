@@ -1,0 +1,189 @@
+---
+import AnimLayout from "../../layouts/AnimLayout.astro";
+
+const STEPS = [
+  {
+    t: "T1 抢到轻量级锁",
+    d: "mark word 是 neutral（存 hash/age/0）。T1 CAS 把 mark 换成指向自己栈帧里 BasicLock 的指针，成功即持有。",
+    src: "synchronizer.cpp:534",
+    log: "T1: CAS mark → from_pointer(lock1) 成功",
+    st: { mark: "stack-locked", owner: "T1", cxq: [], entry: [], t1: ["临界区", "ok"], t2: ["未开始", "dim"] },
+  },
+  {
+    t: "T1 在临界区里执行",
+    d: "此时没有任何内核态操作：没有 park、没有队列，只是对象头里一个指针。这就是“轻量级”的代价优势。",
+    src: "—",
+    log: "T1 执行临界区（无竞争，零系统调用）",
+    st: { mark: "stack-locked", owner: "T1", cxq: [], entry: [], t1: ["临界区", "ok"], t2: ["未开始", "dim"] },
+  },
+  {
+    t: "T2 来了：CAS 失败",
+    d: "T2 也 CAS 但失败；检查 mark.has_locker() 为真且持有者不是自己 → 说明真竞争，只能膨胀。",
+    src: "synchronizer.cpp:538-539",
+    log: "T2: CAS 失败，has_locker() 但非自己持有",
+    st: { mark: "stack-locked", owner: "T1", cxq: [], entry: [], t1: ["临界区", "ok"], t2: ["CAS 失败", "hot"] },
+  },
+  {
+    t: "膨胀第一步：CAS mark → INFLATING",
+    d: "先把 mark 置成 INFLATING(0) 这个中间态，告诉其他线程“我正在膨胀，别插手”。",
+    src: "synchronizer.cpp:1430",
+    log: "T2: inflate() → CAS mark → INFLATING",
+    st: { mark: "INFLATING", owner: "T1", cxq: [], entry: [], t1: ["临界区", "ok"], t2: ["膨胀中", "hot"] },
+  },
+  {
+    t: "膨胀完成：挂上 ObjectMonitor",
+    d: "新建 ObjectMonitor，把 mark CAS 成 encode(monitor)。此后这个对象的锁再也不会退回轻量级。",
+    src: "synchronizer.cpp:1486",
+    log: "T2: 新建 ObjectMonitor，mark → encode(m)",
+    st: { mark: "inflated", owner: "T1", cxq: [], entry: [], t1: ["临界区", "ok"], t2: ["已膨胀", "hot"] },
+  },
+  {
+    t: "T2 进重量级入口，CAS _owner 失败",
+    d: "ObjectMonitor::enter() 先试着把 _owner 从 null CAS 成自己，但 _owner 还是 T1（膨胀时把原持有者搬了过来）。",
+    src: "objectMonitor.cpp:328",
+    log: "T2: ObjectMonitor::enter() → CAS _owner 失败",
+    st: { mark: "inflated", owner: "T1", cxq: [], entry: [], t1: ["临界区", "ok"], t2: ["enter 失败", "hot"] },
+  },
+  {
+    t: "自旋也失败 → EnterI 入 _cxq 并 park",
+    d: "TrySpin 投机自旋没等到锁，EnterI 把 T2 封装成 ObjectWaiter，CAS push 到 _cxq 头部（LIFO），然后 park。",
+    src: "objectMonitor.cpp:686, 745-757",
+    log: "T2: TrySpin 失败 → push _cxq → park()",
+    st: { mark: "inflated", owner: "T1", cxq: ["T2"], entry: [], t1: ["临界区", "ok"], t2: ["parked", "park"] },
+  },
+  {
+    t: "T1 退出：发现 mark 已经变了",
+    d: "monitorexit 走 fast_exit 时发现 mark 已不是自己当初写入的 displaced header，说明被膨胀过，转重量级 exit。",
+    src: "synchronizer.cpp:623-627",
+    log: "T1: monitorexit → mark 已 inflated，转重量级",
+    st: { mark: "inflated", owner: "T1", cxq: ["T2"], entry: [], t1: ["退出中", "hot"], t2: ["parked", "park"] },
+  },
+  {
+    t: "ObjectMonitor::exit() 释放 _owner",
+    d: "把 _owner 清成 null，此时锁在 Java 语义上已经“空了”，但还没人唤醒 T2。",
+    src: "objectMonitor.cpp:1141",
+    log: "T1: exit() → _owner = null",
+    st: { mark: "inflated", owner: "null", cxq: ["T2"], entry: [], t1: ["释放 _owner", "hot"], t2: ["parked", "park"] },
+  },
+  {
+    t: "drain _cxq → _EntryList，再 unpark",
+    d: "关键设计：_cxq 是 LIFO 的 CAS 栈（入队快），exit 时把它整个搬到 _EntryList 变成 FIFO 双向链表，再挑一个 unpark。",
+    src: "objectMonitor.cpp:1268-1314",
+    log: "T1: _cxq → _EntryList → ExitEpilog unpark(T2)",
+    st: { mark: "inflated", owner: "null", cxq: [], entry: ["T2"], t1: ["退出完成", "dim"], t2: ["被 unpark", "hot"] },
+  },
+  {
+    t: "T2 被唤醒，TryLock 成功",
+    d: "从 park 返回后 TryLock 抢到 _owner，整个升级过程结束。此后这个 obj 的锁永远是重量级。",
+    src: "objectMonitor.cpp:829",
+    log: "T2: TryLock 成功，进入临界区",
+    st: { mark: "inflated", owner: "T2", cxq: [], entry: [], t1: ["已结束", "dim"], t2: ["临界区", "ok"] },
+  },
+];
+---
+
+<AnimLayout
+  title="synchronized 锁升级 · 轻量 → 重量级"
+  sub="JDK 21 三段式：无锁 → 栈锁（轻量级）→ ObjectMonitor（重量级），T2 竞争触发膨胀"
+  back="https://gycxxx.github.io/java-lock/"
+>
+  <div class="note">
+    <h3>容易被讲错的三点</h3>
+    <ul>
+      <li>
+        <b>JDK 21 已无偏向锁</b>：锁升级是<b>三段</b>而不是四段。旧八股里的“无锁→偏向→轻量→重量”在 JDK 15 之后就已过期，
+        <code>globals.hpp:1973</code> 的 <code>LockingMode</code> 默认 <code>LM_LEGACY</code>。
+      </li>
+      <li>
+        <b>膨胀不可逆</b>：一旦换成 ObjectMonitor，这个对象后续所有加锁都走重量级路径，不会再“降档”回栈锁。
+      </li>
+      <li>
+        <b>入队 LIFO、出队 FIFO</b>：新线程 CAS push 到 <code>_cxq</code> 头部（竞争小），exit 时 drain 到
+        <code>_EntryList</code> 变成双向链表再挑人唤醒（公平）。<code>_succ</code> / <code>_Responsible</code>
+        是防“锁空着但没人被唤醒”的双保险。
+      </li>
+    </ul>
+    <p style="margin:10px 0 0">
+      <code>wait()</code> / <code>notify()</code> 走第三条队列 <code>_WaitSet</code>（循环双链表），
+      详见 <a href="https://gycxxx.github.io/java-lock/">《Java 锁深读》第一讲</a>。
+    </p>
+  </div>
+</AnimLayout>
+
+<script define:vars={{ STEPS }}>
+  const MARKTXT = {
+    neutral: ["neutral", "hash / age / 0", ""],
+    "stack-locked": ["stack-locked", "ptr → BasicLock(T1 栈帧)", "ok"],
+    INFLATING: ["INFLATING", "0（膨胀中间态）", "hot"],
+    inflated: ["inflated", "ptr → ObjectMonitor", "hot"],
+  };
+
+  function items(arr, empty) {
+    if (!arr.length)
+      return '<span style="color:rgba(255,255,255,.35);font-size:12.5px">' + empty + "</span>";
+    return arr.map((x) => '<span class="qn wait">' + x + "</span>").join("");
+  }
+
+  function lane(who, a) {
+    return (
+      '<div class="lane ' +
+      (a[1] || "") +
+      '"><span class="who">' +
+      who +
+      "</span><span>" +
+      a[0] +
+      "</span></div>"
+    );
+  }
+
+  Anim.create({
+    steps: STEPS,
+    onStep(step, i) {
+      const s = step.st;
+      const m = MARKTXT[s.mark];
+      document.getElementById("stage").innerHTML =
+        '<p class="s-title">对象头 mark word</p>' +
+        '<div class="box ' +
+        m[2] +
+        '"><b>' +
+        m[0] +
+        '</b><code>' +
+        m[1] +
+        "</code></div>" +
+        '<p class="s-title" style="margin-top:16px">ObjectMonitor</p>' +
+        '<div class="s-row">' +
+        '<div class="box"><b>_owner</b><code>' +
+        s.owner +
+        "</code></div>" +
+        '<div class="box ' +
+        (s.cxq.length ? "hot" : "") +
+        '"><b>_cxq（LIFO 栈）</b><code>' +
+        (s.cxq.join(",") || "空") +
+        "</code></div>" +
+        '<div class="box ' +
+        (s.entry.length ? "ok" : "") +
+        '"><b>_EntryList（FIFO）</b><code>' +
+        (s.entry.join(",") || "空") +
+        "</code></div>" +
+        "</div>" +
+        '<div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">' +
+        '<span style="color:rgba(255,255,255,.45);font-size:12px">_cxq</span>' +
+        items(s.cxq, "空") +
+        '<span class="arrow">→ drain →</span>' +
+        '<span style="color:rgba(255,255,255,.45);font-size:12px">_EntryList</span>' +
+        items(s.entry, "空") +
+        "</div>" +
+        '<p class="s-title" style="margin-top:16px">线程</p>' +
+        lane("T1", s.t1) +
+        lane("T2", s.t2);
+
+      Anim.kv([
+        ["mark word", s.mark, true],
+        ["_owner", s.owner, false],
+        ["_cxq", s.cxq.join(",") || "空", s.cxq.length > 0],
+        ["_EntryList", s.entry.join(",") || "空", s.entry.length > 0],
+      ]);
+      Anim.log(STEPS, i);
+    },
+  });
+</script>

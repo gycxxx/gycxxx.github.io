@@ -375,6 +375,8 @@ sequenceDiagram
 
 ### 端到端演算：一条 acks=1 的 produce 请求
 
+> 🎬 配套动画：[Kafka 一条 produce 的旅程](/animations/kafka-produce/) —— 10 步单步播放，LEO/HW/Purgatory 同步变化。
+
 设 topic `orders` 3 分区，分区 1 的 leader 是 broker 1，ISR = {1,2}，`min.insync.replicas=1`，客户端 `acks=1`。
 
 1. **发送**：producer 把 record 写进 `RecordAccumulator` 的 `orders-1` 批次（详见第四讲），Sender 凑成 `ProduceRequest(acks=1)` 发往 broker 1:9092；

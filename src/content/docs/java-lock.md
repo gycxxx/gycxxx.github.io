@@ -668,6 +668,8 @@ if (list == nullptr) {
 
 ### 1.8 端到端演演算：synchronized 从无锁到重量级锁的升级
 
+> 🎬 配套动画：[synchronized 锁升级](/animations/sync-upgrade/) —— 11 步单步播放，mark word 与 `_cxq`/`_EntryList` 同步变化，可拖进度条。
+
 假设线程 T1、T2 依次对对象 obj 执行 `synchronized(obj) { ... }`（LM_LEGACY 模式）：
 
 | 步骤 | 线程 | mark word 状态 | 动作 | 源码位置 |
@@ -1045,6 +1047,8 @@ public final boolean hasQueuedPredecessors() {  // 1284
 ---
 
 ### 2.8 端到端演算：ReentrantLock.lock() 非公平模式
+
+> 🎬 配套动画：[AQS 独占锁取号排队](/animations/aqs-lock/) —— 20 步单步播放，CLH 队列与 state/owner 同步变化。
 
 假设 T1 持有锁，T2 调用 `lock()`：
 

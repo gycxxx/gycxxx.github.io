@@ -4,6 +4,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import "../styles/home.css";
 import { sortByDateDesc, groupByCategory, allTags, href, excerpt } from "../lib/docs";
 import principles from "../data/principles.json";
+import { ANIMATIONS } from "../data/animations";
 
 const docs = sortByDateDesc(await getCollection("docs"));
 const groups = groupByCategory(docs);
@@ -160,18 +161,31 @@ const index = docs.map((d) => ({
     </div>
   </section>
 
-  <!-- ============ ANIMATION PROMO ============ -->
+  <!-- ============ ANIMATIONS ============ -->
   <section class="wrap sec">
-    <a class="promo" href="/chm-resize-animation/">
-      <span class="promo-ico">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v6H3zM3 13h18v6H3zM9 5v6M15 13v6"></path></svg>
-      </span>
-      <span class="promo-body">
-        <b>ConcurrentHashMap 协作扩容 · 分段认领动画</b>
-        <i>64 个桶、stride=16、三个线程抢段，可单步播放每一段是谁搬的</i>
-      </span>
-      <span class="promo-go">打开 →</span>
-    </a>
+    <div class="sec-head">
+      <h2>流程动画</h2>
+      <a class="sec-more" href="/animations/">全部动画 →</a>
+    </div>
+    <div class="tool-grid">
+      {
+        ANIMATIONS.map((a) => (
+          <a class="tool" href={a.href} style={`--accent:${a.color}`}>
+            <span class="tool-ico">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 5h18v6H3zM3 13h18v6H3zM9 5v6M15 13v6"></path>
+              </svg>
+            </span>
+            <b>{a.name}</b>
+            <span>{a.desc}</span>
+            <span class="anim-meta">
+              <em class="cat-pill">{a.cat}</em>
+              <em>{a.steps}</em>
+            </span>
+          </a>
+        ))
+      }
+    </div>
   </section>
 
   <!-- ============ RECENT ============ -->

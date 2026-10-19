@@ -1,0 +1,72 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  sub: string;
+  back?: string;
+}
+
+const { title, sub, back = "https://gycxxx.github.io/" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} · 源码动画</title>
+    <meta name="description" content={sub} />
+    <link rel="stylesheet" href="/anim/anim.css" />
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <header class="top">
+      <div class="in">
+        <b>{title}</b>
+        <span class="sub">{sub}</span>
+        <nav class="rt">
+          <a href={back}>← 返回笔记站</a>
+          <a href="/animations/">全部动画</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="wrap-anim">
+      <div class="cap" id="cap"></div>
+
+      <div class="grid">
+        <div>
+          <div class="stage" id="stage"></div>
+          <div class="ctrl">
+            <button id="b-first" title="Home">⏮</button>
+            <button id="b-prev" title="←">◀ 上一步</button>
+            <button id="b-play" class="pri">▶ 播放</button>
+            <button id="b-next" title="→">下一步 ▶</button>
+            <button id="b-last" title="End">⏭</button>
+            <input id="range" type="range" min="0" value="0" />
+            <span class="cnt" id="cnt">1 / 1</span>
+            <select id="speed" title="播放速度">
+              <option value="2200">慢</option>
+              <option value="1400" selected>中</option>
+              <option value="700">快</option>
+            </select>
+          </div>
+          <p class="hint">
+            <kbd>←</kbd> <kbd>→</kbd> 单步 · <kbd>空格</kbd> 播放/暂停 ·
+            <kbd>Home</kbd>/<kbd>End</kbd> 首/末步 · 也可直接拖进度条
+          </p>
+        </div>
+
+        <aside class="side">
+          <div class="card" id="vars"></div>
+          <div class="card log" id="log"></div>
+        </aside>
+      </div>
+
+      <slot />
+    </div>
+
+    <script is:inline src="/anim/anim.js"></script>
+  </body>
+</html>
