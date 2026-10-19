@@ -18,7 +18,7 @@
 <meta property="og:description" content="对象：OpenCoze 后端 · 单智能体（SingleAgent）模块 —— 从配置到流式回复的完整链路版本：commit 5ec991c4be724b4fba2d511dc164884e86edef05（2026-09-28）代码规模：agent 相关约 9008 行 Go（domain&#x2F;agent&#x2F;singleagent + application&#x2F;singleagent + crossd">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-10-16T16:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-16T07:29:40.774Z">
+<meta property="article:modified_time" content="2026-10-19T02:01:19.896Z">
 <meta property="article:author" content="gyc">
 <meta property="article:tag" content="源码">
 <meta property="article:tag" content="OpenCoze">
@@ -122,10 +122,6 @@
         </div>
         
         
-        <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="menu-share">
-            <i class="icon icon-lg icon-share-alt"></i>
-        </a>
-        
     </div>
 </header>
 <header class="content-header">
@@ -138,7 +134,7 @@
 </time>
 
 
-	<ul class="article-category-list"><li class="article-category-list-item"><a class="article-category-list-link" href="/categories/%E6%B8%B8%E6%88%8F%E4%B8%8E%E4%BA%91%E5%8E%9F%E7%94%9F/">游戏与云原生</a></li></ul>
+	<ul class="article-category-list"><li class="article-category-list-item"><a class="article-category-list-link" href="/categories/RAG-%E4%B8%8E-Agent/">RAG 与 Agent</a></li></ul>
 
         
     </h5>
@@ -155,43 +151,6 @@
     </div>
     <div class="post-body">
         <aside class="post-widget" id="post-widget">
-
-            
-            <div class="post-share" id="post-share">
-    <div class="tit">分享到：</div>
-    <ul class="reset share-icons">
-      <li>
-        <a class="weibo share-sns" href="javascript:;" data-title="微博" data-service="tsina">
-          <i class="icon icon-weibo"></i>
-        </a>
-      </li>
-      <li>
-        <a class="weixin share-sns" href="javascript:;" data-title="微信" data-service="weixin">
-          <i class="icon icon-weixin"></i>
-        </a>
-      </li>
-      <li>
-        <a class="qq share-sns" href="javascript:;" data-title=" QQ" data-service="cqq">
-          <i class="icon icon-qq"></i>
-        </a>
-      </li>
-      <li>
-        <a class="facebook share-sns" href="javascript:;" data-title=" Facebook" data-service="fb">
-          <i class="icon icon-facebook"></i>
-        </a>
-      </li>
-      <li>
-        <a class="twitter share-sns" href="javascript:;" data-title=" Twitter" data-service="twitter">
-          <i class="icon icon-twitter"></i>
-        </a>
-      </li>
-      <li>
-        <a class="douban share-sns" href="javascript:;" data-title="豆瓣" data-service="douban">
-          豆
-        </a>
-      </li>
-    </ul>
- </div>
 
             
 
@@ -1832,51 +1791,6 @@
   </main>
 <div class="mask" id="mask"></div>
 <a href="javascript:;" id="gotop" class="waves-effect waves-circle waves-light"><span class="icon icon-lg icon-chevron-up"></span></a>
-
-<script>
-var BLOG_SHARE = {
-    title: "OpenCoze Agent 模块源码深读笔记",
-    pic: "/img/avatar.jpg",
-    summary: document.getElementsByName('summary')[0].content,
-    url: "https://gycxxx.github.io/opencoze-agent/index.html"
-};
-</script>
-<div class="global-share" id="global-share">
-    <div class="tit">分享到：</div>
-    <ul class="reset share-icons">
-      <li>
-        <a class="weibo share-sns" href="javascript:;" data-title="微博" data-service="tsina">
-          <i class="icon icon-weibo"></i>
-        </a>
-      </li>
-      <li>
-        <a class="weixin share-sns" href="javascript:;" data-title="微信" data-service="weixin">
-          <i class="icon icon-weixin"></i>
-        </a>
-      </li>
-      <li>
-        <a class="qq share-sns" href="javascript:;" data-title=" QQ" data-service="cqq">
-          <i class="icon icon-qq"></i>
-        </a>
-      </li>
-      <li>
-        <a class="facebook share-sns" href="javascript:;" data-title=" Facebook" data-service="fb">
-          <i class="icon icon-facebook"></i>
-        </a>
-      </li>
-      <li>
-        <a class="twitter share-sns" href="javascript:;" data-title=" Twitter" data-service="twitter">
-          <i class="icon icon-twitter"></i>
-        </a>
-      </li>
-      <li>
-        <a class="douban share-sns" href="javascript:;" data-title="豆瓣" data-service="douban">
-          豆
-        </a>
-      </li>
-    </ul>
- </div>
-
 
 <script src="/js/waves.min.js"></script>
 
