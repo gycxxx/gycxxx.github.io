@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>源码深读笔记 | Kafka / Nacos / Spring / Redis / MySQL / ES / Java / JVM / RAG</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  <meta name="theme-color" content="#3F51B5">
+  
+  
+  <meta name="keywords" content="源码,面试,Kafka,Spring,Redis,MySQL,Java,JVM,RAG">
+  <meta name="description" content="ConcurrentHashMap 协作扩容：分段认领动画    :root{     --color-background-primary:#ffffff;     --color-background-secondary:#f5f5f3;     --color-text-primary:#1c1c1a;     --color-text-secondary:#5f5e5a;">
+<meta property="og:type" content="website">
+<meta property="og:title" content="源码深读笔记">
+<meta property="og:url" content="https://gycxxx.github.io/chm-resize-animation/index.html">
+<meta property="og:site_name" content="源码深读笔记">
+<meta property="og:description" content="ConcurrentHashMap 协作扩容：分段认领动画    :root{     --color-background-primary:#ffffff;     --color-background-secondary:#f5f5f3;     --color-text-primary:#1c1c1a;     --color-text-secondary:#5f5e5a;">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-10-19T03:23:08.560Z">
+<meta property="article:modified_time" content="2026-10-19T03:23:08.560Z">
+<meta property="article:author" content="gyc">
+<meta property="article:tag" content="源码">
+<meta property="article:tag" content="面试">
+<meta property="article:tag" content="Kafka">
+<meta property="article:tag" content="Spring">
+<meta property="article:tag" content="Redis">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="JVM">
+<meta property="article:tag" content="RAG">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternative" href="/atom.xml" title="源码深读笔记" type="application/atom+xml">
+  
+  <meta name="summary" content="主流基础设施、框架与 JDK 的源码级深度学习笔记">
+  <link rel="shortcut icon" href="/img/favicon.ico">
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="loading" class="active"></div>
+
+  <nav id="menu"  >
+   <div class="inner flex-row-vertical">
+  <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="menu-off">
+      <i class="icon icon-lg icon-close"></i>
+  </a>
+  <div class="brand-wrap">
+    <div class="brand">
+      <a href="/" class="avatar"><img src="/img/avatar.jpg"></a>
+      <hgroup class="introduce">
+        <h5 class="nickname">gyc</h5>
+        
+      </hgroup>
+    </div>
+  </div>
+  <div class="scroll-wrap flex-col">
+    <ul class="nav">
+      
+          <li class="waves-block waves-effect">
+            <a href="/"  >
+              <i class="icon icon-lg icon-home"></i>
+              主页
+            </a>
+          </li>
+      
+          <li class="waves-block waves-effect">
+            <a href="/archives"  >
+              <i class="icon icon-lg icon-archive"></i>
+              归档
+            </a>
+          </li>
+      
+          <li class="waves-block waves-effect">
+            <a href="/categories"  >
+              <i class="icon icon-lg icon-th-list"></i>
+              分类
+            </a>
+          </li>
+      
+          <li class="waves-block waves-effect">
+            <a href="/tags"  >
+              <i class="icon icon-lg icon-tags"></i>
+              标签
+            </a>
+          </li>
+      
+          <li class="waves-block waves-effect">
+            <a href="/learning-map/"  >
+              <i class="icon icon-lg icon-sitemap"></i>
+              思维导图
+            </a>
+          </li>
+      
+    </ul>
+
+    <footer class="footer">
+  <p>源码深读笔记 &copy; 2026</p>
+  <p>Power by <a href="http://hexo.io/" target="_blank">Hexo</a> Theme
+  <a href="https://github.com/yscoder/hexo-theme-indigo" target="_blank">indigo</a></p>
+  <a href="/atom.xml" target="_blank" class="rss" title="rss"><i class="icon icon-2x icon-rss-square"></i></a>
+</footer>
+
+  </div>
+</div>
+
+  </nav>
+  <main id="main">
+    <header class="top-header" id="header">
+    <div class="flex-row">
+        <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light on" id="menu-toggle">
+          <i class="icon icon-lg icon-navicon"></i>
+        </a>
+        <div class="flex-col header-title ellipsis">源码深读笔记</div>
+        
+        <div class="search-wrap" id="search-wrap">
+            <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="back">
+                <i class="icon icon-lg icon-chevron-left"></i>
+            </a>
+            <input type="text" id="key" class="search-input " autocomplete="off" placeholder="输入感兴趣的关键字">
+            <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="search">
+                <i class="icon icon-lg icon-search"></i>
+            </a>
+        </div>
+        
+        
+    </div>
+</header>
+<header class="content-header">
+  <div class="container">
+    <h1 class="author">源码深读笔记</h1>
+    <h5 class="subtitle">
+        
+            <time datetime="2026-10-19T03:23:08.560Z" itemprop="datePublished" class="page-time">
+  2026-10-19
+</time>
+
+
+        
+    </h5>
+  </div>
+</header>
+
+    <div class="container body-wrap">
+      <article id="page-" 
+  class="article article-type-page" itemprop="blogPost">
+    <div class="post-meta flex-row">
+        
+    </div>
+    <div class="post-body">
+        <aside class="post-widget" id="post-widget">
+
+            
+
+            
+            <nav class="post-toc-wrap" id="post-toc">
+            <ol class="post-toc"><li class="post-toc-item post-toc-level-1"><a class="post-toc-link"><span class="post-toc-number">1.</span> <span class="post-toc-text">ConcurrentHashMap 协作扩容：到底谁搬哪一段</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-2"><a class="post-toc-link"><span class="post-toc-number">1.1.</span> <span class="post-toc-text">64 个桶切成 4 段，T1&#x2F;T2&#x2F;T3 三个线程靠 CAS 依次认领并从高下标往低下标搬运</span></a></li></ol></li></ol>
+            </nav>
+            
+        </aside>
+
+        <div class="post-main">
+
+            <div class="post-content" id="post-content" itemprop="postContent">
+            <!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ConcurrentHashMap 协作扩容：分段认领动画</title>
+<style>
+  :root{
+    --color-background-primary:#ffffff;
+    --color-background-secondary:#f5f5f3;
+    --color-text-primary:#1c1c1a;
+    --color-text-secondary:#5f5e5a;
+    --color-border-tertiary:rgba(0,0,0,0.15);
+    --border-radius-md:8px;
+    --font-sans:system-ui,-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+    --font-mono:ui-monospace,Consolas,"Courier New",monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --color-background-primary:#1b1b1a;
+      --color-background-secondary:#2a2a28;
+      --color-text-primary:#f0f0ee;
+      --color-text-secondary:#a5a49f;
+      --color-border-tertiary:rgba(255,255,255,0.18);
+    }
+  }
+  body{
+    margin:0; padding:24px 20px 40px;
+    background:var(--color-background-primary);
+    color:var(--color-text-primary);
+    font-family:var(--font-sans); font-size:13px; line-height:1.6;
+  }
+  .wrap{max-width:780px; margin:0 auto;}
+  h1{font-size:17px; font-weight:500; margin:0 0 6px;}
+  .sub{font-size:12px; color:var(--color-text-secondary); margin-bottom:18px;}
+  .sr-only{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+  button{
+    font-family:inherit; font-size:13px; color:inherit;
+    background:transparent; border:0.5px solid var(--color-border-tertiary);
+    border-radius:var(--border-radius-md); padding:6px 12px; cursor:pointer;
+  }
+  button:hover{border-color:var(--color-text-secondary);}
+  code{font-family:var(--font-mono); font-size:12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>ConcurrentHashMap 协作扩容：到底谁搬哪一段</h1>
+<div class="sub">
+  table.length = 64，NCPU = 8 → stride = 16，整表切成 4 段。三个线程同时 put，靠一次 CAS 认领一段，从高下标往低下标搬。<br>
+  认领区间左闭右开 <code>[nextIndex - stride, nextIndex)</code>（<code>ConcurrentHashMap.java:2454-2459</code>），段内同样从高往低（<code>i = nextIndex - 1</code>）。<br>
+  <a href="https://gycxxx.github.io/java-collections/" style="color:inherit;">← 回到《Java 集合深读》</a>
+</div>
+
+<h2 class="sr-only">64 个桶切成 4 段，T1/T2/T3 三个线程靠 CAS 依次认领并从高下标往低下标搬运</h2>
+<div style="font-family: var(--font-sans); font-size:13px; color: var(--color-text-primary);">
+
+  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+    <div style="flex:1 1 120px; background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:10px 12px;">
+      <div style="font-size:12px; color:var(--color-text-secondary);">transferIndex</div>
+      <div id="m-ti" style="font-size:22px; font-weight:500;">—</div>
+    </div>
+    <div style="flex:1 1 120px; background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:10px 12px;">
+      <div style="font-size:12px; color:var(--color-text-secondary);">sizeCtl 里的搬迁线程数</div>
+      <div id="m-rs" style="font-size:22px; font-weight:500;">0</div>
+    </div>
+    <div style="flex:1 1 120px; background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:10px 12px;">
+      <div style="font-size:12px; color:var(--color-text-secondary);">stride / 段数</div>
+      <div style="font-size:22px; font-weight:500;">16 <span style="font-size:13px; color:var(--color-text-secondary);">/ 4 段</span></div>
+    </div>
+    <div style="flex:1 1 120px; background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:10px 12px;">
+      <div style="font-size:12px; color:var(--color-text-secondary);">桶数组</div>
+      <div id="m-cap" style="font-size:22px; font-weight:500;">64 <span style="font-size:13px; color:var(--color-text-secondary);">→ 128</span></div>
+    </div>
+  </div>
+
+  <div style="font-size:12px; color:var(--color-text-secondary); margin-bottom:6px;">认领方向：transferIndex 从 64 一路往左啃到 0（段内也从高下标往低下标搬）</div>
+
+  <div id="segs"></div>
+
+  <div id="threads" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; margin-top:14px;"></div>
+
+  <div style="margin-top:12px; background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:10px 12px; font-size:13px; line-height:1.6;">
+    <span style="color:var(--color-text-secondary);">第 <b id="m-step">1</b>/15 步 · </span><span id="m-log"></span>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:10px; margin-top:14px; flex-wrap:wrap;">
+    <button id="b-prev">◀ 上一步</button>
+    <button id="b-play">▶ 播放</button>
+    <button id="b-next">下一步 ▶</button>
+    <button id="b-reset">重置</button>
+    <input type="range" id="r-step" min="1" max="15" value="1" style="flex:1 1 160px;">
+  </div>
+
+  <div style="margin-top:10px; font-size:12px; color:var(--color-text-secondary); line-height:1.7;">
+    深色格 = 已搬完（老表槽位已插 ForwardingNode）　浅色格 = 已认领但未搬完　灰色 = 无人认领　方框 = 该线程当前正在搬的桶
+  </div>
+
+  <div style="margin-top:20px; padding-top:14px; border-top:0.5px solid var(--color-border-tertiary); font-size:12px; color:var(--color-text-secondary); line-height:1.9;">
+    四条必须讲清的边界：<br>
+    1. 发起者没有特权：只多做「建 nextTable（:2431）+ 置 transferIndex = n（:2438）」两件事，之后和所有人一样靠 CAS 抢段。<br>
+    2. 搬完一段不退出：外层 <code>for (;;)</code>（:2444）+ 内层 <code>while (advance)</code>（:2446）回头再抢，所以段数不必等于线程数（3 线程搬 4 段）。<br>
+    3. 来晚的线程不空转：<code>transferIndex &lt;= 0</code> 时 helpTransfer（:2371）/ addCount（:2348）直接 break；帮手上限 MAX_RESIZERS = 65535（:581）。<br>
+    4. 收尾只由最后一人做（:2471-2473），且需 <code>i = n</code> 全表复查（:2475）后才提交新表。<br>
+    反直觉点：stride = max((n&gt;&gt;&gt;3)/NCPU, 16)（:2426-2427），表长 16 时整表只有 1 段，第二个线程根本没段可抢——「并肩搬」至少要表长 ≥ 32。
+  </div>
+</div>
+</div>
+<script>
+(function(){
+  var C={T1:['#378ADD','#B5D4F4','#042C53'],T2:['#1D9E75','#9FE1CB','#04342C'],T3:['#BA7517','#FAC775','#412402']};
+  var SEGS=[{lo:48,hi:64,n:'段①'},{lo:32,hi:48,n:'段②'},{lo:16,hi:32,n:'段③'},{lo:0,hi:16,n:'段④'}];
+  var steps=[
+   {ti:null,rs:0,own:[null,null,null,null],done:[0,0,0,0],act:{},log:'T1 执行 put，addCount 后发现元素数达到阈值 48，准备扩容',
+    th:{T1:['put 中，尚未扩容','—'],T2:['空闲','—'],T3:['空闲','—']}},
+   {ti:null,rs:1,own:[null,null,null,null],done:[0,0,0,0],act:{},log:'T1 CAS(sizeCtl, 48, (rs<<16)+2) 成功 → 抢到发起权，线程数记 1',
+    th:{T1:['抢到发起权','—'],T2:['空闲','—'],T3:['空闲','—']}},
+   {ti:64,rs:1,own:[null,null,null,null],done:[0,0,0,0],act:{},log:'T1 建好 nextTable[128]，并把 transferIndex 置为 n=64（发起者只多做这两件事）',
+    th:{T1:['建新表 + 置游标','—'],T2:['空闲','—'],T3:['空闲','—']}},
+   {ti:48,rs:1,own:['T1',null,null,null],done:[0,0,0,0],act:{T1:0},log:'T1 也靠 CAS 认领：拿到区间 [48,64)，i=63，从最高下标往下搬（发起者没有特权）',
+    th:{T1:['搬 i=63','段①'],T2:['空闲','—'],T3:['空闲','—']}},
+   {ti:48,rs:1,own:['T1',null,null,null],done:[9,0,0,0],act:{T1:0},log:'T1 已搬 9 个桶；此时 T2 的 put 落到 60 号桶，撞见 ForwardingNode（hash==MOVED）',
+    th:{T1:['搬 i=54','段①'],T2:['put 撞见 MOVED','60 号桶'],T3:['空闲','—']}},
+   {ti:48,rs:2,own:['T1',null,null,null],done:[10,0,0,0],act:{T1:0},log:'T2 进入 helpTransfer：CAS(sizeCtl, sc, sc+1) 把线程数加到 2，然后去抢段',
+    th:{T1:['搬 i=53','段①'],T2:['已报名帮忙，抢段中','—'],T3:['空闲','—']}},
+   {ti:32,rs:2,own:['T1','T2',null,null],done:[11,0,0,0],act:{T1:0,T2:1},log:'T2 CAS 认领 [32,48)，i=47 —— 原线程搬段①，新线程搬的是紧挨着的下一“段”',
+    th:{T1:['搬 i=52','段①'],T2:['搬 i=47','段②'],T3:['空闲','—']}},
+   {ti:16,rs:3,own:['T1','T2','T3',null],done:[12,4,0,0],act:{T1:0,T2:1,T3:2},log:'再来一个线程 T3：不排队、不阻塞，同样一次 CAS 认领 [16,32)，游标再降 16',
+    th:{T1:['搬 i=51','段①'],T2:['搬 i=43','段②'],T3:['搬 i=31','段③']}},
+   {ti:0,rs:3,own:['T1','T2','T3','T1'],done:[16,8,3,0],act:{T2:1,T3:2,T1:3},log:'T1 搬完段①并不退出，外层 for(;;) 回头再 CAS，抢到最后一段 [0,16) —— 所以段数不必等于线程数',
+    th:{T1:['搬 i=15','段④'],T2:['搬 i=39','段②'],T3:['搬 i=28','段③']}},
+   {ti:0,rs:3,own:['T1','T2','T3','T1'],done:[16,16,8,6],act:{T3:2,T1:3},log:'T2 段②搬完，transferIndex 已是 0 → i = -1，准备退出',
+    th:{T1:['搬 i=9','段④'],T2:['i=-1，无段可抢','段②'],T3:['搬 i=23','段③']}},
+   {ti:0,rs:2,own:['T1','T2','T3','T1'],done:[16,16,10,9],act:{T3:2,T1:3},log:'T2 CAS(sizeCtl, sc, sc-1)；sc-2 != rs<<16 → 不是最后一人，直接 return，不做收尾',
+    th:{T1:['搬 i=6','段④'],T2:['已退出','—'],T3:['搬 i=21','段③']}},
+   {ti:0,rs:1,own:['T1','T2','T3','T1'],done:[16,16,16,12],act:{T1:3},log:'T3 同样减 1 退出；若此时还有新线程进来，transferIndex<=0 会直接 break，不会空转等待',
+    th:{T1:['搬 i=3','段④'],T2:['已退出','—'],T3:['已退出','—']}},
+   {ti:0,rs:0,own:['T1','T2','T3','T1'],done:[16,16,16,16],act:{},log:'T1 段④搬完，减 1 后 sc-2 == rs<<16 → 自己是最后一个搬迁线程，负责收尾',
+    th:{T1:['最后一人，收尾','段④'],T2:['已退出','—'],T3:['已退出','—']}},
+   {ti:0,rs:0,own:['T1','T2','T3','T1'],done:[16,16,16,16],act:{},log:'T1 置 finishing=true，把 i 重新设为 n，全表复查一遍确认没有漏搬的桶',
+    th:{T1:['finishing，i=n 复查','全表'],T2:['已退出','—'],T3:['已退出','—']}},
+   {ti:0,rs:0,own:['T1','T2','T3','T1'],done:[16,16,16,16],act:{},log:'nextTable=null；table=nextTable(128)；sizeCtl = 128-32 = 96。扩容完成',
+    th:{T1:['提交新表','—'],T2:['已退出','—'],T3:['已退出','—']}}
+  ];
+  var segsEl=document.getElementById('segs'), thEl=document.getElementById('threads'), cur=0, timer=null;
+  var cellEls=[], ownerEls=[], thCards={};
+  SEGS.forEach(function(s,k){
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:8px;';
+    row.innerHTML='<div style="width:86px;flex:0 0 86px;line-height:1.3;"><div style="font-weight:500;">'+s.n+'</div><div style="font-size:12px;color:var(--color-text-secondary);">['+s.lo+','+s.hi+')</div></div>';
+    var cells=document.createElement('div');
+    cells.style.cssText='flex:1 1 auto;display:flex;gap:3px;';
+    var arr=[];
+    for(var i=0;i<16;i++){
+      var c=document.createElement('div');
+      c.style.cssText='flex:1 1 auto;height:20px;border-radius:3px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);';
+      cells.appendChild(c); arr.push(c);
+    }
+    cellEls.push(arr);
+    var ow=document.createElement('div');
+    ow.style.cssText='width:56px;flex:0 0 56px;text-align:center;font-size:12px;color:var(--color-text-secondary);';
+    ow.textContent='未认领';
+    ownerEls.push(ow);
+    row.appendChild(cells); row.appendChild(ow); segsEl.appendChild(row);
+  });
+  ['T1','T2','T3'].forEach(function(t){
+    var d=document.createElement('div');
+    d.style.cssText='border:0.5px solid var(--color-border-tertiary);border-left:3px solid '+C[t][0]+';border-radius:var(--border-radius-md);padding:8px 10px;';
+    d.innerHTML='<div style="font-weight:500;">'+t+'</div><div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px;">段 <span class="g"></span></div><div style="font-size:12px;margin-top:2px;" class="s"></div>';
+    thEl.appendChild(d); thCards[t]=d;
+  });
+  function render(){
+    var st=steps[cur];
+    document.getElementById('m-ti').textContent=(st.ti===null?'—':st.ti);
+    document.getElementById('m-rs').textContent=st.rs;
+    document.getElementById('m-cap').innerHTML=(cur>=14?'128 <span style="font-size:13px;color:var(--color-text-secondary);">完成</span>':'64 <span style="font-size:13px;color:var(--color-text-secondary);">→ 128</span>');
+    document.getElementById('m-step').textContent=cur+1;
+    document.getElementById('m-log').textContent=st.log;
+    document.getElementById('r-step').value=cur+1;
+    SEGS.forEach(function(s,k){
+      var o=st.own[k];
+      for(var i=0;i<16;i++){
+        var filled=i>=16-st.done[k], el=cellEls[k][i];
+        el.style.background=filled?(o?C[o][0]:'#888780'):(o?C[o][1]:'var(--color-background-secondary)');
+        el.style.border='0.5px solid var(--color-border-tertiary)';
+        el.style.outline='none';
+      }
+      if(st.act&&o&&st.done[k]<16){
+        var idx=15-st.done[k];
+        cellEls[k][idx].style.outline='2px solid var(--color-text-primary)';
+      }
+      if(o){ownerEls[k].innerHTML='<span style="display:inline-block;padding:1px 7px;border-radius:10px;background:'+C[o][1]+';color:'+C[o][2]+';">'+o+'</span>';}
+      else{ownerEls[k].textContent='未认领';}
+    });
+    ['T1','T2','T3'].forEach(function(t){
+      var v=st.th[t]; thCards[t].querySelector('.g').textContent=v[1]; thCards[t].querySelector('.s').textContent=v[0];
+    });
+  }
+  function go(n){cur=Math.max(0,Math.min(steps.length-1,n));render();}
+  function stop(){if(timer){clearInterval(timer);timer=null;}document.getElementById('b-play').textContent='▶ 播放';}
+  document.getElementById('b-next').onclick=function(){stop();go(cur+1);};
+  document.getElementById('b-prev').onclick=function(){stop();go(cur-1);};
+  document.getElementById('b-reset').onclick=function(){stop();go(0);};
+  document.getElementById('r-step').oninput=function(){stop();go(parseInt(this.value,10)-1);};
+  document.getElementById('b-play').onclick=function(){
+    if(timer){stop();return;}
+    if(cur>=steps.length-1)go(0);
+    document.getElementById('b-play').textContent='⏸ 暂停';
+    timer=setInterval(function(){if(cur>=steps.length-1){stop();return;}go(cur+1);},1300);
+  };
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'){stop();go(cur+1);}
+    else if(e.key==='ArrowLeft'){stop();go(cur-1);}
+    else if(e.key===' '){e.preventDefault();document.getElementById('b-play').click();}
+  });
+  render();
+})();
+</script>
+</body>
+</html>
+
+
+            
+            
+            <blockquote>
+                <p>
+                本文地址：
+                <a href="https://gycxxx.github.io/chm-resize-animation/index.html" target="_blank" rel="external">https://gycxxx.github.io/chm-resize-animation/index.html</a>
+                </p>
+                <footer><cite><a href="https://gycxxx.github.io">@源码深读笔记</a></cite></footer>
+            </blockquote>
+            </div>
+            
+
+            
+            
+
+
+
+        </div>
+    </div>
+</article>
+
+    </div>
+  </main>
+<div class="mask" id="mask"></div>
+<a href="javascript:;" id="gotop" class="waves-effect waves-circle waves-light"><span class="icon icon-lg icon-chevron-up"></span></a>
+
+<script src="/js/waves.min.js"></script>
+
+
+<script src="/js/main.js"></script>
+
+
+
+
+<div class="search-panel" id="search-panel">
+    <ul class="search-result" id="search-result"></ul>
+</div>
+<script type="text/template" id="search-tpl">
+<li class="item">
+    <a href="/{path}" class="waves-block waves-effect">
+        <div class="title ellipsis" title="{title}">{title}</div>
+        <div class="flex-row flex-middle">
+            <div class="tags ellipsis">
+                {tags}
+            </div>
+            <time class="flex-col time">{date}</time>
+        </div>
+    </a>
+</li>
+</script>
+
+
+<script src="/js/search.js"></script>
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

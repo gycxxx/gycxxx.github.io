@@ -18,7 +18,7 @@
 <meta property="og:description" content="基于对 src&#x2F;java.base&#x2F;share&#x2F;classes&#x2F;java&#x2F;util&#x2F; 目录下 Java 集合源码（ArrayList.java、LinkedList.java、HashMap.java、LinkedHashMap.java、TreeMap.java、HashSet.java、PriorityQueue.java、ArrayDeque.java、Collections.java、A">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-10-14T16:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-19T02:53:40.929Z">
+<meta property="article:modified_time" content="2026-10-19T03:23:23.151Z">
 <meta property="article:author" content="gyc">
 <meta property="article:tag" content="源码">
 <meta property="article:tag" content="集合">
@@ -1806,6 +1806,10 @@
 </ul>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">transferIndex = 64（初始）                                      0</span><br><span class="line"> |                                                              |</span><br><span class="line"> +----------+----------+----------+----------+</span><br><span class="line"> |  段①     |  段②     |  段③     |  段④     |</span><br><span class="line"> | [48,64)  | [32,48)  | [16,32)  | [0,16)   |</span><br><span class="line"> +----------+----------+----------+----------+</span><br><span class="line">      ↑          ↑          ↑          ↑</span><br><span class="line">     T1         T2         T3      （谁先 CAS 谁拿）</span><br><span class="line"> 认领顺序：64 → 48 → 32 → 16 → 0，从右往左一路啃下来</span><br></pre></td></tr></table></figure>
 
+<p><strong>动手看一遍</strong>（可单步、可播放，直接看 <code>transferIndex</code> 是怎么被 CAS 一路啃到 0 的）：</p>
+<iframe src="/chm-resize-animation/" title="CHM 协作扩容分段认领动画" width="100%" height="880" loading="lazy" style="max-width:780px;border:0.5px solid rgba(128,128,128,.35);border-radius:8px;"></iframe>
+
+<p><a href="/chm-resize-animation/">新窗口全屏打开动画 →</a></p>
 <p><strong>第三步：完整分步</strong></p>
 <table>
 <thead>
