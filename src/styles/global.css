@@ -117,9 +117,10 @@ a:hover {
 
 /* ---------- layout ---------- */
 .main {
-  max-width: var(--wrap);
+  /* 左右自适应：窄窗口时保留 40px 留白，宽窗口时文字区在 780~1160px 之间随视口伸缩 */
+  width: min(calc(100% - 40px), clamp(780px, 88vw, 1160px));
   margin: 0 auto;
-  padding: 28px 20px 60px;
+  padding: 28px 0 60px;
 }
 
 .panel {
