@@ -1,0 +1,63 @@
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Sentinel 责任链 · 一次 entry 的完整旅程 · 源码动画</title><meta name="description" content="三道闸放行为王，一条链按 @Spi(order) 排队：统计先行、系统优先、熔断垫后"><link rel="stylesheet" href="/anim/anim.css"><link rel="icon" href="data:,"><link rel="stylesheet" href="/_astro/aqs-lock.D0PgXYln.css"></head> <body> <header class="top"> <div class="in"> <b>Sentinel 责任链 · 一次 entry 的完整旅程</b> <span class="sub">三道闸放行为王，一条链按 @Spi(order) 排队：统计先行、系统优先、熔断垫后</span> <nav class="rt"> <a href="https://gycxxx.github.io/sentinel/">← 返回笔记站</a> <a href="/animations/">全部动画</a> </nav> </div> </header> <div class="wrap-anim"> <div class="cap" id="cap"></div> <div class="grid"> <div> <div class="stage" id="stage"></div> <div class="ctrl"> <button id="b-first" title="Home">⏮</button> <button id="b-prev" title="←">◀ 上一步</button> <button id="b-play" class="pri">▶ 播放</button> <button id="b-next" title="→">下一步 ▶</button> <button id="b-last" title="End">⏭</button> <input id="range" type="range" min="0" value="0"> <span class="cnt" id="cnt">1 / 1</span> <select id="speed" title="播放速度"> <option value="2200">慢</option> <option value="1400" selected>中</option> <option value="700">快</option> </select> </div> <p class="hint"> <kbd>←</kbd> <kbd>→</kbd> 单步 · <kbd>空格</kbd> 播放/暂停 ·
+<kbd>Home</kbd>/<kbd>End</kbd> 首/末步 · 也可直接拖进度条
+</p> </div> <aside class="side"> <div class="card" id="vars"></div> <div class="card log" id="log"></div> </aside> </div>  <div class="note"> <h3>看这张图要抓住的三件事</h3> <ul> <li> <b>顺序即语义</b>：NodeSelector 最先（没有节点就没有统计）；Statistic 在规则前
+        （规则读到的是不含本次的历史，防自触发）；System 在 Flow 前（先保机器再保单资源）；
+        Degrade 垫后但统计在 exit（熔断影响的是下一个请求）。
+</li> <li> <b>三道闸全是 fail-open</b>：上下文超限、全局开关关闭、资源数超上限——
+        统统只建 entry 不检查，Sentinel 自己出问题绝不拖垮业务。
+</li> <li> <b>链是缓存且无锁读的</b>：<code>lookProcessChain</code> 读 <code>chainMap</code> 不加锁，
+        写时才加 <code>LOCK</code> 双检并整体换 Map；同一个资源全局共享一条链。
+</li> </ul> <p style="margin:10px 0 0">
+完整源码分析（含 LeapArray 统计、三种 Controller、熔断状态机）见
+<a href="https://gycxxx.github.io/sentinel/">《Sentinel 源码深读》第一讲</a>。
+</p> </div>  </div> <script src="/anim/anim.js"></script> </body> </html> <script>(function(){const SLOTS = [{"order":"-10000","name":"NodeSelectorSlot","en":"按 context 建 DefaultNode，挂调用树"},{"order":"-9000","name":"ClusterBuilderSlot","en":"按资源名取全局唯一 ClusterNode"},{"order":"-8000","name":"LogSlot","en":"打印 entry / exit 日志"},{"order":"-7000","name":"StatisticSlot","en":"记线程数 + 放行数（规则读它）"},{"order":"-6000","name":"AuthoritySlot","en":"调用方黑白名单"},{"order":"-5000","name":"SystemSlot","en":"系统级指标，机器快挂先削它"},{"order":"-3000","name":"ParamFlowSlot","en":"热点参数限流"},{"order":"-2000","name":"FlowSlot","en":"核心限流：QPS / 线程数阈值"},{"order":"-1500","name":"DefaultCircuitBreakerSlot","en":"注册熔断器回调"},{"order":"-1000","name":"DegradeSlot","en":"cb.tryPass，熔断判断在最后"}];
+const STEPS = [{"t":"SphU.entry(\"demo\") 进入 CtSph.entryWithPriority","d":"所有限流入口都汇到这个方法：先过三道闸，再拿着资源名去找责任链。","src":"sentinel-core/.../CtSph.java:132","log":"entry(\"demo\", EntryType.IN)","st":{"phase":"闸门","gate":"① NullContext 检查","cur":-1,"res":"demo 规则未查","verdict":"—","qps":"0.0","hl":"gate"}},{"t":"闸① NullContext：上下文超限 → 静默放行","d":"ContextUtil.getContext() 拿到 NullContext（上下文数量超限）时，只建 CtEntry 不挂链——不检查任何规则。","src":"sentinel-core/.../CtSph.java:132","log":"闸①: 上下文正常，继续","st":{"phase":"闸门","gate":"① NullContext：通过","cur":-1,"res":"demo 规则未查","verdict":"—","qps":"0.0","hl":"gate"}},{"t":"闸② Constants.ON：全局开关","d":"全局开关关闭时同样只建 entry 不检查。三道闸哲学一致：Sentinel 自己出问题时静默放行，绝不拖垮业务。","src":"sentinel-core/.../CtSph.java:132","log":"闸②: 全局开关 ON，继续","st":{"phase":"闸门","gate":"② 全局开关：ON","cur":-1,"res":"demo 规则未查","verdict":"—","qps":"0.0","hl":"gate"}},{"t":"闸③ lookProcessChain：无锁读缓存链","d":"chainMap.get(resourceWrapper) 直接读，不加任何锁；未命中才进 synchronized 双检 + SPI 装配新链 + 整体换 Map（CopyOnWrite 式）。","src":"sentinel-core/.../CtSph.java:194","log":"闸③: 命中缓存链（读无锁）","st":{"phase":"闸门","gate":"③ chainMap 命中","cur":-1,"res":"demo 规则未查","verdict":"—","qps":"0.0","hl":"gate"}},{"t":"资源数超 MAX_SLOT_CHAIN_SIZE 也放行","d":"链缓存达到上限时新资源直接放行不检查——宁可漏杀不可错杀，fail-open 到底。","src":"sentinel-core/.../CtSph.java:194","log":"闸③: 资源数未超限，链可用","st":{"phase":"闸门","gate":"③ 资源数未超限","cur":-1,"res":"demo 规则未查","verdict":"—","qps":"0.0","hl":"gate"}},{"t":"NodeSelectorSlot（-10000）","d":"链上第一个：按 context 建 DefaultNode、挂到调用树上，并 setCurNode——没有它，后面的统计和规则都无从谈起。","src":"sentinel-core/.../slots/nodeselector/NodeSelectorSlot.java:136","log":"slot 1/10: NodeSelectorSlot → DefaultNode 就位","st":{"phase":"过链","gate":"三道闸全过","cur":0,"res":"节点树已建","verdict":"—","qps":"0.0","hl":"chain"}},{"t":"ClusterBuilderSlot（-9000）+ LogSlot（-8000）","d":"按资源名取全局唯一的 ClusterNode（同资源所有 context 共享它，用于合并出资源级总量）；LogSlot 打一行 entry 日志。","src":"sentinel-core/.../slots/clusterbuilder/ / logger/","log":"slot 2-3/10: ClusterNode 就位，日志已打","st":{"phase":"过链","gate":"三道闸全过","cur":2,"res":"ClusterNode 就位","verdict":"—","qps":"0.0","hl":"chain"}},{"t":"StatisticSlot（-7000）：统计必须走在规则前面","d":"increaseThreadNum + addPassRequest 先记账。这样后面规则读到的永远是“不含本次请求”的历史数据——避免请求自己触发自己。","src":"sentinel-core/.../slots/statistic/StatisticSlot.java","log":"slot 4/10: thread+1，pass 记账","st":{"phase":"过链","gate":"三道闸全过","cur":3,"res":"统计先行（pass/thread 已记）","verdict":"—","qps":"0.0","hl":"chain"}},{"t":"AuthoritySlot（-6000）：来源黑白名单","d":"按调用方 origin 查 AuthorityRule：黑名单直接拒，白名单直接放行后面的检查。","src":"sentinel-core/.../slots/block/authority/AuthoritySlot.java","log":"slot 5/10: origin 不在黑白名单 → 继续","st":{"phase":"过链","gate":"三道闸全过","cur":4,"res":"origin 默认放行","verdict":"—","qps":"0.0","hl":"chain"}},{"t":"SystemSlot（-5000）：系统级保护优先于单资源限流","d":"SystemRuleManager.checkSystem 看系统 QPS / RT / 线程数 / CPU / 负载。机器都快挂了，先做全局削减，再谈单资源阈值。","src":"sentinel-core/.../slots/system/SystemRuleManager.java:290","log":"slot 6/10: 系统指标未越线 → 继续","st":{"phase":"过链","gate":"三道闸全过","cur":5,"res":"系统指标正常","verdict":"—","qps":"0.0","hl":"chain"}},{"t":"ParamFlowSlot（-3000）→ FlowSlot（-2000）","d":"热点参数限流过后进入核心的 FlowSlot：FlowRuleChecker.checkFlow 遍历规则，多条规则是“与”语义，任何一条不过就抛 FlowException。","src":"sentinel-core/.../slots/block/flow/FlowSlot.java:160","log":"slot 7-8/10: FlowRuleChecker.checkFlow","st":{"phase":"判定","gate":"三道闸全过","cur":7,"res":"规则：QPS 阈值 10","verdict":"判定中","qps":"9.8","hl":"flow"}},{"t":"DefaultController.canPass：当前 QPS + 1 > 阈值？","d":"avgUsedTokens(node) 取滑动窗口当前 QPS（9.8）+ acquireCount(1) = 10.8 > 10 → 不通过。高优先级请求此时会 tryOccupyNext + sleep 等待，普通请求直接拒。","src":"sentinel-core/.../controller/DefaultController.java:49","log":"FlowSlot: 9.8 + 1 > 10 → 拒绝","st":{"phase":"判定","gate":"三道闸全过","cur":7,"res":"阈值 10，当前 9.8","verdict":"FlowException ✗","qps":"9.8","hl":"bad"}},{"t":"被拒也要 exit：补一次记账","d":"抛 FlowException 前先 e.exit(count, args)——把 block+1 记进统计，否则 dashboard 上看不到拦截量。","src":"sentinel-core/.../CtSph.java:132","log":"block+1 → 抛出 FlowException","st":{"phase":"拒绝","gate":"三道闸全过","cur":7,"res":"block 已记账","verdict":"FlowException ✗","qps":"9.8","hl":"bad"}},{"t":"换个时刻：QPS 8.2 时同一段代码","d":"当前 QPS 8.2 + 1 = 9.2 ≤ 10 → canPass 返回 true，fireEntry 继续往后传，直到 DegradeSlot 也放行，entry 返回 CtEntry。","src":"sentinel-core/.../slots/block/flow/FlowRuleChecker.java:44","log":"FlowSlot: 8.2 + 1 ≤ 10 → 放行","st":{"phase":"放行","gate":"三道闸全过","cur":7,"res":"阈值 10，当前 8.2","verdict":"通过 ✓","qps":"8.2","hl":"ok"}},{"t":"DegradeSlot（-1000）：熔断器最后把关","d":"DefaultCircuitBreakerSlot 注册回调，DegradeSlot.entry 调 cb.tryPass(context)：熔断器 OPEN 状态直接拒，HALF_OPEN 只放一个探测请求。","src":"sentinel-core/.../slots/block/degrade/DegradeSlot.java:37","log":"slot 9-10/10: 熔断器 CLOSED → 放行","st":{"phase":"放行","gate":"三道闸全过","cur":9,"res":"熔断器 CLOSED","verdict":"通过 ✓","qps":"8.2","hl":"ok"}},{"t":"entry 返回：执行业务方法","d":"CtEntry 交到业务手里。注意此刻统计里 thread=+1——entry 之后不 exit，线程数只增不减，最终会被线程数规则全部拒掉。","src":"sentinel-core/.../CtSph.java:132","log":"→ 返回 CtEntry，业务执行中","st":{"phase":"放行","gate":"三道闸全过","cur":9,"res":"thread=1（待 exit 释放）","verdict":"通过 ✓","qps":"8.2","hl":"ok"}},{"t":"exit：把 RT / 异常喂给熔断器","d":"DegradeSlot.exit 调 cb.onRequestComplete(context)——本次 RT 和异常记进熔断器的滑动窗口。熔断判断发生在请求结束时，影响的是下一个请求。","src":"sentinel-core/.../slots/block/degrade/DegradeSlot.java:41","log":"exit: rt=37ms → 熔断器窗口","st":{"phase":"退出","gate":"三道闸全过","cur":9,"res":"rt 已入熔断窗口","verdict":"exit 完成 ✓","qps":"8.2","hl":"ok"}},{"t":"fail-open：链里出任何内部异常都不抛给业务","d":"chain.entry 的 catch (Throwable) 只 RecordLog 记一行日志。限流组件自己的 bug 不该杀死业务——这是 Sentinel 与 Hystrix 的哲学分歧。","src":"sentinel-core/.../CtSph.java:155","log":"内部异常 → 只记日志，静默放行","st":{"phase":"兜底","gate":"三道闸全过","cur":9,"res":"fail-open","verdict":"静默放行","qps":"8.2","hl":"chain"}}];
+
+  Anim.create({
+    steps: STEPS,
+    onStep(step, i) {
+      const s = step.st;
+      const cur = s.cur;
+
+      const chain = SLOTS.map((sl, k) => {
+        const state =
+          k < cur ? "ok" : k === cur ? "hot" : "";
+        const mark = k < cur ? "✓ " : k === cur ? "▸ " : "";
+        return (
+          '<div class="slot ' +
+          state +
+          '"><span class="o">' +
+          sl.order +
+          '</span><b>' +
+          mark +
+          sl.name +
+          "</b><span class='en'>" +
+          sl.en +
+          "</span></div>"
+        );
+      }).join("");
+
+      document.getElementById("stage").innerHTML =
+        '<p class="s-title">入口与当前阶段</p>' +
+        '<div class="s-row">' +
+        '<div class="box ' + (s.phase === "闸门" ? "hot" : "") + '"><b>三道闸</b><code>' + s.gate + "</code></div>" +
+        '<div class="box ' + (s.phase === "判定" ? "hot" : s.phase === "拒绝" ? "bad" : s.phase === "放行" ? "ok" : "") + '"><b>当前阶段</b><code>' + s.phase + "</code></div>" +
+        '<div class="box ' + (s.verdict.indexOf("✗") >= 0 ? "bad" : s.verdict.indexOf("✓") >= 0 ? "ok" : "") + '"><b>判定结果</b><code>' + s.verdict + "</code></div>" +
+        "</div>" +
+        '<p class="s-title" style="margin-top:16px">责任链（按 @Spi(order) 排序，-10000 → -1000）</p>' +
+        '<div class="chain">' + chain + "</div>" +
+        '<div class="s-row" style="margin-top:14px">' +
+        '<div class="box"><b>当前窗口 QPS</b><code>' + s.qps + "</code></div>" +
+        '<div class="box"><b>规则/状态</b><code>' + s.res + "</code></div>" +
+        "</div>";
+
+      Anim.kv([
+        ["当前阶段", s.phase, true],
+        ["责任链位置", cur < 0 ? "入口（未入链）" : (cur + 1) + " / " + SLOTS.length, cur >= 0],
+        ["判定结果", s.verdict, s.verdict !== "—"],
+        ["窗口 QPS", s.qps, s.qps !== "0.0"],
+      ]);
+      Anim.log(STEPS, i);
+    },
+  });
+})();</script>

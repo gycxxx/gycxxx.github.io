@@ -1,0 +1,66 @@
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>StreamDecoder · CoderResult 三态机 · 源码动画</title><meta name="description" content="残字节 bb + 残字符 leftoverChar：缺字节去读、缺空间返回、不合法抛异常——InputStreamReader 不乱码不阻塞的全部秘密"><link rel="stylesheet" href="/anim/anim.css"><link rel="icon" href="data:,"><link rel="stylesheet" href="/_astro/aqs-lock.D0PgXYln.css"></head> <body> <header class="top"> <div class="in"> <b>StreamDecoder · CoderResult 三态机</b> <span class="sub">残字节 bb + 残字符 leftoverChar：缺字节去读、缺空间返回、不合法抛异常——InputStreamReader 不乱码不阻塞的全部秘密</span> <nav class="rt"> <a href="https://gycxxx.github.io/java-io/">← 返回笔记站</a> <a href="/animations/">全部动画</a> </nav> </div> </header> <div class="wrap-anim"> <div class="cap" id="cap"></div> <div class="grid"> <div> <div class="stage" id="stage"></div> <div class="ctrl"> <button id="b-first" title="Home">⏮</button> <button id="b-prev" title="←">◀ 上一步</button> <button id="b-play" class="pri">▶ 播放</button> <button id="b-next" title="→">下一步 ▶</button> <button id="b-last" title="End">⏭</button> <input id="range" type="range" min="0" value="0"> <span class="cnt" id="cnt">1 / 1</span> <select id="speed" title="播放速度"> <option value="2200">慢</option> <option value="1400" selected>中</option> <option value="700">快</option> </select> </div> <p class="hint"> <kbd>←</kbd> <kbd>→</kbd> 单步 · <kbd>空格</kbd> 播放/暂停 ·
+<kbd>Home</kbd>/<kbd>End</kbd> 首/末步 · 也可直接拖进度条
+</p> </div> <aside class="side"> <div class="card" id="vars"></div> <div class="card log" id="log"></div> </aside> </div>  <div class="note"> <h3>三态机一分钟版</h3> <ul> <li> <b>UNDERFLOW = 缺字节</b>：去底层流 <code>readBytes()</code> 再捞一批；
+        但“已经解出一些字符、底层又没就绪”时立刻返回，绝不干等。
+</li> <li> <b>OVERFLOW = 缺空间</b>：调用方的 <code>char[]</code> 装满了，
+        break 把已解的字符交出去，剩下的下次接着解。
+</li> <li> <b>MALFORMED = 字节序列非法</b>（如 GBK 字节按 UTF-8 解）：
+        三态里唯一抛异常的，<code>MalformedInputException</code>。
+</li> <li> <b>双残量是跨 read 不乱码的关键</b>：字节侧 <code>bb</code> 存半个汉字，
+        字符侧 <code>leftoverChar</code> 存代理对的第二个字符。
+</li> </ul> <p style="margin:10px 0 0">
+完整源码分析（含 StreamEncoder 写侧、BufferedReader 行扫描）见
+<a href="https://gycxxx.github.io/java-io/">《Java IO 源码深读》第三讲</a>。
+</p> </div>  </div> <script src="/anim/anim.js"></script> </body> </html> <script>(function(){const STEPS = [{"t":"new InputStreamReader(in, UTF-8)：构造就有副作用","d":"InputStreamReader 只是个壳，全部转发给 StreamDecoder。构造时立刻读流的前几个字节探测编码（BOM）——所以“先包 reader 再写流”会卡死：写端等 reader 消费，reader 等写端给字节。","src":"sun/nio/cs/StreamDecoder.java:69","log":"StreamDecoder.forInputStreamReader → 探测 BOM","st":{"bb":[],"newb":[],"cb":[],"left":"—","cr":"构造","act":"readBytes() 灌入首批字节","eof":"false","hl":"src"}},{"t":"reader.read(cbuf, 0, 8) → implRead","d":"CharBuffer.wrap(cbuf, off, end-off) 包出字符缓冲，assert end-off>1：至少要能放 2 个字符——UTF-16 代理对必须成对处理。","src":"sun/nio/cs/StreamDecoder.java:298","log":"implRead: CharBuffer 就绪（容量 8）","st":{"bb":["E4 BD A0 E5 A5 BD E4 B8"],"newb":[],"cb":[],"left":"—","cr":"准备解码","act":"decode(bb, cb, eof=false)","eof":"false","hl":"bb"}},{"t":"decode 返回 UNDERFLOW：字节不够解一个字符","d":"bb 里 8 个字节 = 两个完整汉字（各 3 字节）+ 2 个残字节。decoder 解完「你好」后剩 E4 B8，凑不出第三个字符 → UNDERFLOW。","src":"sun/nio/cs/StreamDecoder.java:314","log":"CoderResult.UNDERFLOW（输入缺字节）","st":{"bb":["E4 B8"],"newb":[],"cb":["你","好"],"left":"—","cr":"UNDERFLOW","act":"缺字节 → 判断该读还是该返回","eof":"false","hl":"cr"}},{"t":"UNDERFLOW 的四步判断顺序","d":"① eof 就 break；② cb 没剩余空间就 break；③ 已经解出字符且底层没就绪（!inReady）立刻返回——不干等；④ 否则 readBytes 再捞一批。这个顺序就是 InputStreamReader 不无故阻塞的原因。","src":"sun/nio/cs/StreamDecoder.java:357","log":"cb.position()=2 > 0，inReady()=false → 立刻返回 2 个字符","st":{"bb":["E4 B8"],"newb":[],"cb":["你","好"],"left":"—","cr":"UNDERFLOW","act":"有收获 + 没就绪 → break 返回","eof":"false","hl":"cb"}},{"t":"底层就绪时：readBytes 续读","d":"readBytes 从底层 InputStream 再读一批，拼到 bb 尾部。此前剩下的 2 个残字节不会丢——它们和读上来的新字节同住在一个 ByteBuffer 里。","src":"sun/nio/cs/StreamDecoder.java:265","log":"readBytes(): n=4，bb 补到 6 字节","st":{"bb":["E4 B8"],"newb":["89 E7 94 9F"],"cb":["你","好"],"left":"—","cr":"UNDERFLOW","act":"残字节 + 新字节 → continue 再 decode","eof":"false","hl":"bb"}},{"t":"再 decode：残字节与新字节拼出完整汉字","d":"残字节 E4 B8 与新读的 89 拼成「成」，随后的 E7 94 9F 又解出「生」——bb 这次被吃干。跨 read 调用不乱码，全靠 bb 这对残字节的接力。","src":"sun/nio/cs/StreamDecoder.java:314","log":"decode ✓ 解出「成」「生」，bb 耗尽","st":{"bb":[],"newb":[],"cb":["你","好","成","生"],"left":"—","cr":"UNDERFLOW","act":"循环：缺字节就去读","eof":"false","hl":"cb"}},{"t":"read() 单字符 API：一次解 2 个字符","d":"read0 用 2 元素的 char[] 调 implRead：因为 UTF-16 代理对必须成对解（F0 A0 80 80 = 𠀀，占两个 char）。返回第一个，第二个存进 leftoverChar，下次 read 直接还回去。","src":"sun/nio/cs/StreamDecoder.java:123","log":"read0: 解出代理对 → cbuf[1] 存入 leftoverChar","st":{"bb":[],"newb":[],"cb":["𠀀"],"left":"已存 cbuf[1]","cr":"UNDERFLOW","act":"haveLeftoverChar = true","eof":"false","hl":"left"}},{"t":"OVERFLOW：字符缓冲满了","d":"cb 没有 remaining 时 decode 返回 OVERFLOW，implRead 直接 break，把已解出的字符交出去。缺的是空间，不是字节——bb 里剩下的字节留给下一次 read。","src":"sun/nio/cs/StreamDecoder.java:423","log":"CoderResult.OVERFLOW → 返回已解字符","st":{"bb":["E7 94 9F"],"newb":[],"cb":["你","好","成","生","啊","哦","嗯","嘿"],"left":"已存 cbuf[1]","cr":"OVERFLOW","act":"缺空间 → break 返回","eof":"false","hl":"cr"}},{"t":"MALFORMED：字节序列非法","d":"用 GBK 编码写的字节按 UTF-8 解，cr.throwException() 直接抛 MalformedInputException（UNMAPPABLE 同理抛 UnmappableCharacterException）——三态里唯一会抛异常的。","src":"sun/nio/cs/StreamDecoder.java:424","log":"CoderResult.MALFORMED → throw MalformedInputException","st":{"bb":["C4 E3 BA C3"],"newb":[],"cb":[],"left":"—","cr":"MALFORMED","act":"throwException()","eof":"false","hl":"bad"}},{"t":"EOF：readBytes 返回 -1","d":"流读完了：置 eof=true 再 decode 一次做 flush，循环里第一行 if (eof) break。半截的残字节此时被丢弃。","src":"sun/nio/cs/StreamDecoder.java:314","log":"readBytes() = -1 → eof=true → flush 一次","st":{"bb":["E4 B8"],"newb":[],"cb":[],"left":"—","cr":"EOF","act":"半截残字节凑不齐 → 随 eof 丢弃","eof":"true","hl":"cr"}},{"t":"flush 完 decoder.reset()","d":"eof 分支里调 decoder.reset() 清理解码器内部状态，implRead 返回 -1，即 Reader 合同里的“流结束”。","src":"sun/nio/cs/StreamDecoder.java:426","log":"decoder.reset() → 返回 -1","st":{"bb":[],"newb":[],"cb":[],"left":"—","cr":"已复位","act":"reset() 完成","eof":"true","hl":"ok"}},{"t":"close：fillZeroToPosition 清零残字节","d":"close 路径上把 bb 里“已读但未解码”的字节清零——防止密码之类的敏感数据残留在堆内存里被 dump 出来。","src":"sun/nio/cs/StreamDecoder.java:218","log":"close(): bb 残字节清零 ✓","st":{"bb":["00 00"],"newb":[],"cb":[],"left":"—","cr":"已关闭","act":"fillZeroToPosition()","eof":"true","hl":"ok"}}];
+
+  function byteChips(arr, cls) {
+    if (!arr.length) return '<span class="arrow">（空）</span>';
+    return arr
+      .map((b) => '<span class="byte ' + (cls || "") + '">' + b + "</span>")
+      .join("");
+  }
+  function charChips(arr, cls) {
+    if (!arr.length) return '<span class="arrow">（空）</span>';
+    return arr
+      .map((c) => '<span class="ch ' + (cls || "") + "'>" + c + "</span>")
+      .join("");
+  }
+
+  const CRCLS = { UNDERFLOW: "uf", OVERFLOW: "of", MALFORMED: "bad" };
+
+  Anim.create({
+    steps: STEPS,
+    onStep(step, i) {
+      const s = step.st;
+      const crCls = CRCLS[s.cr] || (s.cr === "MALFORMED" ? "bad" : s.hl === "ok" ? "ok" : "");
+
+      document.getElementById("stage").innerHTML =
+        '<p class="s-title">解码流水线</p>' +
+        '<div class="pipe">' +
+        '<div class="seg"><div class="box ' + (s.hl === "src" ? "hot" : "") + '"><b>底层 InputStream</b><code>readBytes():265</code></div></div>' +
+        '<div class="dec">Charset<br>Decoder<br><span style="font-size:11px;opacity:.75">decode(bb, cb, eof)</span></div>' +
+        '<div class="seg"><div class="box"><b>调用方 char[] cbuf</b><div class="chars" style="margin-top:6px">' + charChips(s.cb, "ok") + "</div></div></div>" +
+        "</div>" +
+        '<p class="s-title" style="margin-top:16px">bb（ByteBuffer 残字节缓冲）</p>' +
+        '<div class="box ' + (s.hl === "bb" ? "hot" : "") + '"><div class="bytes">' +
+        byteChips(s.bb, "res") +
+        byteChips(s.newb, "new") +
+        "</div></div>" +
+        '<div class="s-row" style="margin-top:16px">' +
+        '<div class="box ' + (s.hl === "cr" ? "hot" : "") + '"><b>CoderResult</b><span class="badge ' + crCls + '">' + s.cr + "</span></div>" +
+        '<div class="box ' + (s.hl === "left" ? "hot" : "") + '"><b>leftoverChar（残字符）</b><code>' + s.left + "</code></div>" +
+        '<div class="box"><b>eof</b><code>' + s.eof + "</code></div>" +
+        "</div>" +
+        '<p class="s-title" style="margin-top:14px">本步动作</p>' +
+        '<div class="box ' + (s.hl === "bad" ? "bad" : "") + '"><code>' + s.act + "</code></div>";
+
+      Anim.kv([
+        ["CoderResult", s.cr, s.cr !== "构造" && s.cr !== "准备解码" && s.cr !== "已复位" && s.cr !== "已关闭"],
+        ["bb 残字节", s.bb.length ? s.bb.join(" ") : "（空）", s.bb.length > 0],
+        ["leftoverChar", s.left, s.left !== "—"],
+        ["eof", s.eof, s.eof === "true"],
+      ]);
+      Anim.log(STEPS, i);
+    },
+  });
+})();</script>
