@@ -1,0 +1,62 @@
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Spring 三级缓存 · 循环依赖是怎么被救回来的 · 源码动画</title><meta name="description" content="A 依赖 B、B 依赖 A：靠“实例化后立刻挂工厂”给出早期引用"><link rel="stylesheet" href="/anim/anim.css"><link rel="icon" href="data:,"><link rel="stylesheet" href="/_astro/aqs-lock.BTSF5agR.css"></head> <body> <header class="top"> <div class="in"> <b>Spring 三级缓存 · 循环依赖是怎么被救回来的</b> <span class="sub">A 依赖 B、B 依赖 A：靠“实例化后立刻挂工厂”给出早期引用</span> <nav class="rt"> <a href="https://gycxxx.github.io/spring-core/">← 返回笔记站</a> <a href="/animations/">全部动画</a> </nav> </div> </header> <div class="wrap-anim"> <div class="cap" id="cap"></div> <div class="grid"> <div> <div class="stage" id="stage"></div> <div class="ctrl"> <button id="b-first" title="Home">⏮</button> <button id="b-prev" title="←">◀ 上一步</button> <button id="b-play" class="pri">▶ 播放</button> <button id="b-next" title="→">下一步 ▶</button> <button id="b-last" title="End">⏭</button> <input id="range" type="range" min="0" value="0"> <span class="cnt" id="cnt">1 / 1</span> <select id="speed" title="播放速度"> <option value="2200">慢</option> <option value="1400" selected>中</option> <option value="700">快</option> </select> </div> <p class="hint"> <kbd>←</kbd> <kbd>→</kbd> 单步 · <kbd>空格</kbd> 播放/暂停 ·
+<kbd>Home</kbd>/<kbd>End</kbd> 首/末步 · 也可直接拖进度条
+</p> </div> <aside class="side"> <div class="card" id="vars"></div> <div class="card log" id="log"></div> </aside> </div>  <div class="note"> <h3>最常被讲错的三点</h3> <ul> <li> <b>真正干活的是二级缓存的工厂</b>，不是“三级”。三级 <code>earlySingletonObjects</code>
+只是工厂被调用过之后的暂存；只有工厂 lambda 里才可能返回 AOP 代理。
+</li> <li> <b>构造器注入的循环依赖救不了</b>：构造器发生在实例化阶段，早于 <code>addSingletonFactory</code>，
+        工厂还没挂上去就已经要对方了 → 直接抛 <code>BeanCurrentlyInCreationException</code>。
+</li> <li> <b>“早期引用”和最终放入容器的对象可能不是同一个</b>：如果 A 被 AOP 代理，早期给 B 的是代理，
+        最终容器里也是代理——靠 <code>getEarlyBeanReference</code> 保证一致；这也是循环依赖 + AOP 的经典矛盾点。
+</li> <li>
+Spring 7 换了思路：后台预初始化<b>不给半成品</b>，让依赖方 <code>join()</code> 阻塞等待，
+        从根上绕开半初始化问题（<code>DefaultSingletonBeanRegistry.java:226</code>）。
+</li> </ul> <p style="margin:10px 0 0">
+三级缓存准确位置：<code>singletonObjects</code>(:86) / <code>singletonFactories</code>(:89) /
+<code>earlySingletonObjects</code>(:95)，消费端 <code>getSingleton</code>(:208)。详见
+<a href="https://gycxxx.github.io/spring-core/">《Spring 核心深读》第一讲</a>。
+</p> </div>  </div> <script src="/anim/anim.js"></script> </body> </html> <script>(function(){const STEPS = [{"t":"getBean(A)：一级缓存没有","d":"先无锁读 singletonObjects（一级），绝大多数请求到这里就命中了。A 没有 → 准备创建。","src":"DefaultSingletonBeanRegistry.java:210","log":"getSingleton(A) → 一级未命中","st":{"l1":[],"l2":[],"l3":[],"cic":[],"a":["未开始","dim"],"b":["未开始","dim"],"stack":["getBean(A)"],"hl":"l1"}},{"t":"标记 A 正在创建","d":"beforeSingletonCreation 把 A 放进 singletonsCurrentlyInCreation——后面判断“能不能给早期引用”就靠它。","src":"DefaultSingletonBeanRegistry.java（beforeSingletonCreation）","log":"singletonsCurrentlyInCreation += A","st":{"l1":[],"l2":[],"l3":[],"cic":["A"],"a":["创建中","hot"],"b":["未开始","dim"],"stack":["getBean(A)"],"hl":"cic"}},{"t":"实例化 A：构造器跑完，字段还是 null","d":"createBeanInstance 只把对象 new 出来，此时 A 的 b 字段为空——它是一个“半成品”。","src":"AbstractAutowireCapableBeanFactory（createBeanInstance）","log":"A 实例化完成（b = null）","st":{"l1":[],"l2":[],"l3":[],"cic":["A"],"a":["已实例化","hot"],"b":["未开始","dim"],"stack":["getBean(A)","createBean(A)"],"hl":"a"}},{"t":"★ 立刻把 A 的工厂挂进二级缓存","d":"addSingletonFactory(A, () -> getEarlyBeanReference(...))。这一步必须在属性填充之前——晚了就救不了循环依赖。","src":"DefaultSingletonBeanRegistry.java:89（addSingletonFactory）","log":"二级缓存 += A 的 ObjectFactory","st":{"l1":[],"l2":["A"],"l3":[],"cic":["A"],"a":["已挂工厂","hot"],"b":["未开始","dim"],"stack":["getBean(A)","createBean(A)"],"hl":"l2"}},{"t":"填充 A 的属性：需要 B","d":"populateBean 处理 @Autowired，发现要注入 B → 转去 getBean(B)。","src":"AbstractAutowireCapableBeanFactory（populateBean）","log":"A 需要 B → getBean(B)","st":{"l1":[],"l2":["A"],"l3":[],"cic":["A"],"a":["注入中…","hot"],"b":["未开始","dim"],"stack":["getBean(A)","createBean(A)","getBean(B)"],"hl":"a"}},{"t":"B 同样：实例化后挂进二级","d":"B 走同样的流程：一级没有 → 实例化 → addSingletonFactory(B)。","src":"DefaultSingletonBeanRegistry.java:89","log":"B 实例化 → 二级缓存 += B 的工厂","st":{"l1":[],"l2":["A","B"],"l3":[],"cic":["A","B"],"a":["等待 B","dim"],"b":["已挂工厂","hot"],"stack":["getBean(A)","createBean(A)","getBean(B)","createBean(B)"],"hl":"l2"}},{"t":"★ B 反过来要 A：循环依赖出现","d":"populateBean(B) 发现 @Autowired A → getBean(A)。此时一级缓存依然没有 A——死锁眼看就要发生。","src":"AbstractAutowireCapableBeanFactory（populateBean）","log":"B 需要 A → getBean(A)（循环依赖！）","st":{"l1":[],"l2":["A","B"],"l3":[],"cic":["A","B"],"a":["等待 B","dim"],"b":["注入中…","hot"],"stack":["getBean(A)","createBean(A)","getBean(B)","createBean(B)","getBean(A)"],"hl":"b"}},{"t":"getSingleton(A, true)：三级缓存查找链启动","d":"一级无 → 但 isSingletonCurrentlyInCreation(A) 为真 → 允许查三级；三级 earlySingletonObjects 也还没有。","src":"DefaultSingletonBeanRegistry.java:211-212","log":"一级无 → A 正在创建 → 查三级（空）","st":{"l1":[],"l2":["A","B"],"l3":[],"cic":["A","B"],"a":["被请求","hot"],"b":["注入中…","hot"],"stack":["…getBean(A)","getSingleton(A,true)"],"hl":"l3"}},{"t":"tryLock 后取二级工厂，得到早期引用","d":"注意是 tryLock 不是 lock：持锁者可能正在跑用户的构造器，别的线程不该阻塞。工厂 getObject() 可能触发 getEarlyBeanReference——AOP 代理就在这里产生。","src":"DefaultSingletonBeanRegistry.java:214, :224-226","log":"★ singletonFactory.getObject() → 早期 A（可能是代理）","st":{"l1":[],"l2":["A","B"],"l3":[],"cic":["A","B"],"a":["产生早期引用","hot"],"b":["等待 A","hot"],"stack":["…getSingleton(A,true)"],"hl":"l2"}},{"t":"二级 → 三级搬家（用 remove 的返回值当 CAS）","d":"if (singletonFactories.remove(A) != null) earlySingletonObjects.put(A, obj)。remove 返回 null 说明别人抢先完成了，那就用一级里的最新对象。","src":"DefaultSingletonBeanRegistry.java:228-233","log":"remove(A) 非 null → 三级缓存 += 早期 A","st":{"l1":[],"l2":["B"],"l3":["A"],"cic":["A","B"],"a":["早期引用已给出","ok"],"b":["拿到早期 A","ok"],"stack":["…createBean(B)"],"hl":"l3"}},{"t":"B 初始化完成，进一级缓存","d":"B 走完初始化 → addSingleton(B)：进一级，同时把 B 的二/三级缓存和“正在创建”标记清掉。","src":"DefaultSingletonBeanRegistry.java（addSingleton）","log":"一级缓存 += B（成品），清 B 的二/三级","st":{"l1":["B"],"l2":[],"l3":["A"],"cic":["A"],"a":["等待 B","dim"],"b":["完成","ok"],"stack":["createBean(A) 继续"],"hl":"l1"}},{"t":"A 拿到 B，完成初始化，进一级","d":"回到 A 的 populateBean，注入成品 B；A 初始化完成后 addSingleton(A)。最后清掉 A 在三级里的早期引用。","src":"DefaultSingletonBeanRegistry.java（addSingleton）","log":"一级缓存 += A（成品），循环依赖解决 ✓","st":{"l1":["A","B"],"l2":[],"l3":[],"cic":[],"a":["完成","ok"],"b":["完成","ok"],"stack":["getBean(A) 返回"],"hl":"l1"}}];
+
+  function cacheBox(title, code, arr, hot, hint) {
+    const txt = arr.length ? arr.join(" , ") : "空";
+    return (
+      '<div class="box ' + (hot ? "hot" : arr.length ? "" : "dim") + '"><b>' + title +
+      ' <code style="font-size:11px">' + code + "</code></b>" + txt +
+      '<div style="color:rgba(255,255,255,.4);font-size:11.5px;margin-top:3px">' + hint + "</div></div>"
+    );
+  }
+
+  function beanRow(name, a) {
+    return (
+      '<div class="lane ' + (a[1] || "") + '"><span class="who">' + name + "</span><span>" + a[0] + "</span></div>"
+    );
+  }
+
+  Anim.create({
+    steps: STEPS,
+    onStep(step, i) {
+      const s = step.st;
+      const h = (k) => (s.hl === k ? true : false);
+      document.getElementById("stage").innerHTML =
+        '<p class="s-title">三级缓存（DefaultSingletonBeanRegistry）</p>' +
+        '<div class="s-row">' +
+        cacheBox("一级 singletonObjects", ":86", s.l1, h("l1"), "成品 bean") +
+        cacheBox("二级 singletonFactories", ":89", s.l2, h("l2"), "ObjectFactory，调用才拿对象") +
+        cacheBox("三级 earlySingletonObjects", ":95", s.l3, h("l3"), "已取出过的半成品") +
+        "</div>" +
+        '<p class="s-title" style="margin-top:16px">singletonsCurrentlyInCreation</p>' +
+        '<div class="qnodes">' + (s.cic.length ? s.cic.map((x) => '<span class="qn wait">' + x + "</span>").join("") : '<span style="color:rgba(255,255,255,.35);font-size:12.5px">空</span>') + "</div>" +
+        '<p class="s-title" style="margin-top:16px">Bean 进度</p>' +
+        beanRow("A", s.a) +
+        beanRow("B", s.b) +
+        '<p class="s-title" style="margin-top:16px">调用栈</p>' +
+        '<div class="qnodes">' + s.stack.map((x, k) => '<span class="qn ' + (k === s.stack.length - 1 ? "hot" : "") + '">' + x + "</span>").join('<span class="arrow">›</span>') + "</div>";
+
+      Anim.kv([
+        ["一级（成品）", s.l1.join(",") || "空", h("l1")],
+        ["二级（工厂）", s.l2.join(",") || "空", h("l2")],
+        ["三级（早期）", s.l3.join(",") || "空", h("l3")],
+        ["创建中", s.cic.join(",") || "空", false],
+      ]);
+      Anim.log(STEPS, i);
+    },
+  });
+})();</script>

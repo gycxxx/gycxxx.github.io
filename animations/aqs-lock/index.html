@@ -1,0 +1,77 @@
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>AQS 独占锁 · 取号排队全过程 · 源码动画</title><meta name="description" content="ReentrantLock 非公平模式：T1 持锁，T2 抢锁失败 → 入队 → park → 被叫号 → 抢到锁"><link rel="stylesheet" href="/anim/anim.css"><link rel="icon" href="data:,"><link rel="stylesheet" href="/_astro/aqs-lock.BTSF5agR.css"></head> <body> <header class="top"> <div class="in"> <b>AQS 独占锁 · 取号排队全过程</b> <span class="sub">ReentrantLock 非公平模式：T1 持锁，T2 抢锁失败 → 入队 → park → 被叫号 → 抢到锁</span> <nav class="rt"> <a href="https://gycxxx.github.io/java-lock/">← 返回笔记站</a> <a href="/animations/">全部动画</a> </nav> </div> </header> <div class="wrap-anim"> <div class="cap" id="cap"></div> <div class="grid"> <div> <div class="stage" id="stage"></div> <div class="ctrl"> <button id="b-first" title="Home">⏮</button> <button id="b-prev" title="←">◀ 上一步</button> <button id="b-play" class="pri">▶ 播放</button> <button id="b-next" title="→">下一步 ▶</button> <button id="b-last" title="End">⏭</button> <input id="range" type="range" min="0" value="0"> <span class="cnt" id="cnt">1 / 1</span> <select id="speed" title="播放速度"> <option value="2200">慢</option> <option value="1400" selected>中</option> <option value="700">快</option> </select> </div> <p class="hint"> <kbd>←</kbd> <kbd>→</kbd> 单步 · <kbd>空格</kbd> 播放/暂停 ·
+<kbd>Home</kbd>/<kbd>End</kbd> 首/末步 · 也可直接拖进度条
+</p> </div> <aside class="side"> <div class="card" id="vars"></div> <div class="card log" id="log"></div> </aside> </div>  <div class="note"> <h3>这张图想说清的三件事</h3> <ul> <li> <b>AQS 是取号排队机</b>：<code>tryAcquire</code> 是“能不能直接办”，失败后造 Node 排队，
+<code>park</code> 坐着等，<code>signalNext</code> 叫号后<b>再自己抢一次</b>——不是被唤醒就直接拿到锁。
+</li> <li> <b>prev 先连、next 后补</b>：<code>setPrevRelaxed</code> 在 CAS 入队前就把前驱连好，
+        保证任何时刻都能从 tail 往前遍历完整队列（这是 JDK 21 后 Node 的关键不变式）。
+</li> <li> <b>非公平的“插队”在最后一步</b>：T2 被唤醒重试的同时，一个全新的 T3 可以抢在它前面 CAS 成功——
+        吞吐高但可能饿死，公平锁靠 <code>hasQueuedPredecessors</code> 堵住这一点。
+</li> </ul> <p style="margin:10px 0 0">
+完整 18 步表格与逐行源码见
+<a href="https://gycxxx.github.io/java-lock/">《Java 锁深读》第二讲 2.8 端到端演算</a>。
+</p> </div>  </div> <script src="/anim/anim.js"></script> </body> </html> <script>(function(){const STEPS = [{"t":"T2 调用 lock()，先走快速路径","d":"非公平锁的 initialTryLock：不排队，先 CAS 抢一把。此时 T1 已持有锁。","src":"ReentrantLock.java:321, 151, 223","log":"T2: lock() → sync.lock() → initialTryLock()","st":{"state":1,"owner":"T1","q":[],"t1":["持有锁","ok"],"t2":["调用 lock()","hot"],"hl":[]}},{"t":"CAS(0,1) 失败","d":"compareAndSetState(0, 1) 期望 state 为 0，实际是 1（T1 持有），CAS 失败。","src":"ReentrantLock.java:225","log":"T2: CAS(0,1) 失败 — state 已是 1","st":{"state":1,"owner":"T1","q":[],"t1":["持有锁","ok"],"t2":["CAS 失败","hot"],"hl":["state"]}},{"t":"不是重入：owner 不是自己","d":"getExclusiveOwnerThread() 返回 T1，与当前线程 T2 不等 → 重入分支不成立，快速路径返回 false。","src":"ReentrantLock.java:228","log":"T2: owner=T1 ≠ current，非重入","st":{"state":1,"owner":"T1","q":[],"t1":["持有锁","ok"],"t2":["非重入","hot"],"hl":["owner"]}},{"t":"进入 AQS：acquire(1) → tryAcquire(1)","d":"快速路径失败后交给 AQS。acquire 先再试一次 tryAcquire（子类实现）。","src":"AbstractQueuedSynchronizer.java:988-990 / ReentrantLock.java:241","log":"T2: acquire(1) → tryAcquire(1)","st":{"state":1,"owner":"T1","q":[],"t1":["持有锁","ok"],"t2":["进入 AQS","hot"],"hl":[]}},{"t":"tryAcquire 也失败：state != 0","d":"getState() != 0 说明锁被占，返回 false。T2 必须入队。","src":"ReentrantLock.java:242","log":"T2: getState()!=0 → tryAcquire 返回 false","st":{"state":1,"owner":"T1","q":[],"t1":["持有锁","ok"],"t2":["抢锁失败","hot"],"hl":["state"]}},{"t":"进入 6 参数 acquire 的大 for 循环","d":"JDK 21 用一个 acquire(node, arg, shared, interruptible, timed, time) 覆盖独占/共享/可中断/超时四种模式。","src":"AbstractQueuedSynchronizer.java:670, 990","log":"T2: for(;;) 开始 — 试锁→入队→park 的循环","st":{"state":1,"owner":"T1","q":[],"t1":["持有锁","ok"],"t2":["进入循环","hot"],"hl":[]}},{"t":"tail == null → 初始化 dummy head","d":"队列还是空的，先造一个不持有线程的哑元头节点（CLH 队列的哨兵）。","src":"AbstractQueuedSynchronizer.java:729-730, 582-600","log":"队列空 → tryInitializeHead() 创建 dummy head","st":{"state":1,"owner":"T1","q":["dummy"],"t1":["持有锁","ok"],"t2":["建 dummy 头","hot"],"hl":["q"]}},{"t":"为 T2 创建 ExclusiveNode","d":"独占模式创建 ExclusiveNode（JDK 21 用子类区分模式，不再用 nextWaiter 常量）。","src":"AbstractQueuedSynchronizer.java:732-734","log":"T2: new ExclusiveNode()","st":{"state":1,"owner":"T1","q":["dummy"],"t1":["持有锁","ok"],"t2":["new Node","hot"],"hl":["q"]}},{"t":"挂上 waiter 并指向前驱","d":"node.waiter = 当前线程；setPrevRelaxed(t) 先把 prev 指向 dummy（prev 指针先连好，保证任何时刻都能往前走）。","src":"AbstractQueuedSynchronizer.java:739-740","log":"node.waiter=T2，prev→dummy","st":{"state":1,"owner":"T1","q":["dummy","T2"],"t1":["持有锁","ok"],"t2":["挂 waiter","hot"],"hl":["q"]}},{"t":"casTail 入队成功","d":"CAS 把 tail 从 dummy 换成 T2 节点，随后 t.next = node 把后继指针补上。","src":"AbstractQueuedSynchronizer.java:741-744","log":"casTail 成功 → T2 正式入队","st":{"state":1,"owner":"T1","q":["dummy","T2"],"t1":["持有锁","ok"],"t2":["入队完成","hot"],"hl":["q"]}},{"t":"标记 WAITING，准备阻塞","d":"JDK 21 的 status 只有 WAITING=1 / CANCELLED / COND 三个值，不再有 SIGNAL。置 WAITING 是 park 前的约定。","src":"AbstractQueuedSynchronizer.java:748-749","log":"node.status = WAITING","st":{"state":1,"owner":"T1","q":["dummy","T2w"],"t1":["持有锁","ok"],"t2":["status=WAITING","hot"],"hl":["q"]}},{"t":"LockSupport.park(this) 阻塞","d":"T2 在此挂起。注意：park 之前已经把 status 设成 WAITING，unpark 方靠它判断是否需要唤醒。","src":"AbstractQueuedSynchronizer.java:754","log":"T2: park() — 让出 CPU 等叫号","st":{"state":1,"owner":"T1","q":["dummy","T2w"],"t1":["持有锁","ok"],"t2":["parked","park"],"hl":[]}},{"t":"T1 执行 unlock()","d":"release(1) → tryRelease(1)：state 减到 0，清空 exclusiveOwnerThread。","src":"ReentrantLock.java:493, 172-181 / AQS:1058","log":"T1: unlock() → release(1) → state=0, owner=null","st":{"state":0,"owner":"null","q":["dummy","T2w"],"t1":["释放锁","ok"],"t2":["parked","park"],"hl":["state","owner"]}},{"t":"signalNext(head)：只叫醒一个后继","d":"清掉 head.next 的 WAITING 位并 unpark(T2)。共享模式另有 signalNextIfShared 做级联唤醒。","src":"AbstractQueuedSynchronizer.java:1060, 641-647","log":"T1: signalNext → 清 WAITING + unpark(T2)","st":{"state":0,"owner":"null","q":["dummy","T2"],"t1":["已释放","dim"],"t2":["被 unpark","hot"],"hl":["q"]}},{"t":"T2 被唤醒，清除 WAITING","d":"从 park 返回后 node.clearStatus() 复位，然后回到 for(;;) 顶部重新判断。","src":"AbstractQueuedSynchronizer.java:759","log":"T2: 唤醒 → clearStatus() → 回到循环顶","st":{"state":0,"owner":"null","q":["dummy","T2"],"t1":["已释放","dim"],"t2":["循环重试","hot"],"hl":[]}},{"t":"first = (head == pred) → true","d":"T2 的前驱就是 dummy head，说明它排在队首，这一轮允许再抢一次锁。","src":"AbstractQueuedSynchronizer.java:693-694","log":"T2: 位于队首，可以再试 tryAcquire","st":{"state":0,"owner":"null","q":["dummy","T2"],"t1":["已释放","dim"],"t2":["队首重试","hot"],"hl":["q"]}},{"t":"tryAcquire 成功：CAS(0,1)","d":"state==0 且 CAS(0,1) 成功 —— 非公平锁的“插队”就发生在这里：此刻可能有新线程也来抢，T2 不 guaranteed。","src":"ReentrantLock.java:242","log":"T2: CAS(0,1) 成功","st":{"state":1,"owner":"T2","q":["dummy","T2"],"t1":["已释放","dim"],"t2":["抢到锁","ok"],"hl":["state"]}},{"t":"登记 owner = T2","d":"setExclusiveOwnerThread(current)，可重入的身份证办好了。","src":"ReentrantLock.java:243","log":"setExclusiveOwnerThread(T2)","st":{"state":1,"owner":"T2","q":["dummy","T2"],"t1":["已释放","dim"],"t2":["owner=T2","ok"],"hl":["owner"]}},{"t":"出队：T2 节点变成新的 dummy head","d":"node.prev=null; head=node; pred.next=null —— 旧 head 被丢弃，T2 的节点成为新的哑元头。","src":"AbstractQueuedSynchronizer.java:716-718","log":"head=T2 节点，旧 dummy 出队","st":{"state":1,"owner":"T2","q":["T2"],"t1":["已释放","dim"],"t2":["成为 head","ok"],"hl":["q"]}},{"t":"T2 拿到锁，进入临界区","d":"acquire 返回，lock() 返回。整个过程：一次快速 CAS + 一次入队 + 一次 park + 被唤醒后重试成功。","src":"AbstractQueuedSynchronizer.java:725","log":"T2: 获得锁，执行临界区","st":{"state":1,"owner":"T2","q":["T2"],"t1":["已结束","dim"],"t2":["临界区","ok"],"hl":[]}}];
+
+  const QMAP = {
+    dummy: ["dummy head", "dummy"],
+    T2: ["T2 node", ""],
+    T2w: ["T2 node", "wait"],
+  };
+
+  function nodeHtml(k) {
+    const m = QMAP[k] || [k, ""];
+    return '<span class="qn ' + m[1] + '">' + m[0] + "</span>";
+  }
+
+  function lane(who, arr) {
+    return (
+      '<div class="lane ' +
+      (arr[1] || "") +
+      '"><span class="who">' +
+      who +
+      "</span><span>" +
+      arr[0] +
+      "</span></div>"
+    );
+  }
+
+  Anim.create({
+    steps: STEPS,
+    onStep(step, i) {
+      const s = step.st;
+      const q = s.q.map(nodeHtml).join('<span class="arrow">→</span>');
+      const queue = s.q.length
+        ? q
+        : '<span style="color:rgba(255,255,255,.35);font-size:12.5px">（队列为空，tail == null）</span>';
+
+      document.getElementById("stage").innerHTML =
+        '<p class="s-title">ReentrantLock · NonfairSync</p>' +
+        '<div class="s-row">' +
+        '<div class="box ' +
+        (s.hl.indexOf("state") >= 0 ? "hot" : "") +
+        '"><b>state</b><code>' +
+        s.state +
+        "</code></div>" +
+        '<div class="box ' +
+        (s.hl.indexOf("owner") >= 0 ? "hot" : "") +
+        '"><b>exclusiveOwnerThread</b><code>' +
+        s.owner +
+        "</code></div>" +
+        "</div>" +
+        '<p class="s-title" style="margin-top:18px">CLH 队列（head → tail）</p>' +
+        '<div class="qnodes">' +
+        queue +
+        "</div>" +
+        '<p class="s-title" style="margin-top:18px">线程</p>' +
+        lane("T1", s.t1) +
+        lane("T2", s.t2);
+
+      Anim.kv([
+        ["state", String(s.state), s.hl.indexOf("state") >= 0],
+        ["owner", s.owner, s.hl.indexOf("owner") >= 0],
+        ["队列长度", String(s.q.length), s.hl.indexOf("q") >= 0],
+        ["T2 状态", s.t2[0], true],
+      ]);
+      Anim.log(STEPS, i);
+    },
+  });
+})();</script>
