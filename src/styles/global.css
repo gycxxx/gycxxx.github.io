@@ -115,15 +115,6 @@ a:hover {
   font-weight: 500;
 }
 
-.nav-gh {
-  margin-left: 6px;
-  border: 1px solid var(--line);
-}
-
-.nav-gh:hover {
-  border-color: #c9d0d6;
-}
-
 /* ---------- layout ---------- */
 .main {
   max-width: var(--wrap);

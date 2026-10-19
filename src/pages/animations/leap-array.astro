@@ -1,0 +1,157 @@
+---
+import AnimLayout from "../../layouts/AnimLayout.astro";
+
+const STEPS = [
+  {
+    t: "背景：StatisticNode 的双窗口",
+    d: "每个资源的统计实现里挂着两个 LeapArray：秒级 2 桶 × 500ms，分钟级 60 桶 × 1s。dashboard 上的 QPS/RT/线程数全从这里读。",
+    src: "sentinel-core/.../node/StatisticNode.java:96",
+    log: "rollingCounterInSecond = ArrayMetric(2, 500ms)",
+    st: { b0: "null", b1: "null", t: "—", ws: "—", idx: "—", cas: "—", note: "2 桶循环，时间到就换桶", hl: "" },
+  },
+  {
+    t: "记账入口：pass / block / rt / thread",
+    d: "StatisticSlot 在 entry 时 addPassRequest，exit 时记 RT 与异常。全部落到当前窗口桶的 LongAdder 上——写侧无锁。",
+    src: "sentinel-core/.../slots/statistic/StatisticSlot.java",
+    log: "entry → increaseThreadNum + addPassRequest",
+    st: { b0: "null", b1: "null", t: "—", ws: "—", idx: "—", cas: "—", note: "六组 LongAdder：pass/block/success/exception/rt/thread", hl: "" },
+  },
+  {
+    t: "currentWindow(timeMillis)：两行算术",
+    d: "idx = (time / windowLength) % sampleCount——时间戳直接算出桶下标，天然循环；windowStart = time - time % windowLength——向下对齐到窗口边界。",
+    src: "sentinel-core/.../slots/statistic/base/LeapArray.java:116",
+    log: "t=620 → idx=(620/500)%2=0, windowStart=500",
+    st: { b0: "null", b1: "null", t: "620ms", ws: "500ms", idx: "0", cas: "—", note: "idx 落在桶 0，窗口起点 500ms", hl: "idx" },
+  },
+  {
+    t: "T1 到来：桶是空的 → CAS 建桶",
+    d: "array.get(0) == null，新建 WindowWrap(windowLength=500, windowStart=500, 空 bucket)，CAS(null, window)——同一时刻只有一个线程能建成功。",
+    src: "sentinel-core/.../LeapArray.java:285",
+    log: "T1: CAS(0, null → 桶[500ms]) 成功",
+    st: { b0: "桶[500ms] pass=0", b1: "null", t: "620ms", ws: "500ms", idx: "0", cas: "T1 CAS 成功", note: "胜者建桶，开始记账", hl: "b0" },
+  },
+  {
+    t: "T2 同时到来：CAS 失败 → 自旋重试",
+    d: "T2 也看到 null，也去 CAS——失败方不会报错，自旋重试再 array.get(0)，这次拿到了 T1 建好的桶（windowStart 相同），直接累加。",
+    src: "sentinel-core/.../LeapArray.java:294",
+    log: "T2: CAS 失败 → 重试 → 拿到 T1 的桶",
+    st: { b0: "桶[500ms] pass=2", b1: "null", t: "620ms", ws: "500ms", idx: "0", cas: "T2 CAS 失败后重试成功", note: "LongAdder 累加，全程无锁", hl: "b0" },
+  },
+  {
+    t: "同窗口内的高频到达",
+    d: "windowStart 相同的所有请求共享同一个桶：LongAdder 分段累加，多线程不打架。这就是“统计不给业务加锁”的全部秘密。",
+    src: "sentinel-core/.../LeapArray.java:288",
+    log: "630 / 700 / 880ms 到达 → 全部进桶 0",
+    st: { b0: "桶[500ms] pass=57", b1: "null", t: "880ms", ws: "500ms", idx: "0", cas: "—", note: "桶 0 持续累加中", hl: "b0" },
+  },
+  {
+    t: "时间推进：1120ms 落到桶 1",
+    d: "idx = (1120/500)%2 = 1，windowStart = 1000ms。桶 1 还是 null → 同样走 CAS 建桶。两个桶各管一段，互不干扰。",
+    src: "sentinel-core/.../LeapArray.java:116",
+    log: "t=1120 → idx=1, windowStart=1000 → CAS 建桶 1",
+    st: { b0: "桶[500ms] pass=57", b1: "桶[1000ms] pass=0", t: "1120ms", ws: "1000ms", idx: "1", cas: "CAS(1, null → 桶) 成功", note: "循环数组：用完桶 0 用桶 1", hl: "b1" },
+  },
+  {
+    t: "回到桶 0：旧桶过期 → CAS 换新桶",
+    d: "1620ms 时 idx 又回到 0，但 windowStart=1500 ≠ 桶 0 的 500 → 桶过期：CAS(old, 新桶)。旧桶不丢，它成了 previousWindow。",
+    src: "sentinel-core/.../LeapArray.java:294",
+    log: "t=1620 → idx=0 但桶过期 → CAS 换新桶",
+    st: { b0: "桶[1500ms] pass=0", b1: "桶[1000ms] pass=61", t: "1620ms", ws: "1500ms", idx: "0", cas: "CAS(0, 旧桶 → 新桶) 成功", note: "旧桶退役为 previousWindow", hl: "b0" },
+  },
+  {
+    t: "为什么秒级是 2×500ms 而不是 1×1000ms",
+    d: "窗口切换的瞬间，上一个桶的数据还能被 previousWindow 读到（StatisticNode.previousWindowBlock），QPS 曲线不出悬崖；1×1000ms 会在边界处直接跳变。",
+    src: "sentinel-core/.../node/StatisticNode.java:171",
+    log: "读侧 = 当前桶 + previousWindow 加权",
+    st: { b0: "桶[1500ms] pass=23", b1: "桶[1000ms] pass=61", t: "1620ms", ws: "1500ms", idx: "0", cas: "—", note: "边界时刻两个桶一起供数", hl: "b1" },
+  },
+  {
+    t: "时钟回拨：NTP 校时把时间改回去了",
+    d: "time 突然回退，算出的 windowStart < 桶上的 windowStart：不覆盖旧桶、不改任何数据，直接返回一个空桶——本次统计丢弃，防止校时把曲线打乱。",
+    src: "sentinel-core/.../LeapArray.java:291",
+    log: "windowStart 1200 < 1500 → 返回空桶（丢弃本次）",
+    st: { b0: "桶[1500ms] pass=23", b1: "桶[1000ms] pass=61", t: "1220ms（回拨）", ws: "1200ms", idx: "0", cas: "—", note: "回拨不覆盖，统计作废", hl: "bad" },
+  },
+  {
+    t: "读侧：FlowSlot 拿到的就是这个数",
+    d: "QPS = 窗口内 pass / 窗口秒数。DefaultController.canPass 读 avgUsedTokens 时走的正是这条路——全程 CAS + LongAdder，没有一个业务锁。",
+    src: "sentinel-core/.../controller/DefaultController.java:49",
+    log: "读：当前桶 23 pass / 0.5s ≈ 46 QPS",
+    st: { b0: "桶[1500ms] pass=23", b1: "桶[1000ms] pass=61", t: "1620ms", ws: "1500ms", idx: "0", cas: "—", note: "无锁统计闭环：CAS 换桶 + LongAdder 记账", hl: "ok" },
+  },
+];
+---
+
+<AnimLayout
+  title="LeapArray · 滑动窗口怎么无锁转起来"
+  sub="时间戳算下标、CAS 换桶、LongAdder 记账；2×500ms 双桶让边界不出悬崖，时钟回拨直接丢弃"
+  back="https://gycxxx.github.io/sentinel/"
+>
+  <div class="note">
+    <h3>三句话看懂 LeapArray</h3>
+    <ul>
+      <li>
+        <b>下标是算出来的，不是数出来的</b>：<code>idx = (time / windowLength) % sampleCount</code>，
+        时间一流过，桶位自动循环，不需要搬数据。
+      </li>
+      <li>
+        <b>并发只有一道坎——建桶</b>：用 <code>CAS(null, window)</code> 决出唯一胜者，
+        败者自旋重试拿胜者的桶；之后记账走 <code>LongAdder</code>，全线无锁。
+      </li>
+      <li>
+        <b>两个反直觉设计都有原因</b>：秒级用 2 个 500ms 桶（不是 1 个 1000ms）是为了
+        边界处 <code>previousWindow</code> 还能供数；时钟回拨返回空桶，是为了
+        NTP 校时不把曲线打乱。
+      </li>
+    </ul>
+    <p style="margin:10px 0 0">
+      完整源码分析（含三级节点树、六指标、FlowSlot 读法）见
+      <a href="https://gycxxx.github.io/sentinel/">《Sentinel 源码深读》第二讲</a>。
+    </p>
+  </div>
+</AnimLayout>
+
+<script define:vars={{ STEPS }}>
+  function bucketBox(pos, content, hot, dim) {
+    return (
+      '<div class="s-col"><div class="box ' +
+      (hot ? "hot" : dim ? "dim" : "") +
+      '"><b>桶 ' +
+      pos +
+      '</b><div style="margin-top:5px"><code>' +
+      content +
+      "</code></div></div></div>"
+    );
+  }
+
+  Anim.create({
+    steps: STEPS,
+    onStep(step, i) {
+      const s = step.st;
+
+      document.getElementById("stage").innerHTML =
+        '<p class="s-title">rollingCounterInSecond —— 2 桶循环数组</p>' +
+        '<div class="s-row">' +
+        bucketBox("0", s.b0, s.hl === "b0", s.hl === "b1") +
+        bucketBox("1", s.b1, s.hl === "b1", s.hl === "b0") +
+        "</div>" +
+        '<p class="s-title" style="margin-top:18px">时间与下标演算</p>' +
+        '<div class="s-row">' +
+        '<div class="box ' + (s.hl === "idx" ? "hot" : "") + '"><b>当前时刻 time</b><code>' + s.t + "</code></div>" +
+        '<div class="box ' + (s.hl === "idx" ? "hot" : "") + '"><b>windowStart（向下对齐）</b><code>' + s.ws + "</code></div>" +
+        '<div class="box ' + (s.hl === "idx" ? "hot" : "") + '"><b>idx = (t/500) % 2</b><code>' + s.idx + "</code></div>" +
+        '<div class="box ' + (s.hl === "bad" ? "bad" : s.hl === "ok" ? "ok" : "") + '"><b>CAS / 事件</b><code>' + s.cas + "</code></div>" +
+        "</div>" +
+        '<p class="s-title" style="margin-top:16px">本步要点</p>' +
+        '<div class="box ' + (s.hl === "bad" ? "bad" : s.hl === "ok" ? "ok" : "") + '"><code>' + s.note + "</code></div>";
+
+      Anim.kv([
+        ["time", s.t, s.t !== "—"],
+        ["windowStart", s.ws, s.ws !== "—"],
+        ["桶下标 idx", s.idx, s.idx !== "—"],
+        ["CAS / 事件", s.cas, s.cas !== "—"],
+      ]);
+      Anim.log(STEPS, i);
+    },
+  });
+</script>

@@ -381,6 +381,8 @@ public final String readUTF() throws IOException {
 
 > **本讲问题**：字节怎么变成字符？为什么一次 `read` 能把中文"切成两半"而 `InputStreamReader` 不会乱码？`BufferedReader.readLine` 比 `Scanner` 快在哪？
 
+> 🎬 配套动画：[StreamDecoder 三态机](/animations/stream-decoder/) —— 12 步单步播放，bb 残字节、leftoverChar 残字符与三种 CoderResult 逐步可见。
+
 ### 3.1 InputStreamReader：只是个壳，内核是 StreamDecoder
 
 ```java

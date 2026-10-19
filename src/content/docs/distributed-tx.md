@@ -370,6 +370,8 @@ if (globalSession.getStatus() == GlobalStatus.Begin) {
 
 > **本讲问题**：不改业务代码怎么实现事务？前后镜像长什么样？为什么 undo_log 和业务 SQL 必须同一个本地事务？
 
+> 🎬 配套动画：[Seata AT 两阶段提交](/animations/seata-at/) —— 21 步单步播放，TM/TC/RM 三个角色与 undo_log、GlobalSession、全局锁同步变化，含异常回滚分支。
+
 ### 3.1 代理链：从 DataSource 到 Statement 的五层包装
 
 ```

@@ -146,6 +146,8 @@ Sentinel 的核心可以压缩成**一条责任链 + 一棵统计树 + 三种规
 
 > **本讲问题**：`SphU.entry("demo")` 这行代码进去以后，到底依次敲了哪些门？门的顺序凭什么这么定？
 
+> 🎬 配套动画：[Sentinel 责任链过闸](/animations/sentinel-entry/) —— 18 步单步播放，十个 slot 按 `@Spi(order)` 依次点亮，含放行 / 拒绝 / fail-open 三条结局。
+
 ### 1.1 入口：CtSph 的三道闸
 
 ```java
@@ -245,6 +247,8 @@ if (chain == null) {
 ## 第二讲：Node 与统计 —— LeapArray 滑动窗口
 
 > **本讲问题**：dashboard 上的 QPS/RT/线程数从哪来？为什么统计不给业务加锁？
+
+> 🎬 配套动画：[LeapArray 滑动窗口](/animations/leap-array/) —— 11 步单步播放，看 CAS 换桶、双桶接力与时钟回拨各发生在哪一刻。
 
 ### 2.1 三级节点树
 
