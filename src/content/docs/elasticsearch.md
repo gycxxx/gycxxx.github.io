@@ -17,7 +17,7 @@ tags:
 > **版本基线**：Elasticsearch **9.5.5**（tag v9.5.5）。
 > **精确 commit**：`48acba663b09e70b115dd879329141506c377890`，commit 时间 `2026-09-30 09:32:36 -0500`（git shallow clone，单分支只读副本）。
 >
-> **重要勘误**：网络上仍有大量旧资料称 ES 选主用 "ZenDiscovery + bully 算法"。在 9.5.5 中 **ZenDiscovery 已彻底删除**，统一由 `cluster/coordination/Coordinator.java`（Raft 改良，term + 多数派 + PreVote + log 一致性检查）承担，由 `DiscoveryModule.java:176` 装配。本笔记据实记录。
+> **选主实现说明**：9.5.5 中 **ZenDiscovery 已彻底删除**，选主统一由 `cluster/coordination/Coordinator.java`（Raft 改良，term + 多数派 + PreVote + log 一致性检查）承担，由 `DiscoveryModule.java:176` 装配。
 
 ---
 
@@ -154,7 +154,7 @@ flowchart LR
 
 ## 面试速通：ES 核心知识一页纸
 
-> 本章由原 `es.md`（面试速通指南）合并而来：保留其"一页纸快速建立全局观"的定位，**所有数字与流程均已对照 9.5.5 源码校正**（原稿有过时/不精确处，见本节末尾勘误表）。需要深入的每个点都给了本笔记的讲次指引与源码行号。
+> 本章由原 `es.md`（面试速通指南）合并而来：保留其"一页纸快速建立全局观"的定位，**所有数字与流程均已对照 9.5.5 源码校正**。需要深入的每个点都给了本笔记的讲次指引与源码行号。
 
 ### 1. 核心概念（类比数据库）
 
@@ -247,19 +247,9 @@ ES 默认打分是 BM25（TF-IDF 的改进版）。源码位置 `index/similarit
 
 1. **核心概念**：Index/Document/Shard/Replica 定义（→ 第二讲）；
 2. **底层原理**：倒排索引 + Segment + refresh/flush/merge 的区别（→ 第三讲）；
-3. **集群架构**：9.5.5 已是 Raft 改良选主（Coordinator），**不是旧资料说的 ZenDiscovery + bully**（→ 第一讲，文档头部有勘误）；集群健康 Green/Yellow/Red；
+3. **集群架构**：9.5.5 已是 Raft 改良选主（Coordinator），**不是旧资料说的 ZenDiscovery + bully**（→ 第一讲）；集群健康 Green/Yellow/Red；
 4. **查询语法**：term vs match 的区别、bool 四子句的计分与性能差异（→ 第四讲）；
 5. **性能优化**：text/keyword 适用场景、Bulk 批量写、合理 refresh 间隔、深分页用 `search_after`/PIT 而非 from+size（→ 第五讲）。
-
-### 合并勘误表（原 es.md → 校正后）
-
-| 原稿说法 | 校正 | 依据 |
-|---|---|---|
-| "Flush 默认 **30 分钟**或事务日志满时将 segment 落盘" | **错误（过时）**。9.5.5 默认 `flush_threshold_age`=1 分钟、`flush_threshold_size`=10GB。"30 分钟"是 ES 6.x `index.translog.flush_threshold_period` 的旧默认，该 setting 在 7.0 已移除（源码中已无此名） | `index/IndexSettings.java:394` |
-| "数据同时写入内存 buffer 和 Translog" | 顺序应是先 `Translog.append` 再 `IndexWriter.addDocument`；"内存 buffer"指 Lucene IndexWriter 的 buffer，refresh 后才成 segment | 第三讲逐文件精读 |
-| "随后副本分片同步写入，主分片确认后返回" | 措辞误导：primary 写完 translog 后**并发**转发所有副本（非串行），等 quorum ack 后返回 | 第三讲 |
-| "按 ID 查询……从 translog 和 segment 中快速获取" | 方向对但不精确：realtime GET 先查 translog 未 refresh 的最新操作，miss 再读 Lucene | `index/shard/IndexShard.java:1387` |
-| "ES 不支持事务" | 严谨说法：无**多文档 ACID 事务**；单文档操作是原子的 | 第七节选型表 |
 
 ---
 

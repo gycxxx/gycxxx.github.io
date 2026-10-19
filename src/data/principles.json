@@ -176,6 +176,166 @@
   "c": "游戏与云原生"
  },
  {
+  "q": "Seata 三个角色？",
+  "a": "TM 发起/结束全局事务；RM 管理分支资源、执行二阶段；TC 持会话、驱动状态、管全局锁",
+  "d": "`server/src/main/java/org/apache/seata/server/coordinator/DefaultCoordinator.java`",
+  "s": "distributed-tx",
+  "t": "分布式事务（Seata）源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "XID 怎么跨服务传递？",
+  "a": "RootContext 的 ThreadLocal + RPC  Filter 把 xid 塞进请求头；下游 RootContext.getXID() 非空就是 Participant",
+  "d": "`tm/src/main/java/org/apache/seata/tm/api/DefaultGlobalTransaction.java:235`",
+  "s": "distributed-tx",
+  "t": "分布式事务（Seata）源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "AT 一阶段做了什么？",
+  "a": "解析 SQL → 查前镜像 → 执行 → 查后镜像 → 生成 undo_log → 写业务表和 undo_log 同一本地事务提交 → 注册分支",
+  "d": "`rm-datasource/src/main/java/org/apache/seata/rm/datasource/exec/AbstractDMLBaseExecutor.java:97`",
+  "s": "distributed-tx",
+  "t": "分布式事务（Seata）源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "AT 二阶段回滚原理？",
+  "a": "TC 发 BranchRollback → RM 按 undo_log 的 rollback_info 反向生成 SQL 执行；回滚完才删 undo_log，保证可重入",
+  "d": "`rm-datasource/src/main/java/org/apache/seata/rm/datasource/undo/AbstractUndoLogManager.java:89`",
+  "s": "distributed-tx",
+  "t": "分布式事务（Seata）源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "AT 二阶段提交做什么？",
+  "a": "删 undo_log（异步，Phase two committing 阶段不做业务操作）；一阶段成功即可认为事务完成",
+  "d": "`server/src/main/java/org/apache/seata/server/coordinator/DefaultCoordinator.java:549`",
+  "s": "distributed-tx",
+  "t": "分布式事务（Seata）源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "全局锁什么时候拿？",
+  "a": "RM 注册分支时把 lockKeys（表名+主键值）报给 TC，TC 的 LockManager 抢先到先得；写冲突抛 LockConflictException 重试",
+  "d": "`server/src/main/java/org/apache/seata/server/storage/db/lock/DataBaseLockManager.java`",
+  "s": "distributed-tx",
+  "t": "分布式事务（Seata）源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "脏写怎么防？",
+  "a": "本地事务提交前 checkLock 校验全局锁——如果这行记录被别的事务的全局锁占着，本地提交直接失败",
+  "d": "`rm-datasource/src/main/java/org/apache/seata/rm/datasource/ConnectionProxy.java:237`",
+  "s": "distributed-tx",
+  "t": "分布式事务（Seata）源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "AT 的隔离级别？",
+  "a": "读未提交（RU）——一阶段提交后别的事务就能读到未全局提交的数据；Seata 默认只加写锁，读靠 undo_log 的 afterImage 做补偿查询（@GlobalLock）",
+  "d": "设计取舍",
+  "s": "distributed-tx",
+  "t": "分布式事务（Seata）源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "空回滚是什么？",
+  "a": "TC 决定回滚但 RM 根本没收到过一阶段（没注册分支）→ RM 要能识别\"这个 xid+branchId 我没见过\"并不报错",
+  "d": "`tcc/fence`",
+  "s": "distributed-tx",
+  "t": "分布式事务（Seata）源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "悬挂是什么？",
+  "a": "RM 一阶段网络拥堵，TC 先回滚完（空回滚）， RM 的一阶段后到 → 不回滚就悬挂。fence 表靠 status 状态机挡住",
+  "d": "`integration-tx-api/src/main/java/org/apache/seata/integration/tx/api/fence/DefaultCommonFenceHandler.java:24`",
+  "s": "distributed-tx",
+  "t": "分布式事务（Seata）源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "TCC 的幂等靠什么？",
+  "a": "confirm/cancel 必须幂等实现；fence 表记录 xid+branchId+action 的状态（PREPARED/COMMITTED/ROLLBACKED），重复调用直接返回上次结果",
+  "d": "同上 `:53`",
+  "s": "distributed-tx",
+  "t": "分布式事务（Seata）源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "Saga 和 TCC 差异？",
+  "a": "TCC 三个方法都要业务写；Saga 是状态机 JSON 编排，正向服务 + 补偿服务，长事务/遗留系统友好",
+  "d": "`saga/seata-saga-engine/src/main/java/org/apache/seata/saga/engine/StateMachineEngine.java:29`",
+  "s": "distributed-tx",
+  "t": "分布式事务（Seata）源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "XA 模式和 AT 差异？",
+  "a": "XA 是数据库标准协议（XAResource.prepare/commit），业务无侵入但依赖库支持、性能差；AT 靠 undo_log 补偿，无侵入且快",
+  "d": "`rm-datasource/src/main/java/org/apache/seata/rm/datasource/xa/ConnectionProxyXA.java`",
+  "s": "distributed-tx",
+  "t": "分布式事务（Seata）源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "TC 挂了正在跑的事务怎么办？",
+  "a": "TC 重启后从存储 reload 会话（SessionHolder.reload），继续驱动到终态；RM 有 report 重试",
+  "d": "`server/src/main/java/org/apache/seata/server/session/SessionHolder.java`",
+  "s": "distributed-tx",
+  "t": "分布式事务（Seata）源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "`@GlobalTransactional` 传播性有哪些？",
+  "a": "七种：REQUIRED/SUPPORTS/MANDATORY/REQUIRES_NEW/NOT_SUPPORTED/NEVER/NESTED，和 Spring 同名同义",
+  "d": "`tm/src/main/java/org/apache/seata/tm/api/TransactionalTemplate.java:192`",
+  "s": "distributed-tx",
+  "t": "分布式事务（Seata）源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "参与者（Participant）能回滚吗？",
+  "a": "不能。rollbackTransaction:395 开头就判断 role != Launcher 直接忽略——只有发起方有权结束全局事务",
+  "d": "`tm/src/main/java/org/apache/seata/tm/api/TransactionalTemplate.java:395`",
+  "s": "distributed-tx",
+  "t": "分布式事务（Seata）源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "全局事务超时了会怎样？",
+  "a": "TC timeoutCheck:406 扫到超时会话 → TimeoutRollbacking → 逐分支回滚；RM 提交时若 TC 已判超时，commit(xid) 返回 TimeoutRollbacking 转为回滚",
+  "d": "`server/src/main/java/org/apache/seata/server/coordinator/DefaultCore.java:242`",
+  "s": "distributed-tx",
+  "t": "分布式事务（Seata）源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "二阶段提交失败会无限重试吗？",
+  "a": "不会。有 MAX_COMMIT_RETRY_TIMEOUT（:165）/MAX_ROLLBACK_RETRY_TIMEOUT（:168）和 RETRY_DEAD_THRESHOLD（:177），超过进人工处理（告警）",
+  "d": "`server/src/main/java/org/apache/seata/server/coordinator/DefaultCoordinator.java:165`",
+  "s": "distributed-tx",
+  "t": "分布式事务（Seata）源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "为什么 AT 要求业务表必须有主键？",
+  "a": "前后镜像按主键定位行；isMultiPk():114 还会对复合主键做特殊处理",
+  "d": "`rm-datasource/src/main/java/org/apache/seata/rm/datasource/exec/AbstractDMLBaseExecutor.java:114`",
+  "s": "distributed-tx",
+  "t": "分布式事务（Seata）源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "批量插入为什么特殊？",
+  "a": "批量没有 beforeImage，回滚只能按主键删；InsertExecutor/MySQLInsertExecutor 专门处理自增列和 on duplicate update",
+  "d": "`rm-datasource/src/main/java/org/apache/seata/rm/datasource/exec/InsertExecutor.java`",
+  "s": "distributed-tx",
+  "t": "分布式事务（Seata）源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
   "q": "ArrayList 怎么扩容？",
   "a": "满则走 grow()：ArraysSupport.newLength 首选增长 0.5 倍（约 1.5 倍），System.arraycopy 批量搬迁，摊还 O(1)",
   "d": "第一讲",
@@ -517,6 +677,206 @@
   "d": "第五讲",
   "s": "java-concurrent",
   "t": "Java 并发库（JUC）源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "BIO 和 NIO 的区别？",
+  "a": "BIO 是面向流的阻塞（一个连接一个线程，InputStream.read 阻塞到有数据）；NIO 是面向缓冲的（数据先到 Buffer）+ 非阻塞（Channel 配 Selector，一个线程管多个连接）+ 选择器",
+  "d": "`java/nio/Buffer.java:217`、`sun/nio/ch/SelectorImpl.java:52`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`read()` 为什么返回 int 不返回 byte？",
+  "a": "需要用 -1 表示 EOF，byte 的取值域不够。InputStream.read():182 注释明说",
+  "d": "`java/io/InputStream.java:182`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "一次 `read(byte[])` 一定读满数组吗？",
+  "a": "不一定。FileInputStream.read(byte[],off,len):277 直接透传 native readBytes0，底层 read(2) 对普通文件通常读满，但管道/网络随时可能短读；必须循环或用 readNBytes",
+  "d": "`java/io/FileInputStream.java:277`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`BufferedInputStream` 为什么快？",
+  "a": "把多次小 read 合并成一次 fill() 批量读（默认 8192 字节缓冲，:62），减少 read(2) 系统调用次数；mark/reset 也靠同一块 buf",
+  "d": "`java/io/BufferedInputStream.java:256`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`mark` 之后读超多少会失效？",
+  "a": "marklimit（构造第二参数或 mark(readlimit)）。fill() 里若 pos - markpos > marklimit 就丢弃 mark（markpos = -1）",
+  "d": "`java/io/BufferedInputStream.java:467`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`DataInputStream.readUTF` 和 `Writer.write(\"…\")` 一样吗？",
+  "a": "不一样。readUTF:632 是改长的 UTF-8（2 字节长度前缀 +  supplemental 字符拆成代理对按 3 字节编码、\\0 编码成 2 字节），和标准 UTF-8 不兼容，只能和 DataOutputStream.writeUTF:337 配对",
+  "d": "`java/io/DataInputStream.java:554`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`InputStreamReader` 是字节流还是字符流？",
+  "a": "字符流（extends Reader，java/io/InputStreamReader.java:69），内部持有 StreamDecoder；构造时立刻读前几个字节探测 BOM/编码（sd = StreamDecoder.forInputStreamReader(in, this)，:81-89）",
+  "d": "`java/io/InputStreamReader.java:81`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "跨 `read` 调用中文字为什么会乱？",
+  "a": "多字节字符可能被系统调用切断在两次 read 之间，StreamDecoder 用 bb 残字节缓冲解决：半字符留在 ByteBuffer 里下次继续解",
+  "d": "`sun/nio/cs/StreamDecoder.java:123`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`available()` 返回值可信吗？",
+  "a": "不可信。注释原文\"an estimate\"（:457），普通文件返回剩余字节，网络流返回 0 不代表没数据；不要用它决定\"是否读完\"",
+  "d": "`java/io/FileInputStream.java:457`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`File` 和 `Path` 什么关系？",
+  "a": "JDK 7 起 Path 是主力，File 是遗留 API（java.io.File 仍在维护）。File 内部所有操作委托 FileSystem FS（File.java:160），File.toPath():727 两者互转",
+  "d": "`java/io/File.java:160`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`RandomAccessFile` 和 `FileInputStream` 本质差异？",
+  "a": "它是同一个 native fd 上既可读又可写、光标可 seek 自由定位；\"rws\"/\"rwd\" 模式控制每次写的元数据/内容同步强度（构造 :130）",
+  "d": "`java/io/RandomAccessFile.java:130`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "NIO 的 `Buffer` 三个指针？",
+  "a": "mark <= position <= limit <= capacity（不变量在 Buffer.java:217 注释）；写模式 limit==capacity，读完 flip() 切读模式（limit=position, position=0，:1009），读完再 clear()",
+  "d": "`java/nio/Buffer.java:217`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`HeapByteBuffer` 和 `DirectByteBuffer`？",
+  "a": "前者快在分配（数组）、后者快在 IO（无内核态拷贝）；DirectByteBuffer 受 -XX:MaxDirectMemorySize 限制，靠 Cleaner/Unsafe 释放（Bits.java 管理 reserveMemory）",
+  "d": "`java/nio/Direct-X-Buffer.java.template`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`FileChannel.map` 是什么原理？",
+  "a": "mmap(2)：把文件映射进进程地址空间，返回 MappedByteBuffer（FileChannelImpl.map:1412）；读是缺页中断按需加载，写直接落 page cache",
+  "d": "`sun/nio/ch/FileChannelImpl.java:1412`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`MappedByteBuffer` 什么时候被释放？",
+  "a": "不确定。map 时注册 DefaultUnmapper 到 Cleaner（:1341），GC 触发才 unmap；大文件要用 cleaner().clean() 或 Arena 主动释放，否则 fd 占满",
+  "d": "`sun/nio/ch/FileChannelImpl.java:1341`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`FileChannel.force()` 是 fsync 吗？",
+  "a": "是。force(false) → fsync(2)（数据+元数据）、force(true) → fdatasync 风格只刷数据（:1074）",
+  "d": "`sun/nio/ch/FileChannelImpl.java:1074`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`transferTo`/`transferFrom` 零拷贝？",
+  "a": "对普通文件会走 FileDispatcher.transferTo → Linux sendfile（一次系统调用、数据不过用户态）；不支持时退化为循环 read/write",
+  "d": "`sun/nio/ch/FileChannelImpl.java:934`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "Selector 怎么做到一个线程管多个连接？",
+  "a": "注册时把 fd 和关注事件写进本地内存 pollArray（struct pollfd 数组，PollSelectorImpl.java:53），doSelect 一次 poll(2) 拿所有就绪 fd",
+  "d": "`sun/nio/ch/PollSelectorImpl.java:97`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`Selector.wakeup()` 不阻塞 select 的原理？",
+  "a": "Linux 实现是一根自建管道（PipeImpl，fd0/fd1 两个字段 :56-57）：注册读端到 pollArray，wakeup() 往写端写 1 字节，poll 立刻返回",
+  "d": "`sun/nio/ch/PollSelectorImpl.java:240`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`select()` 返回 0 就绪也可能白跑一趟？",
+  "a": "是。wakeup 写的字节、updateKeys 延迟注册都会让 poll 提前返回但没有就绪事件，所以 selectNow 后要复查 cancelledKeys",
+  "d": "`sun/nio/ch/SelectorImpl.java:120`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "序列化怎么写同一个对象两次？",
+  "a": "第一次 TC_OBJECT 全文，第二次只写 TC_REFERENCE + 句柄号（writeObject0:… 的 handles.assign(obj) 查表）；句柄表 HandleTable 从 0xff71 开始",
+  "d": "`java/io/ObjectOutputStream.java:180`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`serialVersionUID` 不写会怎样？",
+  "a": "运行时按类结构自动计算哈希（ObjectStreamClass.computeDefaultSUID），加个字段就变，反序列化直接 InvalidClassException。必须显式声明",
+  "d": "`java/io/ObjectStreamClass.java`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`readObject` 里能强转吗？",
+  "a": "不能直接信。反序列化是\"从不可信字节造对象\"的入口，JDK 9+ 提供 ObjectInputFilter（ObjectInputStream.java:1281 setObjectInputFilter）做白名单过滤",
+  "d": "`java/io/ObjectInputStream.java:1281`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`PipedInputStream` 死锁怎么发生的？",
+  "a": "写端写满 1024 字节会 awaitSpace（:273）等读端读；读端不读、双方都阻塞就死锁。且读写两端不是线程安全的同一把锁，需两个线程",
+  "d": "`java/io/PipedInputStream.java:273`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "IO 流用完为什么必须 close？",
+  "a": "FileInputStream 的 native fd 是有限资源，close():487 用双检 closed + closeLock 保证幂等，同时会关掉关联的 FileChannel（:498）；忘了关靠 Cleaner 兜底但时机不定",
+  "d": "`java/io/FileInputStream.java:487`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
   "c": "Java"
  },
  {
@@ -1910,6 +2270,150 @@
   "s": "redis",
   "t": "Redis 源码深度学习笔记",
   "c": "存储与缓存"
+ },
+ {
+  "q": "Sentinel 和 Hystrix 差异？",
+  "a": "Sentinel 是控制台+规则热更+多维度流控（并发不隔离、用信号量做隔离）；Hystrix 是线程池隔离+熔断器先行者（已停更）",
+  "d": "设计对比",
+  "s": "sentinel",
+  "t": "Sentinel 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "slot 执行顺序？",
+  "a": "固定顺序：NodeSelector → ClusterBuilder → Log → Statistic → Authority → System → ParamFlow → Flow → CircuitBreaker → Degrade",
+  "d": "`Constants.java:76-84`",
+  "s": "sentinel",
+  "t": "Sentinel 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "slot 顺序怎么定制？",
+  "a": "实现 ProcessorSlot + @Spi(order=...)，或自定义 SlotChainBuilder（SPI 覆盖 DefaultSlotChainBuilder）",
+  "d": "`DefaultSlotChainBuilder.java:37`",
+  "s": "sentinel",
+  "t": "Sentinel 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "限流有几种效果？",
+  "a": "DefaultController（快速失败）+ WarmUpController（冷启动预热）+ ThrottlingController/WarmUpRateLimiterController（匀速排队，基于令牌桶+未来预支）",
+  "d": "`slots/block/flow/controller/`",
+  "s": "sentinel",
+  "t": "Sentinel 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "流控有几种策略？",
+  "a": "按调用方（STRATEGY_DIRECT/RELATE/CHAIN）与按阈值类型（QPS/线程数）组合；集群模式由 TC 的 TokenService 裁决",
+  "d": "`FlowRule.java`",
+  "s": "sentinel",
+  "t": "Sentinel 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "熔断有哪几种？",
+  "a": "慢调用比例（DEGRADE_GRADE_RT）、异常比例（DEGRADE_GRADE_EXCEPTION_RATIO）、异常数（DEGRADE_GRADE_EXCEPTION_COUNT）",
+  "d": "`DegradeRule.java`",
+  "s": "sentinel",
+  "t": "Sentinel 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "熔断半开怎么探测？",
+  "a": "HALF_OPEN 放行一个探测请求：成功 → fromHalfOpenToClose（关闭熔断），失败/慢 → fromHalfOpenToOpen（重新打开）",
+  "d": "`ResponseTimeCircuitBreaker.java:82-95`",
+  "s": "sentinel",
+  "t": "Sentinel 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "熔断和限流的区别？",
+  "a": "限流是\"入口控制流量\"（对所有请求生效）；熔断是\"出口保护\"（对满足统计条件的资源暂停放行，有自动恢复）",
+  "d": "`DegradeSlot.java:41`",
+  "s": "sentinel",
+  "t": "Sentinel 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "统计窗口多大？",
+  "a": "秒级 ArrayMetric(SAMPLE_COUNT=2, 1000ms) + 分钟级 ArrayMetric(60, 60000ms)，底层 LeapArray 循环桶",
+  "d": "`StatisticNode.java:96`",
+  "s": "sentinel",
+  "t": "Sentinel 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "`LeapArray` 并发安全吗？",
+  "a": "桶数组用 AtomicReferenceArray + CAS 换桶（array.compareAndSet(idx, null, window)），统计值用 LongAdder——无锁",
+  "d": "`LeapArray.java:116`",
+  "s": "sentinel",
+  "t": "Sentinel 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "规则怎么热更新？",
+  "a": "RuleManager 监听 SentinelProperty；NacosDataSource 等实现把远程配置推成 property 更新，loadRules 重建",
+  "d": "`NacosDataSource.java:71`",
+  "s": "sentinel",
+  "t": "Sentinel 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "集群限流原理？",
+  "a": "每个 TokenClient 向 TokenServer 申请配额；TokenServer 是独立进程（或嵌入），本地规则只做兜底；超限返回 TokenResultStatus.BLOCKED",
+  "d": "`TokenService.java:36`",
+  "s": "sentinel",
+  "t": "Sentinel 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "`@SentinelResource` 两个属性？",
+  "a": "value（资源名）+ blockHandler（限流降级方法，方法签名要与原方法一致）+ fallback（业务异常）",
+  "d": "`annotation/SentinelResource.java`",
+  "s": "sentinel",
+  "t": "Sentinel 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "上下文超限会怎样？",
+  "a": "超过 Constants.MAX_CONTEXT_NAME_SIZE（默认 2000）后新入口进 NullContext，只建 entry 不做规则检查",
+  "d": "`CtSph.java:118`",
+  "s": "sentinel",
+  "t": "Sentinel 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "热点参数限流限什么？",
+  "a": "按参数值分别统计：同一资源下 paramIdx=0 的 userId=10086 单独一个计数器，可设单参数值阈值 + 全局阈值",
+  "d": "`ParamFlowSlot.java:50`",
+  "s": "sentinel",
+  "t": "Sentinel 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "系统自适应 BBR 是什么？",
+  "a": "参考 Google BBR：当 load 超阈值时，若并发线程 > maxSuccessQps × minRt / 1000（理论最优并发）则拒绝——过载时只放进\"最优并发数\"的请求",
+  "d": "`SystemRuleManager.java:337`",
+  "s": "sentinel",
+  "t": "Sentinel 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "`entry` 抛了非 BlockException 怎么办？",
+  "a": "CtSph:155-159 只记录日志继续返回 entry——Sentinel 自身异常不拖垮业务（fail-open）",
+  "d": "`CtSph.java:155`",
+  "s": "sentinel",
+  "t": "Sentinel 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "`SphU.entry` 忘了 exit 会怎样？",
+  "a": "线程数统计泄漏（increaseThreadNum 加了不减），最终所有请求被线程数规则拒——必须 try-finally",
+  "d": "`StatisticSlot.java:62`",
+  "s": "sentinel",
+  "t": "Sentinel 源码深度学习笔记",
+  "c": "中间件"
  },
  {
   "q": "BeanFactory 和 FactoryBean 有什么区别？",
