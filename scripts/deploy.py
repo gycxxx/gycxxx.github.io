@@ -25,6 +25,19 @@ def sync():
     if not os.path.isdir(os.path.join(DEPLOY, ".git")):
         sys.exit("部署仓不存在或不是 git 仓库: " + DEPLOY)
 
+    # 安全闸：部署仓现在有 master(产物) 与 src(Astro 源码) 两个分支，
+    # 在 src 分支上跑会把源码整个移走。
+    import subprocess
+
+    br = subprocess.run(
+        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+        cwd=DEPLOY,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    if br != "master":
+        sys.exit("部署仓当前在 %s 分支，请先 git checkout master 再发布" % br)
+
     import time
 
     stamp = time.strftime("%Y%m%d-%H%M%S")
