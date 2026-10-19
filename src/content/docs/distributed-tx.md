@@ -24,22 +24,6 @@ tags:
 
 ---
 
-## 目录
-
-- [〇、全景地图](#〇全景地图)
-- [速览：六讲各自做了什么（先看这个再进细节）](#速览六讲各自做了什么先看这个再进细节)
-- [面试速通：分布式事务高频问题一页纸](#面试速通分布式事务高频问题一页纸)
-- [第一讲：全局图景与 TM —— 一个 @GlobalTransactional 的一生](#第一讲全局图景与-tm--一个-globaltransactional-的一生)
-- [第二讲：TC 协调核心 —— DefaultCoordinator / DefaultCore / GlobalSession](#第二讲tc-协调核心--defaultcoordinator--defaultcore--globalsession)
-- [第三讲：AT 模式 —— DataSourceProxy 与 undo_log 两阶段](#第三讲at-模式--datasourceproxy-与-undo_log-两阶段)
-- [第四讲：TCC 模式与 fence 防悬挂](#第四讲tcc-模式与-fence-防悬挂)
-- [第五讲：Saga 状态机与 XA 模式](#第五讲saga-状态机与-xa-模式)
-- [第六讲：存储与集群 —— SessionManager / LockManager / Raft](#第六讲存储与集群--sessionmanager--lockmanager--raft)
-- [附：学习路线与复习卡汇总](#附学习路线与复习卡汇总)
-- [涉及文件索引](#涉及文件索引)
-
----
-
 ## 〇、全景地图
 
 Seata 的分布式事务可以压缩成**三个角色 + 一张状态机 + 四种分支模式**：

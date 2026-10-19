@@ -17,26 +17,6 @@ tags:
 
 ---
 
-## 目录
-
-- [〇、全景地图](#〇全景地图)
-- [面试速通：RAGFlow 高频问题一页纸](#面试速通ragflow-高频问题一页纸)
-- [第一讲：internal/parser —— 解析与分块基础库](#第一讲internal-parser--解析与分块基础库)
-- [第二讲：chunk 包逐行精读 —— 三阶段流水线](#第二讲chunk-包逐行精读--三阶段流水线)
-- [第三讲：GeneralChunker —— 生产分块的"消费现场"](#第三讲generalchunker--生产分块的消费现场)
-- [第四讲：Parser 组件 —— 组件边界与规范化](#第四讲parser-组件--组件边界与规范化)
-- [第五讲：任务编排 —— 上游 Pipeline 与下游落库](#第五讲任务编排--上游-pipeline-与下游落库)
-- [第六讲：Ingestor —— 任务派发与 NATS 消费](#第六讲ingestor--任务派发与-nats-消费)
-- [第七讲：LLM 抽取链路 —— Extractor 与 KnowledgeCompiler](#第七讲llm-抽取链路--extractor-与-knowledgecompiler)
-- [第八讲：检索侧 —— chunk 怎么被搜回来](#第八讲检索侧--chunk-怎么被搜回来)
-- [第九讲：知识编译与 Agentic RAG —— 原理与端到端演算](#第九讲知识编译与-agentic-rag--原理与端到端演算)
-- [第十讲：Agentic RAG 全流程精讲](#第十讲agentic-rag-全流程精讲)
-- [第十一讲：知识编译全流程精讲](#第十一讲知识编译全流程精讲)
-- [第十二讲：演进史与速查 —— Python → Go 迁移 / 模板清单 / 参数总表](#第十二讲演进史与速查--python--go-迁移--模板清单--参数总表)
-- [附：学习路线与复习卡汇总](#附学习路线与复习卡汇总)
-
----
-
 ## 〇、全景地图
 
 ```
@@ -702,7 +682,6 @@ inputs["lang"]      = KB.Language   // → Globals → 提示词语言
 
 最终去向：`engine.Get()` 的 DocEngine 抽象（ES/Infinity/OpenSearch/SereneDB/OceanBase 按 service_conf.yaml 选择），索引名 `ragflow_<tenantID>`（**每租户一个索引**）。
 
-
 ### 第五讲小结：只发身份证 → 装配四件套 → 八步落库
 
 **一句话定位**：File 只发身份证不取二进制；PipelineExecutor 装配 `doc_id/tenant_id/kb_id/lang` 四件套（经 Globals 分发给各组件）；processOutput 用八步把 chunks 写进每租户一个的索引。
@@ -974,7 +953,6 @@ FusionExpr      → 融合（weighted_sum, weights "0.2,0.8", normalize=atan）
 - **Elasticsearch**（`engine/elasticsearch/chunk.go`）：hybrid body + `_score`（注意 `SCORE` 是 Infinity 的列名，ES 读回为空——曾把每个 hybrid chunk 的分数压成 0 的真实 bug）+ pagerank 加权（`calculateScores`）+ 跨索引结果按分数重排。
 - **SereneDB/OceanBase**：SQL 语义的融合（buildFusionSQL），OceanBase 有 DBMS hybrid 不可用时降级 SQL 的开关。
 
-
 查询意图的物理路径：
 
 ```mermaid
@@ -1233,7 +1211,6 @@ formalize_question → [planner → prefetch] → rag_agent → draft → sca
     └─ insufficient → query_rewrite ──────→ rag_agent（下一轮）
 ```
 
-
 预算三件套（L1506-1522）：**图级无总时钟**（曾有 TotalBudgetS+30s 总限时会拦腰截断流式组稿，已移除）；靠 per-node 超时 + **节点访问预算**（一轮研究 = rag_agent→draft→sca = 3 visits；按 run steps 计数会多干 3 倍活才触发保护）+ `guard` 路由。预算耗尽 → `stop` 节点**报错并丢弃 state**（不拿半成品组稿，防 slots/draft 泄漏下游）。Eino `WithMaxRunSteps(limit*2+16)` 只是防接线错误的兜底。
 
 **routeSCA 决策表**（L989-1013 注释整理）——是否再来一轮由**记录**决定，reviewer 的 verdict 只是一票：
@@ -1453,7 +1430,6 @@ flowchart TD
 ```
 
 **CompiledExpander**（写读交汇点，`runtime/tool_compiled_expansion.go`，镜像 Python `use_compiled=True → _expand_with_compiled`，harness.go:162-175 接线）：`search_chunks` 命中普通 chunk 后，用**问题向量**查编译产物行（`compile_kwd ∈ {tree, wiki_page, artifact_page, essence}`、`knowledge_graph_kwd ∈ {entity, relation}`、`available_int=1`）；命中的产物行带 `source_chunk_ids` → 把指向的**原始 chunk** 拉进证据集。编译产物是导航索引，证据仍是原文（保引用可溯）。Dense 腿硬约束（L32-42 警告）：必须命名传参 `num_candidates=max(topN,256)`、`similarity=0.1`——位置参数写反会把 HNSW 候选列表压塌、**静默摧毁召回**。
-
 
 ```mermaid
 sequenceDiagram
@@ -1688,7 +1664,6 @@ flowchart TD
     A3 -->|"产物行检索可见：只是导航索引"| B2
     B4 -.->|"组稿引用仍指向原始 chunk，可溯"| A1
 ```
-
 
 ### 11.7 本讲小结
 
@@ -1970,7 +1945,6 @@ general（naive）模板核心参数（节选自 `ingestion_pipeline_general.jso
 31\. routeSCA 四规则：work×learning 决定一切，reviewer 的 verdict 只是一票；NoProgress=视图 hash 不变即关闭。
   
 32\. 枚举型问题硬限 2 轮（实测第 3 轮 +0 chunks）。
-
 
 1. 交汇点 CompiledExpander：编译产物当导航索引，顺 source_chunk_ids 摸回原始证据。
 2. Agentic RAG 五阶段：formalize_question → [planner → prefetch] → (rag_agent → draft → sca)* 研究环 → formalize_answer；一轮研究 = 3 visits。

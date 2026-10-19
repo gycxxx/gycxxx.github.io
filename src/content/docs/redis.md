@@ -19,21 +19,6 @@ tags:
 
 ---
 
-## 目录
-
-- [〇、全景地图](#〇全景地图)
-- [面试速通：Redis 高频问题一页纸](#面试速通redis-高频问题一页纸)
-- [第一讲：事件驱动核心 —— ae 与 serverCron](#第一讲事件驱动核心--ae-与-servercron)
-- [第二讲：网络层与 RESP 协议 —— anet 与 networking](#第二讲网络层与-resp-协议--anet-与-networking)
-- [第三讲：命令生命周期 —— processCommand / call / propagate](#第三讲命令生命周期--processcommand--call--propagate)
-- [第四讲：对象与数据结构 —— object / dict / intset / zset / 过期](#第四讲对象与数据结构--object--dict--intset--zset--过期)
-- [第五讲：持久化 —— RDB 与 AOF](#第五讲持久化--rdb-与-aof)
-- [第六讲：复制与集群概览 —— replication 与 cluster](#第六讲复制与集群概览--replication-与-cluster)
-- [附：学习路线与复习卡汇总](#附学习路线与复习卡汇总)
-- [涉及文件索引](#涉及文件索引)
-
----
-
 ## 〇、全景地图
 
 Redis 8.10.2 的整体骨架可以压缩成四层：**事件层（ae）** → **连接层（connection/anet）** → **协议与客户端层（networking）** → **命令与数据层（server/db/object）**。旁路上挂着三件"后台活"：持久化（rdb/aof）、复制（replication）、集群（cluster）。

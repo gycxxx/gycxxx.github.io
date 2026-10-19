@@ -15,21 +15,6 @@ tags:
 
 ---
 
-## 目录
-
-- [〇、全景地图](#〇全景地图)
-- [面试速通：Kafka 高频问题一页纸](#面试速通kafka-高频问题一页纸)
-- [第一讲：网络层与请求处理全链路](#第一讲网络层与请求处理全链路)
-- [第二讲：KRaft 元数据与 Controller](#第二讲kraft-元数据与-controller)
-- [第三讲：存储引擎](#第三讲存储引擎)
-- [第四讲：Producer](#第四讲producer)
-- [第五讲：Consumer](#第五讲consumer)
-- [第六讲：Group Coordinator 与事务协调](#第六讲group-coordinator-与事务协调)
-- [附：学习路线与复习卡汇总](#附学习路线与复习卡汇总)
-- [涉及文件索引](#涉及文件索引)
-
----
-
 ## 〇、全景地图
 
 ```
@@ -596,7 +581,6 @@ flowchart LR
 
 ---
 
-
 ## 第三讲：存储引擎
 
 ### 定位
@@ -765,7 +749,6 @@ flowchart LR
 
 ---
 
-
 ## 第四讲：Producer
 
 ### 定位
@@ -919,7 +902,6 @@ flowchart LR
 3. **sequence 只在首次 drain 时分配**：重试批次带着原 sequence 重发（`:903` 的 `hasSequence` 判断），配合 broker 侧 `ProducerStateManager` 实现端到端恰好一次——幂等的全部秘密就在"序号不重新分配"这六个字。
 
 ---
-
 
 ## 第五讲：Consumer
 
@@ -1085,7 +1067,6 @@ flowchart TD
 3. **cooperative 的本质是"只动该动的分区"**：目标分配由 broker 算好（`ConsumerMembershipManager`），客户端在本地执行撤销/领取并在心跳里 ack——停顿窗口从"全组两轮 join"缩短为"2-3 轮心跳"。
 
 ---
-
 
 ## 第六讲：Group Coordinator 与事务协调
 
@@ -1263,7 +1244,6 @@ flowchart LR
 3. **pid fence 靠 epoch 单调递增**：InitProducerId 对同一 transactionalId 总是提升 epoch（`TransactionCoordinator.scala:563-564`），旧 producer 的任何请求都会被 PRODUCER_FENCED——这是僵尸 producer 的终极防线，也是 `ProducerFencedException` 的唯一来源。
 
 ---
-
 
 ## 附：学习路线与复习卡汇总
 

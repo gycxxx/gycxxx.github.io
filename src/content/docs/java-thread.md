@@ -21,22 +21,6 @@ tags:
 
 ---
 
-## 目录
-
-- [〇、全景地图](#〇全景地图)
-- [速览：各讲做了什么（先看这个再进细节）](#速览各讲做了什么先看这个再进细节)
-- [面试速通：Java 线程高频问题一页纸](#面试速通java-线程高频问题一页纸)
-- [第一讲：Thread 基础与生命周期 —— Thread.java](#第一讲thread-基础与生命周期--threadjava)
-- [第二讲：ThreadLocal 与继承 —— ThreadLocal / InheritableThreadLocal](#第二讲threadlocal-与继承--threadlocal--inheritablethreadlocal)
-- [第三讲：虚拟线程 VirtualThread —— VirtualThread.java](#第三讲虚拟线程-virtualthread--virtualthreadjava)
-- [第四讲：ThreadGroup 与未捕获异常 —— ThreadGroup.java](#第四讲threadgroup-与未捕获异常--threadgroupjava)
-- [第五讲：HotSpot 线程实现概览 —— thread.{hpp,cpp} / javaThread.{hpp,cpp} / osThread.hpp](#第五讲hotspot-线程实现概览--threadhppcpp--javathreadhppcpp--osthreadhpp)
-- [端到端演算](#端到端演算)
-- [附：学习路线与复习卡汇总](#附学习路线与复习卡汇总)
-- [涉及文件索引](#涉及文件索引)
-
----
-
 ## 〇、全景地图
 
 JDK 21 的线程体系可以压缩成两层：**Java 层**（`java.lang.Thread`、`VirtualThread`、`ThreadLocal`、`ThreadGroup`）和 **HotSpot 层**（`Thread` C++ 基类、`JavaThread`、`OSThread`、`SafepointSynchronize`、`ThreadsSMRSupport`）。两层之间靠 `native` 方法（`start0`、`interrupt0`、`yield0`、`sleep0`、`setPriority0` 等）和 `eetop` 字段（`Thread.java:234`，JVM 内部 `JavaThread*` 地址）打通。

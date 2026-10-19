@@ -22,22 +22,6 @@ tags:
 
 ---
 
-## 目录
-
-- [〇、全景地图](#〇全景地图)
-- [速览：六讲各自做了什么（先看这个再进细节）](#速览六讲各自做了什么先看这个再进细节)
-- [面试速通：Java IO 高频问题一页纸](#面试速通java-io-高频问题一页纸)
-- [第一讲：字节流骨架 —— InputStream / OutputStream 与 File 流](#第一讲字节流骨架--inputstream--outputstream-与-file-流)
-- [第二讲：缓冲与数据流 —— BufferedInputStream / DataInputStream](#第二讲缓冲与数据流--bufferedinputstream--datainputstream)
-- [第三讲：字符流与编解码 —— StreamDecoder 与 BufferedReader](#第三讲字符流与编解码--streamdecoder-与-bufferedreader)
-- [第四讲：File、RandomAccessFile 与 FileSystem 抽象](#第四讲filerandomaccessfile-与-filesystem-抽象)
-- [第五讲：NIO 三件套 —— Buffer / FileChannel / Selector](#第五讲nio-三件套--buffer--filechannel--selector)
-- [第六讲：序列化与管道 —— ObjectInputStream / PipedInputStream](#第六讲序列化与管道--objectinputstream--pipedinputstream)
-- [附：学习路线与复习卡汇总](#附学习路线与复习卡汇总)
-- [涉及文件索引](#涉及文件索引)
-
----
-
 ## 〇、全景地图
 
 Java IO 在源码层面可以压缩成**两套并行的 API + 一个公共编解码内核 + 一个共享的文件系统抽象**：

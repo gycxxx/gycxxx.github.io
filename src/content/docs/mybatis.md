@@ -17,21 +17,6 @@ tags:
 
 ---
 
-## 目录
-
-- [〇、全景地图](#〇全景地图)
-- [面试速通：MyBatis 高频问题一页纸](#面试速通mybatis-高频问题一页纸)
-- [第一讲：入口与配置体系 —— 从 SqlSessionFactoryBuilder 到 DefaultSqlSession](#第一讲入口与配置体系--从-sqlsessionfactorybuilder-到-defaultsqlsession)
-- [第二讲：Executor 执行器体系 —— 一级缓存、三种执行器与二级缓存](#第二讲executor-执行器体系--一级缓存三种执行器与二级缓存)
-- [第三讲：StatementHandler 与参数/结果处理](#第三讲statementhandler-与参数结果处理)
-- [第四讲：SQL 映射与动态 SQL —— MappedStatement、SqlSource 与节点树](#第四讲sql-映射与动态-sql--mappedstatementsqlsource-与节点树)
-- [第五讲：Mapper 接口绑定与方法调用](#第五讲mapper-接口绑定与方法调用)
-- [第六讲：插件拦截器、缓存装饰器与日志](#第六讲插件拦截器缓存装饰器与日志)
-- [附：学习路线与复习卡汇总](#附学习路线与复习卡汇总)
-- [涉及文件索引](#涉及文件索引)
-
----
-
 ## 〇、全景地图
 
 ```

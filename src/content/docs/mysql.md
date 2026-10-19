@@ -20,21 +20,6 @@ tags:
 
 ---
 
-## 目录
-
-- [〇、全景地图](#〇全景地图)
-- [面试速通：MySQL 高频问题一页纸](#面试速通mysql-高频问题一页纸)
-- [第一讲：mysqld 启动与连接线程模型](#第一讲mysqld-启动与连接线程模型)
-- [第二讲：查询生命周期 —— 从 COM_QUERY 到结果包](#第二讲查询生命周期--从-com_query-到结果包)
-- [第三讲：优化器骨架 —— 从 JOIN::optimize 到 AccessPath](#第三讲优化器骨架--从-joinoptimize-到-accesspath)
-- [第四讲：InnoDB 存储引擎 —— buffer pool、B+ 树与行格式](#第四讲innodb-存储引擎--buffer-poolb-树与行格式)
-- [第五讲：事务、MVCC 与锁](#第五讲事务mvcc-与锁)
-- [第六讲：redo / undo / binlog 与两阶段提交](#第六讲redo--undo--binlog-与两阶段提交)
-- [附：学习路线与复习卡汇总](#附学习路线与复习卡汇总)
-- [涉及文件索引](#涉及文件索引)
-
----
-
 ## 〇、全景地图
 
 ```

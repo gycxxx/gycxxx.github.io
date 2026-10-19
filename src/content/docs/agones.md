@@ -22,21 +22,6 @@ tags:
 
 ---
 
-## 目录
-
-- [〇、全景地图](#〇全景地图)
-- [速览：各讲做了什么（先看这个再进细节）](#速览各讲做了什么先看这个再进细节)
-- [面试速通：Agones 高频问题一页纸](#面试速通agones-高频问题一页纸)
-- [第一讲：数据模型 —— 三层 CRD 与 GameServer 状态机](#第一讲数据模型--三层-crd-与-gameserver-状态机)
-- [第二讲：控制面骨架 —— controller 进程与 workerqueue](#第二讲控制面骨架--controller-进程与-workerqueue)
-- [第三讲：GameServer 生命周期与 SDK Server](#第三讲gameserver-生命周期与-sdk-server)
-- [第四讲：Fleet 与 GameServerSet 编排](#第四讲fleet-与-gameserverset-编排)
-- [第五讲：GameServerAllocation —— 分配的两条路径](#第五讲gameserverallocation--分配的两条路径)
-- [第六讲：FleetAutoscaler、可观测性与部署拓扑](#第六讲fleetautoscaler可观测性与部署拓扑)
-- [附：学习路线、复习卡与文件索引](#附学习路线复习卡与文件索引)
-
----
-
 ## 〇、全景地图
 
 Agones 的骨架可以压成一句话：**用 CRD 描述"游戏服务器"，用 controller 把 CRD 翻译成 Pod，用 SDK sidecar 让游戏进程反向参与生命周期管理**。

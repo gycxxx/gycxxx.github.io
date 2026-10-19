@@ -16,20 +16,6 @@ tags:
 
 ---
 
-## 目录
-
-- [〇、全景地图](#〇全景地图)
-- [面试速通：Spring Boot 高频问题一页纸](#面试速通spring-boot-高频问题一页纸)
-- [第一讲：SpringApplication.run —— 一次启动的全流程](#第一讲springapplicationrun--一次启动的全流程)
-- [第二讲：自动配置 —— @EnableAutoConfiguration 与条件注解家族](#第二讲自动配置--enableautoconfiguration-与条件注解家族)
-- [第三讲：内嵌 Web 容器 —— ServletWebServerApplicationContext 与 Tomcat](#第三讲内嵌-web-容器--servletwebserverapplicationcontext-与-tomcat)
-- [第四讲：外部化配置与 Environment —— ConfigData 与 Binder](#第四讲外部化配置与-environment--configdata-与-binder)
-- [第五讲：starter 与构建生态 —— 约定、repackage 与 loader](#第五讲starter-与构建生态--约定repackage-与-loader)
-- [附：学习路线与复习卡汇总](#附学习路线与复习卡汇总)
-- [涉及文件索引](#涉及文件索引)
-
----
-
 ## 〇、全景地图
 
 ```
@@ -727,7 +713,6 @@ flowchart TD
 2. **排序三步与环检测**：字母序打底（确定性）→ `@AutoConfigureOrder` → `@AutoConfigureBefore/After` 拓扑展开（递归补齐关系类、深度优先入队、遇环即抛）；全程只读 ASM 元数据，候选类不在 classpath 也能排；
 3. **`REGISTER_BEAN` 阶段是 `@ConditionalOnMissingBean` 可靠性的根基**：`OnBeanCondition.getConfigurationPhase()` 锁死该阶段（L92–94），配合 `DeferredImportSelector.Group` 保证"用户配置先于自动配置注册"——于是"用户定义了 X，自动配置就退让"成为确定性命中而非竞态；同理，`spring.autoconfigure.exclude` 排一个不存在的类会直接报错，防止 silently 失效。
 
-
 ---
 
 ## 第三讲：内嵌 Web 容器 —— ServletWebServerApplicationContext 与 Tomcat
@@ -1048,7 +1033,6 @@ flowchart TD
 2. **工厂 Bean 唯一性 + FailureAnalyzer 是排障第一现场**：0 个 factory → `MissingWebServerFactoryBeanException`（提示补 starter），多个 → 明确报出 bean 名（Tomcat/Jetty 冲突）；端口占用被翻译成 `PortInUseException`（`TomcatWebServer.java:247`）；
 3. **优雅停机三段式**：`doClose` 先发 `REFUSING_TRAFFIC`（L174 摘流量）→ `WebServerGracefulShutdownLifecycle`（专用 phase，早于 stop lifecycle）→ `GracefulShutdown` pause 连接器 + 50ms 轮询在途请求（`getInProgressAsyncCount`/`getCountAllocated`），超时可被 `stop()` abort；`server.shutdown=graceful` 只是换了个枚举，链路本身内建。
 
-
 ---
 
 ## 第四讲：外部化配置与 Environment —— ConfigData 与 Binder
@@ -1290,7 +1274,6 @@ flowchart LR
 1. **优先级不是玄学是代码**：命令行 `SimpleCommandLinePropertySource` addFirst（`SpringApplication.java:529`）永远最高；ConfigData addLast（`ConfigDataEnvironment.java:368`）永远垫底（在默认属性之上、`@PropertySource` 之下）；`DefaultPropertiesPropertySource` 被三处 moveToEnd 反复压底（`ConfigDataEnvironment.java:345`、`SpringApplication.java:358`、`PropertySourceOrderingBeanFactoryPostProcessor`）——"后来者居上"的链式语义全靠 addFirst/addLast 的顺序工程；
 2. **profile 两轮处理 + 休眠保护**：先无 profile 处理（拿到激活所需的 `spring.profiles.*`），再带 profile 处理 `application-{profile}` 文件；未激活贡献者里的 `spring.profiles.include` 会抛 `InactiveConfigDataAccessException`（`ConfigDataEnvironment.java:310–315`）——防止休眠配置悄悄改激活集合；同位置 `.properties` 因 addFirst 倒序（`StandardConfigDataLocationResolver.java:210–214`）而优先于 YAML；
 3. **Binder 是"配置的最终收敛点"**：松弛绑定收敛三种命名（`max-attempts`/`MAX_ATTEMPTS`/`maxAttempts` → UNIFORM `maxattempts`，`ConfigurationPropertyName.java:184–186`）；`PropertySourcesPlaceholdersResolver` 在绑定时解析 `${...}`（默认值用 `:`）；`ignoreUnknownFields` 默认 true 静默忽略未知键，设 false 立即暴露拼写错误——排障时先看 Origin（`OriginTrackedMapPropertySource` 记录每个值的文件和行号）。
-
 
 ---
 

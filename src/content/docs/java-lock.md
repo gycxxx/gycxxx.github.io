@@ -23,21 +23,6 @@ tags:
 
 ---
 
-## 目录
-
-- [〇、全景地图](#〇全景地图)
-- [速览：各讲做了什么（先看这个再进细节）](#速览各讲做了什么先看这个再进细节)
-- [面试速通：Java 锁高频问题一页纸](#面试速通java-锁高频问题一页纸)
-- [第一讲：synchronized 与锁升级 —— ObjectMonitor 与 ObjectSynchronizer](#第一讲synchronized-与锁升级--objectmonitor-与-objectsynchronizer)
-- [第二讲：AQS 核心 —— AbstractQueuedSynchronizer](#第二讲aqs-核心--abstractqueuedsynchronizer)
-- [第三讲：ReentrantLock —— 公平与非公平的差别](#第三讲reentrantlock--公平与非公平的差别)
-- [第四讲：读写锁 —— ReentrantReadWriteLock 与 StampedLock](#第四讲读写锁--reentrantreadwritelock-与-stampedlock)
-- [第五讲：Condition 与 LockSupport —— 等待与唤醒的底层](#第五讲condition-与-locksupport--等待与唤醒的底层)
-- [附：学习路线与复习卡汇总](#附学习路线与复习卡汇总)
-- [涉及文件索引](#涉及文件索引)
-
----
-
 ## 〇、全景地图
 
 Java 21 的锁体系可以压缩成两大家族、三层骨架：

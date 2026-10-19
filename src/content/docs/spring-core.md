@@ -28,23 +28,6 @@ tags:
 
 ---
 
-## 目录
-
-- [〇、全景地图](#〇全景地图)
-- [速览：各讲做了什么（先看这个再进细节）](#速览各讲做了什么先看这个再进细节)
-- [面试速通：Spring 核心高频问题一页纸](#面试速通spring-核心高频问题一页纸)
-- [第一讲：BeanFactory 与容器基础 —— BeanFactory / DefaultListableBeanFactory / BeanDefinition](#第一讲beanfactory-与容器基础--beanfactory--defaultlistablebeanfactory--beandefinition)
-- [第二讲：Bean 生命周期与依赖注入 —— AbstractAutowireCapableBeanFactory / 注入点](#第二讲bean-生命周期与依赖注入--abstractautowirecapablebeanfactory--注入点)
-- [第三讲：ApplicationContext 与资源加载 —— refresh 十二步 / 扫描 / @Configuration](#第三讲applicationcontext-与资源加载--refresh-十二步--扫描--configuration)
-- [第四讲：AOP 代理体系 —— JdkDynamicAopProxy / CglibAopProxy / 自动代理织入](#第四讲aop-代理体系--jkddynamicaopproxy--cglibaopproxy--自动代理织入)
-- [第五讲：Spring AOP 表达式与切面解析 —— spring-expression / @Aspect 到 Advisor](#第五讲spring-aop-表达式与切面解析--spring-expression--aspect-到-advisor)
-- [第六讲：声明式事务 —— PlatformTransactionManager / @Transactional](#第六讲声明式事务--platformtransactionmanager--transactional)
-- [端到端演算](#端到端演算)
-- [附：学习路线与复习卡汇总](#附学习路线与复习卡汇总)
-- [涉及文件索引](#涉及文件索引)
-
----
-
 ## 〇、全景地图
 
 Spring Framework 核心容器可以压缩成**一条自下而上的五层栈**：最底层的 `spring-core` 提供资源抽象与 SpEL 基础设施；`spring-beans` 在其上盖起 BeanFactory（造对象的仓库）；`spring-context` 再盖起 ApplicationContext（仓库 + 事件 + 注解装配的组合体）；`spring-aop` 横切在 beans 之上（把"要造什么"变成"要造一个带拦截器的代理"）；`spring-tx` 则是建立在自己造的 `MethodInterceptor` 拦截链上的一层业务语义。运行时真正活着的对象只有六个：BeanFactory、BeanDefinition、Bean 实例、BeanPostProcessor、Advisor/MethodInterceptor、PlatformTransactionManager。

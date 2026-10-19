@@ -20,22 +20,6 @@ tags:
 
 ---
 
-## 目录
-
-- [〇、全景地图](#〇全景地图)
-- [速览：各讲做了什么（先看这个再进细节）](#速览各讲做了什么先看这个再进细节)
-- [面试速通：JVM 高频问题一页纸](#面试速通jvm-高频问题一页纸)
-- [第一讲：类加载机制 —— ClassLoader / classLoader / classFileParser](#第一讲类加载机制--classloader--classloader--classfileparser)
-- [第二讲：运行时数据区 —— memory / runtime / oops / sharedRuntime](#第二讲运行时数据区--memory--runtime--oops--sharedruntime)
-- [第三讲：JIT 编译器 —— ci / prims / CompileBroker / JVMCI / OSR](#第三讲jit-编译器--ci--prims--compilebroker--jvmci--osr)
-- [第四讲：GC 家族 —— g1 / z / serial / parallel / shenandoah / epsilon](#第四讲gc-家族--g1--z--serial--parallel--shenandoah--epsilon)
-- [第五讲：JMM 与并发内存模型 —— orderAccess / atomic / synchronizer / VarHandle](#第五讲jmm-与并发内存模型--orderaccess--atomic--synchronizer--varhandle)
-- [端到端演算](#端到端演算)
-- [附：学习路线与复习卡汇总](#附学习路线与复习卡汇总)
-- [涉及文件索引](#涉及文件索引)
-
----
-
 ## 〇、全景地图
 
 HotSpot 21 的整体骨架可以压缩成三横一纵：**类加载层（classfile/）** → **运行时数据区层（memory/ + runtime/）** → **执行引擎层（JIT + 解释器）**，纵向贯穿的是 **GC 层（gc/）** 和 **并发与同步层（runtime/orderAccess、atomic、synchronizer）**。每个 Java 线程自带栈与 TLAB，堆与方法区/Metaspace 是所有线程共享的全局结构。

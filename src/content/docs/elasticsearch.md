@@ -21,23 +21,6 @@ tags:
 
 ---
 
-## 目录
-
-- [〇、全景地图](#〇全景地图)
-- [速览：六讲各自做了什么（先看这个再进细节）](#速览六讲各自做了什么先看这个再进细节)
-- [面试速通：ES 核心知识一页纸](#面试速通es-核心知识一页纸)
-- [第一讲：节点启动与集群发现 —— Bootstrap / Node / Coordinator](#第一讲节点启动与集群发现--bootstrap--node--coordinator)
-- [第二讲：索引与分片 —— IndexService / IndexShard / AllocationService](#第二讲索引与分片--indexservice--indexshard--allocationservice)
-- [第三讲：写入路径 —— TransportBulkAction / IndexShard / Translog / Refresh](#第三讲写入路径--transportbulkaction--indexshard--translog--refresh)
-- [第四讲：查询与搜索 —— SearchService / QueryPhase / Aggregation](#第四讲查询与搜索--searchservice--queryphase--aggregation)
-- [第五讲：分布式执行与协调 —— TransportSearchAction 两阶段 / Scroll / Task](#第五讲分布式执行与协调--transportsearchaction-两阶段--scroll--task)
-- [第六讲：recovery 与故障转移 —— PeerRecovery / SeqNo / Snapshot](#第六讲recovery-与故障转移--peerrecovery--seqno--snapshot)
-- [端到端演算](#端到端演算)
-- [附：学习路线与复习卡汇总](#附学习路线与复习卡汇总)
-- [涉及文件索引](#涉及文件索引)
-
----
-
 ## 〇、全景地图
 
 Elasticsearch 9.5.5 的整体骨架可以压缩成三层：**进程层（Bootstrap/Elasticsearch/Node）** → **协调层（Coordinator/ClusterService/MasterService/ClusterApplierService）** → **数据层（IndicesService/IndexService/IndexShard）+ 查询层（SearchService/TransportSearchAction）**。旁路上挂着三件"集群活"：选主（Coordinator）、recovery（PeerRecoverySourceService）、snapshot（SnapshotsService）。
@@ -557,7 +540,6 @@ public boolean isMasterNode() {
 
 `wasReadFromDiff`（`:193`）标记此 state 是从全量还是 diff 反序列化来的——diff 路径走 `DiffableUtils` 增量传输，节省带宽。
 
-
 ### 第一讲小结：一个进程如何变成"集群成员"，以及 Raft 改良如何防脑裂
 
 **一句话定位**：`Bootstrap.initPhase1`（`bootstrap/Elasticsearch.java:128`）把进程拉起来、`Node.start`（`node/Node.java:278`）按"协调器先于集群服务、HTTP 最后才开"的固定顺序开机，`Coordinator.startInitialJoin`（`cluster/coordination/Coordinator.java:1232`）触发 Raft 改良选主——`handleStartJoin`（`CoordinationState.java:169`）强制 term 递增、`handleJoin`（`CoordinationState.java:220`）拒绝日志更新的投票者、`VotingConfiguration.hasQuorum`（`CoordinationMetadata.java:326`）用 `votedNodesCount * 2 > nodeIds.size()` 严格多数派判定，从根本上杜绝脑裂。
@@ -796,7 +778,6 @@ return new LegacyBM25Similarity(k1, b, discountOverlaps);
 ```
 
 `LegacyBM25Similarity` 包装 Lucene 的 `BM25Similarity`，参数 `k1`（默认 1.2）、`b`（默认 0.75）、`discountOverlaps`（默认 true）。9.x 用 "Legacy" 前缀是因为新版本有改进的 BM25 实现，但默认仍用 legacy 保证兼容。这就是为什么用户搜一个词，ES 默认按 BM25（TF-IDF 的改进版，加了文档长度归一化和饱和项）打分。
-
 
 ### 第二讲小结：分片是"被分配 + 被创建 + 被映射"的三段式落地
 
@@ -1205,7 +1186,6 @@ public static void execute(SearchContext searchContext) throws QueryPhaseExecuti
 
 虽然第五讲才详细讲 `TransportSearchAction`，但它在第四讲也要提一句：`doExecute`（`action/search/TransportSearchAction.java:403`）是协调节点入口，把 `SearchRequest` 转成异步动作链（见第五讲）。
 
-
 ### 第四讲小结：查询是"canMatch 短路 + Lucene 一次 search + aggregator 同跑 + fetch 按需"
 
 **一句话定位**：`SearchService.executeQueryPhase`（`search/SearchService.java:821`）先用 `canMatch` 短路不可能命中的分片，再走 `loadOrExecuteQueryPhase`（`:806`）→ `QueryPhase.execute`（`search/query/QueryPhase.java:62`）；聚合器 `Aggregator`（`search/aggregations/Aggregator.java:36`）作为 Lucene collector 与 topDocs 同一次 search 跑完，`buildAggregations`（`:147`）转 `InternalAggregation`；fetch 阶段（`search/fetch/FetchPhase.java:75`）按需取原文；默认打分 `LegacyBM25Similarity`（`index/similarity/SimilarityProviders.java:263`，`k1=1.2, b=0.75`）。
@@ -1372,7 +1352,6 @@ scroll 的代价是**分片级 context 占内存**——`index.max_scroll_contex
 - `TransportShardFlushAction`（`action/admin/indices/flush/TransportShardFlushAction.java`）：flush 分片级。
 
 这些是 `TransportReplicationAction`/`TransportWriteAction` 的子类，对应"协调节点 → 分片节点"的 RPC 入口。
-
 
 ### 第五讲小结：分布式搜索是"scatter-query → gather-归并 → scatter-fetch"
 
@@ -1588,7 +1567,6 @@ recoveryTarget.finalizeRecovery(globalCheckpoint, trimAboveSeqNo, finalizeListen
 快照流程：master 把 `SnapshotsInProgress` 写入 ClusterState（`cluster/` 目录下）→ 各分片所在节点的 `SnapshotShardsService`（`snapshots/SnapshotShardsService.java`）感知到后，把本地 segment 拷到外部仓库（`Repository`，对接 S3/HDFS/GCS）→ 完成后 master 调 `endSnapshot`。
 
 `RestoreService`（`snapshots/RestoreService.java`）是反方向——从仓库拷 segment 回来，本质类似 phase1。
-
 
 ### 第六讲小结：recovery 是"phase1 段 + phase2 translog + seqNo 续传 + finalize 同步 checkpoint"
 

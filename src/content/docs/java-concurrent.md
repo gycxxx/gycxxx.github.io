@@ -22,21 +22,6 @@ tags:
 
 ---
 
-## 目录
-
-- [〇、全景地图](#〇全景地图)
-- [速览：各讲做了什么（先看这个再进细节）](#速览各讲做了什么先看这个再进细节)
-- [面试速通：JUC 并发库高频问题一页纸](#面试速通juc-并发库高频问题一页纸)
-- [第一讲：Executor 与线程池](#第一讲executor-与线程池)
-- [第二讲：Future 与 CompletableFuture](#第二讲future-与-completablefuture)
-- [第三讲：并发容器](#第三讲并发容器)
-- [第四讲：同步器与 ForkJoin](#第四讲同步器与-forkjoin)
-- [第五讲：时间工具与并发杂项](#第五讲时间工具与并发杂项)
-- [附：学习路线与复习卡汇总](#附学习路线与复习卡汇总)
-- [涉及文件索引](#涉及文件索引)
-
----
-
 ## 〇、全景地图
 
 JDK 21 的 `java.util.concurrent`（JUC）包可以压缩成五大板块：**Executor 体系**（任务提交与线程池）、**Future 体系**（异步结果与回调链）、**并发容器**（无锁/低锁数据结构）、**同步器**（AQS 的各种外壳）、**ForkJoin**（工作窃取）。三条主线把它们串起来：任务提交流（`execute` → `addWorker` → `runWorker` → `getTask`）、异步回调流（`supplyAsync` → `AsyncSupply.run` → `completeValue` → `postComplete` → `tryFire`）、同步等待流（`await` → AQS 共享 acquire → `tryReleaseShared` CAS state → `signalAll`）。

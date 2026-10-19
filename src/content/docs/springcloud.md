@@ -24,19 +24,6 @@ tags:
 
 ---
 
-## 目录
-
-- [〇、全景地图](#〇全景地图)
-- [面试速通：Spring Cloud 高频问题一页纸](#面试速通spring-cloud-高频问题一页纸)
-- [第一讲：Spring Cloud 是什么与 release train](#第一讲spring-cloud-是什么与-release-train)
-- [第二讲：commons 抽象与负载均衡](#第二讲commons-抽象与负载均衡)
-- [第三讲：Spring Cloud Gateway —— 路由与过滤器链](#第三讲spring-cloud-gateway--路由与过滤器链)
-- [第四讲：OpenFeign —— 声明式客户端与动态代理](#第四讲openfeign--声明式客户端与动态代理)
-- [附：学习路线与复习卡汇总](#附学习路线与复习卡汇总)
-- [涉及文件索引](#涉及文件索引)
-
----
-
 ## 〇、全景地图
 
 ```

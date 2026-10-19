@@ -19,22 +19,6 @@ tags:
 
 ---
 
-## 目录
-
-- [〇、全景地图](#〇全景地图)
-- [速览：各讲做了什么（先看这个再进细节）](#速览各讲做了什么先看这个再进细节)
-- [面试速通：Java 集合高频问题一页纸](#面试速通java-集合高频问题一页纸)
-- [第一讲：List 家族 —— ArrayList、LinkedList 与 AbstractList](#第一讲list-家族--arraylistlinkedlist-与-abstractlist)
-- [第二讲：Map 家族核心 —— HashMap、LinkedHashMap 与 TreeMap](#第二讲map-家族核心--hashmaplinkedhashmap-与-treemap)
-- [第三讲：Set 家族与 Queue —— HashSet、PriorityQueue、ArrayDeque](#第三讲set-家族与-queue--hashsetpriorityqueuearraydeque)
-- [第四讲：迭代器与工具类 —— Iterator、Collections、Arrays](#第四讲迭代器与工具类--iteratorcollectionsarrays)
-- [第五讲：散列原理与设计权衡 —— 为什么是 2 次幂、为什么树化阈值是 8](#第五讲散列原理与设计权衡--为什么是-2-次幂为什么树化阈值是-8)
-- [第六讲：并发集合 —— 从"一把大锁"到"无锁 + 协作扩容"](#第六讲并发集合--从一把大锁到无锁--协作扩容)
-- [附：学习路线与复习卡汇总](#附学习路线与复习卡汇总)
-- [涉及文件索引](#涉及文件索引)
-
----
-
 ## 〇、全景地图
 
 Java 集合框架（JDK 21 非并发部分）的骨架可以压成两大族系：**Collection 族**（`List`/`Set`/`Queue`/`Deque`）与 **Map 族**。前者靠 `AbstractCollection` → `AbstractList`/`AbstractSet`/`AbstractQueue` 这条抽象骨架串起来，后者靠 `AbstractMap` 串起来。两条主线上挂着各自的具体实现：数组/链表/哈希表/红黑树/堆/循环数组，外加 `Collections`/`Arrays` 两个工具箱做包装与排序。

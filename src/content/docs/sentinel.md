@@ -23,22 +23,6 @@ tags:
 
 ---
 
-## 目录
-
-- [〇、全景地图](#〇全景地图)
-- [速览：六讲各自做了什么（先看这个再进细节）](#速览六讲各自做了什么先看这个再进细节)
-- [面试速通：Sentinel 高频问题一页纸](#面试速通sentinel-高频问题一页纸)
-- [第一讲：SlotChain 责任链 —— 一次 entry 的完整旅程](#第一讲slotchain-责任链--一次-entry-的完整旅程)
-- [第二讲：Node 与统计 —— LeapArray 滑动窗口](#第二讲node-与统计--leaparray-滑动窗口)
-- [第三讲：FlowSlot 限流 —— 三种 TrafficShapingController](#第三讲flowslot-限流--三种-trafficshapingcontroller)
-- [第四讲：DegradeSlot 熔断 —— CircuitBreaker 状态机](#第四讲degradeslot-熔断--circuitbreaker-状态机)
-- [第五讲：SystemSlot / AuthoritySlot / ParamFlowSlot](#第五讲systemslot--authorityslot--paramflowslot)
-- [第六讲：规则推送与集群限流 —— DataSource / Transport / TokenService](#第六讲规则推送与集群限流--datasource--transport--tokenservice)
-- [附：学习路线与复习卡汇总](#附学习路线与复习卡汇总)
-- [涉及文件索引](#涉及文件索引)
-
----
-
 ## 〇、全景地图
 
 Sentinel 的核心可以压缩成**一条责任链 + 一棵统计树 + 三种规则**：

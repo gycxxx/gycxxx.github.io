@@ -16,20 +16,6 @@ tags:
 
 ---
 
-## 目录
-
-- [〇、全景地图](#〇全景地图)
-- [面试速通：Nacos 高频问题一页纸](#面试速通nacos-高频问题一页纸)
-- [第一讲：模块装配与启动 —— NacosBootstrap 的三段式点火](#第一讲模块装配与启动--nacosbootstrap-的三段式点火)
-- [第二讲：naming 服务发现核心 —— v2 模型、distro 与 gRPC 推送](#第二讲naming-服务发现核心--v2-模型distro-与-grpc-推送)
-- [第三讲：config 配置中心 —— 缓存、dump、长轮询与 gRPC 监听](#第三讲config-配置中心--缓存dump长轮询与-grpc-监听)
-- [第四讲：一致性协议 —— AP（distro）与 CP（JRaft）双轨制](#第四讲一致性协议--apdistro与-cpjraft双轨制)
-- [第五讲：客户端 SDK —— Naming/Config 双客户端的韧性设计](#第五讲客户端-sdk--namingconfig-双客户端的韧性设计)
-- [附：学习路线与复习卡汇总](#附学习路线与复习卡汇总)
-- [涉及文件索引](#涉及文件索引)
-
----
-
 ## 〇、全景地图
 
 ```
