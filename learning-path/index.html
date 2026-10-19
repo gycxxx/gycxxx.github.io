@@ -1,221 +1,93 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  
-  <title>源码深读知识体系 · 学习路径与记忆地图 | 源码深读笔记 | Kafka / Nacos / Spring / Redis / MySQL / ES / Java / JVM / RAG</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  
-  <meta name="theme-color" content="#3F51B5">
-  
-  
-  <meta name="keywords" content="思维导图,学习路径,记忆方法">
-  <meta name="description" content="配套交互式思维导图：learning-map.html（本地同目录；线上 https:&#x2F;&#x2F;gycxxx.github.io&#x2F;learning-map&#x2F;）。本文是那张图的文字版 + 记忆科学使用说明：图用来”看”，本文用来”讲”和”复习”。 覆盖：19 份文档 &#x2F; 111 讲 &#x2F; 6 条主线。全部结论可对照源码复验（verify_citations.py，3561 条引用 0">
-<meta property="og:type" content="article">
-<meta property="og:title" content="源码深读知识体系 · 学习路径与记忆地图">
-<meta property="og:url" content="https://gycxxx.github.io/learning-path/index.html">
-<meta property="og:site_name" content="源码深读笔记">
-<meta property="og:description" content="配套交互式思维导图：learning-map.html（本地同目录；线上 https:&#x2F;&#x2F;gycxxx.github.io&#x2F;learning-map&#x2F;）。本文是那张图的文字版 + 记忆科学使用说明：图用来”看”，本文用来”讲”和”复习”。 覆盖：19 份文档 &#x2F; 111 讲 &#x2F; 6 条主线。全部结论可对照源码复验（verify_citations.py，3561 条引用 0">
-<meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2026-10-16T16:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-19T02:01:19.907Z">
-<meta property="article:author" content="gyc">
-<meta property="article:tag" content="思维导图">
-<meta property="article:tag" content="学习路径">
-<meta property="article:tag" content="记忆方法">
-<meta name="twitter:card" content="summary">
-  
-    <link rel="alternative" href="/atom.xml" title="源码深读笔记" type="application/atom+xml">
-  
-  <meta name="summary" content="主流基础设施、框架与 JDK 的源码级深度学习笔记">
-  <link rel="shortcut icon" href="/img/favicon.ico">
-  
-<link rel="stylesheet" href="/css/style.css">
-
-<meta name="generator" content="Hexo 7.3.0"></head>
-
-<body>
-  <div id="loading" class="active"></div>
-
-  <nav id="menu" class="hide" >
-   <div class="inner flex-row-vertical">
-  <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="menu-off">
-      <i class="icon icon-lg icon-close"></i>
-  </a>
-  <div class="brand-wrap">
-    <div class="brand">
-      <a href="/" class="avatar"><img src="/img/avatar.jpg"></a>
-      <hgroup class="introduce">
-        <h5 class="nickname">gyc</h5>
-        
-      </hgroup>
-    </div>
-  </div>
-  <div class="scroll-wrap flex-col">
-    <ul class="nav">
-      
-          <li class="waves-block waves-effect">
-            <a href="/"  >
-              <i class="icon icon-lg icon-home"></i>
-              主页
-            </a>
-          </li>
-      
-          <li class="waves-block waves-effect">
-            <a href="/archives"  >
-              <i class="icon icon-lg icon-archive"></i>
-              归档
-            </a>
-          </li>
-      
-          <li class="waves-block waves-effect">
-            <a href="/categories"  >
-              <i class="icon icon-lg icon-th-list"></i>
-              分类
-            </a>
-          </li>
-      
-          <li class="waves-block waves-effect">
-            <a href="/tags"  >
-              <i class="icon icon-lg icon-tags"></i>
-              标签
-            </a>
-          </li>
-      
-          <li class="waves-block waves-effect">
-            <a href="/learning-map/"  >
-              <i class="icon icon-lg icon-sitemap"></i>
-              思维导图
-            </a>
-          </li>
-      
-    </ul>
-
-    <footer class="footer">
-  <p>源码深读笔记 &copy; 2026</p>
-  <p>Power by <a href="http://hexo.io/" target="_blank">Hexo</a> Theme
-  <a href="https://github.com/yscoder/hexo-theme-indigo" target="_blank">indigo</a></p>
-  <a href="/atom.xml" target="_blank" class="rss" title="rss"><i class="icon icon-2x icon-rss-square"></i></a>
-</footer>
-
-  </div>
-</div>
-
-  </nav>
-  <main id="main">
-    <header class="top-header" id="header">
-    <div class="flex-row">
-        <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light on" id="menu-toggle">
-          <i class="icon icon-lg icon-navicon"></i>
-        </a>
-        <div class="flex-col header-title ellipsis">源码深读知识体系 · 学习路径与记忆地图</div>
-        
-        <div class="search-wrap" id="search-wrap">
-            <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="back">
-                <i class="icon icon-lg icon-chevron-left"></i>
-            </a>
-            <input type="text" id="key" class="search-input " autocomplete="off" placeholder="输入感兴趣的关键字">
-            <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="search">
-                <i class="icon icon-lg icon-search"></i>
-            </a>
-        </div>
-        
-        
-    </div>
-</header>
-<header class="content-header">
-  <div class="container">
-    <h1 class="author">源码深读知识体系 · 学习路径与记忆地图</h1>
-    <h5 class="subtitle">
-        
-            <time datetime="2026-10-16T16:00:00.000Z" itemprop="datePublished" class="page-time">
-  2026-10-17
-</time>
-
-
-	<ul class="article-category-list"><li class="article-category-list-item"><a class="article-category-list-link" href="/categories/%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF/">学习路线</a></li></ul>
-
-        
-    </h5>
-  </div>
-</header>
-
-    <div class="container body-wrap">
-      <article id="post-learning-path" 
-  class="article article-type-post" itemprop="blogPost">
-    <div class="post-meta flex-row">
-        
-	<ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84/" rel="tag">学习路径</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%80%9D%E7%BB%B4%E5%AF%BC%E5%9B%BE/" rel="tag">思维导图</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E8%AE%B0%E5%BF%86%E6%96%B9%E6%B3%95/" rel="tag">记忆方法</a></li></ul>
-
-    </div>
-    <div class="post-body">
-        <aside class="post-widget" id="post-widget">
-
-            
-
-            
-            <nav class="post-toc-wrap" id="post-toc">
-            <ol class="post-toc"><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E4%B8%80%E9%A1%B5%E7%BA%B8%E6%80%BB%E8%A7%88"><span class="post-toc-number">1.</span> <span class="post-toc-text">一页纸总览</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E6%8C%89%E8%BF%99%E4%B8%AA%E9%A1%BA%E5%BA%8F%E6%8E%92"><span class="post-toc-number">2.</span> <span class="post-toc-text">为什么按这个顺序排</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E5%90%84%E4%B8%BB%E7%BA%BF%E6%98%8E%E7%BB%86%EF%BC%88%E6%96%87%E6%A1%A3-%E2%86%92-%E8%AE%B2%E6%AC%A1-%E2%86%92-%E8%AE%B0%E5%BF%86%E9%92%A9%E5%AD%90%EF%BC%89"><span class="post-toc-number">3.</span> <span class="post-toc-text">各主线明细（文档 → 讲次 → 记忆钩子）</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%98%B6%E6%AE%B5%E4%B8%80-%C2%B7-Java-%E5%9F%BA%E7%A1%80%E6%89%93%E5%BA%95"><span class="post-toc-number">3.1.</span> <span class="post-toc-text">阶段一 · Java 基础打底</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%98%B6%E6%AE%B5%E4%BA%8C-%C2%B7-Spring-%E5%85%A8%E5%AE%B6%E6%A1%B6"><span class="post-toc-number">3.2.</span> <span class="post-toc-text">阶段二 · Spring 全家桶</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%98%B6%E6%AE%B5%E4%B8%89-%C2%B7-%E5%AD%98%E5%82%A8%E4%B8%8E%E7%BC%93%E5%AD%98"><span class="post-toc-number">3.3.</span> <span class="post-toc-text">阶段三 · 存储与缓存</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%98%B6%E6%AE%B5%E5%9B%9B-%C2%B7-%E5%88%86%E5%B8%83%E5%BC%8F%E4%B8%AD%E9%97%B4%E4%BB%B6"><span class="post-toc-number">3.4.</span> <span class="post-toc-text">阶段四 · 分布式中间件</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%98%B6%E6%AE%B5%E4%BA%94-%C2%B7-%E6%B8%B8%E6%88%8F%E4%B8%8E%E4%BA%91%E5%8E%9F%E7%94%9F%EF%BC%88%E7%8B%AC%E7%AB%8B%E4%B8%BB%E7%BA%BF%EF%BC%89"><span class="post-toc-number">3.5.</span> <span class="post-toc-text">阶段五 · 游戏与云原生（独立主线）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%98%B6%E6%AE%B5%E5%85%AD-%C2%B7-RAG-%E4%B8%8E-Agent-%E5%B7%A5%E7%A8%8B"><span class="post-toc-number">3.6.</span> <span class="post-toc-text">阶段六 · RAG 与 Agent 工程</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E8%AE%B0%E5%BF%86%E7%A7%91%E5%AD%A6%EF%BC%9A%E8%BF%99%E5%A5%97%E7%AC%94%E8%AE%B0%E6%80%8E%E4%B9%88%E7%94%A8%E6%89%8D%E4%B8%8D%E7%99%BD%E8%AF%BB"><span class="post-toc-number">4.</span> <span class="post-toc-text">记忆科学：这套笔记怎么用才不白读</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E9%97%B4%E9%9A%94%E9%87%8D%E5%A4%8D%E5%A4%8D%E4%B9%A0%E6%97%A5%E7%A8%8B"><span class="post-toc-number">5.</span> <span class="post-toc-text">间隔重复复习日程</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E4%BA%A4%E9%94%99%E5%AF%B9%E6%AF%94%E9%A2%98%E7%BB%84%EF%BC%88D14-%E7%94%A8%EF%BC%89"><span class="post-toc-number">6.</span> <span class="post-toc-text">交错对比题组（D14 用）</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E6%8F%90%E5%8F%96%E7%BB%83%E4%B9%A0%E6%A8%A1%E6%9D%BF%EF%BC%88%E6%AF%8F%E6%AC%A1%E5%A4%8D%E4%B9%A0%E7%94%A8%EF%BC%89"><span class="post-toc-number">7.</span> <span class="post-toc-text">提取练习模板（每次复习用）</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#%E6%96%87%E4%BB%B6%E4%B8%8E%E5%B7%A5%E5%85%B7"><span class="post-toc-number">8.</span> <span class="post-toc-text">文件与工具</span></a></li></ol>
-            </nav>
-            
-        </aside>
-
-        <div class="post-main">
-
-            <div class="post-content" id="post-content" itemprop="postContent">
-            <blockquote>
-<p><strong>配套交互式思维导图</strong>：<a href="learning-map.html"><code>learning-map.html</code></a>（本地同目录；线上 <a href="https://gycxxx.github.io/learning-map/">https://gycxxx.github.io/learning-map/</a>）。<br>本文是那张图的<strong>文字版 + 记忆科学使用说明</strong>：图用来”看”，本文用来”讲”和”复习”。</p>
-<p><strong>覆盖</strong>：19 份文档 &#x2F; <strong>111 讲</strong> &#x2F; 6 条主线。全部结论可对照源码复验（<code>verify_citations.py</code>，3561 条引用 0 问题）。</p>
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>源码深读知识体系 · 学习路径与记忆地图 · 源码深读</title><meta name="description" content="源码级技术笔记：中间件、Spring、Java、存储、云原生与 RAG"><link rel="icon" href="data:,"><link rel="stylesheet" href="/_astro/_slug_.B9Gg1xby.css"></head> <body> <header class="site-header"> <div class="inner"> <h1 class="site-title"><a href="/">源码深读</a></h1> <p class="site-desc">逐文件、逐函数地读源码，结论都带 文件:行号</p> <nav class="site-nav"> <a href="/">首页</a> <a href="/categories/">分类</a> <a href="/tags/">标签</a> <a href="/learning-path/">学习路线</a> <a href="/learning-map/">思维导图</a> <a href="https://github.com/gycxxx/gycxxx.github.io">GitHub</a> </nav> </div> </header> <main class="main">  <article class="post"> <div class="crumb"> <a href="/">首页</a>  / <a href="/categories/%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF/">学习路线</a>  </div> <div class="post-head"> <h1>源码深读知识体系 · 学习路径与记忆地图</h1> <div class="page-meta"> <time datetime="2026-10-17T00:00:00.000Z">2026-10-17</time>  · <a class="chip" href="/tags/%E6%80%9D%E7%BB%B4%E5%AF%BC%E5%9B%BE/">思维导图</a>  <a class="chip" href="/tags/%E5%AD%A6%E4%B9%A0%E8%B7%AF%E5%BE%84/">学习路径</a>  <a class="chip" href="/tags/%E8%AE%B0%E5%BF%86%E6%96%B9%E6%B3%95/">记忆方法</a>  </div> </div> <nav class="toc"> <div class="toc-title">目录</div> <ol> <li class="d2"> <a href="#一页纸总览">一页纸总览</a> </li><li class="d2"> <a href="#为什么按这个顺序排">为什么按这个顺序排</a> </li><li class="d2"> <a href="#各主线明细文档--讲次--记忆钩子">各主线明细（文档 → 讲次 → 记忆钩子）</a> </li><li class="d3"> <a href="#阶段一--java-基础打底">阶段一 · Java 基础打底</a> </li><li class="d3"> <a href="#阶段二--spring-全家桶">阶段二 · Spring 全家桶</a> </li><li class="d3"> <a href="#阶段三--存储与缓存">阶段三 · 存储与缓存</a> </li><li class="d3"> <a href="#阶段四--分布式中间件">阶段四 · 分布式中间件</a> </li><li class="d3"> <a href="#阶段五--游戏与云原生独立主线">阶段五 · 游戏与云原生（独立主线）</a> </li><li class="d3"> <a href="#阶段六--rag-与-agent-工程">阶段六 · RAG 与 Agent 工程</a> </li><li class="d2"> <a href="#记忆科学这套笔记怎么用才不白读">记忆科学：这套笔记怎么用才不白读</a> </li><li class="d2"> <a href="#间隔重复复习日程">间隔重复复习日程</a> </li><li class="d2"> <a href="#交错对比题组d14-用">交错对比题组（D14 用）</a> </li><li class="d2"> <a href="#提取练习模板每次复习用">提取练习模板（每次复习用）</a> </li><li class="d2"> <a href="#文件与工具">文件与工具</a> </li> </ol> </nav> <div class="markdown-body">  <blockquote>
+<p><strong>配套交互式思维导图</strong>：<a href="learning-map.html"><code>learning-map.html</code></a>（本地同目录；线上 <a href="https://gycxxx.github.io/learning-map/">https://gycxxx.github.io/learning-map/</a>）。
+本文是那张图的<strong>文字版 + 记忆科学使用说明</strong>：图用来”看”，本文用来”讲”和”复习”。</p>
+<p><strong>覆盖</strong>：19 份文档 / <strong>111 讲</strong> / 6 条主线。全部结论可对照源码复验（<code>verify_citations.py</code>，3561 条引用 0 问题）。</p>
 </blockquote>
 <hr>
-<h2 id="一页纸总览"><a href="#一页纸总览" class="headerlink" title="一页纸总览"></a>一页纸总览</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">源码深读知识体系（19 份文档 · 111 讲 · 3561 条已校验引用）</span><br><span class="line">│</span><br><span class="line">├─ 阶段一 · Java 基础打底（第 1–3 周）           ← 地基：数据结构 → 并发 → JVM</span><br><span class="line">│  ├─ java-collections（6 讲）  List → Map → Set/Queue → 迭代器 → 散列 → 并发集合</span><br><span class="line">│  ├─ java-lock（5 讲）         synchronized 升级 → AQS → ReentrantLock → 读写锁 → Condition</span><br><span class="line">│  ├─ java-concurrent（5 讲）   线程池 → Future/CFF → 并发容器 → 同步器/ForkJoin → 时间工具</span><br><span class="line">│  ├─ java-thread（5 讲）       Thread → ThreadLocal → 虚拟线程 → ThreadGroup → HotSpot</span><br><span class="line">│  └─ jdk（5 讲）               类加载 → 运行时数据区 → JIT → GC → JMM</span><br><span class="line">│</span><br><span class="line">├─ 阶段二 · Spring 全家桶（第 4–6 周）            ← 一条请求从进容器到落库</span><br><span class="line">│  ├─ spring-core（6 讲）       BeanFactory → 生命周期 → Context → AOP → SpEL → 事务</span><br><span class="line">│  ├─ springboot（5 讲）        run 流程 → 自动配置 → 内嵌容器 → 外部化配置 → starter</span><br><span class="line">│  ├─ springmvc（5 讲）         DispatcherServlet → Mapping → Adapter → 视图 → 横切</span><br><span class="line">│  ├─ springcloud（4 讲）       BOM → commons/LoadBalancer → Gateway → OpenFeign</span><br><span class="line">│  └─ mybatis（6 讲）           入口配置 → Executor → StatementHandler → 动态 SQL → Mapper → 插件</span><br><span class="line">│</span><br><span class="line">├─ 阶段三 · 存储与缓存（第 7–9 周）               ← 三种存储范式，横向对照着读</span><br><span class="line">│  ├─ mysql（6 讲）             启动 → 查询生命周期 → 优化器 → InnoDB → MVCC/锁 → 两阶段提交</span><br><span class="line">│  ├─ redis（6 讲）             事件驱动 → RESP → 命令生命周期 → 数据结构 → 持久化 → 集群</span><br><span class="line">│  └─ elasticsearch（6 讲）     集群发现 → 索引分片 → 写入路径 → 查询 → 分布式执行 → recovery</span><br><span class="line">│</span><br><span class="line">├─ 阶段四 · 分布式中间件（第 10–11 周）            ← 概念密度最高</span><br><span class="line">│  ├─ kafka（6 讲）             网络层 → KRaft → 存储引擎 → Producer → Consumer → Coordinator</span><br><span class="line">│  └─ nacos（5 讲）             装配启动 → naming → config → AP/CP 双轨 → 客户端 SDK</span><br><span class="line">│</span><br><span class="line">├─ 阶段五 · 游戏与云原生（第 12–14 周，可并行）     ← 独立主线，不依赖 Java 线</span><br><span class="line">│  ├─ open-match（6 讲）        拓扑 → Ticket 生命周期 → 状态存储 → 本地缓存 → 过滤匹配 → Assignment</span><br><span class="line">│  └─ agones（6 讲）            三层 CRD → 控制面 → GameServer/SDK Server → Fleet 编排 → 分配 → 扩缩容</span><br><span class="line">│</span><br><span class="line">└─ 阶段六 · RAG 与 Agent 工程（第 15–16 周）       ← 把前五阶段原语拼成 AI 应用链路</span><br><span class="line">   ├─ opencoze-agent（6 讲）    数据模型 → 构建期 → 运行期 → 工具节点 → 知识/建议 → 发布</span><br><span class="line">   └─ ingestion-deep-dive（12 讲） parser → chunk → 编排 → Ingestor → LLM 抽取 → 检索 → 编译</span><br></pre></td></tr></table></figure>
+<h2 id="一页纸总览">一页纸总览</h2>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>源码深读知识体系（19 份文档 · 111 讲 · 3561 条已校验引用）</span></span>
+<span class="line"><span>│</span></span>
+<span class="line"><span>├─ 阶段一 · Java 基础打底（第 1–3 周）           ← 地基：数据结构 → 并发 → JVM</span></span>
+<span class="line"><span>│  ├─ java-collections（6 讲）  List → Map → Set/Queue → 迭代器 → 散列 → 并发集合</span></span>
+<span class="line"><span>│  ├─ java-lock（5 讲）         synchronized 升级 → AQS → ReentrantLock → 读写锁 → Condition</span></span>
+<span class="line"><span>│  ├─ java-concurrent（5 讲）   线程池 → Future/CFF → 并发容器 → 同步器/ForkJoin → 时间工具</span></span>
+<span class="line"><span>│  ├─ java-thread（5 讲）       Thread → ThreadLocal → 虚拟线程 → ThreadGroup → HotSpot</span></span>
+<span class="line"><span>│  └─ jdk（5 讲）               类加载 → 运行时数据区 → JIT → GC → JMM</span></span>
+<span class="line"><span>│</span></span>
+<span class="line"><span>├─ 阶段二 · Spring 全家桶（第 4–6 周）            ← 一条请求从进容器到落库</span></span>
+<span class="line"><span>│  ├─ spring-core（6 讲）       BeanFactory → 生命周期 → Context → AOP → SpEL → 事务</span></span>
+<span class="line"><span>│  ├─ springboot（5 讲）        run 流程 → 自动配置 → 内嵌容器 → 外部化配置 → starter</span></span>
+<span class="line"><span>│  ├─ springmvc（5 讲）         DispatcherServlet → Mapping → Adapter → 视图 → 横切</span></span>
+<span class="line"><span>│  ├─ springcloud（4 讲）       BOM → commons/LoadBalancer → Gateway → OpenFeign</span></span>
+<span class="line"><span>│  └─ mybatis（6 讲）           入口配置 → Executor → StatementHandler → 动态 SQL → Mapper → 插件</span></span>
+<span class="line"><span>│</span></span>
+<span class="line"><span>├─ 阶段三 · 存储与缓存（第 7–9 周）               ← 三种存储范式，横向对照着读</span></span>
+<span class="line"><span>│  ├─ mysql（6 讲）             启动 → 查询生命周期 → 优化器 → InnoDB → MVCC/锁 → 两阶段提交</span></span>
+<span class="line"><span>│  ├─ redis（6 讲）             事件驱动 → RESP → 命令生命周期 → 数据结构 → 持久化 → 集群</span></span>
+<span class="line"><span>│  └─ elasticsearch（6 讲）     集群发现 → 索引分片 → 写入路径 → 查询 → 分布式执行 → recovery</span></span>
+<span class="line"><span>│</span></span>
+<span class="line"><span>├─ 阶段四 · 分布式中间件（第 10–11 周）            ← 概念密度最高</span></span>
+<span class="line"><span>│  ├─ kafka（6 讲）             网络层 → KRaft → 存储引擎 → Producer → Consumer → Coordinator</span></span>
+<span class="line"><span>│  └─ nacos（5 讲）             装配启动 → naming → config → AP/CP 双轨 → 客户端 SDK</span></span>
+<span class="line"><span>│</span></span>
+<span class="line"><span>├─ 阶段五 · 游戏与云原生（第 12–14 周，可并行）     ← 独立主线，不依赖 Java 线</span></span>
+<span class="line"><span>│  ├─ open-match（6 讲）        拓扑 → Ticket 生命周期 → 状态存储 → 本地缓存 → 过滤匹配 → Assignment</span></span>
+<span class="line"><span>│  └─ agones（6 讲）            三层 CRD → 控制面 → GameServer/SDK Server → Fleet 编排 → 分配 → 扩缩容</span></span>
+<span class="line"><span>│</span></span>
+<span class="line"><span>└─ 阶段六 · RAG 与 Agent 工程（第 15–16 周）       ← 把前五阶段原语拼成 AI 应用链路</span></span>
+<span class="line"><span>   ├─ opencoze-agent（6 讲）    数据模型 → 构建期 → 运行期 → 工具节点 → 知识/建议 → 发布</span></span>
+<span class="line"><span>   └─ ingestion-deep-dive（12 讲） parser → chunk → 编排 → Ingestor → LLM 抽取 → 检索 → 编译</span></span></code></pre>
+<p><strong>全链路一句话</strong>：请求进来（Spring MVC）→ 用 Bean（spring-core）→ 查数据（MySQL / Redis / ES）→ 发消息（Kafka）→ 找服务（Nacos）→ 游戏场景匹配开服（Open Match / Agones）；AI 侧则是 Agent 跑业务逻辑（OpenCoze）→ 知识入库检索（RAGFlow）。</p>
+<hr>
+<h2 id="为什么按这个顺序排">为什么按这个顺序排</h2>
+<p>排课表不是按”知名度”，是按<strong>依赖方向</strong>：</p>
 
-<p><strong>全链路一句话</strong>：请求进来（Spring MVC）→ 用 Bean（spring-core）→ 查数据（MySQL &#x2F; Redis &#x2F; ES）→ 发消息（Kafka）→ 找服务（Nacos）→ 游戏场景匹配开服（Open Match &#x2F; Agones）；AI 侧则是 Agent 跑业务逻辑（OpenCoze）→ 知识入库检索（RAGFlow）。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>顺序</th><th>依赖关系</th><th>不按这个顺序的代价</th></tr></thead><tbody><tr><td>Java 基础 → Spring</td><td>spring-core 大量复用 AQS、<code>ConcurrentHashMap</code>、类加载</td><td>读不懂线程池拒绝策略、三级缓存、CGLIB 增强的前提</td></tr><tr><td>Spring → 存储</td><td>mybatis 二级缓存复用 collections 的装饰器模式；事务管理复用 spring-core</td><td>看不懂 <code>CachingExecutor</code> 为什么是两层</td></tr><tr><td>存储 → 中间件</td><td>Kafka/Nacos 的持久化与一致性都建立在存储范式之上</td><td>把”日志”和”数据库”混为一谈</td></tr><tr><td>中间件 → 游戏云原生</td><td>Agones 的 K8s 编排理念与 Nacos 的服务发现同源</td><td>看不出 ownerReference 与 ServiceInstance 的对应</td></tr><tr><td>全部 → RAG/Agent</td><td>Ingestion 是把前面所有原语拼起来的一条完整工程链路</td><td>只能看懂单点，拼不出系统</td></tr></tbody></table>
+<p><strong>阶段五可与前四阶段并行</strong>：它是 K8s/Go 技术栈，与 Java 线无依赖，且内部顺序（匹配 → 开服）与线上调用链一致。</p>
 <hr>
-<h2 id="为什么按这个顺序排"><a href="#为什么按这个顺序排" class="headerlink" title="为什么按这个顺序排"></a>为什么按这个顺序排</h2><p>排课表不是按”知名度”，是按<strong>依赖方向</strong>：</p>
-<table>
-<thead>
-<tr>
-<th>顺序</th>
-<th>依赖关系</th>
-<th>不按这个顺序的代价</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Java 基础 → Spring</td>
-<td>spring-core 大量复用 AQS、<code>ConcurrentHashMap</code>、类加载</td>
-<td>读不懂线程池拒绝策略、三级缓存、CGLIB 增强的前提</td>
-</tr>
-<tr>
-<td>Spring → 存储</td>
-<td>mybatis 二级缓存复用 collections 的装饰器模式；事务管理复用 spring-core</td>
-<td>看不懂 <code>CachingExecutor</code> 为什么是两层</td>
-</tr>
-<tr>
-<td>存储 → 中间件</td>
-<td>Kafka&#x2F;Nacos 的持久化与一致性都建立在存储范式之上</td>
-<td>把”日志”和”数据库”混为一谈</td>
-</tr>
-<tr>
-<td>中间件 → 游戏云原生</td>
-<td>Agones 的 K8s 编排理念与 Nacos 的服务发现同源</td>
-<td>看不出 ownerReference 与 ServiceInstance 的对应</td>
-</tr>
-<tr>
-<td>全部 → RAG&#x2F;Agent</td>
-<td>Ingestion 是把前面所有原语拼起来的一条完整工程链路</td>
-<td>只能看懂单点，拼不出系统</td>
-</tr>
-</tbody></table>
-<p><strong>阶段五可与前四阶段并行</strong>：它是 K8s&#x2F;Go 技术栈，与 Java 线无依赖，且内部顺序（匹配 → 开服）与线上调用链一致。</p>
-<hr>
-<h2 id="各主线明细（文档-→-讲次-→-记忆钩子）"><a href="#各主线明细（文档-→-讲次-→-记忆钩子）" class="headerlink" title="各主线明细（文档 → 讲次 → 记忆钩子）"></a>各主线明细（文档 → 讲次 → 记忆钩子）</h2><p>“钩子”&#x3D; 该讲<strong>能脱口而出的一句话</strong>。复习时先复述钩子，卡住再回原文。</p>
-<h3 id="阶段一-·-Java-基础打底"><a href="#阶段一-·-Java-基础打底" class="headerlink" title="阶段一 · Java 基础打底"></a>阶段一 · Java 基础打底</h3><p><strong>java-collections</strong></p>
+<h2 id="各主线明细文档--讲次--记忆钩子">各主线明细（文档 → 讲次 → 记忆钩子）</h2>
+<p>“钩子”= 该讲<strong>能脱口而出的一句话</strong>。复习时先复述钩子，卡住再回原文。</p>
+<h3 id="阶段一--java-基础打底">阶段一 · Java 基础打底</h3>
+<p><strong>java-collections</strong></p>
 <ol>
-<li>List 家族 — ArrayList 扩容 1.5×；LinkedList 双链表；<code>Arrays.asList</code> 返回的是 Arrays 内部类，不能 add&#x2F;remove</li>
+<li>List 家族 — ArrayList 扩容 1.5×；LinkedList 双链表；<code>Arrays.asList</code> 返回的是 Arrays 内部类，不能 add/remove</li>
 <li>Map 家族核心 — HashMap 链表 + 红黑树；LinkedHashMap 覆写 <code>afterNodeInsertion</code> 即得 LRU；TreeMap 走红黑树有序</li>
 <li>Set 与 Queue — HashSet 就是 HashMap 包壳；PriorityQueue 数组小顶堆；ArrayDeque 循环数组</li>
-<li>迭代器与工具类 — fail-fast &#x3D; modCount 校验；<code>iterator.remove</code> 会同步 expectedModCount；Collections 三类包装全是装饰器</li>
+<li>迭代器与工具类 — fail-fast = modCount 校验；<code>iterator.remove</code> 会同步 expectedModCount；Collections 三类包装全是装饰器</li>
 <li>散列原理 — 容量 2 次幂 → 位与代替取模；树化阈值 8 来自泊松分布；loadFactor 0.75 是时空权衡</li>
 <li>并发集合 — CHM 的 <code>sizeCtl</code> 一个 int 四态 + 协作扩容；COW 写时复制；CLQ 无锁；BlockingQueue 四兄弟</li>
 </ol>
@@ -231,7 +103,7 @@
 <ol>
 <li>Executor 与线程池 — <code>ctl</code> 高 3 位存状态低 29 位存计数；Worker 继承 AQS 做不可重入锁；四种拒绝策略</li>
 <li>Future 与 CompletableFuture — FutureTask 七态状态机；Completion 继承 ForkJoinTask 实现零成本复用</li>
-<li>并发容器 — CHM 用 CAS + synchronized；ReservationNode 占位解决 compute 冲突；COW &#x2F; BlockingQueue</li>
+<li>并发容器 — CHM 用 CAS + synchronized；ReservationNode 占位解决 compute 冲突；COW / BlockingQueue</li>
 <li>同步器与 ForkJoin — AQS 五兄弟；ForkJoinPool work-stealing 偷任务</li>
 <li>时间工具与杂项 — TimeUnit 换算；ThreadLocalRandom 避免竞争；ScheduledThreadPoolExecutor</li>
 </ol>
@@ -246,42 +118,46 @@
 <p><strong>jdk</strong></p>
 <ol>
 <li>类加载机制 — 双亲委派；ClassFileParser 流式拆包；InstanceKlass 是运行时类</li>
-<li>运行时数据区 — 堆 &#x2F; Metaspace &#x2F; 栈帧 &#x2F; oop 对象头</li>
-<li>JIT 编译器 — C1&#x2F;C2 分层编译；CompileBroker 派发；OSR 栈上替换</li>
-<li>GC 家族 — G1 &#x3D; region + SATB；ZGC &#x3D; 染色指针 + 读屏障；另 Serial&#x2F;Parallel&#x2F;Shenandoah&#x2F;Epsilon</li>
+<li>运行时数据区 — 堆 / Metaspace / 栈帧 / oop 对象头</li>
+<li>JIT 编译器 — C1/C2 分层编译；CompileBroker 派发；OSR 栈上替换</li>
+<li>GC 家族 — G1 = region + SATB；ZGC = 染色指针 + 读屏障；另 Serial/Parallel/Shenandoah/Epsilon</li>
 <li>JMM — x86 TSO 下 volatile 几乎免费；OrderAccess acquire-release；DCL 的正确性证据</li>
 </ol>
-<h3 id="阶段二-·-Spring-全家桶"><a href="#阶段二-·-Spring-全家桶" class="headerlink" title="阶段二 · Spring 全家桶"></a>阶段二 · Spring 全家桶</h3><p><strong>spring-core</strong></p>
+<h3 id="阶段二--spring-全家桶">阶段二 · Spring 全家桶</h3>
+<p><strong>spring-core</strong></p>
 <ol>
 <li>BeanFactory 与容器基础 — DefaultListableBeanFactory 三级缓存；<code>preInstantiateSingletons</code> 预初始化</li>
 <li>Bean 生命周期与依赖注入 — <code>createBean</code> 五步；Aware 回调链；<code>@Autowired</code> 注入点解析</li>
-<li>ApplicationContext 与资源加载 — <code>refresh()</code> 十二步；<code>@Configuration</code> full&#x2F;lite 与 CGLIB 增强</li>
-<li>AOP 代理体系 — JDK 动态代理 vs CGLIB 选型；AbstractAutoProxyCreator 织入；Advisor&#x2F;Pointcut 链</li>
+<li>ApplicationContext 与资源加载 — <code>refresh()</code> 十二步；<code>@Configuration</code> full/lite 与 CGLIB 增强</li>
+<li>AOP 代理体系 — JDK 动态代理 vs CGLIB 选型；AbstractAutoProxyCreator 织入；Advisor/Pointcut 链</li>
 <li>SpEL 与切面解析 — 表达式求值链路 vs AspectJ 切点链路，注意能力边界</li>
 <li>声明式事务 — AbstractPlatformTransactionManager 传播行为；TransactionInterceptor；六大失效场景</li>
 </ol>
-<p><strong>springboot</strong>：run 全流程（监听器时序 &#x2F; BootstrapContext）→ 自动配置（imports &#x2F; 条件注解 &#x2F; Binder 松弛绑定）→ 内嵌容器（ServletWebServerFactory &#x2F; 优雅停机）→ 外部化配置（ConfigDataEnvironmentPostProcessor &#x2F; 优先级）→ starter 生态</p>
-<p><strong>springmvc</strong>：DispatcherServlet（doDispatch 九步 &#x2F; HandlerExecutionChain &#x2F; 异常解析链）→ HandlerMapping（PathPattern）→ HandlerAdapter（HttpMessageConverter 协商 &#x2F; 数据绑定）→ 视图与内容协商 → 异步 &#x2F; CORS &#x2F; 拦截器 &#x2F; 异常</p>
-<p><strong>springcloud</strong>：release train 与 BOM → commons 抽象与 LoadBalancer（ServiceInstanceListSupplier 过滤器链）→ Gateway（Route&#x2F;Predicate&#x2F;Filter 链 &#x2F; RateLimiter &#x2F; Reactor Netty）→ OpenFeign（动态代理 &#x2F; Encoder&#x2F;Decoder &#x2F; LB 集成）</p>
+<p><strong>springboot</strong>：run 全流程（监听器时序 / BootstrapContext）→ 自动配置（imports / 条件注解 / Binder 松弛绑定）→ 内嵌容器（ServletWebServerFactory / 优雅停机）→ 外部化配置（ConfigDataEnvironmentPostProcessor / 优先级）→ starter 生态</p>
+<p><strong>springmvc</strong>：DispatcherServlet（doDispatch 九步 / HandlerExecutionChain / 异常解析链）→ HandlerMapping（PathPattern）→ HandlerAdapter（HttpMessageConverter 协商 / 数据绑定）→ 视图与内容协商 → 异步 / CORS / 拦截器 / 异常</p>
+<p><strong>springcloud</strong>：release train 与 BOM → commons 抽象与 LoadBalancer（ServiceInstanceListSupplier 过滤器链）→ Gateway（Route/Predicate/Filter 链 / RateLimiter / Reactor Netty）→ OpenFeign（动态代理 / Encoder/Decoder / LB 集成）</p>
 <p><strong>mybatis</strong></p>
 <ol>
 <li>入口与配置体系 — SqlSessionFactoryBuilder → XMLConfigBuilder → Configuration → DefaultSqlSession</li>
 <li>Executor 执行器体系 — BaseExecutor 一级缓存 + queryStack 防递归；CachingExecutor + TransactionalCache 两阶段提交</li>
-<li>StatementHandler 与参数&#x2F;结果 — DefaultResultSetHandler 决策树；TypeHandler 查找链；延迟加载</li>
-<li>SQL 映射与动态 SQL — MappedStatement &#x2F; SqlSource 三兄弟；SqlNode 节点树；<code>#&#123;&#125;</code> vs <code>$&#123;&#125;</code></li>
+<li>StatementHandler 与参数/结果 — DefaultResultSetHandler 决策树；TypeHandler 查找链；延迟加载</li>
+<li>SQL 映射与动态 SQL — MappedStatement / SqlSource 三兄弟；SqlNode 节点树；<code>#{}</code> vs <code>${}</code></li>
 <li>Mapper 接口绑定 — JDK 动态代理；MapperMethod 分派；ParamNameResolver</li>
-<li>插件&#x2F;缓存&#x2F;日志 — Interceptor 拦四大对象；CacheBuilder 装饰链；JDBC 日志代理</li>
+<li>插件/缓存/日志 — Interceptor 拦四大对象；CacheBuilder 装饰链；JDBC 日志代理</li>
 </ol>
-<h3 id="阶段三-·-存储与缓存"><a href="#阶段三-·-存储与缓存" class="headerlink" title="阶段三 · 存储与缓存"></a>阶段三 · 存储与缓存</h3><p><strong>mysql</strong>：mysqld 启动与连接线程模型 → 查询生命周期（COM_QUERY 到结果包）→ 优化器（JOIN::optimize &#x2F; AccessPath）→ InnoDB（buffer pool &#x2F; B+ 树 &#x2F; 行格式 &#x2F; double write）→ 事务 MVCC 与锁（read view &#x2F; undo 版本链 &#x2F; Next-Key &#x2F; 死锁检测）→ redo&#x2F;undo&#x2F;binlog 两阶段提交</p>
-<p><strong>redis</strong>：事件驱动核心（aeMain &#x2F; beforeSleep &#x2F; serverCron &#x2F; io-threads）→ 网络层与 RESP（RESP3 &#x2F; 输出缓冲限制）→ 命令生命周期（processCommand 检查链 → call → propagate）→ 对象与数据结构（encoding 演化 &#x2F; listpack &#x2F; dict rehash &#x2F; zset 双结构）→ 持久化（RDB fork &#x2F; AOF 三策略 &#x2F; 混合）→ 复制与集群（PSYNC2 &#x2F; gossip &#x2F; failover）</p>
-<p><strong>elasticsearch</strong>：节点启动与集群发现（Coordinator &#x2F; Raft 改良选主 &#x2F; PreVote）→ 索引与分片（IndexService &#x2F; AllocationService &#x2F; routing）→ 写入路径（TransportBulkAction &#x2F; Translog &#x2F; Refresh &#x2F; Flush）→ 查询与搜索（QueryPhase &#x2F; 聚合同一次 Lucene search）→ 分布式执行（两阶段 query-then-fetch &#x2F; scroll）→ recovery 与故障转移（PeerRecovery &#x2F; SeqNo &#x2F; Snapshot）</p>
-<h3 id="阶段四-·-分布式中间件"><a href="#阶段四-·-分布式中间件" class="headerlink" title="阶段四 · 分布式中间件"></a>阶段四 · 分布式中间件</h3><p><strong>kafka</strong>：网络层与请求处理（Acceptor &#x2F; Processor &#x2F; Purgatory）→ KRaft 元数据与 Controller（raft 日志 + snapshot）→ 存储引擎（UnifiedLog &#x2F; LogSegment &#x2F; LogCleaner）→ Producer（RecordAccumulator &#x2F; Sender &#x2F; 幂等事务）→ Consumer（Fetcher &#x2F; 再均衡 eager vs cooperative）→ Group Coordinator 与事务（状态机 &#x2F; 两阶段标记）</p>
-<p><strong>nacos</strong>：模块装配与启动（NacosBootstrap 三段式点火）→ naming（v2 模型 &#x2F; distro &#x2F; gRPC 推送 &#x2F; 健康检查）→ config（ConfigCacheService MD5 &#x2F; 长轮询 30s）→ 一致性协议（AP distro vs CP JRaft）→ 客户端 SDK（双客户端韧性设计）</p>
-<h3 id="阶段五-·-游戏与云原生（独立主线）"><a href="#阶段五-·-游戏与云原生（独立主线）" class="headerlink" title="阶段五 · 游戏与云原生（独立主线）"></a>阶段五 · 游戏与云原生（独立主线）</h3><p><strong>open-match</strong></p>
+<h3 id="阶段三--存储与缓存">阶段三 · 存储与缓存</h3>
+<p><strong>mysql</strong>：mysqld 启动与连接线程模型 → 查询生命周期（COM_QUERY 到结果包）→ 优化器（JOIN::optimize / AccessPath）→ InnoDB（buffer pool / B+ 树 / 行格式 / double write）→ 事务 MVCC 与锁（read view / undo 版本链 / Next-Key / 死锁检测）→ redo/undo/binlog 两阶段提交</p>
+<p><strong>redis</strong>：事件驱动核心（aeMain / beforeSleep / serverCron / io-threads）→ 网络层与 RESP（RESP3 / 输出缓冲限制）→ 命令生命周期（processCommand 检查链 → call → propagate）→ 对象与数据结构（encoding 演化 / listpack / dict rehash / zset 双结构）→ 持久化（RDB fork / AOF 三策略 / 混合）→ 复制与集群（PSYNC2 / gossip / failover）</p>
+<p><strong>elasticsearch</strong>：节点启动与集群发现（Coordinator / Raft 改良选主 / PreVote）→ 索引与分片（IndexService / AllocationService / routing）→ 写入路径（TransportBulkAction / Translog / Refresh / Flush）→ 查询与搜索（QueryPhase / 聚合同一次 Lucene search）→ 分布式执行（两阶段 query-then-fetch / scroll）→ recovery 与故障转移（PeerRecovery / SeqNo / Snapshot）</p>
+<h3 id="阶段四--分布式中间件">阶段四 · 分布式中间件</h3>
+<p><strong>kafka</strong>：网络层与请求处理（Acceptor / Processor / Purgatory）→ KRaft 元数据与 Controller（raft 日志 + snapshot）→ 存储引擎（UnifiedLog / LogSegment / LogCleaner）→ Producer（RecordAccumulator / Sender / 幂等事务）→ Consumer（Fetcher / 再均衡 eager vs cooperative）→ Group Coordinator 与事务（状态机 / 两阶段标记）</p>
+<p><strong>nacos</strong>：模块装配与启动（NacosBootstrap 三段式点火）→ naming（v2 模型 / distro / gRPC 推送 / 健康检查）→ config（ConfigCacheService MD5 / 长轮询 30s）→ 一致性协议（AP distro vs CP JRaft）→ 客户端 SDK（双客户端韧性设计）</p>
+<h3 id="阶段五--游戏与云原生独立主线">阶段五 · 游戏与云原生（独立主线）</h3>
+<p><strong>open-match</strong></p>
 <ol>
 <li>组件拓扑与进程模型 — v2 砍成单二进制 om-core + 6 个 RPC</li>
 <li>Ticket 生命周期 — Ticket ID ≡ Redis Stream entry ID；新票恒为 inactive</li>
-<li>状态存储抽象 — XADD &#x2F; XREAD BLOCK &#x2F; XTRIM MINID；三个 sync.Map 本地缓存</li>
+<li>状态存储抽象 — XADD / XREAD BLOCK / XTRIM MINID；三个 sync.Map 本地缓存</li>
 <li>ReplicatedTicketCache — setDifference 求活跃票，读路径整个下沉到内存</li>
 <li>过滤与匹配编排 — 4 种硬编码 filter 而非 CEL；4MB 分块；MMF 双向流</li>
 <li>Assignment 与观测 — WatchAssignments 1s 轮询；指标名笔误 <code>om_core.ticket.assigment.watch</code></li>
@@ -295,321 +171,212 @@
 <li>GameServerAllocation — 聚合 API + 独立 allocator 双路径；失败返回 201 + UnAllocated</li>
 <li>FleetAutoscaler 与观测 — 7 种策略；Buffer 以 Allocated 为基数；OpenCensus 双 exporter</li>
 </ol>
-<h3 id="阶段六-·-RAG-与-Agent-工程"><a href="#阶段六-·-RAG-与-Agent-工程" class="headerlink" title="阶段六 · RAG 与 Agent 工程"></a>阶段六 · RAG 与 Agent 工程</h3><p><strong>agent&#x2F;opencoze-agent</strong></p>
+<h3 id="阶段六--rag-与-agent-工程">阶段六 · RAG 与 Agent 工程</h3>
+<p><strong>agent/opencoze-agent</strong></p>
 <ol>
-<li>数据模型 — Draft &#x2F; Version &#x2F; Publish 三形态；SingleAgent 只是跨域薄壳</li>
-<li>构建期 — BuildAgent 装配 5 类工具；按有无工具决定 ReAct &#x2F; 裸 LLM；AllPredecessor 触发</li>
+<li>数据模型 — Draft / Version / Publish 三形态；SingleAgent 只是跨域薄壳</li>
+<li>构建期 — BuildAgent 装配 5 类工具；按有无工具决定 ReAct / 裸 LLM；AllPredecessor 触发</li>
 <li>运行期 — StreamExecute 建 Pipe(10)；<code>runner.Stream</code> 返回值被丢弃，输出只经 callback</li>
 <li>五类工具节点 — 数据库工具运行期校验 SQL 表名防越权；<code>newKnowledgeTool</code> 是死代码</li>
-<li>知识检索与建议 — RAGFlow 直连双通道，硬编码 0.3&#x2F;0.7&#x2F;8；<code>suggestParser</code> 空函数</li>
+<li>知识检索与建议 — RAGFlow 直连双通道，硬编码 0.3/0.7/8；<code>suggestParser</code> 空函数</li>
 <li>发布与端到端 — 七步发布；<code>publish.go:100</code> 并发共享 err 的 bug；三层流 100→10→20</li>
 </ol>
-<p><strong>agent&#x2F;ingestion-deep-dive</strong>（12 讲）：internal&#x2F;parser 解析分块基础 → chunk 三阶段流水线 → GeneralChunker 消费现场 → Parser 组件边界与规范化 → 任务编排（Pipeline 与落库）→ Ingestor（NATS 消费）→ LLM 抽取链路（Extractor &#x2F; KnowledgeCompiler）→ 检索侧 → 知识编译与 Agentic RAG 原理 → Agentic RAG 全流程 → 知识编译全流程 → 演进史与速查</p>
+<p><strong>agent/ingestion-deep-dive</strong>（12 讲）：internal/parser 解析分块基础 → chunk 三阶段流水线 → GeneralChunker 消费现场 → Parser 组件边界与规范化 → 任务编排（Pipeline 与落库）→ Ingestor（NATS 消费）→ LLM 抽取链路（Extractor / KnowledgeCompiler）→ 检索侧 → 知识编译与 Agentic RAG 原理 → Agentic RAG 全流程 → 知识编译全流程 → 演进史与速查</p>
 <hr>
-<h2 id="记忆科学：这套笔记怎么用才不白读"><a href="#记忆科学：这套笔记怎么用才不白读" class="headerlink" title="记忆科学：这套笔记怎么用才不白读"></a>记忆科学：这套笔记怎么用才不白读</h2><p>七条策略，全部可在这套文档的结构里落地：</p>
-<table>
-<thead>
-<tr>
-<th>策略</th>
-<th>在本套文档里的落地方式</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>先全景后细节</strong></td>
-<td>每份文档都有「速览：各讲做了什么」+ 全流程图。<strong>先读它再进讲次</strong> —— 大脑对已有框架的信息吸收率远高于碎片</td>
-</tr>
-<tr>
-<td><strong>组块化（Chunking）</strong></td>
-<td>6 条主线 &#x3D; 6 个组块；每块 2–6 份文档。一次只攻一条主线，不要东一本西一本</td>
-</tr>
-<tr>
-<td><strong>双编码（Dual Coding）</strong></td>
-<td>同一信息有文字 + mermaid 图两种表征，回忆时多一条线索</td>
-</tr>
-<tr>
-<td><strong>精细提问（Elaborative Interrogation）</strong></td>
-<td>每讲读完问三个”为什么”：为什么是这个阈值？为什么不是另一种结构？为什么这样取舍？</td>
-</tr>
-<tr>
-<td><strong>提取练习（Retrieval Practice）</strong></td>
-<td>合上书，在纸上重画思维导图。画不下去的地方就是没学会的地方，<strong>只回去补那一块</strong></td>
-</tr>
-<tr>
-<td><strong>间隔重复（Spaced Repetition）</strong></td>
-<td>按下面的 D1&#x2F;D3&#x2F;D7&#x2F;D14&#x2F;D30 节奏回看各文档末尾的「复习卡」</td>
-</tr>
-<tr>
-<td><strong>交错学习（Interleaving）</strong></td>
-<td>同层组件横向对比（见下方题组），比顺序递进更抗遗忘</td>
-</tr>
-</tbody></table>
-<hr>
-<h2 id="间隔重复复习日程"><a href="#间隔重复复习日程" class="headerlink" title="间隔重复复习日程"></a>间隔重复复习日程</h2><table>
-<thead>
-<tr>
-<th>节点</th>
-<th>时间</th>
-<th>动作</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>D1</strong></td>
-<td>当天晚上</td>
-<td>只看思维导图叶子钩子，合书复述；卡住的位置标星</td>
-</tr>
-<tr>
-<td><strong>D3</strong></td>
-<td>第 3 天</td>
-<td>回看该文档「面试速通」高频 Q&amp;A，<strong>先答后对</strong></td>
-</tr>
-<tr>
-<td><strong>D7</strong></td>
-<td>第 7 天</td>
-<td>做文档末尾「复习卡」，错的抄进错题本</td>
-</tr>
-<tr>
-<td><strong>D14</strong></td>
-<td>第 14 天</td>
-<td>与同阶段另一份文档做交错对比（见下方题组）</td>
-</tr>
-<tr>
-<td><strong>D30</strong></td>
-<td>第 30 天</td>
-<td>全图重画一次，能脱稿讲完一条主线即过关</td>
-</tr>
-</tbody></table>
-<p><strong>16 周计划对照</strong>（每天 1.5–2h）：</p>
-<table>
-<thead>
-<tr>
-<th>周次</th>
-<th>主线</th>
-<th>周末验收</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>W1–W3</td>
-<td>阶段一 Java 基础</td>
-<td>能白板画出 HashMap 扩容 + CHM 协作扩容</td>
-</tr>
-<tr>
-<td>W4–W6</td>
-<td>阶段二 Spring</td>
-<td>能从头讲清一个 <code>@Transactional</code> 请求的完整生命周期</td>
-</tr>
-<tr>
-<td>W7–W9</td>
-<td>阶段三 存储</td>
-<td>能对比 MySQL &#x2F; Redis &#x2F; ES 的写路径与一致性</td>
-</tr>
-<tr>
-<td>W10–W11</td>
-<td>阶段四 中间件</td>
-<td>能讲清 Kafka ISR 与 Nacos distro 的取舍</td>
-</tr>
-<tr>
-<td>W12–W14</td>
-<td>阶段五 游戏云原生</td>
-<td>能画出”匹配 → 开服”两段链路</td>
-</tr>
-<tr>
-<td>W15–W16</td>
-<td>阶段六 RAG&#x2F;Agent</td>
-<td>能讲清一次文档入库到被检索回来的全过程 + Agent 一次调用的完整链路</td>
-</tr>
-</tbody></table>
-<hr>
-<h2 id="交错对比题组（D14-用）"><a href="#交错对比题组（D14-用）" class="headerlink" title="交错对比题组（D14 用）"></a>交错对比题组（D14 用）</h2><table>
-<thead>
-<tr>
-<th>题组</th>
-<th>对比对象</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>写路径对照</strong></td>
-<td>MySQL（buffer pool + redo）· Redis（aof_fsync 三策略）· ES（Translog + Refresh&#x2F;Flush）</td>
-</tr>
-<tr>
-<td><strong>一致性对照</strong></td>
-<td>Kafka（ISR + 水位）· Nacos（distro AP vs JRaft CP）· Agones（乐观并发 + status 非 subresource）</td>
-</tr>
-<tr>
-<td><strong>锁与并发对照</strong></td>
-<td>synchronized（ObjectMonitor 混合队列）· AQS（CLH 变体）· CHM（synchronized 桶锁 + CAS）</td>
-</tr>
-<tr>
-<td><strong>请求处理对照</strong></td>
-<td>Spring MVC（doDispatch 九步）· Redis（processCommand 链）· Kafka（Processor + Purgatory）</td>
-</tr>
-<tr>
-<td><strong>状态机对照</strong></td>
-<td>Thread 九态 · FutureTask 七态 · GameServer 十一态</td>
-</tr>
-</tbody></table>
-<hr>
-<h2 id="提取练习模板（每次复习用）"><a href="#提取练习模板（每次复习用）" class="headerlink" title="提取练习模板（每次复习用）"></a>提取练习模板（每次复习用）</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">今天复习：______（文档 + 讲次）</span><br><span class="line"></span><br><span class="line">1. 不看资料，3 分钟内写下该讲的&quot;钩子&quot;：____________________</span><br><span class="line">2. 该讲回答了哪个&quot;为什么&quot;？____________________</span><br><span class="line">3. 它和已学过的哪个组件是同构的？（如：二级缓存 = 装饰器模式）</span><br><span class="line">   ____________________</span><br><span class="line">4. 画出最小流程图（只画主干，不画细节）：____________________</span><br><span class="line">5. 对照原文，只补写错的地方，用红笔标注：____________________</span><br></pre></td></tr></table></figure>
+<h2 id="记忆科学这套笔记怎么用才不白读">记忆科学：这套笔记怎么用才不白读</h2>
+<p>七条策略，全部可在这套文档的结构里落地：</p>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>策略</th><th>在本套文档里的落地方式</th></tr></thead><tbody><tr><td><strong>先全景后细节</strong></td><td>每份文档都有「速览：各讲做了什么」+ 全流程图。<strong>先读它再进讲次</strong> —— 大脑对已有框架的信息吸收率远高于碎片</td></tr><tr><td><strong>组块化（Chunking）</strong></td><td>6 条主线 = 6 个组块；每块 2–6 份文档。一次只攻一条主线，不要东一本西一本</td></tr><tr><td><strong>双编码（Dual Coding）</strong></td><td>同一信息有文字 + mermaid 图两种表征，回忆时多一条线索</td></tr><tr><td><strong>精细提问（Elaborative Interrogation）</strong></td><td>每讲读完问三个”为什么”：为什么是这个阈值？为什么不是另一种结构？为什么这样取舍？</td></tr><tr><td><strong>提取练习（Retrieval Practice）</strong></td><td>合上书，在纸上重画思维导图。画不下去的地方就是没学会的地方，<strong>只回去补那一块</strong></td></tr><tr><td><strong>间隔重复（Spaced Repetition）</strong></td><td>按下面的 D1/D3/D7/D14/D30 节奏回看各文档末尾的「复习卡」</td></tr><tr><td><strong>交错学习（Interleaving）</strong></td><td>同层组件横向对比（见下方题组），比顺序递进更抗遗忘</td></tr></tbody></table>
 <hr>
-<h2 id="文件与工具"><a href="#文件与工具" class="headerlink" title="文件与工具"></a>文件与工具</h2><table>
-<thead>
-<tr>
-<th>文件</th>
-<th>用途</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>learning-map.html</code></td>
-<td>交互式思维导图（可折叠&#x2F;缩放&#x2F;搜索，右侧含复习节奏与记忆法面板）</td>
-</tr>
-<tr>
-<td><code>build_mindmap.py</code></td>
-<td>生成上面那个 HTML 的脚本；文档增删讲次后改数据重跑即可</td>
-</tr>
-<tr>
-<td><code>learning-path.md</code></td>
-<td>本文件：思维导图文字版 + 记忆科学使用说明</td>
-</tr>
-<tr>
-<td><code>verify_citations.py</code></td>
-<td>引用复验（期望 3561 OK + 3 AMBIGUOUS-OK，0 真实问题）</td>
-</tr>
-<tr>
-<td><code>README.md</code></td>
-<td>全库总索引（文档清单 &#x2F; 内容速览 &#x2F; 目录结构 &#x2F; 学习顺序）</td>
-</tr>
-</tbody></table>
+<h2 id="间隔重复复习日程">间隔重复复习日程</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>节点</th><th>时间</th><th>动作</th></tr></thead><tbody><tr><td><strong>D1</strong></td><td>当天晚上</td><td>只看思维导图叶子钩子，合书复述；卡住的位置标星</td></tr><tr><td><strong>D3</strong></td><td>第 3 天</td><td>回看该文档「面试速通」高频 Q&#x26;A，<strong>先答后对</strong></td></tr><tr><td><strong>D7</strong></td><td>第 7 天</td><td>做文档末尾「复习卡」，错的抄进错题本</td></tr><tr><td><strong>D14</strong></td><td>第 14 天</td><td>与同阶段另一份文档做交错对比（见下方题组）</td></tr><tr><td><strong>D30</strong></td><td>第 30 天</td><td>全图重画一次，能脱稿讲完一条主线即过关</td></tr></tbody></table>
+<p><strong>16 周计划对照</strong>（每天 1.5–2h）：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>周次</th><th>主线</th><th>周末验收</th></tr></thead><tbody><tr><td>W1–W3</td><td>阶段一 Java 基础</td><td>能白板画出 HashMap 扩容 + CHM 协作扩容</td></tr><tr><td>W4–W6</td><td>阶段二 Spring</td><td>能从头讲清一个 <code>@Transactional</code> 请求的完整生命周期</td></tr><tr><td>W7–W9</td><td>阶段三 存储</td><td>能对比 MySQL / Redis / ES 的写路径与一致性</td></tr><tr><td>W10–W11</td><td>阶段四 中间件</td><td>能讲清 Kafka ISR 与 Nacos distro 的取舍</td></tr><tr><td>W12–W14</td><td>阶段五 游戏云原生</td><td>能画出”匹配 → 开服”两段链路</td></tr><tr><td>W15–W16</td><td>阶段六 RAG/Agent</td><td>能讲清一次文档入库到被检索回来的全过程 + Agent 一次调用的完整链路</td></tr></tbody></table>
+<hr>
+<h2 id="交错对比题组d14-用">交错对比题组（D14 用）</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>题组</th><th>对比对象</th></tr></thead><tbody><tr><td><strong>写路径对照</strong></td><td>MySQL（buffer pool + redo）· Redis（aof_fsync 三策略）· ES（Translog + Refresh/Flush）</td></tr><tr><td><strong>一致性对照</strong></td><td>Kafka（ISR + 水位）· Nacos（distro AP vs JRaft CP）· Agones（乐观并发 + status 非 subresource）</td></tr><tr><td><strong>锁与并发对照</strong></td><td>synchronized（ObjectMonitor 混合队列）· AQS（CLH 变体）· CHM（synchronized 桶锁 + CAS）</td></tr><tr><td><strong>请求处理对照</strong></td><td>Spring MVC（doDispatch 九步）· Redis（processCommand 链）· Kafka（Processor + Purgatory）</td></tr><tr><td><strong>状态机对照</strong></td><td>Thread 九态 · FutureTask 七态 · GameServer 十一态</td></tr></tbody></table>
+<hr>
+<h2 id="提取练习模板每次复习用">提取练习模板（每次复习用）</h2>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>今天复习：______（文档 + 讲次）</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>1. 不看资料，3 分钟内写下该讲的"钩子"：____________________</span></span>
+<span class="line"><span>2. 该讲回答了哪个"为什么"？____________________</span></span>
+<span class="line"><span>3. 它和已学过的哪个组件是同构的？（如：二级缓存 = 装饰器模式）</span></span>
+<span class="line"><span>   ____________________</span></span>
+<span class="line"><span>4. 画出最小流程图（只画主干，不画细节）：____________________</span></span>
+<span class="line"><span>5. 对照原文，只补写错的地方，用红笔标注：____________________</span></span></code></pre>
+<hr>
+<h2 id="文件与工具">文件与工具</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>文件</th><th>用途</th></tr></thead><tbody><tr><td><code>learning-map.html</code></td><td>交互式思维导图（可折叠/缩放/搜索，右侧含复习节奏与记忆法面板）</td></tr><tr><td><code>build_mindmap.py</code></td><td>生成上面那个 HTML 的脚本；文档增删讲次后改数据重跑即可</td></tr><tr><td><code>learning-path.md</code></td><td>本文件：思维导图文字版 + 记忆科学使用说明</td></tr><tr><td><code>verify_citations.py</code></td><td>引用复验（期望 3561 OK + 3 AMBIGUOUS-OK，0 真实问题）</td></tr><tr><td><code>README.md</code></td><td>全库总索引（文档清单 / 内容速览 / 目录结构 / 学习顺序）</td></tr></tbody></table>
 <blockquote>
 <p>配套站点：<code>https://gycxxx.github.io/</code>（Hexo + indigo 主题，全部文档已上线）</p>
-</blockquote>
-
-
-            
-            
-            <blockquote>
-                <p>
-                本文地址：
-                <a href="https://gycxxx.github.io/learning-path/" target="_blank" rel="external">https://gycxxx.github.io/learning-path/</a>
-                </p>
-                <footer><cite><a href="https://gycxxx.github.io">@源码深读笔记</a></cite></footer>
-            </blockquote>
-            </div>
-            
-<nav class="post-nav">
-  
-    <div class="waves-block waves-effect prev fl">
-      <a href="/open-match/" id="post-prev" class="post-nav-link">
-        <div class="tips"><i class="icon icon-angle-left icon-lg icon-pr"></i> Prev</div>
-        <h4 class="title">Open Match 2 源码深读笔记</h4>
-      </a>
-    </div>
-  
-
-  
-    <div class="waves-block waves-effect next fr">
-      <a href="/mybatis/" id="post-next" class="post-nav-link">
-        <div class="tips">Next <i class="icon icon-angle-right icon-lg icon-pl"></i></div>
-        <h4 class="title">MyBatis 源码深度学习笔记</h4>
-      </a>
-    </div>
-  
-</nav>
-
-
-            
-            
-
-
-
-        </div>
-    </div>
-</article>
-
-    </div>
-  </main>
-<div class="mask" id="mask"></div>
-<a href="javascript:;" id="gotop" class="waves-effect waves-circle waves-light"><span class="icon icon-lg icon-chevron-up"></span></a>
-
-<script src="/js/waves.min.js"></script>
-
-
-<script src="/js/main.js"></script>
-
-
-
-
-<div class="search-panel" id="search-panel">
-    <ul class="search-result" id="search-result"></ul>
-</div>
-<script type="text/template" id="search-tpl">
-<li class="item">
-    <a href="/{path}" class="waves-block waves-effect">
-        <div class="title ellipsis" title="{title}">{title}</div>
-        <div class="flex-row flex-middle">
-            <div class="tags ellipsis">
-                {tags}
-            </div>
-            <time class="flex-col time">{date}</time>
-        </div>
-    </a>
-</li>
-</script>
-
-
-<script src="/js/search.js"></script>
-
-
-
-
-
-
-
-
-
-
-<!-- hexo injector body_end start --><script src="/js/mermaid.min.js"></script>
-<script>(function () {
-  function restore(node) {
-    var raw = node.getAttribute("data-mermaid-source");
-    if (raw != null) { node.textContent = raw; }
-  }
-  function render() {
-    var codes = document.querySelectorAll("pre > code.highlight.mermaid, pre > code.mermaid");
-    for (var i = 0; i < codes.length; i++) {
-      var code = codes[i];
-      var pre = code.parentNode;
-      var box = document.createElement("div");
-      box.className = "mermaid";
-      box.setAttribute("data-mermaid-source", code.textContent);
-      box.textContent = code.textContent;
-      pre.parentNode.replaceChild(box, pre);
-    }
-    var nodes = document.querySelectorAll(".mermaid");
-    if (!window.mermaid || !nodes.length) { return; }
-    window.mermaid.initialize({
-      startOnLoad: false,
-      theme: "default",
-      logLevel: 4,
-      securityLevel: "loose",
-      flowchart: { curve: "linear" },
-      gantt: { axisFormat: "%m/%d/%Y" },
-      sequence: { actorMargin: 50 }
-    });
-    window.mermaid.run({ nodes: nodes, suppressErrors: true })
-      .then(function () {
-        for (var j = 0; j < nodes.length; j++) {
-          if (!nodes[j].querySelector("svg")) { restore(nodes[j]); }
-        }
-      })
-      .catch(function (err) {
-        if (window.console && console.error) { console.error(err); }
-        for (var k = 0; k < nodes.length; k++) { restore(nodes[k]); }
-      });
-  }
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", render);
-  } else {
-    render();
-  }
-})();</script><!-- hexo injector body_end end --></body>
-</html>
+</blockquote>  </div> <div class="post-nav"> <span><a href="/open-match/">← Open Match 2 源码深读笔记</a></span> <span><a href="/agones/">Agones 源码深读笔记 →</a></span> </div> </article>  </main> <footer class="site-footer"> <div class="inner"> <span>源码深读 · 由 Astro 静态生成 · 内容以 Markdown 源码笔记为唯一事实源</span> </div> </footer> </body></html> <script type="module" src="/_astro/PostLayout.astro_astro_type_script_index_0_lang.B4vzteL_.js"></script>

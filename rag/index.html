@@ -1,547 +1,643 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  
-  <title>OpenCoze RAG 实现说明 | 源码深读笔记 | Kafka / Nacos / Spring / Redis / MySQL / ES / Java / JVM / RAG</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  
-  <meta name="theme-color" content="#3F51B5">
-  
-  
-  <meta name="keywords" content="OpenCoze,RAG">
-  <meta name="description" content="本文档整理 OpenCoze 项目中知识库 RAG（Retrieval-Augmented Generation）的完整实现，包括文档索引、解析分片、多路召回、重排序与结果打包的全链路。 1. 整体架构OpenCoze 的 RAG 实现分为索引链路（写入）和检索链路（读取）两条主线，采用 DDD 分层架构： 123456789101112131415161718192021222324252627">
-<meta property="og:type" content="article">
-<meta property="og:title" content="OpenCoze RAG 实现说明">
-<meta property="og:url" content="https://gycxxx.github.io/rag/index.html">
-<meta property="og:site_name" content="源码深读笔记">
-<meta property="og:description" content="本文档整理 OpenCoze 项目中知识库 RAG（Retrieval-Augmented Generation）的完整实现，包括文档索引、解析分片、多路召回、重排序与结果打包的全链路。 1. 整体架构OpenCoze 的 RAG 实现分为索引链路（写入）和检索链路（读取）两条主线，采用 DDD 分层架构： 123456789101112131415161718192021222324252627">
-<meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2026-09-29T16:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-16T07:29:40.782Z">
-<meta property="article:author" content="gyc">
-<meta property="article:tag" content="OpenCoze">
-<meta property="article:tag" content="RAG">
-<meta name="twitter:card" content="summary">
-  
-    <link rel="alternative" href="/atom.xml" title="源码深读笔记" type="application/atom+xml">
-  
-  <meta name="summary" content="主流基础设施、框架与 JDK 的源码级深度学习笔记">
-  <link rel="shortcut icon" href="/img/favicon.ico">
-  
-<link rel="stylesheet" href="/css/style.css">
-
-<meta name="generator" content="Hexo 7.3.0"></head>
-
-<body>
-  <div id="loading" class="active"></div>
-
-  <nav id="menu" class="hide" >
-   <div class="inner flex-row-vertical">
-  <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="menu-off">
-      <i class="icon icon-lg icon-close"></i>
-  </a>
-  <div class="brand-wrap">
-    <div class="brand">
-      <a href="/" class="avatar"><img src="/img/avatar.jpg"></a>
-      <hgroup class="introduce">
-        <h5 class="nickname">gyc</h5>
-        
-      </hgroup>
-    </div>
-  </div>
-  <div class="scroll-wrap flex-col">
-    <ul class="nav">
-      
-          <li class="waves-block waves-effect">
-            <a href="/"  >
-              <i class="icon icon-lg icon-home"></i>
-              主页
-            </a>
-          </li>
-      
-          <li class="waves-block waves-effect">
-            <a href="/archives"  >
-              <i class="icon icon-lg icon-archive"></i>
-              归档
-            </a>
-          </li>
-      
-          <li class="waves-block waves-effect">
-            <a href="/categories"  >
-              <i class="icon icon-lg icon-th-list"></i>
-              分类
-            </a>
-          </li>
-      
-          <li class="waves-block waves-effect">
-            <a href="/tags"  >
-              <i class="icon icon-lg icon-tags"></i>
-              标签
-            </a>
-          </li>
-      
-          <li class="waves-block waves-effect">
-            <a href="/learning-map/"  >
-              <i class="icon icon-lg icon-sitemap"></i>
-              思维导图
-            </a>
-          </li>
-      
-    </ul>
-
-    <footer class="footer">
-  <p>源码深读笔记 &copy; 2026</p>
-  <p>Power by <a href="http://hexo.io/" target="_blank">Hexo</a> Theme
-  <a href="https://github.com/yscoder/hexo-theme-indigo" target="_blank">indigo</a></p>
-  <a href="/atom.xml" target="_blank" class="rss" title="rss"><i class="icon icon-2x icon-rss-square"></i></a>
-</footer>
-
-  </div>
-</div>
-
-  </nav>
-  <main id="main">
-    <header class="top-header" id="header">
-    <div class="flex-row">
-        <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light on" id="menu-toggle">
-          <i class="icon icon-lg icon-navicon"></i>
-        </a>
-        <div class="flex-col header-title ellipsis">OpenCoze RAG 实现说明</div>
-        
-        <div class="search-wrap" id="search-wrap">
-            <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="back">
-                <i class="icon icon-lg icon-chevron-left"></i>
-            </a>
-            <input type="text" id="key" class="search-input " autocomplete="off" placeholder="输入感兴趣的关键字">
-            <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="search">
-                <i class="icon icon-lg icon-search"></i>
-            </a>
-        </div>
-        
-        
-    </div>
-</header>
-<header class="content-header">
-  <div class="container">
-    <h1 class="author">OpenCoze RAG 实现说明</h1>
-    <h5 class="subtitle">
-        
-            <time datetime="2026-09-29T16:00:00.000Z" itemprop="datePublished" class="page-time">
-  2026-09-30
-</time>
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>OpenCoze RAG 实现说明 · 源码深读</title><meta name="description" content="源码级技术笔记：中间件、Spring、Java、存储、云原生与 RAG"><link rel="icon" href="data:,"><link rel="stylesheet" href="/_astro/_slug_.B9Gg1xby.css"></head> <body> <header class="site-header"> <div class="inner"> <h1 class="site-title"><a href="/">源码深读</a></h1> <p class="site-desc">逐文件、逐函数地读源码，结论都带 文件:行号</p> <nav class="site-nav"> <a href="/">首页</a> <a href="/categories/">分类</a> <a href="/tags/">标签</a> <a href="/learning-path/">学习路线</a> <a href="/learning-map/">思维导图</a> <a href="https://github.com/gycxxx/gycxxx.github.io">GitHub</a> </nav> </div> </header> <main class="main">  <article class="post"> <div class="crumb"> <a href="/">首页</a>  / <a href="/categories/RAG/">RAG</a>  </div> <div class="post-head"> <h1>OpenCoze RAG 实现说明</h1> <div class="page-meta"> <time datetime="2026-09-30T00:00:00.000Z">2026-09-30</time>  · <a class="chip" href="/tags/RAG/">RAG</a>  <a class="chip" href="/tags/OpenCoze/">OpenCoze</a>  </div> </div> <nav class="toc"> <div class="toc-title">目录</div> <ol> <li class="d2"> <a href="#1-整体架构">1. 整体架构</a> </li><li class="d2"> <a href="#2-索引链路写入">2. 索引链路（写入）</a> </li><li class="d3"> <a href="#21-整体流程">2.1 整体流程</a> </li><li class="d3"> <a href="#22-docprocessor-接口">2.2 DocProcessor 接口</a> </li><li class="d3"> <a href="#23-事件驱动机制">2.3 事件驱动机制</a> </li><li class="d3"> <a href="#24-文档解析parser">2.4 文档解析（Parser）</a> </li><li class="d4"> <a href="#解析器管理器">解析器管理器</a> </li><li class="d4"> <a href="#支持的文件类型">支持的文件类型</a> </li><li class="d4"> <a href="#分片策略">分片策略</a> </li><li class="d4"> <a href="#自定义分片算法">自定义分片算法</a> </li><li class="d4"> <a href="#分片批处理">分片批处理</a> </li><li class="d3"> <a href="#25-向量索引写入">2.5 向量索引写入</a> </li><li class="d4"> <a href="#searchstore-接口">SearchStore 接口</a> </li><li class="d4"> <a href="#manager-工厂">Manager 工厂</a> </li><li class="d4"> <a href="#索引写入核心">索引写入核心</a> </li><li class="d4"> <a href="#collection-命名">Collection 命名</a> </li><li class="d4"> <a href="#字段映射fmapping">字段映射（fMapping）</a> </li><li class="d3"> <a href="#26-文档状态管理">2.6 文档状态管理</a> </li><li class="d3"> <a href="#27-slice-状态">2.7 Slice 状态</a> </li><li class="d2"> <a href="#3-检索链路读取">3. 检索链路（读取）</a> </li><li class="d3"> <a href="#31-整体流程">3.1 整体流程</a> </li><li class="d3"> <a href="#32-检索编排核心代码">3.2 检索编排核心代码</a> </li><li class="d3"> <a href="#33-检索策略模型">3.3 检索策略模型</a> </li><li class="d3"> <a href="#34-查询改写query-rewrite">3.4 查询改写（Query Rewrite）</a> </li><li class="d3"> <a href="#35-向量检索vectorretrievenode">3.5 向量检索（vectorRetrieveNode）</a> </li><li class="d4"> <a href="#milvus-检索细节">Milvus 检索细节</a> </li><li class="d4"> <a href="#向量字段命名约定">向量字段命名约定</a> </li><li class="d4"> <a href="#索引默认参数">索引默认参数</a> </li><li class="d3"> <a href="#36-全文检索esretrievenode">3.6 全文检索（esRetrieveNode）</a> </li><li class="d3"> <a href="#37-nl2sql-检索nl2sqlretrievenode">3.7 NL2SQL 检索（nl2SqlRetrieveNode）</a> </li><li class="d3"> <a href="#38-重排序reranknode">3.8 重排序（reRankNode）</a> </li><li class="d3"> <a href="#39-结果打包packresults">3.9 结果打包（packResults）</a> </li><li class="d3"> <a href="#310-图片内容处理">3.10 图片内容处理</a> </li><li class="d2"> <a href="#4-ragflow-集成">4. RAGFlow 集成</a> </li><li class="d3"> <a href="#41-初始化">4.1 初始化</a> </li><li class="d3"> <a href="#42-检索参数">4.2 检索参数</a> </li><li class="d3"> <a href="#43-客户端能力">4.3 客户端能力</a> </li><li class="d2"> <a href="#5-配置结构">5. 配置结构</a> </li><li class="d3"> <a href="#51-knowledgeconfig">5.1 KnowledgeConfig</a> </li><li class="d3"> <a href="#52-配置加载与回退">5.2 配置加载与回退</a> </li><li class="d3"> <a href="#53-embedding-支持">5.3 Embedding 支持</a> </li><li class="d3"> <a href="#54-向量存储后端选择">5.4 向量存储后端选择</a> </li><li class="d3"> <a href="#55-消息队列选择">5.5 消息队列选择</a> </li><li class="d2"> <a href="#6-关键设计决策">6. 关键设计决策</a> </li><li class="d3"> <a href="#61-事件驱动的异步索引">6.1 事件驱动的异步索引</a> </li><li class="d3"> <a href="#62-eino-框架编排">6.2 eino 框架编排</a> </li><li class="d3"> <a href="#63-多路召回--rrf-融合">6.3 多路召回 + RRF 融合</a> </li><li class="d3"> <a href="#64-表格类型特殊处理">6.4 表格类型特殊处理</a> </li><li class="d3"> <a href="#65-ragflow-互斥模式">6.5 RAGFlow 互斥模式</a> </li><li class="d2"> <a href="#7-关键文件索引">7. 关键文件索引</a> </li><li class="d3"> <a href="#索引链路">索引链路</a> </li><li class="d3"> <a href="#检索链路">检索链路</a> </li><li class="d3"> <a href="#infra-层">Infra 层</a> </li><li class="d3"> <a href="#配置层">配置层</a> </li><li class="d2"> <a href="#8-小结">8. 小结</a> </li> </ol> </nav> <div class="markdown-body">  <p>本文档整理 OpenCoze 项目中知识库 RAG（Retrieval-Augmented Generation）的完整实现，包括文档索引、解析分片、多路召回、重排序与结果打包的全链路。</p>
+<h2 id="1-整体架构">1. 整体架构</h2>
+<p>OpenCoze 的 RAG 实现分为<strong>索引链路</strong>（写入）和<strong>检索链路</strong>（读取）两条主线，采用 DDD 分层架构：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>┌─────────────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│                    Application 层                        │</span></span>
+<span class="line"><span>│   knowledge.go — API 请求转 entity，调用 domain service  │</span></span>
+<span class="line"><span>│   init.go — 初始化 service + 注册 MQ consumer           │</span></span>
+<span class="line"><span>├─────────────────────────────────────────────────────────┤</span></span>
+<span class="line"><span>│                    Domain 层                             │</span></span>
+<span class="line"><span>│   service/knowledge.go — CreateDocument 等核心方法       │</span></span>
+<span class="line"><span>│   service/retrieve.go — 检索编排主流程（eino Chain）     │</span></span>
+<span class="line"><span>│   service/event_handle.go — MQ 消息处理、解析+索引全流程 │</span></span>
+<span class="line"><span>│   service/convert.go — 类型转换映射（d2s/s2d/fMapping）  │</span></span>
+<span class="line"><span>│   service/validate.go — 文档/知识库可写性校验            │</span></span>
+<span class="line"><span>│   processor/ — DocProcessor 接口与实现                   │</span></span>
+<span class="line"><span>│   entity/ — 领域实体、状态、事件、策略定义               │</span></span>
+<span class="line"><span>├─────────────────────────────────────────────────────────┤</span></span>
+<span class="line"><span>│                    Infra 层                              │</span></span>
+<span class="line"><span>│   document/parser/ — 文档解析器（builtin/ppstructure）   │</span></span>
+<span class="line"><span>│   document/searchstore/ — 检索存储（Milvus/ES）          │</span></span>
+<span class="line"><span>│   document/rerank/ — 重排序（RRF/VikingDB）              │</span></span>
+<span class="line"><span>│   document/nl2sql/ — 自然语言转 SQL                      │</span></span>
+<span class="line"><span>│   document/messages2query/ — Query 改写                  │</span></span>
+<span class="line"><span>│   eventbus/ — 消息队列（nsq/kafka/rmq/pulsar/nats）     │</span></span>
+<span class="line"><span>│   ragflow/ — RAGFlow 外部集成                            │</span></span>
+<span class="line"><span>├─────────────────────────────────────────────────────────┤</span></span>
+<span class="line"><span>│                    Config 层                             │</span></span>
+<span class="line"><span>│   api/model/admin/config — Thrift 配置结构               │</span></span>
+<span class="line"><span>│   bizpkg/config/knowledge — 配置加载与默认值回退         │</span></span>
+<span class="line"><span>└─────────────────────────────────────────────────────────┘</span></span></code></pre>
+<h2 id="2-索引链路写入">2. 索引链路（写入）</h2>
+<h3 id="21-整体流程">2.1 整体流程</h3>
+<p>文档从上传到可检索，经过以下步骤：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>[API 请求] CreateDocument</span></span>
+<span class="line"><span>  │</span></span>
+<span class="line"><span>  ├─ 1. BeforeCreate()  — 上传文件到对象存储（TOS）</span></span>
+<span class="line"><span>  ├─ 2. BuildDBModel()  — 生成文档 ID，构建 DB 模型</span></span>
+<span class="line"><span>  ├─ 3. InsertDBModel() — 事务写入数据库（含表格物理表创建）</span></span>
+<span class="line"><span>  ├─ 4. Indexing()      — 发送 IndexDocumentsEvent 到 MQ</span></span>
+<span class="line"><span>  │</span></span>
+<span class="line"><span>  └─ [MQ Consumer 异步处理]</span></span>
+<span class="line"><span>       ├─ indexDocuments     — 批量事件拆为单文档事件</span></span>
+<span class="line"><span>       │    └─ indexDocument  — 单文档索引全流程</span></span>
+<span class="line"><span>       │         ├─ validateDocumentStatus     — 校验可写性</span></span>
+<span class="line"><span>       │         ├─ beginIndexingProcess       — 状态 → Chunking</span></span>
+<span class="line"><span>       │         ├─ processDocumentParsing     — 解析文档</span></span>
+<span class="line"><span>       │         │    └─ parseManager.GetParser → parser.Parse</span></span>
+<span class="line"><span>       │         ├─ handleTableDocument         — 表格特殊处理</span></span>
+<span class="line"><span>       │         ├─ processDocumentChunks       — 批量分片（batch=100）</span></span>
+<span class="line"><span>       │         │    └─ batchProcessSlice</span></span>
+<span class="line"><span>       │         │         ├─ genMultiIDs</span></span>
+<span class="line"><span>       │         │         ├─ convertToSlices     — d2sMapping</span></span>
+<span class="line"><span>       │         │         ├─ upsertDataToTable   — 表类型写 RDB</span></span>
+<span class="line"><span>       │         │         ├─ storeSlicesInDB     — 写 slice 表</span></span>
+<span class="line"><span>       │         │         └─ indexSlicesInSearchStores — 写向量库+ES</span></span>
+<span class="line"><span>       │         │              ├─ manager.Create(collection)</span></span>
+<span class="line"><span>       │         │              └─ ss.Store(ssDocs)</span></span>
+<span class="line"><span>       │         └─ finalizeDocumentIndexing    — 状态 → Enable</span></span></code></pre>
+<h3 id="22-docprocessor-接口">2.2 DocProcessor 接口</h3>
+<p><a href="../domain/knowledge/processor/interface.go">processor/interface.go</a> 定义了文档处理的标准流程：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="go"><code><span class="line"><span style="color:#D73A49">type</span><span style="color:#6F42C1"> DocProcessor</span><span style="color:#D73A49"> interface</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6F42C1">    BeforeCreate</span><span style="color:#24292E">() </span><span style="color:#D73A49">error</span><span style="color:#6A737D">         // 获取数据源，上传到对象存储</span></span>
+<span class="line"><span style="color:#6F42C1">    BuildDBModel</span><span style="color:#24292E">() </span><span style="color:#D73A49">error</span><span style="color:#6A737D">         // 构建文档记录</span></span>
+<span class="line"><span style="color:#6F42C1">    InsertDBModel</span><span style="color:#24292E">() </span><span style="color:#D73A49">error</span><span style="color:#6A737D">        // 将文档记录插入数据库（事务）</span></span>
+<span class="line"><span style="color:#6F42C1">    Indexing</span><span style="color:#24292E">() </span><span style="color:#D73A49">error</span><span style="color:#6A737D">             // 发起索引任务（发送 MQ 事件）</span></span>
+<span class="line"><span style="color:#6F42C1">    GetResp</span><span style="color:#24292E">() []</span><span style="color:#D73A49">*</span><span style="color:#6F42C1">entity</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Document</span><span style="color:#6A737D"> // 返回处理后的文档信息</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>基础实现在 <a href="../domain/knowledge/processor/impl/base.go">processor/impl/base.go</a>，其中 <code>Indexing()</code> 方法发送事件：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="go"><code><span class="line"><span style="color:#D73A49">func</span><span style="color:#24292E"> (</span><span style="color:#E36209">p </span><span style="color:#D73A49">*</span><span style="color:#6F42C1">baseDocProcessor</span><span style="color:#24292E">) </span><span style="color:#6F42C1">Indexing</span><span style="color:#24292E">() </span><span style="color:#D73A49">error</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">    event </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> events.</span><span style="color:#6F42C1">NewIndexDocumentsEvent</span><span style="color:#24292E">(p.Documents[</span><span style="color:#005CC5">0</span><span style="color:#24292E">].KnowledgeID, p.Documents)</span></span>
+<span class="line"><span style="color:#24292E">    body, _ </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> sonic.</span><span style="color:#6F42C1">Marshal</span><span style="color:#24292E">(event)</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#24292E"> p.producer.</span><span style="color:#6F42C1">Send</span><span style="color:#24292E">(p.ctx, body)</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h3 id="23-事件驱动机制">2.3 事件驱动机制</h3>
+<p>索引采用<strong>两级事件</strong>机制：</p>
 
 
-	<ul class="article-category-list"><li class="article-category-list-item"><a class="article-category-list-link" href="/categories/RAG/">RAG</a></li></ul>
 
-        
-    </h5>
-  </div>
-</header>
 
-    <div class="container body-wrap">
-      <article id="post-rag" 
-  class="article article-type-post" itemprop="blogPost">
-    <div class="post-meta flex-row">
-        
-	<ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/OpenCoze/" rel="tag">OpenCoze</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/RAG/" rel="tag">RAG</a></li></ul>
 
-    </div>
-    <div class="post-body">
-        <aside class="post-widget" id="post-widget">
 
-            
 
-            
-            <nav class="post-toc-wrap" id="post-toc">
-            <ol class="post-toc"><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#1-%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84"><span class="post-toc-number">1.</span> <span class="post-toc-text">1. 整体架构</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#2-%E7%B4%A2%E5%BC%95%E9%93%BE%E8%B7%AF%EF%BC%88%E5%86%99%E5%85%A5%EF%BC%89"><span class="post-toc-number">2.</span> <span class="post-toc-text">2. 索引链路（写入）</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-1-%E6%95%B4%E4%BD%93%E6%B5%81%E7%A8%8B"><span class="post-toc-number">2.1.</span> <span class="post-toc-text">2.1 整体流程</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-2-DocProcessor-%E6%8E%A5%E5%8F%A3"><span class="post-toc-number">2.2.</span> <span class="post-toc-text">2.2 DocProcessor 接口</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-3-%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8%E6%9C%BA%E5%88%B6"><span class="post-toc-number">2.3.</span> <span class="post-toc-text">2.3 事件驱动机制</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-4-%E6%96%87%E6%A1%A3%E8%A7%A3%E6%9E%90%EF%BC%88Parser%EF%BC%89"><span class="post-toc-number">2.4.</span> <span class="post-toc-text">2.4 文档解析（Parser）</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#%E8%A7%A3%E6%9E%90%E5%99%A8%E7%AE%A1%E7%90%86%E5%99%A8"><span class="post-toc-number">2.4.1.</span> <span class="post-toc-text">解析器管理器</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#%E6%94%AF%E6%8C%81%E7%9A%84%E6%96%87%E4%BB%B6%E7%B1%BB%E5%9E%8B"><span class="post-toc-number">2.4.2.</span> <span class="post-toc-text">支持的文件类型</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#%E5%88%86%E7%89%87%E7%AD%96%E7%95%A5"><span class="post-toc-number">2.4.3.</span> <span class="post-toc-text">分片策略</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#%E8%87%AA%E5%AE%9A%E4%B9%89%E5%88%86%E7%89%87%E7%AE%97%E6%B3%95"><span class="post-toc-number">2.4.4.</span> <span class="post-toc-text">自定义分片算法</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#%E5%88%86%E7%89%87%E6%89%B9%E5%A4%84%E7%90%86"><span class="post-toc-number">2.4.5.</span> <span class="post-toc-text">分片批处理</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-5-%E5%90%91%E9%87%8F%E7%B4%A2%E5%BC%95%E5%86%99%E5%85%A5"><span class="post-toc-number">2.5.</span> <span class="post-toc-text">2.5 向量索引写入</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#SearchStore-%E6%8E%A5%E5%8F%A3"><span class="post-toc-number">2.5.1.</span> <span class="post-toc-text">SearchStore 接口</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#Manager-%E5%B7%A5%E5%8E%82"><span class="post-toc-number">2.5.2.</span> <span class="post-toc-text">Manager 工厂</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#%E7%B4%A2%E5%BC%95%E5%86%99%E5%85%A5%E6%A0%B8%E5%BF%83"><span class="post-toc-number">2.5.3.</span> <span class="post-toc-text">索引写入核心</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#Collection-%E5%91%BD%E5%90%8D"><span class="post-toc-number">2.5.4.</span> <span class="post-toc-text">Collection 命名</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#%E5%AD%97%E6%AE%B5%E6%98%A0%E5%B0%84%EF%BC%88fMapping%EF%BC%89"><span class="post-toc-number">2.5.5.</span> <span class="post-toc-text">字段映射（fMapping）</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-6-%E6%96%87%E6%A1%A3%E7%8A%B6%E6%80%81%E7%AE%A1%E7%90%86"><span class="post-toc-number">2.6.</span> <span class="post-toc-text">2.6 文档状态管理</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#2-7-Slice-%E7%8A%B6%E6%80%81"><span class="post-toc-number">2.7.</span> <span class="post-toc-text">2.7 Slice 状态</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#3-%E6%A3%80%E7%B4%A2%E9%93%BE%E8%B7%AF%EF%BC%88%E8%AF%BB%E5%8F%96%EF%BC%89"><span class="post-toc-number">3.</span> <span class="post-toc-text">3. 检索链路（读取）</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-1-%E6%95%B4%E4%BD%93%E6%B5%81%E7%A8%8B"><span class="post-toc-number">3.1.</span> <span class="post-toc-text">3.1 整体流程</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-2-%E6%A3%80%E7%B4%A2%E7%BC%96%E6%8E%92%E6%A0%B8%E5%BF%83%E4%BB%A3%E7%A0%81"><span class="post-toc-number">3.2.</span> <span class="post-toc-text">3.2 检索编排核心代码</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-3-%E6%A3%80%E7%B4%A2%E7%AD%96%E7%95%A5%E6%A8%A1%E5%9E%8B"><span class="post-toc-number">3.3.</span> <span class="post-toc-text">3.3 检索策略模型</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-4-%E6%9F%A5%E8%AF%A2%E6%94%B9%E5%86%99%EF%BC%88Query-Rewrite%EF%BC%89"><span class="post-toc-number">3.4.</span> <span class="post-toc-text">3.4 查询改写（Query Rewrite）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-5-%E5%90%91%E9%87%8F%E6%A3%80%E7%B4%A2%EF%BC%88vectorRetrieveNode%EF%BC%89"><span class="post-toc-number">3.5.</span> <span class="post-toc-text">3.5 向量检索（vectorRetrieveNode）</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#Milvus-%E6%A3%80%E7%B4%A2%E7%BB%86%E8%8A%82"><span class="post-toc-number">3.5.1.</span> <span class="post-toc-text">Milvus 检索细节</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#%E5%90%91%E9%87%8F%E5%AD%97%E6%AE%B5%E5%91%BD%E5%90%8D%E7%BA%A6%E5%AE%9A"><span class="post-toc-number">3.5.2.</span> <span class="post-toc-text">向量字段命名约定</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#%E7%B4%A2%E5%BC%95%E9%BB%98%E8%AE%A4%E5%8F%82%E6%95%B0"><span class="post-toc-number">3.5.3.</span> <span class="post-toc-text">索引默认参数</span></a></li></ol></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-6-%E5%85%A8%E6%96%87%E6%A3%80%E7%B4%A2%EF%BC%88esRetrieveNode%EF%BC%89"><span class="post-toc-number">3.6.</span> <span class="post-toc-text">3.6 全文检索（esRetrieveNode）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-7-NL2SQL-%E6%A3%80%E7%B4%A2%EF%BC%88nl2SqlRetrieveNode%EF%BC%89"><span class="post-toc-number">3.7.</span> <span class="post-toc-text">3.7 NL2SQL 检索（nl2SqlRetrieveNode）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-8-%E9%87%8D%E6%8E%92%E5%BA%8F%EF%BC%88reRankNode%EF%BC%89"><span class="post-toc-number">3.8.</span> <span class="post-toc-text">3.8 重排序（reRankNode）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-9-%E7%BB%93%E6%9E%9C%E6%89%93%E5%8C%85%EF%BC%88packResults%EF%BC%89"><span class="post-toc-number">3.9.</span> <span class="post-toc-text">3.9 结果打包（packResults）</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#3-10-%E5%9B%BE%E7%89%87%E5%86%85%E5%AE%B9%E5%A4%84%E7%90%86"><span class="post-toc-number">3.10.</span> <span class="post-toc-text">3.10 图片内容处理</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#4-RAGFlow-%E9%9B%86%E6%88%90"><span class="post-toc-number">4.</span> <span class="post-toc-text">4. RAGFlow 集成</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#4-1-%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="post-toc-number">4.1.</span> <span class="post-toc-text">4.1 初始化</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#4-2-%E6%A3%80%E7%B4%A2%E5%8F%82%E6%95%B0"><span class="post-toc-number">4.2.</span> <span class="post-toc-text">4.2 检索参数</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#4-3-%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%83%BD%E5%8A%9B"><span class="post-toc-number">4.3.</span> <span class="post-toc-text">4.3 客户端能力</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#5-%E9%85%8D%E7%BD%AE%E7%BB%93%E6%9E%84"><span class="post-toc-number">5.</span> <span class="post-toc-text">5. 配置结构</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#5-1-KnowledgeConfig"><span class="post-toc-number">5.1.</span> <span class="post-toc-text">5.1 KnowledgeConfig</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#5-2-%E9%85%8D%E7%BD%AE%E5%8A%A0%E8%BD%BD%E4%B8%8E%E5%9B%9E%E9%80%80"><span class="post-toc-number">5.2.</span> <span class="post-toc-text">5.2 配置加载与回退</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#5-3-Embedding-%E6%94%AF%E6%8C%81"><span class="post-toc-number">5.3.</span> <span class="post-toc-text">5.3 Embedding 支持</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#5-4-%E5%90%91%E9%87%8F%E5%AD%98%E5%82%A8%E5%90%8E%E7%AB%AF%E9%80%89%E6%8B%A9"><span class="post-toc-number">5.4.</span> <span class="post-toc-text">5.4 向量存储后端选择</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#5-5-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E9%80%89%E6%8B%A9"><span class="post-toc-number">5.5.</span> <span class="post-toc-text">5.5 消息队列选择</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#6-%E5%85%B3%E9%94%AE%E8%AE%BE%E8%AE%A1%E5%86%B3%E7%AD%96"><span class="post-toc-number">6.</span> <span class="post-toc-text">6. 关键设计决策</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-1-%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8%E7%9A%84%E5%BC%82%E6%AD%A5%E7%B4%A2%E5%BC%95"><span class="post-toc-number">6.1.</span> <span class="post-toc-text">6.1 事件驱动的异步索引</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-2-eino-%E6%A1%86%E6%9E%B6%E7%BC%96%E6%8E%92"><span class="post-toc-number">6.2.</span> <span class="post-toc-text">6.2 eino 框架编排</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-3-%E5%A4%9A%E8%B7%AF%E5%8F%AC%E5%9B%9E-RRF-%E8%9E%8D%E5%90%88"><span class="post-toc-number">6.3.</span> <span class="post-toc-text">6.3 多路召回 + RRF 融合</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-4-%E8%A1%A8%E6%A0%BC%E7%B1%BB%E5%9E%8B%E7%89%B9%E6%AE%8A%E5%A4%84%E7%90%86"><span class="post-toc-number">6.4.</span> <span class="post-toc-text">6.4 表格类型特殊处理</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#6-5-RAGFlow-%E4%BA%92%E6%96%A5%E6%A8%A1%E5%BC%8F"><span class="post-toc-number">6.5.</span> <span class="post-toc-text">6.5 RAGFlow 互斥模式</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#7-%E5%85%B3%E9%94%AE%E6%96%87%E4%BB%B6%E7%B4%A2%E5%BC%95"><span class="post-toc-number">7.</span> <span class="post-toc-text">7. 关键文件索引</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E7%B4%A2%E5%BC%95%E9%93%BE%E8%B7%AF"><span class="post-toc-number">7.1.</span> <span class="post-toc-text">索引链路</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E6%A3%80%E7%B4%A2%E9%93%BE%E8%B7%AF"><span class="post-toc-number">7.2.</span> <span class="post-toc-text">检索链路</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#Infra-%E5%B1%82"><span class="post-toc-number">7.3.</span> <span class="post-toc-text">Infra 层</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E9%85%8D%E7%BD%AE%E5%B1%82"><span class="post-toc-number">7.4.</span> <span class="post-toc-text">配置层</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#8-%E5%B0%8F%E7%BB%93"><span class="post-toc-number">8.</span> <span class="post-toc-text">8. 小结</span></a></li></ol>
-            </nav>
-            
-        </aside>
 
-        <div class="post-main">
 
-            <div class="post-content" id="post-content" itemprop="postContent">
-            <p>本文档整理 OpenCoze 项目中知识库 RAG（Retrieval-Augmented Generation）的完整实现，包括文档索引、解析分片、多路召回、重排序与结果打包的全链路。</p>
-<h2 id="1-整体架构"><a href="#1-整体架构" class="headerlink" title="1. 整体架构"></a>1. 整体架构</h2><p>OpenCoze 的 RAG 实现分为<strong>索引链路</strong>（写入）和<strong>检索链路</strong>（读取）两条主线，采用 DDD 分层架构：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">┌─────────────────────────────────────────────────────────┐</span><br><span class="line">│                    Application 层                        │</span><br><span class="line">│   knowledge.go — API 请求转 entity，调用 domain service  │</span><br><span class="line">│   init.go — 初始化 service + 注册 MQ consumer           │</span><br><span class="line">├─────────────────────────────────────────────────────────┤</span><br><span class="line">│                    Domain 层                             │</span><br><span class="line">│   service/knowledge.go — CreateDocument 等核心方法       │</span><br><span class="line">│   service/retrieve.go — 检索编排主流程（eino Chain）     │</span><br><span class="line">│   service/event_handle.go — MQ 消息处理、解析+索引全流程 │</span><br><span class="line">│   service/convert.go — 类型转换映射（d2s/s2d/fMapping）  │</span><br><span class="line">│   service/validate.go — 文档/知识库可写性校验            │</span><br><span class="line">│   processor/ — DocProcessor 接口与实现                   │</span><br><span class="line">│   entity/ — 领域实体、状态、事件、策略定义               │</span><br><span class="line">├─────────────────────────────────────────────────────────┤</span><br><span class="line">│                    Infra 层                              │</span><br><span class="line">│   document/parser/ — 文档解析器（builtin/ppstructure）   │</span><br><span class="line">│   document/searchstore/ — 检索存储（Milvus/ES）          │</span><br><span class="line">│   document/rerank/ — 重排序（RRF/VikingDB）              │</span><br><span class="line">│   document/nl2sql/ — 自然语言转 SQL                      │</span><br><span class="line">│   document/messages2query/ — Query 改写                  │</span><br><span class="line">│   eventbus/ — 消息队列（nsq/kafka/rmq/pulsar/nats）     │</span><br><span class="line">│   ragflow/ — RAGFlow 外部集成                            │</span><br><span class="line">├─────────────────────────────────────────────────────────┤</span><br><span class="line">│                    Config 层                             │</span><br><span class="line">│   api/model/admin/config — Thrift 配置结构               │</span><br><span class="line">│   bizpkg/config/knowledge — 配置加载与默认值回退         │</span><br><span class="line">└─────────────────────────────────────────────────────────┘</span><br></pre></td></tr></table></figure>
 
-<h2 id="2-索引链路（写入）"><a href="#2-索引链路（写入）" class="headerlink" title="2. 索引链路（写入）"></a>2. 索引链路（写入）</h2><h3 id="2-1-整体流程"><a href="#2-1-整体流程" class="headerlink" title="2.1 整体流程"></a>2.1 整体流程</h3><p>文档从上传到可检索，经过以下步骤：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">[API 请求] CreateDocument</span><br><span class="line">  │</span><br><span class="line">  ├─ 1. BeforeCreate()  — 上传文件到对象存储（TOS）</span><br><span class="line">  ├─ 2. BuildDBModel()  — 生成文档 ID，构建 DB 模型</span><br><span class="line">  ├─ 3. InsertDBModel() — 事务写入数据库（含表格物理表创建）</span><br><span class="line">  ├─ 4. Indexing()      — 发送 IndexDocumentsEvent 到 MQ</span><br><span class="line">  │</span><br><span class="line">  └─ [MQ Consumer 异步处理]</span><br><span class="line">       ├─ indexDocuments     — 批量事件拆为单文档事件</span><br><span class="line">       │    └─ indexDocument  — 单文档索引全流程</span><br><span class="line">       │         ├─ validateDocumentStatus     — 校验可写性</span><br><span class="line">       │         ├─ beginIndexingProcess       — 状态 → Chunking</span><br><span class="line">       │         ├─ processDocumentParsing     — 解析文档</span><br><span class="line">       │         │    └─ parseManager.GetParser → parser.Parse</span><br><span class="line">       │         ├─ handleTableDocument         — 表格特殊处理</span><br><span class="line">       │         ├─ processDocumentChunks       — 批量分片（batch=100）</span><br><span class="line">       │         │    └─ batchProcessSlice</span><br><span class="line">       │         │         ├─ genMultiIDs</span><br><span class="line">       │         │         ├─ convertToSlices     — d2sMapping</span><br><span class="line">       │         │         ├─ upsertDataToTable   — 表类型写 RDB</span><br><span class="line">       │         │         ├─ storeSlicesInDB     — 写 slice 表</span><br><span class="line">       │         │         └─ indexSlicesInSearchStores — 写向量库+ES</span><br><span class="line">       │         │              ├─ manager.Create(collection)</span><br><span class="line">       │         │              └─ ss.Store(ssDocs)</span><br><span class="line">       │         └─ finalizeDocumentIndexing    — 状态 → Enable</span><br></pre></td></tr></table></figure>
 
-<h3 id="2-2-DocProcessor-接口"><a href="#2-2-DocProcessor-接口" class="headerlink" title="2.2 DocProcessor 接口"></a>2.2 DocProcessor 接口</h3><p><a href="../domain/knowledge/processor/interface.go">processor&#x2F;interface.go</a> 定义了文档处理的标准流程：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> DocProcessor <span class="keyword">interface</span> &#123;</span><br><span class="line">    BeforeCreate() <span class="type">error</span>         <span class="comment">// 获取数据源，上传到对象存储</span></span><br><span class="line">    BuildDBModel() <span class="type">error</span>         <span class="comment">// 构建文档记录</span></span><br><span class="line">    InsertDBModel() <span class="type">error</span>        <span class="comment">// 将文档记录插入数据库（事务）</span></span><br><span class="line">    Indexing() <span class="type">error</span>             <span class="comment">// 发起索引任务（发送 MQ 事件）</span></span><br><span class="line">    GetResp() []*entity.Document <span class="comment">// 返回处理后的文档信息</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>基础实现在 <a href="../domain/knowledge/processor/impl/base.go">processor&#x2F;impl&#x2F;base.go</a>，其中 <code>Indexing()</code> 方法发送事件：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *baseDocProcessor)</span></span> Indexing() <span class="type">error</span> &#123;</span><br><span class="line">    event := events.NewIndexDocumentsEvent(p.Documents[<span class="number">0</span>].KnowledgeID, p.Documents)</span><br><span class="line">    body, _ := sonic.Marshal(event)</span><br><span class="line">    <span class="keyword">return</span> p.producer.Send(p.ctx, body)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h3 id="2-3-事件驱动机制"><a href="#2-3-事件驱动机制" class="headerlink" title="2.3 事件驱动机制"></a>2.3 事件驱动机制</h3><p>索引采用<strong>两级事件</strong>机制：</p>
-<table>
-<thead>
-<tr>
-<th>事件类型</th>
-<th>触发场景</th>
-<th>处理逻辑</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>IndexDocuments</code></td>
-<td>CreateDocument 批量提交</td>
-<td>拆分为多个 <code>IndexDocument</code> 事件</td>
-</tr>
-<tr>
-<td><code>IndexDocument</code></td>
-<td>单文档索引</td>
-<td>解析 → 分片 → 写 DB + SearchStore</td>
-</tr>
-<tr>
-<td><code>IndexSlice</code></td>
-<td>单分片增量索引</td>
-<td>仅写搜索存储</td>
-</tr>
-<tr>
-<td><code>DeleteKnowledgeData</code></td>
-<td>删除知识库</td>
-<td>清理 SearchStore + DB 数据</td>
-</tr>
-<tr>
-<td><code>DocumentReview</code></td>
-<td>文档预览</td>
-<td>解析文档返回预览</td>
-</tr>
-</tbody></table>
-<p>事件定义在 <a href="../domain/knowledge/entity/event.go">entity&#x2F;event.go</a>，工厂函数在 <a href="../domain/knowledge/internal/events/events.go">internal&#x2F;events&#x2F;events.go</a>。</p>
-<p>消息队列支持 5 种后端（<a href="../infra/eventbus/impl/eventbus.go">infra&#x2F;eventbus&#x2F;impl&#x2F;eventbus.go</a>）：通过 <code>MQTypeKey</code> 环境变量选择 <code>nsq</code> &#x2F; <code>kafka</code> &#x2F; <code>rmq</code> &#x2F; <code>pulsar</code> &#x2F; <code>nats</code>。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>事件类型</th><th>触发场景</th><th>处理逻辑</th></tr></thead><tbody><tr><td><code>IndexDocuments</code></td><td>CreateDocument 批量提交</td><td>拆分为多个 <code>IndexDocument</code> 事件</td></tr><tr><td><code>IndexDocument</code></td><td>单文档索引</td><td>解析 → 分片 → 写 DB + SearchStore</td></tr><tr><td><code>IndexSlice</code></td><td>单分片增量索引</td><td>仅写搜索存储</td></tr><tr><td><code>DeleteKnowledgeData</code></td><td>删除知识库</td><td>清理 SearchStore + DB 数据</td></tr><tr><td><code>DocumentReview</code></td><td>文档预览</td><td>解析文档返回预览</td></tr></tbody></table>
+<p>事件定义在 <a href="../domain/knowledge/entity/event.go">entity/event.go</a>，工厂函数在 <a href="../domain/knowledge/internal/events/events.go">internal/events/events.go</a>。</p>
+<p>消息队列支持 5 种后端（<a href="../infra/eventbus/impl/eventbus.go">infra/eventbus/impl/eventbus.go</a>）：通过 <code>MQTypeKey</code> 环境变量选择 <code>nsq</code> / <code>kafka</code> / <code>rmq</code> / <code>pulsar</code> / <code>nats</code>。</p>
 <p>批量事件拆分时使用 <code>shardingKey=knowledgeID</code> 保证同一知识库的事件顺序性：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(k *knowledgeSVC)</span></span> indexDocuments(ctx context.Context, event *entity.Event) &#123;</span><br><span class="line">    <span class="keyword">for</span> i := <span class="keyword">range</span> event.Documents &#123;</span><br><span class="line">        doc := event.Documents[i]</span><br><span class="line">        e := events.NewIndexDocumentEvent(doc.KnowledgeID, doc)</span><br><span class="line">        msgData, _ := sonic.Marshal(e)</span><br><span class="line">        k.producer.Send(ctx, msgData, eventbus.WithShardingKey(strconv.FormatInt(doc.KnowledgeID, <span class="number">10</span>)))</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="2-4-文档解析（Parser）"><a href="#2-4-文档解析（Parser）" class="headerlink" title="2.4 文档解析（Parser）"></a>2.4 文档解析（Parser）</h3><h4 id="解析器管理器"><a href="#解析器管理器" class="headerlink" title="解析器管理器"></a>解析器管理器</h4><p><a href="../infra/document/parser/manager.go">infra&#x2F;document&#x2F;parser&#x2F;manager.go</a> 定义接口：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Manager <span class="keyword">interface</span> &#123;</span><br><span class="line">    GetParser(config *Config) (Parser, <span class="type">error</span>)</span><br><span class="line">    IsAutoAnnotationSupported() <span class="type">bool</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="go"><code><span class="line"><span style="color:#D73A49">func</span><span style="color:#24292E"> (</span><span style="color:#E36209">k </span><span style="color:#D73A49">*</span><span style="color:#6F42C1">knowledgeSVC</span><span style="color:#24292E">) </span><span style="color:#6F42C1">indexDocuments</span><span style="color:#24292E">(</span><span style="color:#E36209">ctx</span><span style="color:#6F42C1"> context</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Context</span><span style="color:#24292E">, </span><span style="color:#E36209">event</span><span style="color:#D73A49"> *</span><span style="color:#6F42C1">entity</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Event</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#24292E"> i </span><span style="color:#D73A49">:=</span><span style="color:#D73A49"> range</span><span style="color:#24292E"> event.Documents {</span></span>
+<span class="line"><span style="color:#24292E">        doc </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> event.Documents[i]</span></span>
+<span class="line"><span style="color:#24292E">        e </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> events.</span><span style="color:#6F42C1">NewIndexDocumentEvent</span><span style="color:#24292E">(doc.KnowledgeID, doc)</span></span>
+<span class="line"><span style="color:#24292E">        msgData, _ </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> sonic.</span><span style="color:#6F42C1">Marshal</span><span style="color:#24292E">(e)</span></span>
+<span class="line"><span style="color:#24292E">        k.producer.</span><span style="color:#6F42C1">Send</span><span style="color:#24292E">(ctx, msgData, eventbus.</span><span style="color:#6F42C1">WithShardingKey</span><span style="color:#24292E">(strconv.</span><span style="color:#6F42C1">FormatInt</span><span style="color:#24292E">(doc.KnowledgeID, </span><span style="color:#005CC5">10</span><span style="color:#24292E">)))</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h3 id="24-文档解析parser">2.4 文档解析（Parser）</h3>
+<h4 id="解析器管理器">解析器管理器</h4>
+<p><a href="../infra/document/parser/manager.go">infra/document/parser/manager.go</a> 定义接口：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="go"><code><span class="line"><span style="color:#D73A49">type</span><span style="color:#6F42C1"> Manager</span><span style="color:#D73A49"> interface</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6F42C1">    GetParser</span><span style="color:#24292E">(</span><span style="color:#E36209">config</span><span style="color:#D73A49"> *</span><span style="color:#6F42C1">Config</span><span style="color:#24292E">) (</span><span style="color:#6F42C1">Parser</span><span style="color:#24292E">, </span><span style="color:#D73A49">error</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#6F42C1">    IsAutoAnnotationSupported</span><span style="color:#24292E">() </span><span style="color:#D73A49">bool</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
 <p><code>Config</code> 包含文件扩展名、解析策略和分片策略：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Config <span class="keyword">struct</span> &#123;</span><br><span class="line">    FileExtension    FileExtension</span><br><span class="line">    ParsingStrategy  *ParsingStrategy</span><br><span class="line">    ChunkingStrategy *ChunkingStrategy</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="go"><code><span class="line"><span style="color:#D73A49">type</span><span style="color:#6F42C1"> Config</span><span style="color:#D73A49"> struct</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">    FileExtension    </span><span style="color:#6F42C1">FileExtension</span></span>
+<span class="line"><span style="color:#24292E">    ParsingStrategy  </span><span style="color:#D73A49">*</span><span style="color:#6F42C1">ParsingStrategy</span></span>
+<span class="line"><span style="color:#24292E">    ChunkingStrategy </span><span style="color:#D73A49">*</span><span style="color:#6F42C1">ChunkingStrategy</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h4 id="支持的文件类型">支持的文件类型</h4>
+<p><a href="../infra/document/parser/impl/builtin/manager.go">builtin/manager.go</a> 按扩展名分发：</p>
 
-<h4 id="支持的文件类型"><a href="#支持的文件类型" class="headerlink" title="支持的文件类型"></a>支持的文件类型</h4><p><a href="../infra/document/parser/impl/builtin/manager.go">builtin&#x2F;manager.go</a> 按扩展名分发：</p>
-<table>
-<thead>
-<tr>
-<th>扩展名</th>
-<th>解析方式</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>PDF</td>
-<td>Python 脚本（parse_pdf.py），支持 OCR</td>
-</tr>
-<tr>
-<td>TXT</td>
-<td>直接读取文本</td>
-</tr>
-<tr>
-<td>Markdown</td>
-<td>Markdown 解析 + OCR</td>
-</tr>
-<tr>
-<td>DOCX</td>
-<td>Python 脚本</td>
-</tr>
-<tr>
-<td>CSV</td>
-<td>CSV 解析</td>
-</tr>
-<tr>
-<td>XLSX</td>
-<td>Excel 解析</td>
-</tr>
-<tr>
-<td>JSON</td>
-<td>JSON 解析</td>
-</tr>
-<tr>
-<td>JPG&#x2F;JPEG&#x2F;PNG</td>
-<td>图片解析（调用多模态模型）</td>
-</tr>
-</tbody></table>
-<p>另有 <a href="../infra/document/parser/impl/ppstructure/manager.go">ppstructure&#x2F;manager.go</a> 基于 PP-StructureV2 的 PDF 解析实现。</p>
-<h4 id="分片策略"><a href="#分片策略" class="headerlink" title="分片策略"></a>分片策略</h4><p><a href="../domain/knowledge/entity/strategy.go">entity&#x2F;strategy.go</a> 定义：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> ChunkingStrategy <span class="keyword">struct</span> &#123;</span><br><span class="line">    ChunkType       ChunkType  <span class="comment">// Default(0) / Custom(1) / Leveled(2)</span></span><br><span class="line">    ChunkSize       <span class="type">int64</span>      <span class="comment">// 最大分片长度</span></span><br><span class="line">    Separator       <span class="type">string</span>     <span class="comment">// 分隔符</span></span><br><span class="line">    Overlap         <span class="type">int64</span>      <span class="comment">// 重叠比例（百分比）</span></span><br><span class="line">    TrimSpace       <span class="type">bool</span></span><br><span class="line">    TrimURLAndEmail <span class="type">bool</span></span><br><span class="line">    MaxDepth        <span class="type">int64</span>      <span class="comment">// 层级分片最大深度</span></span><br><span class="line">    SaveTitle       <span class="type">bool</span>       <span class="comment">// 保留层级标题</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>默认分片参数（<a href="../domain/knowledge/internal/consts/consts.go">internal&#x2F;consts&#x2F;consts.go</a>）：</p>
-<table>
-<thead>
-<tr>
-<th>参数</th>
-<th>默认值</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>ChunkSize</td>
-<td>800</td>
-</tr>
-<tr>
-<td>Separator</td>
-<td><code>\n</code></td>
-</tr>
-<tr>
-<td>Overlap</td>
-<td>10（即 10%）</td>
-</tr>
-</tbody></table>
-<h4 id="自定义分片算法"><a href="#自定义分片算法" class="headerlink" title="自定义分片算法"></a>自定义分片算法</h4><p><a href="../infra/document/parser/impl/builtin/chunk_custom.go">builtin&#x2F;chunk_custom.go</a> 核心逻辑：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>扩展名</th><th>解析方式</th></tr></thead><tbody><tr><td>PDF</td><td>Python 脚本（parse_pdf.py），支持 OCR</td></tr><tr><td>TXT</td><td>直接读取文本</td></tr><tr><td>Markdown</td><td>Markdown 解析 + OCR</td></tr><tr><td>DOCX</td><td>Python 脚本</td></tr><tr><td>CSV</td><td>CSV 解析</td></tr><tr><td>XLSX</td><td>Excel 解析</td></tr><tr><td>JSON</td><td>JSON 解析</td></tr><tr><td>JPG/JPEG/PNG</td><td>图片解析（调用多模态模型）</td></tr></tbody></table>
+<p>另有 <a href="../infra/document/parser/impl/ppstructure/manager.go">ppstructure/manager.go</a> 基于 PP-StructureV2 的 PDF 解析实现。</p>
+<h4 id="分片策略">分片策略</h4>
+<p><a href="../domain/knowledge/entity/strategy.go">entity/strategy.go</a> 定义：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="go"><code><span class="line"><span style="color:#D73A49">type</span><span style="color:#6F42C1"> ChunkingStrategy</span><span style="color:#D73A49"> struct</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">    ChunkType       </span><span style="color:#6F42C1">ChunkType</span><span style="color:#6A737D">  // Default(0) / Custom(1) / Leveled(2)</span></span>
+<span class="line"><span style="color:#24292E">    ChunkSize       </span><span style="color:#D73A49">int64</span><span style="color:#6A737D">      // 最大分片长度</span></span>
+<span class="line"><span style="color:#24292E">    Separator       </span><span style="color:#D73A49">string</span><span style="color:#6A737D">     // 分隔符</span></span>
+<span class="line"><span style="color:#24292E">    Overlap         </span><span style="color:#D73A49">int64</span><span style="color:#6A737D">      // 重叠比例（百分比）</span></span>
+<span class="line"><span style="color:#24292E">    TrimSpace       </span><span style="color:#D73A49">bool</span></span>
+<span class="line"><span style="color:#24292E">    TrimURLAndEmail </span><span style="color:#D73A49">bool</span></span>
+<span class="line"><span style="color:#24292E">    MaxDepth        </span><span style="color:#D73A49">int64</span><span style="color:#6A737D">      // 层级分片最大深度</span></span>
+<span class="line"><span style="color:#24292E">    SaveTitle       </span><span style="color:#D73A49">bool</span><span style="color:#6A737D">       // 保留层级标题</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>默认分片参数（<a href="../domain/knowledge/internal/consts/consts.go">internal/consts/consts.go</a>）：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>参数</th><th>默认值</th></tr></thead><tbody><tr><td>ChunkSize</td><td>800</td></tr><tr><td>Separator</td><td><code>\n</code></td></tr><tr><td>Overlap</td><td>10（即 10%）</td></tr></tbody></table>
+<h4 id="自定义分片算法">自定义分片算法</h4>
+<p><a href="../infra/document/parser/impl/builtin/chunk_custom.go">builtin/chunk_custom.go</a> 核心逻辑：</p>
 <ol>
 <li>按 <code>Separator</code> 切分文本</li>
 <li>逐段追加到 buffer，达到 <code>ChunkSize</code> 时生成分片</li>
-<li><code>Overlap &gt; 0</code> 时，从上一分片尾部按百分比截取重叠内容</li>
+<li><code>Overlap > 0</code> 时，从上一分片尾部按百分比截取重叠内容</li>
 <li>支持 <code>TrimSpace</code> 和 <code>TrimURLAndEmail</code> 清洗</li>
 </ol>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">getOverlap</span><span class="params">(runes []<span class="type">rune</span>, overlapRatio <span class="type">int64</span>, chunkSize <span class="type">int64</span>)</span></span> []<span class="type">rune</span> &#123;</span><br><span class="line">    overlap := <span class="type">int64</span>(<span class="type">float64</span>(chunkSize) * <span class="type">float64</span>(overlapRatio) / <span class="number">100</span>)</span><br><span class="line">    <span class="keyword">if</span> <span class="type">int64</span>(<span class="built_in">len</span>(runes)) &lt;= overlap &#123; <span class="keyword">return</span> runes &#125;</span><br><span class="line">    <span class="keyword">return</span> runes[<span class="built_in">len</span>(runes)-<span class="type">int</span>(overlap):]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="分片批处理"><a href="#分片批处理" class="headerlink" title="分片批处理"></a>分片批处理</h4><p><a href="../domain/knowledge/service/event_handle.go">event_handle.go</a> 中 <code>processDocumentChunks</code> 按 <code>batchSize=100</code> 批量处理：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(k *knowledgeSVC)</span></span> processDocumentChunks(ctx context.Context, doc *entity.Document,</span><br><span class="line">    parseResult []*schema.Document, cacheRecord *indexDocCacheRecord) <span class="type">error</span> &#123;</span><br><span class="line">    batchSize := <span class="number">100</span></span><br><span class="line">    progressbar := progressbar.New(ctx, doc.ID, <span class="type">int64</span>(<span class="built_in">len</span>(parseResult)*<span class="built_in">len</span>(k.searchStoreManagers)), k.cacheCli, <span class="literal">true</span>)</span><br><span class="line">    <span class="keyword">for</span> i := <span class="type">int</span>(cacheRecord.LastProcessedNumber); i &lt; <span class="built_in">len</span>(parseResult); i += batchSize &#123;</span><br><span class="line">        chunks := parseResult[i:min(i+batchSize, <span class="built_in">len</span>(parseResult))]</span><br><span class="line">        <span class="keyword">if</span> err := k.batchProcessSlice(ctx, doc, i, chunks, cacheRecord, progressbar); err != <span class="literal">nil</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> err</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="2-5-向量索引写入"><a href="#2-5-向量索引写入" class="headerlink" title="2.5 向量索引写入"></a>2.5 向量索引写入</h3><h4 id="SearchStore-接口"><a href="#SearchStore-接口" class="headerlink" title="SearchStore 接口"></a>SearchStore 接口</h4><p><a href="../infra/document/searchstore/searchstore.go">searchstore.go</a> 继承 eino 框架的 Indexer 和 Retriever：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> SearchStore <span class="keyword">interface</span> &#123;</span><br><span class="line">    indexer.Indexer     <span class="comment">// Store 方法 — 写入索引</span></span><br><span class="line">    retriever.Retriever  <span class="comment">// Retrieve 方法 — 检索</span></span><br><span class="line">    Delete(ctx context.Context, ids []<span class="type">string</span>) <span class="type">error</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="Manager-工厂"><a href="#Manager-工厂" class="headerlink" title="Manager 工厂"></a>Manager 工厂</h4><p><a href="../infra/document/searchstore/impl/impl.go">impl&#x2F;impl.go</a> 返回两个 Manager — ES（全文）+ 向量库：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">New</span><span class="params">(ctx context.Context, conf *config.KnowledgeConfig, es es.Client)</span></span> ([]Manager, <span class="type">error</span>) &#123;</span><br><span class="line">    esSearchstoreManager := elasticsearch.NewManager(...)</span><br><span class="line">    mgr, err := getVectorStore(ctx, conf) <span class="comment">// milvus / vikingdb / oceanbase</span></span><br><span class="line">    <span class="keyword">return</span> []searchstore.Manager&#123;esSearchstoreManager, mgr&#125;, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="go"><code><span class="line"><span style="color:#D73A49">func</span><span style="color:#6F42C1"> getOverlap</span><span style="color:#24292E">(</span><span style="color:#E36209">runes</span><span style="color:#24292E"> []</span><span style="color:#D73A49">rune</span><span style="color:#24292E">, </span><span style="color:#E36209">overlapRatio</span><span style="color:#D73A49"> int64</span><span style="color:#24292E">, </span><span style="color:#E36209">chunkSize</span><span style="color:#D73A49"> int64</span><span style="color:#24292E">) []</span><span style="color:#D73A49">rune</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">    overlap </span><span style="color:#D73A49">:=</span><span style="color:#D73A49"> int64</span><span style="color:#24292E">(</span><span style="color:#D73A49">float64</span><span style="color:#24292E">(chunkSize) </span><span style="color:#D73A49">*</span><span style="color:#D73A49"> float64</span><span style="color:#24292E">(overlapRatio) </span><span style="color:#D73A49">/</span><span style="color:#005CC5"> 100</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#D73A49"> int64</span><span style="color:#24292E">(</span><span style="color:#6F42C1">len</span><span style="color:#24292E">(runes)) </span><span style="color:#D73A49">&#x3C;=</span><span style="color:#24292E"> overlap { </span><span style="color:#D73A49">return</span><span style="color:#24292E"> runes }</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#24292E"> runes[</span><span style="color:#6F42C1">len</span><span style="color:#24292E">(runes)</span><span style="color:#D73A49">-int</span><span style="color:#24292E">(overlap):]</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h4 id="分片批处理">分片批处理</h4>
+<p><a href="../domain/knowledge/service/event_handle.go">event_handle.go</a> 中 <code>processDocumentChunks</code> 按 <code>batchSize=100</code> 批量处理：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="go"><code><span class="line"><span style="color:#D73A49">func</span><span style="color:#24292E"> (</span><span style="color:#E36209">k </span><span style="color:#D73A49">*</span><span style="color:#6F42C1">knowledgeSVC</span><span style="color:#24292E">) </span><span style="color:#6F42C1">processDocumentChunks</span><span style="color:#24292E">(</span><span style="color:#E36209">ctx</span><span style="color:#6F42C1"> context</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Context</span><span style="color:#24292E">, </span><span style="color:#E36209">doc</span><span style="color:#D73A49"> *</span><span style="color:#6F42C1">entity</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Document</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#E36209">    parseResult</span><span style="color:#24292E"> []</span><span style="color:#D73A49">*</span><span style="color:#6F42C1">schema</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Document</span><span style="color:#24292E">, </span><span style="color:#E36209">cacheRecord</span><span style="color:#D73A49"> *</span><span style="color:#6F42C1">indexDocCacheRecord</span><span style="color:#24292E">) </span><span style="color:#D73A49">error</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">    batchSize </span><span style="color:#D73A49">:=</span><span style="color:#005CC5"> 100</span></span>
+<span class="line"><span style="color:#24292E">    progressbar </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> progressbar.</span><span style="color:#6F42C1">New</span><span style="color:#24292E">(ctx, doc.ID, </span><span style="color:#D73A49">int64</span><span style="color:#24292E">(</span><span style="color:#6F42C1">len</span><span style="color:#24292E">(parseResult)</span><span style="color:#D73A49">*</span><span style="color:#6F42C1">len</span><span style="color:#24292E">(k.searchStoreManagers)), k.cacheCli, </span><span style="color:#005CC5">true</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#24292E"> i </span><span style="color:#D73A49">:=</span><span style="color:#D73A49"> int</span><span style="color:#24292E">(cacheRecord.LastProcessedNumber); i </span><span style="color:#D73A49">&#x3C;</span><span style="color:#6F42C1"> len</span><span style="color:#24292E">(parseResult); i </span><span style="color:#D73A49">+=</span><span style="color:#24292E"> batchSize {</span></span>
+<span class="line"><span style="color:#24292E">        chunks </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> parseResult[i:</span><span style="color:#6F42C1">min</span><span style="color:#24292E">(i</span><span style="color:#D73A49">+</span><span style="color:#24292E">batchSize, </span><span style="color:#6F42C1">len</span><span style="color:#24292E">(parseResult))]</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> err </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> k.</span><span style="color:#6F42C1">batchProcessSlice</span><span style="color:#24292E">(ctx, doc, i, chunks, cacheRecord, progressbar); err </span><span style="color:#D73A49">!=</span><span style="color:#005CC5"> nil</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">            return</span><span style="color:#24292E"> err</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#005CC5"> nil</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h3 id="25-向量索引写入">2.5 向量索引写入</h3>
+<h4 id="searchstore-接口">SearchStore 接口</h4>
+<p><a href="../infra/document/searchstore/searchstore.go">searchstore.go</a> 继承 eino 框架的 Indexer 和 Retriever：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="go"><code><span class="line"><span style="color:#D73A49">type</span><span style="color:#6F42C1"> SearchStore</span><span style="color:#D73A49"> interface</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6F42C1">    indexer</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Indexer</span><span style="color:#6A737D">     // Store 方法 — 写入索引</span></span>
+<span class="line"><span style="color:#6F42C1">    retriever</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Retriever</span><span style="color:#6A737D">  // Retrieve 方法 — 检索</span></span>
+<span class="line"><span style="color:#6F42C1">    Delete</span><span style="color:#24292E">(</span><span style="color:#E36209">ctx</span><span style="color:#6F42C1"> context</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Context</span><span style="color:#24292E">, </span><span style="color:#E36209">ids</span><span style="color:#24292E"> []</span><span style="color:#D73A49">string</span><span style="color:#24292E">) </span><span style="color:#D73A49">error</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h4 id="manager-工厂">Manager 工厂</h4>
+<p><a href="../infra/document/searchstore/impl/impl.go">impl/impl.go</a> 返回两个 Manager — ES（全文）+ 向量库：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="go"><code><span class="line"><span style="color:#D73A49">func</span><span style="color:#6F42C1"> New</span><span style="color:#24292E">(</span><span style="color:#E36209">ctx</span><span style="color:#6F42C1"> context</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Context</span><span style="color:#24292E">, </span><span style="color:#E36209">conf</span><span style="color:#D73A49"> *</span><span style="color:#6F42C1">config</span><span style="color:#24292E">.</span><span style="color:#6F42C1">KnowledgeConfig</span><span style="color:#24292E">, </span><span style="color:#E36209">es</span><span style="color:#6F42C1"> es</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Client</span><span style="color:#24292E">) ([]</span><span style="color:#6F42C1">Manager</span><span style="color:#24292E">, </span><span style="color:#D73A49">error</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">    esSearchstoreManager </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> elasticsearch.</span><span style="color:#6F42C1">NewManager</span><span style="color:#24292E">(</span><span style="color:#D73A49">...</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    mgr, err </span><span style="color:#D73A49">:=</span><span style="color:#6F42C1"> getVectorStore</span><span style="color:#24292E">(ctx, conf) </span><span style="color:#6A737D">// milvus / vikingdb / oceanbase</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#24292E"> []</span><span style="color:#6F42C1">searchstore</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Manager</span><span style="color:#24292E">{esSearchstoreManager, mgr}, </span><span style="color:#005CC5">nil</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
 <p>向量存储后端通过 <code>VECTOR_STORE_TYPE</code> 环境变量选择。</p>
-<h4 id="索引写入核心"><a href="#索引写入核心" class="headerlink" title="索引写入核心"></a>索引写入核心</h4><p><a href="../domain/knowledge/service/event_handle.go">event_handle.go</a> 的 <code>indexSlicesInSearchStores</code>：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(k *knowledgeSVC)</span></span> indexSlicesInSearchStores(ctx context.Context, doc *entity.Document,</span><br><span class="line">    collectionName <span class="type">string</span>, sliceEntities []*entity.Slice, ...) <span class="type">error</span> &#123;</span><br><span class="line"></span><br><span class="line">    fields, _ := k.mapSearchFields(doc)           <span class="comment">// fMapping 按文档类型定义字段</span></span><br><span class="line">    indexingFields := getIndexingFields(fields)    <span class="comment">// 标记 Indexing=true 的字段</span></span><br><span class="line">    ssDocs, _ := slices.TransformWithErrorCheck(sliceEntities, <span class="function"><span class="keyword">func</span><span class="params">(a *entity.Slice)</span></span> (*schema.Document, <span class="type">error</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> k.slice2Document(ctx, doc, a)       <span class="comment">// s2dMapping 转换</span></span><br><span class="line">    &#125;)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> _, manager := <span class="keyword">range</span> k.searchStoreManagers &#123;</span><br><span class="line">        manager.Create(ctx, &amp;searchstore.CreateRequest&#123;CollectionName: collectionName, Fields: fields&#125;)</span><br><span class="line">        ss, _ := manager.GetSearchStore(ctx, collectionName)</span><br><span class="line">        ss.Store(ctx, ssDocs,</span><br><span class="line">            searchstore.WithIndexerPartitionKey(fieldNameDocumentID),</span><br><span class="line">            searchstore.WithPartition(strconv.FormatInt(doc.ID, <span class="number">10</span>)),</span><br><span class="line">            searchstore.WithIndexingFields(indexingFields),</span><br><span class="line">            searchstore.WithProgressBar(progressBar),</span><br><span class="line">        )</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="Collection-命名"><a href="#Collection-命名" class="headerlink" title="Collection 命名"></a>Collection 命名</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">getCollectionName</span><span class="params">(knowledgeID <span class="type">int64</span>)</span></span> <span class="type">string</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> fmt.Sprintf(<span class="string">&quot;opencoze_%d&quot;</span>, knowledgeID)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<h4 id="索引写入核心">索引写入核心</h4>
+<p><a href="../domain/knowledge/service/event_handle.go">event_handle.go</a> 的 <code>indexSlicesInSearchStores</code>：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="go"><code><span class="line"><span style="color:#D73A49">func</span><span style="color:#24292E"> (</span><span style="color:#E36209">k </span><span style="color:#D73A49">*</span><span style="color:#6F42C1">knowledgeSVC</span><span style="color:#24292E">) </span><span style="color:#6F42C1">indexSlicesInSearchStores</span><span style="color:#24292E">(</span><span style="color:#E36209">ctx</span><span style="color:#6F42C1"> context</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Context</span><span style="color:#24292E">, </span><span style="color:#E36209">doc</span><span style="color:#D73A49"> *</span><span style="color:#6F42C1">entity</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Document</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#E36209">    collectionName</span><span style="color:#D73A49"> string</span><span style="color:#24292E">, </span><span style="color:#E36209">sliceEntities</span><span style="color:#24292E"> []</span><span style="color:#D73A49">*</span><span style="color:#6F42C1">entity</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Slice</span><span style="color:#24292E">, </span><span style="color:#D73A49">...</span><span style="color:#24292E">) </span><span style="color:#D73A49">error</span><span style="color:#24292E"> {</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    fields, _ </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> k.</span><span style="color:#6F42C1">mapSearchFields</span><span style="color:#24292E">(doc)           </span><span style="color:#6A737D">// fMapping 按文档类型定义字段</span></span>
+<span class="line"><span style="color:#24292E">    indexingFields </span><span style="color:#D73A49">:=</span><span style="color:#6F42C1"> getIndexingFields</span><span style="color:#24292E">(fields)    </span><span style="color:#6A737D">// 标记 Indexing=true 的字段</span></span>
+<span class="line"><span style="color:#24292E">    ssDocs, _ </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> slices.</span><span style="color:#6F42C1">TransformWithErrorCheck</span><span style="color:#24292E">(sliceEntities, </span><span style="color:#D73A49">func</span><span style="color:#24292E">(</span><span style="color:#E36209">a</span><span style="color:#D73A49"> *</span><span style="color:#6F42C1">entity</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Slice</span><span style="color:#24292E">) (</span><span style="color:#D73A49">*</span><span style="color:#6F42C1">schema</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Document</span><span style="color:#24292E">, </span><span style="color:#D73A49">error</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#24292E"> k.</span><span style="color:#6F42C1">slice2Document</span><span style="color:#24292E">(ctx, doc, a)       </span><span style="color:#6A737D">// s2dMapping 转换</span></span>
+<span class="line"><span style="color:#24292E">    })</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#24292E"> _, manager </span><span style="color:#D73A49">:=</span><span style="color:#D73A49"> range</span><span style="color:#24292E"> k.searchStoreManagers {</span></span>
+<span class="line"><span style="color:#24292E">        manager.</span><span style="color:#6F42C1">Create</span><span style="color:#24292E">(ctx, </span><span style="color:#D73A49">&#x26;</span><span style="color:#6F42C1">searchstore</span><span style="color:#24292E">.</span><span style="color:#6F42C1">CreateRequest</span><span style="color:#24292E">{CollectionName: collectionName, Fields: fields})</span></span>
+<span class="line"><span style="color:#24292E">        ss, _ </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> manager.</span><span style="color:#6F42C1">GetSearchStore</span><span style="color:#24292E">(ctx, collectionName)</span></span>
+<span class="line"><span style="color:#24292E">        ss.</span><span style="color:#6F42C1">Store</span><span style="color:#24292E">(ctx, ssDocs,</span></span>
+<span class="line"><span style="color:#24292E">            searchstore.</span><span style="color:#6F42C1">WithIndexerPartitionKey</span><span style="color:#24292E">(fieldNameDocumentID),</span></span>
+<span class="line"><span style="color:#24292E">            searchstore.</span><span style="color:#6F42C1">WithPartition</span><span style="color:#24292E">(strconv.</span><span style="color:#6F42C1">FormatInt</span><span style="color:#24292E">(doc.ID, </span><span style="color:#005CC5">10</span><span style="color:#24292E">)),</span></span>
+<span class="line"><span style="color:#24292E">            searchstore.</span><span style="color:#6F42C1">WithIndexingFields</span><span style="color:#24292E">(indexingFields),</span></span>
+<span class="line"><span style="color:#24292E">            searchstore.</span><span style="color:#6F42C1">WithProgressBar</span><span style="color:#24292E">(progressBar),</span></span>
+<span class="line"><span style="color:#24292E">        )</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#005CC5"> nil</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h4 id="collection-命名">Collection 命名</h4>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="go"><code><span class="line"><span style="color:#D73A49">func</span><span style="color:#6F42C1"> getCollectionName</span><span style="color:#24292E">(</span><span style="color:#E36209">knowledgeID</span><span style="color:#D73A49"> int64</span><span style="color:#24292E">) </span><span style="color:#D73A49">string</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#24292E"> fmt.</span><span style="color:#6F42C1">Sprintf</span><span style="color:#24292E">(</span><span style="color:#032F62">"opencoze_</span><span style="color:#005CC5">%d</span><span style="color:#032F62">"</span><span style="color:#24292E">, knowledgeID)</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
 <p>每个知识库对应一个 collection，文档 ID 作为 partition key。</p>
-<h4 id="字段映射（fMapping）"><a href="#字段映射（fMapping）" class="headerlink" title="字段映射（fMapping）"></a>字段映射（fMapping）</h4><p><a href="../domain/knowledge/service/convert.go">convert.go</a> 按文档类型定义搜索字段：</p>
-<table>
-<thead>
-<tr>
-<th>文档类型</th>
-<th>索引字段</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Text</td>
-<td><code>id</code>(主键), <code>creator_id</code>, <code>document_id</code>, <code>text_content</code>(indexing)</td>
-</tr>
-<tr>
-<td>Table</td>
-<td><code>id</code>, <code>creator_id</code>, <code>document_id</code>, + 各列字段(indexing) 或 <code>text_content</code>(压缩模式)</td>
-</tr>
-<tr>
-<td>Image</td>
-<td><code>id</code>, <code>creator_id</code>, <code>document_id</code>, <code>text_content</code>(indexing)</td>
-</tr>
-</tbody></table>
-<h3 id="2-6-文档状态管理"><a href="#2-6-文档状态管理" class="headerlink" title="2.6 文档状态管理"></a>2.6 文档状态管理</h3><p><a href="../domain/knowledge/entity/const.go">entity&#x2F;const.go</a> 定义文档状态：</p>
-<table>
-<thead>
-<tr>
-<th>状态</th>
-<th>值</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Init</td>
-<td>-1</td>
-<td>初始化</td>
-</tr>
-<tr>
-<td>Uploading</td>
-<td>0</td>
-<td>上传中</td>
-</tr>
-<tr>
-<td>Enable</td>
-<td>1</td>
-<td>生效（可检索）</td>
-</tr>
-<tr>
-<td>Disable</td>
-<td>2</td>
-<td>失效</td>
-</tr>
-<tr>
-<td>Deleted</td>
-<td>3</td>
-<td>已删除</td>
-</tr>
-<tr>
-<td>Chunking</td>
-<td>4</td>
-<td>切片中</td>
-</tr>
-<tr>
-<td>Failed</td>
-<td>9</td>
-<td>失败</td>
-</tr>
-</tbody></table>
-<p>索引过程状态流转：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Uploading → Chunking → Enable（成功）</span><br><span class="line">                    └→ Failed（不可重试错误）</span><br><span class="line">                    └→ Chunking（可重试错误，等待重试）</span><br></pre></td></tr></table></figure>
+<h4 id="字段映射fmapping">字段映射（fMapping）</h4>
+<p><a href="../domain/knowledge/service/convert.go">convert.go</a> 按文档类型定义搜索字段：</p>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>文档类型</th><th>索引字段</th></tr></thead><tbody><tr><td>Text</td><td><code>id</code>(主键), <code>creator_id</code>, <code>document_id</code>, <code>text_content</code>(indexing)</td></tr><tr><td>Table</td><td><code>id</code>, <code>creator_id</code>, <code>document_id</code>, + 各列字段(indexing) 或 <code>text_content</code>(压缩模式)</td></tr><tr><td>Image</td><td><code>id</code>, <code>creator_id</code>, <code>document_id</code>, <code>text_content</code>(indexing)</td></tr></tbody></table>
+<h3 id="26-文档状态管理">2.6 文档状态管理</h3>
+<p><a href="../domain/knowledge/entity/const.go">entity/const.go</a> 定义文档状态：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>状态</th><th>值</th><th>说明</th></tr></thead><tbody><tr><td>Init</td><td>-1</td><td>初始化</td></tr><tr><td>Uploading</td><td>0</td><td>上传中</td></tr><tr><td>Enable</td><td>1</td><td>生效（可检索）</td></tr><tr><td>Disable</td><td>2</td><td>失效</td></tr><tr><td>Deleted</td><td>3</td><td>已删除</td></tr><tr><td>Chunking</td><td>4</td><td>切片中</td></tr><tr><td>Failed</td><td>9</td><td>失败</td></tr></tbody></table>
+<p>索引过程状态流转：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>Uploading → Chunking → Enable（成功）</span></span>
+<span class="line"><span>                    └→ Failed（不可重试错误）</span></span>
+<span class="line"><span>                    └→ Chunking（可重试错误，等待重试）</span></span></code></pre>
 <p>错误处理逻辑（<a href="../domain/knowledge/service/event_handle.go">event_handle.go</a>）：</p>
 <ul>
 <li><code>ErrKnowledgeNonRetryableCode</code> → <code>DocumentStatusFailed</code></li>
 <li>其他错误 → <code>DocumentStatusChunking</code>（等待 MQ 重试）</li>
 <li>panic → <code>DocumentStatusFailed</code></li>
 </ul>
-<h3 id="2-7-Slice-状态"><a href="#2-7-Slice-状态" class="headerlink" title="2.7 Slice 状态"></a>2.7 Slice 状态</h3><table>
-<thead>
-<tr>
-<th>状态</th>
-<th>值</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Init</td>
-<td>0</td>
-<td>初始化</td>
-</tr>
-<tr>
-<td>FinishStore</td>
-<td>1</td>
-<td>SearchStore 存储完成</td>
-</tr>
-<tr>
-<td>Failed</td>
-<td>9</td>
-<td>失败</td>
-</tr>
-</tbody></table>
-<h2 id="3-检索链路（读取）"><a href="#3-检索链路（读取）" class="headerlink" title="3. 检索链路（读取）"></a>3. 检索链路（读取）</h2><h3 id="3-1-整体流程"><a href="#3-1-整体流程" class="headerlink" title="3.1 整体流程"></a>3.1 整体流程</h3><p>检索使用 eino 框架的 <code>compose.Chain</code> 编排 DAG，节点顺序为 <strong>查询改写 → 并行多路召回 → 重排 → 打包</strong>：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">Retrieve(ctx, request)</span><br><span class="line">  │</span><br><span class="line">  ├─ newRetrieveContext — 过滤启用知识库/文档，构建 RetrieveContext</span><br><span class="line">  │</span><br><span class="line">  └─ eino Chain 编译并执行:</span><br><span class="line">       │</span><br><span class="line">       1. queryRewriteNode</span><br><span class="line">       │    └─ EnableQueryRewrite 且有对话历史时</span><br><span class="line">       │       调用 rewriter.MessagesToQuery 改写查询</span><br><span class="line">       │</span><br><span class="line">       2. Parallel（并行多路召回）</span><br><span class="line">       │    ├─ passRequestContext — 透传 RetrieveContext</span><br><span class="line">       │    │</span><br><span class="line">       │    ├─ [RAGFlow 模式]</span><br><span class="line">       │    │    └─ ragflowRetrieveNode — 调用 RAGFlow API 检索</span><br><span class="line">       │    │</span><br><span class="line">       │    └─ [原始模式] 三路并行:</span><br><span class="line">       │         ├─ vectorRetrieveNode — 向量检索（Milvus）</span><br><span class="line">       │         │    └─ SearchType != FullText 时生效</span><br><span class="line">       │         ├─ esRetrieveNode — 全文检索（ES）</span><br><span class="line">       │         │    └─ SearchType != Semantic 时生效</span><br><span class="line">       │         └─ nl2SqlRetrieveNode — NL2SQL（表格）</span><br><span class="line">       │              └─ EnableNL2SQL 且有表格文档时生效</span><br><span class="line">       │</span><br><span class="line">       3. reRankNode</span><br><span class="line">       │    └─ 按 SearchType 组装通道 → reranker.Rerank</span><br><span class="line">       │       → MinScore 过滤</span><br><span class="line">       │</span><br><span class="line">       4. packResults</span><br><span class="line">            └─ slice ID 反查 DB → 按文档类型构造 RetrieveSlice</span><br><span class="line">               → 递增命中计数</span><br></pre></td></tr></table></figure>
+<h3 id="27-slice-状态">2.7 Slice 状态</h3>
 
-<h3 id="3-2-检索编排核心代码"><a href="#3-2-检索编排核心代码" class="headerlink" title="3.2 检索编排核心代码"></a>3.2 检索编排核心代码</h3><p><a href="../domain/knowledge/service/retrieve.go">retrieve.go</a> 的 <code>Retrieve</code> 方法：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(k *knowledgeSVC)</span></span> Retrieve(ctx context.Context, request *RetrieveRequest) (response *RetrieveResponse, err <span class="type">error</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(request.Query) == <span class="number">0</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> &amp;knowledgeModel.RetrieveResponse&#123;&#125;, <span class="literal">nil</span></span><br><span class="line">    &#125;</span><br><span class="line">    retrieveContext, err := k.newRetrieveContext(ctx, request)</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(retrieveContext.Documents) == <span class="number">0</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> &amp;knowledgeModel.RetrieveResponse&#123;&#125;, <span class="literal">nil</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    chain := compose.NewChain[*RetrieveContext, []*knowledgeModel.RetrieveSlice]()</span><br><span class="line">    rewriteNode := compose.InvokableLambda(k.queryRewriteNode)</span><br><span class="line">    passRequestContextNode := compose.InvokableLambda(k.passRequestContext)</span><br><span class="line">    reRankNode := compose.InvokableLambda(k.reRankNode)</span><br><span class="line">    packResult := compose.InvokableLambda(k.packResults)</span><br><span class="line"></span><br><span class="line">    parallelNode := compose.NewParallel().</span><br><span class="line">        AddLambda(<span class="string">&quot;passRequestContext&quot;</span>, passRequestContextNode)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> k.ragflowEnabled &#123;</span><br><span class="line">        parallelNode.AddLambda(<span class="string">&quot;ragflowRetrieveNode&quot;</span>, compose.InvokableLambda(k.ragflowRetrieveNode))</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        parallelNode.</span><br><span class="line">            AddLambda(<span class="string">&quot;vectorRetrieveNode&quot;</span>, vectorRetrieveNode).</span><br><span class="line">            AddLambda(<span class="string">&quot;esRetrieveNode&quot;</span>, EsRetrieveNode).</span><br><span class="line">            AddLambda(<span class="string">&quot;nl2SqlRetrieveNode&quot;</span>, Nl2SqlRetrieveNode)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    r, err := chain.</span><br><span class="line">        AppendLambda(rewriteNode).</span><br><span class="line">        AppendParallel(parallelNode).</span><br><span class="line">        AppendLambda(reRankNode).</span><br><span class="line">        AppendLambda(packResult).</span><br><span class="line">        Compile(ctx)</span><br><span class="line"></span><br><span class="line">    output, err := r.Invoke(ctx, retrieveContext)</span><br><span class="line">    <span class="keyword">return</span> &amp;RetrieveResponse&#123;RetrieveSlices: output&#125;, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h3 id="3-3-检索策略模型"><a href="#3-3-检索策略模型" class="headerlink" title="3.3 检索策略模型"></a>3.3 检索策略模型</h3><p><a href="../crossdomain/knowledge/model/knowledge.go">crossdomain&#x2F;knowledge&#x2F;model&#x2F;knowledge.go</a> 定义：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> RetrievalStrategy <span class="keyword">struct</span> &#123;</span><br><span class="line">    TopK              *<span class="type">int64</span>      <span class="comment">// 1-10，默认 3</span></span><br><span class="line">    MinScore          *<span class="type">float64</span>    <span class="comment">// 0.01-0.99，默认 0.5</span></span><br><span class="line">    MaxTokens         *<span class="type">int64</span></span><br><span class="line">    SelectType        SelectType  <span class="comment">// Auto(0) / OnDemand(1)</span></span><br><span class="line">    SearchType        SearchType  <span class="comment">// Semantic(0) / FullText(1) / Hybrid(2)</span></span><br><span class="line">    EnableQueryRewrite <span class="type">bool</span></span><br><span class="line">    EnableRerank       <span class="type">bool</span></span><br><span class="line">    EnableNL2SQL       <span class="type">bool</span></span><br><span class="line">    IsPersonalOnly     <span class="type">bool</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>状态</th><th>值</th><th>说明</th></tr></thead><tbody><tr><td>Init</td><td>0</td><td>初始化</td></tr><tr><td>FinishStore</td><td>1</td><td>SearchStore 存储完成</td></tr><tr><td>Failed</td><td>9</td><td>失败</td></tr></tbody></table>
+<h2 id="3-检索链路读取">3. 检索链路（读取）</h2>
+<h3 id="31-整体流程">3.1 整体流程</h3>
+<p>检索使用 eino 框架的 <code>compose.Chain</code> 编排 DAG，节点顺序为 <strong>查询改写 → 并行多路召回 → 重排 → 打包</strong>：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>Retrieve(ctx, request)</span></span>
+<span class="line"><span>  │</span></span>
+<span class="line"><span>  ├─ newRetrieveContext — 过滤启用知识库/文档，构建 RetrieveContext</span></span>
+<span class="line"><span>  │</span></span>
+<span class="line"><span>  └─ eino Chain 编译并执行:</span></span>
+<span class="line"><span>       │</span></span>
+<span class="line"><span>       1. queryRewriteNode</span></span>
+<span class="line"><span>       │    └─ EnableQueryRewrite 且有对话历史时</span></span>
+<span class="line"><span>       │       调用 rewriter.MessagesToQuery 改写查询</span></span>
+<span class="line"><span>       │</span></span>
+<span class="line"><span>       2. Parallel（并行多路召回）</span></span>
+<span class="line"><span>       │    ├─ passRequestContext — 透传 RetrieveContext</span></span>
+<span class="line"><span>       │    │</span></span>
+<span class="line"><span>       │    ├─ [RAGFlow 模式]</span></span>
+<span class="line"><span>       │    │    └─ ragflowRetrieveNode — 调用 RAGFlow API 检索</span></span>
+<span class="line"><span>       │    │</span></span>
+<span class="line"><span>       │    └─ [原始模式] 三路并行:</span></span>
+<span class="line"><span>       │         ├─ vectorRetrieveNode — 向量检索（Milvus）</span></span>
+<span class="line"><span>       │         │    └─ SearchType != FullText 时生效</span></span>
+<span class="line"><span>       │         ├─ esRetrieveNode — 全文检索（ES）</span></span>
+<span class="line"><span>       │         │    └─ SearchType != Semantic 时生效</span></span>
+<span class="line"><span>       │         └─ nl2SqlRetrieveNode — NL2SQL（表格）</span></span>
+<span class="line"><span>       │              └─ EnableNL2SQL 且有表格文档时生效</span></span>
+<span class="line"><span>       │</span></span>
+<span class="line"><span>       3. reRankNode</span></span>
+<span class="line"><span>       │    └─ 按 SearchType 组装通道 → reranker.Rerank</span></span>
+<span class="line"><span>       │       → MinScore 过滤</span></span>
+<span class="line"><span>       │</span></span>
+<span class="line"><span>       4. packResults</span></span>
+<span class="line"><span>            └─ slice ID 反查 DB → 按文档类型构造 RetrieveSlice</span></span>
+<span class="line"><span>               → 递增命中计数</span></span></code></pre>
+<h3 id="32-检索编排核心代码">3.2 检索编排核心代码</h3>
+<p><a href="../domain/knowledge/service/retrieve.go">retrieve.go</a> 的 <code>Retrieve</code> 方法：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="go"><code><span class="line"><span style="color:#D73A49">func</span><span style="color:#24292E"> (</span><span style="color:#E36209">k </span><span style="color:#D73A49">*</span><span style="color:#6F42C1">knowledgeSVC</span><span style="color:#24292E">) </span><span style="color:#6F42C1">Retrieve</span><span style="color:#24292E">(</span><span style="color:#E36209">ctx</span><span style="color:#6F42C1"> context</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Context</span><span style="color:#24292E">, </span><span style="color:#E36209">request</span><span style="color:#D73A49"> *</span><span style="color:#6F42C1">RetrieveRequest</span><span style="color:#24292E">) (</span><span style="color:#E36209">response</span><span style="color:#D73A49"> *</span><span style="color:#6F42C1">RetrieveResponse</span><span style="color:#24292E">, </span><span style="color:#E36209">err</span><span style="color:#D73A49"> error</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#6F42C1"> len</span><span style="color:#24292E">(request.Query) </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> 0</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#D73A49"> &#x26;</span><span style="color:#6F42C1">knowledgeModel</span><span style="color:#24292E">.</span><span style="color:#6F42C1">RetrieveResponse</span><span style="color:#24292E">{}, </span><span style="color:#005CC5">nil</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">    retrieveContext, err </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> k.</span><span style="color:#6F42C1">newRetrieveContext</span><span style="color:#24292E">(ctx, request)</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#6F42C1"> len</span><span style="color:#24292E">(retrieveContext.Documents) </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> 0</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#D73A49"> &#x26;</span><span style="color:#6F42C1">knowledgeModel</span><span style="color:#24292E">.</span><span style="color:#6F42C1">RetrieveResponse</span><span style="color:#24292E">{}, </span><span style="color:#005CC5">nil</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    chain </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> compose.</span><span style="color:#6F42C1">NewChain</span><span style="color:#24292E">[</span><span style="color:#D73A49">*</span><span style="color:#6F42C1">RetrieveContext</span><span style="color:#24292E">, []</span><span style="color:#D73A49">*</span><span style="color:#6F42C1">knowledgeModel</span><span style="color:#24292E">.</span><span style="color:#6F42C1">RetrieveSlice</span><span style="color:#24292E">]()</span></span>
+<span class="line"><span style="color:#24292E">    rewriteNode </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> compose.</span><span style="color:#6F42C1">InvokableLambda</span><span style="color:#24292E">(k.queryRewriteNode)</span></span>
+<span class="line"><span style="color:#24292E">    passRequestContextNode </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> compose.</span><span style="color:#6F42C1">InvokableLambda</span><span style="color:#24292E">(k.passRequestContext)</span></span>
+<span class="line"><span style="color:#24292E">    reRankNode </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> compose.</span><span style="color:#6F42C1">InvokableLambda</span><span style="color:#24292E">(k.reRankNode)</span></span>
+<span class="line"><span style="color:#24292E">    packResult </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> compose.</span><span style="color:#6F42C1">InvokableLambda</span><span style="color:#24292E">(k.packResults)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    parallelNode </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> compose.</span><span style="color:#6F42C1">NewParallel</span><span style="color:#24292E">().</span></span>
+<span class="line"><span style="color:#6F42C1">        AddLambda</span><span style="color:#24292E">(</span><span style="color:#032F62">"passRequestContext"</span><span style="color:#24292E">, passRequestContextNode)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> k.ragflowEnabled {</span></span>
+<span class="line"><span style="color:#24292E">        parallelNode.</span><span style="color:#6F42C1">AddLambda</span><span style="color:#24292E">(</span><span style="color:#032F62">"ragflowRetrieveNode"</span><span style="color:#24292E">, compose.</span><span style="color:#6F42C1">InvokableLambda</span><span style="color:#24292E">(k.ragflowRetrieveNode))</span></span>
+<span class="line"><span style="color:#24292E">    } </span><span style="color:#D73A49">else</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">        parallelNode.</span></span>
+<span class="line"><span style="color:#6F42C1">            AddLambda</span><span style="color:#24292E">(</span><span style="color:#032F62">"vectorRetrieveNode"</span><span style="color:#24292E">, vectorRetrieveNode).</span></span>
+<span class="line"><span style="color:#6F42C1">            AddLambda</span><span style="color:#24292E">(</span><span style="color:#032F62">"esRetrieveNode"</span><span style="color:#24292E">, EsRetrieveNode).</span></span>
+<span class="line"><span style="color:#6F42C1">            AddLambda</span><span style="color:#24292E">(</span><span style="color:#032F62">"nl2SqlRetrieveNode"</span><span style="color:#24292E">, Nl2SqlRetrieveNode)</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    r, err </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> chain.</span></span>
+<span class="line"><span style="color:#6F42C1">        AppendLambda</span><span style="color:#24292E">(rewriteNode).</span></span>
+<span class="line"><span style="color:#6F42C1">        AppendParallel</span><span style="color:#24292E">(parallelNode).</span></span>
+<span class="line"><span style="color:#6F42C1">        AppendLambda</span><span style="color:#24292E">(reRankNode).</span></span>
+<span class="line"><span style="color:#6F42C1">        AppendLambda</span><span style="color:#24292E">(packResult).</span></span>
+<span class="line"><span style="color:#6F42C1">        Compile</span><span style="color:#24292E">(ctx)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    output, err </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> r.</span><span style="color:#6F42C1">Invoke</span><span style="color:#24292E">(ctx, retrieveContext)</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#D73A49"> &#x26;</span><span style="color:#6F42C1">RetrieveResponse</span><span style="color:#24292E">{RetrieveSlices: output}, </span><span style="color:#005CC5">nil</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h3 id="33-检索策略模型">3.3 检索策略模型</h3>
+<p><a href="../crossdomain/knowledge/model/knowledge.go">crossdomain/knowledge/model/knowledge.go</a> 定义：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="go"><code><span class="line"><span style="color:#D73A49">type</span><span style="color:#6F42C1"> RetrievalStrategy</span><span style="color:#D73A49"> struct</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">    TopK              </span><span style="color:#D73A49">*int64</span><span style="color:#6A737D">      // 1-10，默认 3</span></span>
+<span class="line"><span style="color:#24292E">    MinScore          </span><span style="color:#D73A49">*float64</span><span style="color:#6A737D">    // 0.01-0.99，默认 0.5</span></span>
+<span class="line"><span style="color:#24292E">    MaxTokens         </span><span style="color:#D73A49">*int64</span></span>
+<span class="line"><span style="color:#24292E">    SelectType        </span><span style="color:#6F42C1">SelectType</span><span style="color:#6A737D">  // Auto(0) / OnDemand(1)</span></span>
+<span class="line"><span style="color:#24292E">    SearchType        </span><span style="color:#6F42C1">SearchType</span><span style="color:#6A737D">  // Semantic(0) / FullText(1) / Hybrid(2)</span></span>
+<span class="line"><span style="color:#24292E">    EnableQueryRewrite </span><span style="color:#D73A49">bool</span></span>
+<span class="line"><span style="color:#24292E">    EnableRerank       </span><span style="color:#D73A49">bool</span></span>
+<span class="line"><span style="color:#24292E">    EnableNL2SQL       </span><span style="color:#D73A49">bool</span></span>
+<span class="line"><span style="color:#24292E">    IsPersonalOnly     </span><span style="color:#D73A49">bool</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
 <p>SearchType 与召回通道的对应关系：</p>
-<table>
-<thead>
-<tr>
-<th>SearchType</th>
-<th>向量检索</th>
-<th>ES 全文</th>
-<th>NL2SQL</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Semantic (0)</td>
-<td>启用</td>
-<td>跳过</td>
-<td>按 EnableNL2SQL</td>
-</tr>
-<tr>
-<td>FullText (1)</td>
-<td>跳过</td>
-<td>启用</td>
-<td>按 EnableNL2SQL</td>
-</tr>
-<tr>
-<td>Hybrid (2)</td>
-<td>启用</td>
-<td>启用</td>
-<td>按 EnableNL2SQL</td>
-</tr>
-</tbody></table>
-<h3 id="3-4-查询改写（Query-Rewrite）"><a href="#3-4-查询改写（Query-Rewrite）" class="headerlink" title="3.4 查询改写（Query Rewrite）"></a>3.4 查询改写（Query Rewrite）</h3><p><a href="../infra/document/messages2query">infra&#x2F;document&#x2F;messages2query</a> 实现，使用 eino Chain 编排：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">消息列表 → JSON 序列化 → Jinja2 模板填充 → LLM 生成 → 返回改写后的 query</span><br></pre></td></tr></table></figure>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>SearchType</th><th>向量检索</th><th>ES 全文</th><th>NL2SQL</th></tr></thead><tbody><tr><td>Semantic (0)</td><td>启用</td><td>跳过</td><td>按 EnableNL2SQL</td></tr><tr><td>FullText (1)</td><td>跳过</td><td>启用</td><td>按 EnableNL2SQL</td></tr><tr><td>Hybrid (2)</td><td>启用</td><td>启用</td><td>按 EnableNL2SQL</td></tr></tbody></table>
+<h3 id="34-查询改写query-rewrite">3.4 查询改写（Query Rewrite）</h3>
+<p><a href="../infra/document/messages2query">infra/document/messages2query</a> 实现，使用 eino Chain 编排：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>消息列表 → JSON 序列化 → Jinja2 模板填充 → LLM 生成 → 返回改写后的 query</span></span></code></pre>
 <p>模板文件：<code>resources/conf/prompt/messages_to_query_template_jinja2.json</code></p>
 <p>触发条件（<a href="../domain/knowledge/service/retrieve.go">retrieve.go</a> <code>queryRewriteNode</code>）：</p>
 <ul>
-<li><code>len(ChatHistory) &gt; 1</code>（有对话历史）</li>
+<li><code>len(ChatHistory) > 1</code>（有对话历史）</li>
 <li><code>Strategy.EnableQueryRewrite == true</code></li>
 <li><code>rewriter != nil</code></li>
 </ul>
 <p>改写后的 query 存入 <code>RetrieveContext.RewrittenQuery</code>，后续召回节点优先使用。</p>
-<h3 id="3-5-向量检索（vectorRetrieveNode）"><a href="#3-5-向量检索（vectorRetrieveNode）" class="headerlink" title="3.5 向量检索（vectorRetrieveNode）"></a>3.5 向量检索（vectorRetrieveNode）</h3><p>从 <code>searchStoreManagers</code> 中筛选 <code>TypeVectorStore</code> 的 Manager（Milvus），调用 <code>retrieveChannels</code>：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(k *knowledgeSVC)</span></span> retrieveChannels(ctx context.Context, req *RetrieveContext,</span><br><span class="line">    manager searchstore.Manager) (result []*schema.Document, err <span class="type">error</span>) &#123;</span><br><span class="line">    query := req.OriginQuery</span><br><span class="line">    <span class="keyword">if</span> req.Strategy.EnableQueryRewrite &amp;&amp; req.RewrittenQuery != <span class="literal">nil</span> &#123;</span><br><span class="line">        query = *req.RewrittenQuery</span><br><span class="line">    &#125;</span><br><span class="line">    eg, ctx := errgroup.WithContext(ctx)</span><br><span class="line">    eg.SetLimit(<span class="number">2</span>)                            <span class="comment">// 并发上限 2</span></span><br><span class="line">    <span class="keyword">for</span> knowledgeID, knowledgeInfo := <span class="keyword">range</span> req.KnowledgeInfoMap &#123;</span><br><span class="line">        dsl := &amp;searchstore.DSL&#123;              <span class="comment">// document_id IN [...] 过滤</span></span><br><span class="line">            Op: searchstore.OpIn, Field: <span class="string">&quot;document_id&quot;</span>, Value: knowledgeInfo.DocumentIDs,</span><br><span class="line">        &#125;</span><br><span class="line">        opts := []retriever.Option&#123;</span><br><span class="line">            searchstore.WithRetrieverPartitionKey(fieldNameDocumentID),</span><br><span class="line">            searchstore.WithPartitions(partitions),</span><br><span class="line">            retriever.WithDSLInfo(dsl.DSL()),</span><br><span class="line">            retriever.WithTopK(<span class="number">8</span>),            <span class="comment">// 固定 TopK=8</span></span><br><span class="line">        &#125;</span><br><span class="line">        eg.Go(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> <span class="type">error</span> &#123;</span><br><span class="line">            ss, _ := manager.GetSearchStore(ctx, collectionName)</span><br><span class="line">            retrievedDocs, _ := ss.Retrieve(ctx, query, opts...)</span><br><span class="line">            mu.Lock(); result = <span class="built_in">append</span>(result, retrievedDocs...); mu.Unlock()</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">        &#125;)</span><br><span class="line">    &#125;</span><br><span class="line">    eg.Wait()</span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="Milvus-检索细节"><a href="#Milvus-检索细节" class="headerlink" title="Milvus 检索细节"></a>Milvus 检索细节</h4><p><a href="../infra/document/searchstore/impl/milvus/milvus_searchstore.go">milvus_searchstore.go</a>：</p>
+<h3 id="35-向量检索vectorretrievenode">3.5 向量检索（vectorRetrieveNode）</h3>
+<p>从 <code>searchStoreManagers</code> 中筛选 <code>TypeVectorStore</code> 的 Manager（Milvus），调用 <code>retrieveChannels</code>：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="go"><code><span class="line"><span style="color:#D73A49">func</span><span style="color:#24292E"> (</span><span style="color:#E36209">k </span><span style="color:#D73A49">*</span><span style="color:#6F42C1">knowledgeSVC</span><span style="color:#24292E">) </span><span style="color:#6F42C1">retrieveChannels</span><span style="color:#24292E">(</span><span style="color:#E36209">ctx</span><span style="color:#6F42C1"> context</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Context</span><span style="color:#24292E">, </span><span style="color:#E36209">req</span><span style="color:#D73A49"> *</span><span style="color:#6F42C1">RetrieveContext</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#E36209">    manager</span><span style="color:#6F42C1"> searchstore</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Manager</span><span style="color:#24292E">) (</span><span style="color:#E36209">result</span><span style="color:#24292E"> []</span><span style="color:#D73A49">*</span><span style="color:#6F42C1">schema</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Document</span><span style="color:#24292E">, </span><span style="color:#E36209">err</span><span style="color:#D73A49"> error</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">    query </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> req.OriginQuery</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> req.Strategy.EnableQueryRewrite </span><span style="color:#D73A49">&#x26;&#x26;</span><span style="color:#24292E"> req.RewrittenQuery </span><span style="color:#D73A49">!=</span><span style="color:#005CC5"> nil</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">        query </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> *</span><span style="color:#24292E">req.RewrittenQuery</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">    eg, ctx </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> errgroup.</span><span style="color:#6F42C1">WithContext</span><span style="color:#24292E">(ctx)</span></span>
+<span class="line"><span style="color:#24292E">    eg.</span><span style="color:#6F42C1">SetLimit</span><span style="color:#24292E">(</span><span style="color:#005CC5">2</span><span style="color:#24292E">)                            </span><span style="color:#6A737D">// 并发上限 2</span></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#24292E"> knowledgeID, knowledgeInfo </span><span style="color:#D73A49">:=</span><span style="color:#D73A49"> range</span><span style="color:#24292E"> req.KnowledgeInfoMap {</span></span>
+<span class="line"><span style="color:#24292E">        dsl </span><span style="color:#D73A49">:=</span><span style="color:#D73A49"> &#x26;</span><span style="color:#6F42C1">searchstore</span><span style="color:#24292E">.</span><span style="color:#6F42C1">DSL</span><span style="color:#24292E">{              </span><span style="color:#6A737D">// document_id IN [...] 过滤</span></span>
+<span class="line"><span style="color:#24292E">            Op: searchstore.OpIn, Field: </span><span style="color:#032F62">"document_id"</span><span style="color:#24292E">, Value: knowledgeInfo.DocumentIDs,</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">        opts </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> []</span><span style="color:#6F42C1">retriever</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Option</span><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#24292E">            searchstore.</span><span style="color:#6F42C1">WithRetrieverPartitionKey</span><span style="color:#24292E">(fieldNameDocumentID),</span></span>
+<span class="line"><span style="color:#24292E">            searchstore.</span><span style="color:#6F42C1">WithPartitions</span><span style="color:#24292E">(partitions),</span></span>
+<span class="line"><span style="color:#24292E">            retriever.</span><span style="color:#6F42C1">WithDSLInfo</span><span style="color:#24292E">(dsl.</span><span style="color:#6F42C1">DSL</span><span style="color:#24292E">()),</span></span>
+<span class="line"><span style="color:#24292E">            retriever.</span><span style="color:#6F42C1">WithTopK</span><span style="color:#24292E">(</span><span style="color:#005CC5">8</span><span style="color:#24292E">),            </span><span style="color:#6A737D">// 固定 TopK=8</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">        eg.</span><span style="color:#6F42C1">Go</span><span style="color:#24292E">(</span><span style="color:#D73A49">func</span><span style="color:#24292E">() </span><span style="color:#D73A49">error</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">            ss, _ </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> manager.</span><span style="color:#6F42C1">GetSearchStore</span><span style="color:#24292E">(ctx, collectionName)</span></span>
+<span class="line"><span style="color:#24292E">            retrievedDocs, _ </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> ss.</span><span style="color:#6F42C1">Retrieve</span><span style="color:#24292E">(ctx, query, opts</span><span style="color:#D73A49">...</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">            mu.</span><span style="color:#6F42C1">Lock</span><span style="color:#24292E">(); result </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> append</span><span style="color:#24292E">(result, retrievedDocs</span><span style="color:#D73A49">...</span><span style="color:#24292E">); mu.</span><span style="color:#6F42C1">Unlock</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#D73A49">            return</span><span style="color:#005CC5"> nil</span></span>
+<span class="line"><span style="color:#24292E">        })</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">    eg.</span><span style="color:#6F42C1">Wait</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#D73A49">    return</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h4 id="milvus-检索细节">Milvus 检索细节</h4>
+<p><a href="../infra/document/searchstore/impl/milvus/milvus_searchstore.go">milvus_searchstore.go</a>：</p>
 <ul>
 <li><strong>混合检索</strong>：当 Embedding 支持 dense+sparse 时，使用 <code>HybridSearch</code> + 服务端 RRF 融合</li>
 <li><strong>单路检索</strong>：仅 dense 或仅 sparse 时，使用 <code>Search</code></li>
-<li><strong>分数归一化</strong>：L2 距离 <code>1.0-(score-min)/base</code>，IP&#x2F;COSINE <code>(score+1)/2</code></li>
-<li><strong>DSL 转过滤</strong>：<code>dsl2Expr</code> 将 DSL 转为 Milvus 布尔表达式（<code>==</code>&#x2F;<code>!=</code>&#x2F;<code>LIKE</code>&#x2F;<code>IN</code>&#x2F;<code>AND</code>&#x2F;<code>OR</code>）</li>
+<li><strong>分数归一化</strong>：L2 距离 <code>1.0-(score-min)/base</code>，IP/COSINE <code>(score+1)/2</code></li>
+<li><strong>DSL 转过滤</strong>：<code>dsl2Expr</code> 将 DSL 转为 Milvus 布尔表达式（<code>==</code>/<code>!=</code>/<code>LIKE</code>/<code>IN</code>/<code>AND</code>/<code>OR</code>）</li>
 </ul>
-<h4 id="向量字段命名约定"><a href="#向量字段命名约定" class="headerlink" title="向量字段命名约定"></a>向量字段命名约定</h4><table>
-<thead>
-<tr>
-<th>用途</th>
-<th>命名规则</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Dense 向量字段</td>
-<td><code>dense_&#123;fieldName&#125;</code></td>
-</tr>
-<tr>
-<td>Dense 索引名</td>
-<td><code>index_dense_&#123;fieldName&#125;</code></td>
-</tr>
-<tr>
-<td>Sparse 向量字段</td>
-<td><code>sparse_&#123;fieldName&#125;</code></td>
-</tr>
-<tr>
-<td>Sparse 索引名</td>
-<td><code>index_sparse_&#123;fieldName&#125;</code></td>
-</tr>
-</tbody></table>
-<h4 id="索引默认参数"><a href="#索引默认参数" class="headerlink" title="索引默认参数"></a>索引默认参数</h4><table>
-<thead>
-<tr>
-<th>参数</th>
-<th>默认值</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Dense 索引类型</td>
-<td>HNSW (M&#x3D;30, efConstruction&#x3D;360)</td>
-</tr>
-<tr>
-<td>Dense 度量</td>
-<td>IP</td>
-</tr>
-<tr>
-<td>Sparse 索引类型</td>
-<td>SPARSE_INVERTED_INDEX (drop_ratio&#x3D;0.2)</td>
-</tr>
-<tr>
-<td>Sparse 度量</td>
-<td>IP</td>
-</tr>
-<tr>
-<td>ShardNum</td>
-<td>1</td>
-</tr>
-<tr>
-<td>BatchSize</td>
-<td>100</td>
-</tr>
-</tbody></table>
-<h3 id="3-6-全文检索（esRetrieveNode）"><a href="#3-6-全文检索（esRetrieveNode）" class="headerlink" title="3.6 全文检索（esRetrieveNode）"></a>3.6 全文检索（esRetrieveNode）</h3><p>从 <code>searchStoreManagers</code> 中筛选 <code>TypeTextStore</code> 的 Manager（Elasticsearch）。</p>
+<h4 id="向量字段命名约定">向量字段命名约定</h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>用途</th><th>命名规则</th></tr></thead><tbody><tr><td>Dense 向量字段</td><td><code>dense_{fieldName}</code></td></tr><tr><td>Dense 索引名</td><td><code>index_dense_{fieldName}</code></td></tr><tr><td>Sparse 向量字段</td><td><code>sparse_{fieldName}</code></td></tr><tr><td>Sparse 索引名</td><td><code>index_sparse_{fieldName}</code></td></tr></tbody></table>
+<h4 id="索引默认参数">索引默认参数</h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>参数</th><th>默认值</th></tr></thead><tbody><tr><td>Dense 索引类型</td><td>HNSW (M=30, efConstruction=360)</td></tr><tr><td>Dense 度量</td><td>IP</td></tr><tr><td>Sparse 索引类型</td><td>SPARSE_INVERTED_INDEX (drop_ratio=0.2)</td></tr><tr><td>Sparse 度量</td><td>IP</td></tr><tr><td>ShardNum</td><td>1</td></tr><tr><td>BatchSize</td><td>100</td></tr></tbody></table>
+<h3 id="36-全文检索esretrievenode">3.6 全文检索（esRetrieveNode）</h3>
+<p>从 <code>searchStoreManagers</code> 中筛选 <code>TypeTextStore</code> 的 Manager（Elasticsearch）。</p>
 <p><a href="../infra/document/searchstore/impl/elasticsearch/elasticsearch_searchstore.go">elasticsearch_searchstore.go</a>：</p>
 <ul>
 <li><strong>匹配方式</strong>：无 <code>MultiMatch</code> 时用 <code>MatchQuery(text_content, query)</code>；有 <code>MultiMatch</code> 时用多字段匹配（表格列检索）</li>
-<li><strong>DSL 转 ES Query</strong>：<code>travDSL</code> 将 DSL 映射为 ES 的 <code>Must</code>&#x2F;<code>MustNot</code>&#x2F;<code>Should</code>&#x2F;<code>Match</code>&#x2F;<code>Equal</code>&#x2F;<code>In</code></li>
+<li><strong>DSL 转 ES Query</strong>：<code>travDSL</code> 将 DSL 映射为 ES 的 <code>Must</code>/<code>MustNot</code>/<code>Should</code>/<code>Match</code>/<code>Equal</code>/<code>In</code></li>
 <li><strong>分数归一化</strong>：每条结果分数除以首条分数，归一化到 [0,1]</li>
 </ul>
-<h3 id="3-7-NL2SQL-检索（nl2SqlRetrieveNode）"><a href="#3-7-NL2SQL-检索（nl2SqlRetrieveNode）" class="headerlink" title="3.7 NL2SQL 检索（nl2SqlRetrieveNode）"></a>3.7 NL2SQL 检索（nl2SqlRetrieveNode）</h3><p><a href="../infra/document/nl2sql">infra&#x2F;document&#x2F;nl2sql</a> 实现，使用 eino Chain 编排：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">TableSchema → Markdown 表格描述 → Jinja2 模板 → LLM 生成 SQL → 解析 JSON 提取 SQL</span><br></pre></td></tr></table></figure>
-
+<h3 id="37-nl2sql-检索nl2sqlretrievenode">3.7 NL2SQL 检索（nl2SqlRetrieveNode）</h3>
+<p><a href="../infra/document/nl2sql">infra/document/nl2sql</a> 实现，使用 eino Chain 编排：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>TableSchema → Markdown 表格描述 → Jinja2 模板 → LLM 生成 SQL → 解析 JSON 提取 SQL</span></span></code></pre>
 <p>模板文件：<code>resources/conf/prompt/nl2sql_template_jinja2.json</code></p>
 <p>执行流程（<a href="../domain/knowledge/service/retrieve.go">retrieve.go</a> <code>nl2SqlExec</code>）：</p>
 <ol>
 <li><code>nl2Sql.NL2SQL</code> — LLM 生成 SQL（传入 ChatHistory + TableSchema）</li>
 <li><code>addSliceIdColumn</code> — 追加 <code>_knowledge_slice_id</code> 选择列</li>
-<li><code>sqlparser.ParseAndModifySQL</code> — 虚拟表名&#x2F;列名映射到物理 RDB 表</li>
+<li><code>sqlparser.ParseAndModifySQL</code> — 虚拟表名/列名映射到物理 RDB 表</li>
 <li><code>rdb.ExecuteSQL</code> — 执行 SQL</li>
 <li>遍历结果集行，逐列还原数据类型，序列化为 JSON 作为 <code>Document.Content</code></li>
 <li><code>d.WithScore(1)</code> — SQL 召回结果分数固定为 1</li>
@@ -551,450 +647,215 @@
 <li>文档类型为 <code>DocumentTypeTable</code></li>
 <li><code>Strategy.EnableNL2SQL == true</code></li>
 </ul>
-<h3 id="3-8-重排序（reRankNode）"><a href="#3-8-重排序（reRankNode）" class="headerlink" title="3.8 重排序（reRankNode）"></a>3.8 重排序（reRankNode）</h3><p><a href="../domain/knowledge/service/retrieve.go">retrieve.go</a> 的 <code>reRankNode</code> 按 SearchType 组装通道：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> retrieveResultArr [][]*rerank.Data</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> retrieveCtx.Strategy.EnableNL2SQL &#123;</span><br><span class="line">    retrieveResultArr = <span class="built_in">append</span>(retrieveResultArr, docs2RerankData(nl2SqlRetrieveResult))</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">switch</span> retrieveCtx.Strategy.SearchType &#123;</span><br><span class="line"><span class="keyword">case</span> SearchTypeSemantic:</span><br><span class="line">    retrieveResultArr = <span class="built_in">append</span>(retrieveResultArr, docs2RerankData(vectorRetrieveResult))</span><br><span class="line"><span class="keyword">case</span> SearchTypeFullText:</span><br><span class="line">    retrieveResultArr = <span class="built_in">append</span>(retrieveResultArr, docs2RerankData(esRetrieveResult))</span><br><span class="line"><span class="keyword">case</span> SearchTypeHybrid:</span><br><span class="line">    retrieveResultArr = <span class="built_in">append</span>(retrieveResultArr, docs2RerankData(vectorRetrieveResult))</span><br><span class="line">    retrieveResultArr = <span class="built_in">append</span>(retrieveResultArr, docs2RerankData(esRetrieveResult))</span><br><span class="line"><span class="keyword">default</span>:</span><br><span class="line">    retrieveResultArr = <span class="built_in">append</span>(retrieveResultArr, docs2RerankData(vectorRetrieveResult))</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">resp, err := k.reranker.Rerank(ctx, &amp;rerank.Request&#123;</span><br><span class="line">    Query: query,</span><br><span class="line">    Data:  retrieveResultArr,</span><br><span class="line">    TopN:  retrieveCtx.Strategy.TopK,</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line"><span class="comment">// MinScore 过滤</span></span><br><span class="line"><span class="keyword">for</span> _, item := <span class="keyword">range</span> resp.SortedData &#123;</span><br><span class="line">    <span class="keyword">if</span> item.Score &lt; ptr.From(retrieveCtx.Strategy.MinScore) &#123;</span><br><span class="line">        <span class="keyword">continue</span></span><br><span class="line">    &#125;</span><br><span class="line">    doc := item.Document</span><br><span class="line">    doc.WithScore(item.Score)</span><br><span class="line">    retrieveResult = <span class="built_in">append</span>(retrieveResult, doc)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>Reranker 实现选择（<a href="../infra/document/rerank/impl/impl.go">rerank&#x2F;impl&#x2F;impl.go</a>）：</p>
+<h3 id="38-重排序reranknode">3.8 重排序（reRankNode）</h3>
+<p><a href="../domain/knowledge/service/retrieve.go">retrieve.go</a> 的 <code>reRankNode</code> 按 SearchType 组装通道：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="go"><code><span class="line"><span style="color:#D73A49">var</span><span style="color:#24292E"> retrieveResultArr [][]</span><span style="color:#D73A49">*</span><span style="color:#6F42C1">rerank</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Data</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">if</span><span style="color:#24292E"> retrieveCtx.Strategy.EnableNL2SQL {</span></span>
+<span class="line"><span style="color:#24292E">    retrieveResultArr </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> append</span><span style="color:#24292E">(retrieveResultArr, </span><span style="color:#6F42C1">docs2RerankData</span><span style="color:#24292E">(nl2SqlRetrieveResult))</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"><span style="color:#D73A49">switch</span><span style="color:#24292E"> retrieveCtx.Strategy.SearchType {</span></span>
+<span class="line"><span style="color:#D73A49">case</span><span style="color:#24292E"> SearchTypeSemantic:</span></span>
+<span class="line"><span style="color:#24292E">    retrieveResultArr </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> append</span><span style="color:#24292E">(retrieveResultArr, </span><span style="color:#6F42C1">docs2RerankData</span><span style="color:#24292E">(vectorRetrieveResult))</span></span>
+<span class="line"><span style="color:#D73A49">case</span><span style="color:#24292E"> SearchTypeFullText:</span></span>
+<span class="line"><span style="color:#24292E">    retrieveResultArr </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> append</span><span style="color:#24292E">(retrieveResultArr, </span><span style="color:#6F42C1">docs2RerankData</span><span style="color:#24292E">(esRetrieveResult))</span></span>
+<span class="line"><span style="color:#D73A49">case</span><span style="color:#24292E"> SearchTypeHybrid:</span></span>
+<span class="line"><span style="color:#24292E">    retrieveResultArr </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> append</span><span style="color:#24292E">(retrieveResultArr, </span><span style="color:#6F42C1">docs2RerankData</span><span style="color:#24292E">(vectorRetrieveResult))</span></span>
+<span class="line"><span style="color:#24292E">    retrieveResultArr </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> append</span><span style="color:#24292E">(retrieveResultArr, </span><span style="color:#6F42C1">docs2RerankData</span><span style="color:#24292E">(esRetrieveResult))</span></span>
+<span class="line"><span style="color:#D73A49">default</span><span style="color:#24292E">:</span></span>
+<span class="line"><span style="color:#24292E">    retrieveResultArr </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> append</span><span style="color:#24292E">(retrieveResultArr, </span><span style="color:#6F42C1">docs2RerankData</span><span style="color:#24292E">(vectorRetrieveResult))</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">resp, err </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> k.reranker.</span><span style="color:#6F42C1">Rerank</span><span style="color:#24292E">(ctx, </span><span style="color:#D73A49">&#x26;</span><span style="color:#6F42C1">rerank</span><span style="color:#24292E">.</span><span style="color:#6F42C1">Request</span><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#24292E">    Query: query,</span></span>
+<span class="line"><span style="color:#24292E">    Data:  retrieveResultArr,</span></span>
+<span class="line"><span style="color:#24292E">    TopN:  retrieveCtx.Strategy.TopK,</span></span>
+<span class="line"><span style="color:#24292E">})</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// MinScore 过滤</span></span>
+<span class="line"><span style="color:#D73A49">for</span><span style="color:#24292E"> _, item </span><span style="color:#D73A49">:=</span><span style="color:#D73A49"> range</span><span style="color:#24292E"> resp.SortedData {</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> item.Score </span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E"> ptr.</span><span style="color:#6F42C1">From</span><span style="color:#24292E">(retrieveCtx.Strategy.MinScore) {</span></span>
+<span class="line"><span style="color:#D73A49">        continue</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">    doc </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> item.Document</span></span>
+<span class="line"><span style="color:#24292E">    doc.</span><span style="color:#6F42C1">WithScore</span><span style="color:#24292E">(item.Score)</span></span>
+<span class="line"><span style="color:#24292E">    retrieveResult </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> append</span><span style="color:#24292E">(retrieveResult, doc)</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>Reranker 实现选择（<a href="../infra/document/rerank/impl/impl.go">rerank/impl/impl.go</a>）：</p>
 <ul>
 <li><code>RerankType_RRF</code>（默认）→ 本地 RRF，无网络调用</li>
 <li><code>RerankType_VikingDB</code> → VikingDB 模型重排序服务</li>
 </ul>
-<p>RRF 算法详见 <a href="./rrf.md">docs&#x2F;rrf.md</a>。</p>
-<h3 id="3-9-结果打包（packResults）"><a href="#3-9-结果打包（packResults）" class="headerlink" title="3.9 结果打包（packResults）"></a>3.9 结果打包（packResults）</h3><p><a href="../domain/knowledge/service/retrieve.go">retrieve.go</a> 的 <code>packResults</code> 将重排后的 <code>schema.Document</code> 转为最终返回的 <code>RetrieveSlice</code>：</p>
+<p>RRF 算法详见 <a href="./rrf.md">docs/rrf.md</a>。</p>
+<h3 id="39-结果打包packresults">3.9 结果打包（packResults）</h3>
+<p><a href="../domain/knowledge/service/retrieve.go">retrieve.go</a> 的 <code>packResults</code> 将重排后的 <code>schema.Document</code> 转为最终返回的 <code>RetrieveSlice</code>：</p>
 <ol>
-<li><strong>区分有 ID &#x2F; 无 ID 结果</strong>：<ul>
+<li><strong>区分有 ID / 无 ID 结果</strong>：
+<ul>
 <li>有 ID：解析 slice ID，收集到 <code>sliceIDs</code> set</li>
-<li>无 ID（RAGFlow 外部结果）：直接用 MetaData 构造 <code>RetrieveSlice</code>，Score&#x3D;1</li>
+<li>无 ID（RAGFlow 外部结果）：直接用 MetaData 构造 <code>RetrieveSlice</code>，Score=1</li>
 </ul>
 </li>
 <li><strong>批量查询</strong>：<code>sliceRepo.MGetSlices</code> 取 slice 记录，<code>FilterEnableKnowledge</code> 过滤启用知识库，<code>MGetByID</code> 取文档</li>
 <li><strong>表格数据填充</strong>：表格类型 slice 调 <code>selectTableData</code> 从 RDB 取原始列数据</li>
 <li><strong>按文档类型构造内容</strong>：</li>
 </ol>
-<table>
-<thead>
-<tr>
-<th>文档类型</th>
-<th>RawContent 填充方式</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Text</td>
-<td><code>formatSliceContent</code> 格式化后取 text</td>
-</tr>
-<tr>
-<td>Table</td>
-<td>优先 sliceMap 原始列数据，否则回退 slice.Content</td>
-</tr>
-<tr>
-<td>Image</td>
-<td><code>&lt;img data-tos-key=URI&gt;</code> + 内容</td>
-</tr>
-</tbody></table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>文档类型</th><th>RawContent 填充方式</th></tr></thead><tbody><tr><td>Text</td><td><code>formatSliceContent</code> 格式化后取 text</td></tr><tr><td>Table</td><td>优先 sliceMap 原始列数据，否则回退 slice.Content</td></tr><tr><td>Image</td><td><code>&#x3C;img data-tos-key=URI></code> + 内容</td></tr></tbody></table>
 <ol start="5">
 <li><strong>生成文档 URL</strong>：<code>storage.GetObjectUrl</code> 生成可访问链接</li>
 <li><strong>递增命中计数</strong>：<code>sliceRepo.IncrementHitCount</code>（失败仅告警，不中断）</li>
 </ol>
-<h3 id="3-10-图片内容处理"><a href="#3-10-图片内容处理" class="headerlink" title="3.10 图片内容处理"></a>3.10 图片内容处理</h3><p><code>formatSliceContent</code>（retrieve.go L814）：将 slice 内容中的 <code>&lt;img data-tos-key=&quot;...&quot;&gt;</code> 标签替换为真实 TOS URL。</p>
+<h3 id="310-图片内容处理">3.10 图片内容处理</h3>
+<p><code>formatSliceContent</code>（retrieve.go L814）：将 slice 内容中的 <code>&#x3C;img data-tos-key="..."></code> 标签替换为真实 TOS URL。</p>
 <p><code>ParseFrontEndImageContent</code>（retrieve.go L862）：正则提取图片标签属性，倒序遍历保证偏移量替换不失效。</p>
-<h2 id="4-RAGFlow-集成"><a href="#4-RAGFlow-集成" class="headerlink" title="4. RAGFlow 集成"></a>4. RAGFlow 集成</h2><p>RAGFlow 是外部 RAG 服务，与原始三路召回<strong>互斥</strong>（通过 <code>ragflowEnabled</code> 控制，当前硬编码为 <code>false</code>）。</p>
-<h3 id="4-1-初始化"><a href="#4-1-初始化" class="headerlink" title="4.1 初始化"></a>4.1 初始化</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// application/application.go</span></span><br><span class="line">ragflowBaseURL := os.Getenv(<span class="string">&quot;RAGFLOW_BASE_URL&quot;</span>)</span><br><span class="line">ragflowAPIKey := os.Getenv(<span class="string">&quot;RAGFLOW_API_KEY&quot;</span>)</span><br><span class="line"><span class="keyword">if</span> ragflowBaseURL != <span class="string">&quot;&quot;</span> &amp;&amp; ragflowAPIKey != <span class="string">&quot;&quot;</span> &#123;</span><br><span class="line">    ragflowClient = ragflow.NewClient(ragflowBaseURL, ragflowAPIKey)</span><br><span class="line">    knowledgeComponents.RagflowClient = ragflowClient</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="4-ragflow-集成">4. RAGFlow 集成</h2>
+<p>RAGFlow 是外部 RAG 服务，与原始三路召回<strong>互斥</strong>（通过 <code>ragflowEnabled</code> 控制，当前硬编码为 <code>false</code>）。</p>
+<h3 id="41-初始化">4.1 初始化</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="go"><code><span class="line"><span style="color:#6A737D">// application/application.go</span></span>
+<span class="line"><span style="color:#24292E">ragflowBaseURL </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> os.</span><span style="color:#6F42C1">Getenv</span><span style="color:#24292E">(</span><span style="color:#032F62">"RAGFLOW_BASE_URL"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">ragflowAPIKey </span><span style="color:#D73A49">:=</span><span style="color:#24292E"> os.</span><span style="color:#6F42C1">Getenv</span><span style="color:#24292E">(</span><span style="color:#032F62">"RAGFLOW_API_KEY"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#D73A49">if</span><span style="color:#24292E"> ragflowBaseURL </span><span style="color:#D73A49">!=</span><span style="color:#032F62"> ""</span><span style="color:#D73A49"> &#x26;&#x26;</span><span style="color:#24292E"> ragflowAPIKey </span><span style="color:#D73A49">!=</span><span style="color:#032F62"> ""</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">    ragflowClient </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ragflow.</span><span style="color:#6F42C1">NewClient</span><span style="color:#24292E">(ragflowBaseURL, ragflowAPIKey)</span></span>
+<span class="line"><span style="color:#24292E">    knowledgeComponents.RagflowClient </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ragflowClient</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h3 id="42-检索参数">4.2 检索参数</h3>
+<p><code>ragflowRetrieveNode</code> 调用 RAGFlow Retrieve API，参数硬编码：</p>
 
-<h3 id="4-2-检索参数"><a href="#4-2-检索参数" class="headerlink" title="4.2 检索参数"></a>4.2 检索参数</h3><p><code>ragflowRetrieveNode</code> 调用 RAGFlow Retrieve API，参数硬编码：</p>
-<table>
-<thead>
-<tr>
-<th>参数</th>
-<th>值</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>TopK</td>
-<td>策略值，默认 8</td>
-</tr>
-<tr>
-<td>SimilarityThreshold</td>
-<td>0.3</td>
-</tr>
-<tr>
-<td>VectorSimilarityWeight</td>
-<td>0.7</td>
-</tr>
-<tr>
-<td>Page</td>
-<td>1</td>
-</tr>
-<tr>
-<td>PageNum</td>
-<td>10</td>
-</tr>
-</tbody></table>
-<h3 id="4-3-客户端能力"><a href="#4-3-客户端能力" class="headerlink" title="4.3 客户端能力"></a>4.3 客户端能力</h3><p><a href="../infra/ragflow/client.go">infra&#x2F;ragflow&#x2F;client.go</a> 封装了完整的 RAGFlow API：Dataset 管理、文档上传&#x2F;解析、Chunk 管理、检索等。</p>
-<h2 id="5-配置结构"><a href="#5-配置结构" class="headerlink" title="5. 配置结构"></a>5. 配置结构</h2><h3 id="5-1-KnowledgeConfig"><a href="#5-1-KnowledgeConfig" class="headerlink" title="5.1 KnowledgeConfig"></a>5.1 KnowledgeConfig</h3><p><a href="../api/model/admin/config/config.go">api&#x2F;model&#x2F;admin&#x2F;config&#x2F;config.go</a> 定义 Thrift 配置：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> KnowledgeConfig <span class="keyword">struct</span> &#123;</span><br><span class="line">    EmbeddingConfig *EmbeddingConfig  <span class="comment">// 嵌入模型</span></span><br><span class="line">    RerankConfig    *RerankConfig     <span class="comment">// 重排序</span></span><br><span class="line">    OcrConfig       *OCRConfig        <span class="comment">// OCR</span></span><br><span class="line">    ParserConfig    *ParserConfig     <span class="comment">// 解析器</span></span><br><span class="line">    BuiltinModelID  <span class="type">int64</span>             <span class="comment">// 内置模型 ID</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h3 id="5-2-配置加载与回退"><a href="#5-2-配置加载与回退" class="headerlink" title="5.2 配置加载与回退"></a>5.2 配置加载与回退</h3><p><a href="../bizpkg/config/knowledge/knowledge.go">bizpkg&#x2F;config&#x2F;knowledge&#x2F;knowledge.go</a> 从 KV 存储读取配置，不存在时回退到环境变量：</p>
-<table>
-<thead>
-<tr>
-<th>配置项</th>
-<th>环境变量</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Embedding 类型</td>
-<td><code>EMBEDDING_TYPE</code></td>
-</tr>
-<tr>
-<td>Embedding URL</td>
-<td><code>&#123;TYPE&#125;_EMBEDDING_BASE_URL</code></td>
-</tr>
-<tr>
-<td>Embedding APIKey</td>
-<td><code>&#123;TYPE&#125;_EMBEDDING_API_KEY</code></td>
-</tr>
-<tr>
-<td>Embedding 模型</td>
-<td><code>&#123;TYPE&#125;_EMBEDDING_MODEL</code></td>
-</tr>
-<tr>
-<td>Embedding 维度</td>
-<td><code>&#123;TYPE&#125;_EMBEDDING_DIMS</code></td>
-</tr>
-<tr>
-<td>Rerank 类型</td>
-<td><code>RERANK_TYPE</code></td>
-</tr>
-<tr>
-<td>VikingDB AK&#x2F;SK</td>
-<td><code>VIKINGDB_RERANK_*</code></td>
-</tr>
-<tr>
-<td>OCR 类型</td>
-<td><code>OCR_TYPE</code></td>
-</tr>
-<tr>
-<td>Parser 类型</td>
-<td><code>PARSER_TYPE</code></td>
-</tr>
-</tbody></table>
-<h3 id="5-3-Embedding-支持"><a href="#5-3-Embedding-支持" class="headerlink" title="5.3 Embedding 支持"></a>5.3 Embedding 支持</h3><p>支持的 Embedding 类型：<code>openai</code> &#x2F; <code>ark</code>（默认）&#x2F; <code>ollama</code> &#x2F; <code>gemini</code> &#x2F; <code>http</code></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>参数</th><th>值</th></tr></thead><tbody><tr><td>TopK</td><td>策略值，默认 8</td></tr><tr><td>SimilarityThreshold</td><td>0.3</td></tr><tr><td>VectorSimilarityWeight</td><td>0.7</td></tr><tr><td>Page</td><td>1</td></tr><tr><td>PageNum</td><td>10</td></tr></tbody></table>
+<h3 id="43-客户端能力">4.3 客户端能力</h3>
+<p><a href="../infra/ragflow/client.go">infra/ragflow/client.go</a> 封装了完整的 RAGFlow API：Dataset 管理、文档上传/解析、Chunk 管理、检索等。</p>
+<h2 id="5-配置结构">5. 配置结构</h2>
+<h3 id="51-knowledgeconfig">5.1 KnowledgeConfig</h3>
+<p><a href="../api/model/admin/config/config.go">api/model/admin/config/config.go</a> 定义 Thrift 配置：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="go"><code><span class="line"><span style="color:#D73A49">type</span><span style="color:#6F42C1"> KnowledgeConfig</span><span style="color:#D73A49"> struct</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">    EmbeddingConfig </span><span style="color:#D73A49">*</span><span style="color:#6F42C1">EmbeddingConfig</span><span style="color:#6A737D">  // 嵌入模型</span></span>
+<span class="line"><span style="color:#24292E">    RerankConfig    </span><span style="color:#D73A49">*</span><span style="color:#6F42C1">RerankConfig</span><span style="color:#6A737D">     // 重排序</span></span>
+<span class="line"><span style="color:#24292E">    OcrConfig       </span><span style="color:#D73A49">*</span><span style="color:#6F42C1">OCRConfig</span><span style="color:#6A737D">        // OCR</span></span>
+<span class="line"><span style="color:#24292E">    ParserConfig    </span><span style="color:#D73A49">*</span><span style="color:#6F42C1">ParserConfig</span><span style="color:#6A737D">     // 解析器</span></span>
+<span class="line"><span style="color:#24292E">    BuiltinModelID  </span><span style="color:#D73A49">int64</span><span style="color:#6A737D">             // 内置模型 ID</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h3 id="52-配置加载与回退">5.2 配置加载与回退</h3>
+<p><a href="../bizpkg/config/knowledge/knowledge.go">bizpkg/config/knowledge/knowledge.go</a> 从 KV 存储读取配置，不存在时回退到环境变量：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>配置项</th><th>环境变量</th></tr></thead><tbody><tr><td>Embedding 类型</td><td><code>EMBEDDING_TYPE</code></td></tr><tr><td>Embedding URL</td><td><code>{TYPE}_EMBEDDING_BASE_URL</code></td></tr><tr><td>Embedding APIKey</td><td><code>{TYPE}_EMBEDDING_API_KEY</code></td></tr><tr><td>Embedding 模型</td><td><code>{TYPE}_EMBEDDING_MODEL</code></td></tr><tr><td>Embedding 维度</td><td><code>{TYPE}_EMBEDDING_DIMS</code></td></tr><tr><td>Rerank 类型</td><td><code>RERANK_TYPE</code></td></tr><tr><td>VikingDB AK/SK</td><td><code>VIKINGDB_RERANK_*</code></td></tr><tr><td>OCR 类型</td><td><code>OCR_TYPE</code></td></tr><tr><td>Parser 类型</td><td><code>PARSER_TYPE</code></td></tr></tbody></table>
+<h3 id="53-embedding-支持">5.3 Embedding 支持</h3>
+<p>支持的 Embedding 类型：<code>openai</code> / <code>ark</code>（默认）/ <code>ollama</code> / <code>gemini</code> / <code>http</code></p>
 <p>是否启用 sparse 混合检索取决于 Embedding 是否同时支持 dense 和 sparse 向量。</p>
-<h3 id="5-4-向量存储后端选择"><a href="#5-4-向量存储后端选择" class="headerlink" title="5.4 向量存储后端选择"></a>5.4 向量存储后端选择</h3><p>通过 <code>VECTOR_STORE_TYPE</code> 环境变量选择：<code>milvus</code> &#x2F; <code>vikingdb</code> &#x2F; <code>oceanbase</code></p>
-<h3 id="5-5-消息队列选择"><a href="#5-5-消息队列选择" class="headerlink" title="5.5 消息队列选择"></a>5.5 消息队列选择</h3><p>通过 <code>MQTypeKey</code> 环境变量选择：<code>nsq</code> &#x2F; <code>kafka</code> &#x2F; <code>rmq</code> &#x2F; <code>pulsar</code> &#x2F; <code>nats</code></p>
-<h2 id="6-关键设计决策"><a href="#6-关键设计决策" class="headerlink" title="6. 关键设计决策"></a>6. 关键设计决策</h2><h3 id="6-1-事件驱动的异步索引"><a href="#6-1-事件驱动的异步索引" class="headerlink" title="6.1 事件驱动的异步索引"></a>6.1 事件驱动的异步索引</h3><p>索引采用 MQ 异步处理，API 请求只负责上传文件和发事件，不阻塞等待索引完成。两级事件机制（批量 → 单文档）保证同一知识库的事件顺序性。</p>
-<h3 id="6-2-eino-框架编排"><a href="#6-2-eino-框架编排" class="headerlink" title="6.2 eino 框架编排"></a>6.2 eino 框架编排</h3><p>检索链路使用 eino 的 <code>compose.Chain</code> + <code>compose.Parallel</code> 编排 DAG，各节点解耦可独立测试，并行召回自动并发执行。</p>
-<h3 id="6-3-多路召回-RRF-融合"><a href="#6-3-多路召回-RRF-融合" class="headerlink" title="6.3 多路召回 + RRF 融合"></a>6.3 多路召回 + RRF 融合</h3><p>默认三路召回（向量 + ES + NL2SQL）各自独立返回结果，通过 RRF 按排名融合。RRF 不依赖各系统分数的绝对值，只看相对排名，适合融合异构检索系统。</p>
-<h3 id="6-4-表格类型特殊处理"><a href="#6-4-表格类型特殊处理" class="headerlink" title="6.4 表格类型特殊处理"></a>6.4 表格类型特殊处理</h3><p>表格文档有独立的处理路径：</p>
+<h3 id="54-向量存储后端选择">5.4 向量存储后端选择</h3>
+<p>通过 <code>VECTOR_STORE_TYPE</code> 环境变量选择：<code>milvus</code> / <code>vikingdb</code> / <code>oceanbase</code></p>
+<h3 id="55-消息队列选择">5.5 消息队列选择</h3>
+<p>通过 <code>MQTypeKey</code> 环境变量选择：<code>nsq</code> / <code>kafka</code> / <code>rmq</code> / <code>pulsar</code> / <code>nats</code></p>
+<h2 id="6-关键设计决策">6. 关键设计决策</h2>
+<h3 id="61-事件驱动的异步索引">6.1 事件驱动的异步索引</h3>
+<p>索引采用 MQ 异步处理，API 请求只负责上传文件和发事件，不阻塞等待索引完成。两级事件机制（批量 → 单文档）保证同一知识库的事件顺序性。</p>
+<h3 id="62-eino-框架编排">6.2 eino 框架编排</h3>
+<p>检索链路使用 eino 的 <code>compose.Chain</code> + <code>compose.Parallel</code> 编排 DAG，各节点解耦可独立测试，并行召回自动并发执行。</p>
+<h3 id="63-多路召回--rrf-融合">6.3 多路召回 + RRF 融合</h3>
+<p>默认三路召回（向量 + ES + NL2SQL）各自独立返回结果，通过 RRF 按排名融合。RRF 不依赖各系统分数的绝对值，只看相对排名，适合融合异构检索系统。</p>
+<h3 id="64-表格类型特殊处理">6.4 表格类型特殊处理</h3>
+<p>表格文档有独立的处理路径：</p>
 <ul>
 <li>索引时：创建物理 RDB 表，列数据可压缩（<code>enableCompactTable</code>）</li>
 <li>检索时：支持 NL2SQL 直接查 RDB，或通过 <code>MultiMatch</code> 多列匹配</li>
 <li>打包时：从 RDB 取原始列数据填充 slice</li>
 </ul>
-<h3 id="6-5-RAGFlow-互斥模式"><a href="#6-5-RAGFlow-互斥模式" class="headerlink" title="6.5 RAGFlow 互斥模式"></a>6.5 RAGFlow 互斥模式</h3><p>RAGFlow 作为外部 RAG 服务，启用时完全替换原始三路召回，不做混合。当前 <code>ragflowEnabled</code> 硬编码为 <code>false</code>。</p>
-<h2 id="7-关键文件索引"><a href="#7-关键文件索引" class="headerlink" title="7. 关键文件索引"></a>7. 关键文件索引</h2><h3 id="索引链路"><a href="#索引链路" class="headerlink" title="索引链路"></a>索引链路</h3><table>
-<thead>
-<tr>
-<th>职责</th>
-<th>文件</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>API 入口</td>
-<td><a href="../application/knowledge/knowledge.go">application&#x2F;knowledge&#x2F;knowledge.go</a></td>
-</tr>
-<tr>
-<td>初始化装配</td>
-<td><a href="../application/knowledge/init.go">application&#x2F;knowledge&#x2F;init.go</a></td>
-</tr>
-<tr>
-<td>CreateDocument</td>
-<td><a href="../domain/knowledge/service/knowledge.go">domain&#x2F;knowledge&#x2F;service&#x2F;knowledge.go</a></td>
-</tr>
-<tr>
-<td>MQ 事件处理</td>
-<td><a href="../domain/knowledge/service/event_handle.go">domain&#x2F;knowledge&#x2F;service&#x2F;event_handle.go</a></td>
-</tr>
-<tr>
-<td>DocProcessor 接口</td>
-<td><a href="../domain/knowledge/processor/interface.go">domain&#x2F;knowledge&#x2F;processor&#x2F;interface.go</a></td>
-</tr>
-<tr>
-<td>DocProcessor 实现</td>
-<td><a href="../domain/knowledge/processor/impl/base.go">domain&#x2F;knowledge&#x2F;processor&#x2F;impl&#x2F;base.go</a></td>
-</tr>
-<tr>
-<td>事件定义</td>
-<td><a href="../domain/knowledge/entity/event.go">domain&#x2F;knowledge&#x2F;entity&#x2F;event.go</a></td>
-</tr>
-<tr>
-<td>事件工厂</td>
-<td><a href="../domain/knowledge/internal/events/events.go">domain&#x2F;knowledge&#x2F;internal&#x2F;events&#x2F;events.go</a></td>
-</tr>
-<tr>
-<td>文档状态</td>
-<td><a href="../domain/knowledge/entity/const.go">domain&#x2F;knowledge&#x2F;entity&#x2F;const.go</a></td>
-</tr>
-<tr>
-<td>分片策略</td>
-<td><a href="../domain/knowledge/entity/strategy.go">domain&#x2F;knowledge&#x2F;entity&#x2F;strategy.go</a></td>
-</tr>
-<tr>
-<td>默认参数</td>
-<td><a href="../domain/knowledge/internal/consts/consts.go">domain&#x2F;knowledge&#x2F;internal&#x2F;consts&#x2F;consts.go</a></td>
-</tr>
-</tbody></table>
-<h3 id="检索链路"><a href="#检索链路" class="headerlink" title="检索链路"></a>检索链路</h3><table>
-<thead>
-<tr>
-<th>职责</th>
-<th>文件</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>检索编排</td>
-<td><a href="../domain/knowledge/service/retrieve.go">domain&#x2F;knowledge&#x2F;service&#x2F;retrieve.go</a></td>
-</tr>
-<tr>
-<td>服务接口</td>
-<td><a href="../domain/knowledge/service/interface.go">domain&#x2F;knowledge&#x2F;service&#x2F;interface.go</a></td>
-</tr>
-<tr>
-<td>类型转换</td>
-<td><a href="../domain/knowledge/service/convert.go">domain&#x2F;knowledge&#x2F;service&#x2F;convert.go</a></td>
-</tr>
-<tr>
-<td>可写性校验</td>
-<td><a href="../domain/knowledge/service/validate.go">domain&#x2F;knowledge&#x2F;service&#x2F;validate.go</a></td>
-</tr>
-<tr>
-<td>检索模型</td>
-<td><a href="../crossdomain/knowledge/model/knowledge.go">crossdomain&#x2F;knowledge&#x2F;model&#x2F;knowledge.go</a></td>
-</tr>
-</tbody></table>
-<h3 id="Infra-层"><a href="#Infra-层" class="headerlink" title="Infra 层"></a>Infra 层</h3><table>
-<thead>
-<tr>
-<th>职责</th>
-<th>文件</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Parser 接口</td>
-<td><a href="../infra/document/parser/manager.go">infra&#x2F;document&#x2F;parser&#x2F;manager.go</a></td>
-</tr>
-<tr>
-<td>Parser builtin</td>
-<td><a href="../infra/document/parser/impl/builtin/">infra&#x2F;document&#x2F;parser&#x2F;impl&#x2F;builtin&#x2F;</a></td>
-</tr>
-<tr>
-<td>Parser ppstructure</td>
-<td><a href="../infra/document/parser/impl/ppstructure/">infra&#x2F;document&#x2F;parser&#x2F;impl&#x2F;ppstructure&#x2F;</a></td>
-</tr>
-<tr>
-<td>SearchStore 接口</td>
-<td><a href="../infra/document/searchstore/searchstore.go">infra&#x2F;document&#x2F;searchstore&#x2F;searchstore.go</a></td>
-</tr>
-<tr>
-<td>Manager 接口</td>
-<td><a href="../infra/document/searchstore/manager.go">infra&#x2F;document&#x2F;searchstore&#x2F;manager.go</a></td>
-</tr>
-<tr>
-<td>DSL 定义</td>
-<td><a href="../infra/document/searchstore/dsl.go">infra&#x2F;document&#x2F;searchstore&#x2F;dsl.go</a></td>
-</tr>
-<tr>
-<td>Manager 工厂</td>
-<td><a href="../infra/document/searchstore/impl/impl.go">infra&#x2F;document&#x2F;searchstore&#x2F;impl&#x2F;impl.go</a></td>
-</tr>
-<tr>
-<td>Milvus 实现</td>
-<td><a href="../infra/document/searchstore/impl/milvus/">infra&#x2F;document&#x2F;searchstore&#x2F;impl&#x2F;milvus&#x2F;</a></td>
-</tr>
-<tr>
-<td>ES 实现</td>
-<td><a href="../infra/document/searchstore/impl/elasticsearch/">infra&#x2F;document&#x2F;searchstore&#x2F;impl&#x2F;elasticsearch&#x2F;</a></td>
-</tr>
-<tr>
-<td>Reranker 接口</td>
-<td><a href="../infra/document/rerank/rerank.go">infra&#x2F;document&#x2F;rerank&#x2F;rerank.go</a></td>
-</tr>
-<tr>
-<td>RRF 实现</td>
-<td><a href="../infra/document/rerank/impl/rrf/rrf.go">infra&#x2F;document&#x2F;rerank&#x2F;impl&#x2F;rrf&#x2F;rrf.go</a></td>
-</tr>
-<tr>
-<td>Reranker 工厂</td>
-<td><a href="../infra/document/rerank/impl/impl.go">infra&#x2F;document&#x2F;rerank&#x2F;impl&#x2F;impl.go</a></td>
-</tr>
-<tr>
-<td>NL2SQL</td>
-<td><a href="../infra/document/nl2sql/">infra&#x2F;document&#x2F;nl2sql&#x2F;</a></td>
-</tr>
-<tr>
-<td>MessagesToQuery</td>
-<td><a href="../infra/document/messages2query/">infra&#x2F;document&#x2F;messages2query&#x2F;</a></td>
-</tr>
-<tr>
-<td>EventBus</td>
-<td><a href="../infra/eventbus/">infra&#x2F;eventbus&#x2F;</a></td>
-</tr>
-<tr>
-<td>RAGFlow</td>
-<td><a href="../infra/ragflow/client.go">infra&#x2F;ragflow&#x2F;client.go</a></td>
-</tr>
-</tbody></table>
-<h3 id="配置层"><a href="#配置层" class="headerlink" title="配置层"></a>配置层</h3><table>
-<thead>
-<tr>
-<th>职责</th>
-<th>文件</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Thrift 配置</td>
-<td><a href="../api/model/admin/config/config.go">api&#x2F;model&#x2F;admin&#x2F;config&#x2F;config.go</a></td>
-</tr>
-<tr>
-<td>配置加载</td>
-<td><a href="../bizpkg/config/knowledge/knowledge.go">bizpkg&#x2F;config&#x2F;knowledge&#x2F;knowledge.go</a></td>
-</tr>
-</tbody></table>
-<h2 id="8-小结"><a href="#8-小结" class="headerlink" title="8. 小结"></a>8. 小结</h2><table>
-<thead>
-<tr>
-<th>维度</th>
-<th>实现</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>索引方式</td>
-<td>事件驱动异步索引（MQ），两级事件保证顺序</td>
-</tr>
-<tr>
-<td>文档解析</td>
-<td>支持 PDF&#x2F;TXT&#x2F;MD&#x2F;DOCX&#x2F;CSV&#x2F;XLSX&#x2F;JSON&#x2F;图片，builtin + ppstructure</td>
-</tr>
-<tr>
-<td>分片策略</td>
-<td>Default&#x2F;Custom&#x2F;Leveled，默认 ChunkSize&#x3D;800, Separator&#x3D;\n, Overlap&#x3D;10%</td>
-</tr>
-<tr>
-<td>向量存储</td>
-<td>Milvus（默认）&#x2F; VikingDB &#x2F; OceanBase，支持 dense+sparse 混合</td>
-</tr>
-<tr>
-<td>全文检索</td>
-<td>Elasticsearch</td>
-</tr>
-<tr>
-<td>检索编排</td>
-<td>eino compose.Chain DAG，查询改写 → 并行多路召回 → 重排 → 打包</td>
-</tr>
-<tr>
-<td>多路召回</td>
-<td>向量 + ES + NL2SQL（表格），按 SearchType 路由</td>
-</tr>
-<tr>
-<td>重排序</td>
-<td>RRF（默认，本地）&#x2F; VikingDB（模型服务），详见 rrf.md</td>
-</tr>
-<tr>
-<td>Query 改写</td>
-<td>LLM 基于对话历史改写，Jinja2 模板</td>
-</tr>
-<tr>
-<td>NL2SQL</td>
-<td>LLM 生成 SQL 查 RDB，表格类型专属</td>
-</tr>
-<tr>
-<td>外部集成</td>
-<td>RAGFlow（互斥模式，当前未启用）</td>
-</tr>
-<tr>
-<td>消息队列</td>
-<td>nsq &#x2F; kafka &#x2F; rmq &#x2F; pulsar &#x2F; nats</td>
-</tr>
-<tr>
-<td>并发控制</td>
-<td>召回 errgroup limit&#x3D;2，批量索引 batchSize&#x3D;100</td>
-</tr>
-</tbody></table>
-
-
-            
-            
-            <blockquote>
-                <p>
-                本文地址：
-                <a href="https://gycxxx.github.io/rag/" target="_blank" rel="external">https://gycxxx.github.io/rag/</a>
-                </p>
-                <footer><cite><a href="https://gycxxx.github.io">@源码深读笔记</a></cite></footer>
-            </blockquote>
-            </div>
-            
-<nav class="post-nav">
-  
-    <div class="waves-block waves-effect prev fl">
-      <a href="/springcloud/" id="post-prev" class="post-nav-link">
-        <div class="tips"><i class="icon icon-angle-left icon-lg icon-pr"></i> Prev</div>
-        <h4 class="title">Spring Cloud 源码深度学习笔记</h4>
-      </a>
-    </div>
-  
-
-  
-    <div class="waves-block waves-effect next fr">
-      <a href="/rrf/" id="post-next" class="post-nav-link">
-        <div class="tips">Next <i class="icon icon-angle-right icon-lg icon-pl"></i></div>
-        <h4 class="title">RRF（Reciprocal Rank Fusion，倒数排名融合）说明</h4>
-      </a>
-    </div>
-  
-</nav>
-
-
-            
-            
-
-
-
-        </div>
-    </div>
-</article>
-
-    </div>
-  </main>
-<div class="mask" id="mask"></div>
-<a href="javascript:;" id="gotop" class="waves-effect waves-circle waves-light"><span class="icon icon-lg icon-chevron-up"></span></a>
-
-<script src="/js/waves.min.js"></script>
-
-
-<script src="/js/main.js"></script>
-
-
-
-
-<div class="search-panel" id="search-panel">
-    <ul class="search-result" id="search-result"></ul>
-</div>
-<script type="text/template" id="search-tpl">
-<li class="item">
-    <a href="/{path}" class="waves-block waves-effect">
-        <div class="title ellipsis" title="{title}">{title}</div>
-        <div class="flex-row flex-middle">
-            <div class="tags ellipsis">
-                {tags}
-            </div>
-            <time class="flex-col time">{date}</time>
-        </div>
-    </a>
-</li>
-</script>
-
-
-<script src="/js/search.js"></script>
+<h3 id="65-ragflow-互斥模式">6.5 RAGFlow 互斥模式</h3>
+<p>RAGFlow 作为外部 RAG 服务，启用时完全替换原始三路召回，不做混合。当前 <code>ragflowEnabled</code> 硬编码为 <code>false</code>。</p>
+<h2 id="7-关键文件索引">7. 关键文件索引</h2>
+<h3 id="索引链路">索引链路</h3>
 
 
 
@@ -1005,49 +866,235 @@
 
 
 
-<!-- hexo injector body_end start --><script src="/js/mermaid.min.js"></script>
-<script>(function () {
-  function restore(node) {
-    var raw = node.getAttribute("data-mermaid-source");
-    if (raw != null) { node.textContent = raw; }
-  }
-  function render() {
-    var codes = document.querySelectorAll("pre > code.highlight.mermaid, pre > code.mermaid");
-    for (var i = 0; i < codes.length; i++) {
-      var code = codes[i];
-      var pre = code.parentNode;
-      var box = document.createElement("div");
-      box.className = "mermaid";
-      box.setAttribute("data-mermaid-source", code.textContent);
-      box.textContent = code.textContent;
-      pre.parentNode.replaceChild(box, pre);
-    }
-    var nodes = document.querySelectorAll(".mermaid");
-    if (!window.mermaid || !nodes.length) { return; }
-    window.mermaid.initialize({
-      startOnLoad: false,
-      theme: "default",
-      logLevel: 4,
-      securityLevel: "loose",
-      flowchart: { curve: "linear" },
-      gantt: { axisFormat: "%m/%d/%Y" },
-      sequence: { actorMargin: 50 }
-    });
-    window.mermaid.run({ nodes: nodes, suppressErrors: true })
-      .then(function () {
-        for (var j = 0; j < nodes.length; j++) {
-          if (!nodes[j].querySelector("svg")) { restore(nodes[j]); }
-        }
-      })
-      .catch(function (err) {
-        if (window.console && console.error) { console.error(err); }
-        for (var k = 0; k < nodes.length; k++) { restore(nodes[k]); }
-      });
-  }
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", render);
-  } else {
-    render();
-  }
-})();</script><!-- hexo injector body_end end --></body>
-</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>职责</th><th>文件</th></tr></thead><tbody><tr><td>API 入口</td><td><a href="../application/knowledge/knowledge.go">application/knowledge/knowledge.go</a></td></tr><tr><td>初始化装配</td><td><a href="../application/knowledge/init.go">application/knowledge/init.go</a></td></tr><tr><td>CreateDocument</td><td><a href="../domain/knowledge/service/knowledge.go">domain/knowledge/service/knowledge.go</a></td></tr><tr><td>MQ 事件处理</td><td><a href="../domain/knowledge/service/event_handle.go">domain/knowledge/service/event_handle.go</a></td></tr><tr><td>DocProcessor 接口</td><td><a href="../domain/knowledge/processor/interface.go">domain/knowledge/processor/interface.go</a></td></tr><tr><td>DocProcessor 实现</td><td><a href="../domain/knowledge/processor/impl/base.go">domain/knowledge/processor/impl/base.go</a></td></tr><tr><td>事件定义</td><td><a href="../domain/knowledge/entity/event.go">domain/knowledge/entity/event.go</a></td></tr><tr><td>事件工厂</td><td><a href="../domain/knowledge/internal/events/events.go">domain/knowledge/internal/events/events.go</a></td></tr><tr><td>文档状态</td><td><a href="../domain/knowledge/entity/const.go">domain/knowledge/entity/const.go</a></td></tr><tr><td>分片策略</td><td><a href="../domain/knowledge/entity/strategy.go">domain/knowledge/entity/strategy.go</a></td></tr><tr><td>默认参数</td><td><a href="../domain/knowledge/internal/consts/consts.go">domain/knowledge/internal/consts/consts.go</a></td></tr></tbody></table>
+<h3 id="检索链路">检索链路</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>职责</th><th>文件</th></tr></thead><tbody><tr><td>检索编排</td><td><a href="../domain/knowledge/service/retrieve.go">domain/knowledge/service/retrieve.go</a></td></tr><tr><td>服务接口</td><td><a href="../domain/knowledge/service/interface.go">domain/knowledge/service/interface.go</a></td></tr><tr><td>类型转换</td><td><a href="../domain/knowledge/service/convert.go">domain/knowledge/service/convert.go</a></td></tr><tr><td>可写性校验</td><td><a href="../domain/knowledge/service/validate.go">domain/knowledge/service/validate.go</a></td></tr><tr><td>检索模型</td><td><a href="../crossdomain/knowledge/model/knowledge.go">crossdomain/knowledge/model/knowledge.go</a></td></tr></tbody></table>
+<h3 id="infra-层">Infra 层</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>职责</th><th>文件</th></tr></thead><tbody><tr><td>Parser 接口</td><td><a href="../infra/document/parser/manager.go">infra/document/parser/manager.go</a></td></tr><tr><td>Parser builtin</td><td><a href="../infra/document/parser/impl/builtin/">infra/document/parser/impl/builtin/</a></td></tr><tr><td>Parser ppstructure</td><td><a href="../infra/document/parser/impl/ppstructure/">infra/document/parser/impl/ppstructure/</a></td></tr><tr><td>SearchStore 接口</td><td><a href="../infra/document/searchstore/searchstore.go">infra/document/searchstore/searchstore.go</a></td></tr><tr><td>Manager 接口</td><td><a href="../infra/document/searchstore/manager.go">infra/document/searchstore/manager.go</a></td></tr><tr><td>DSL 定义</td><td><a href="../infra/document/searchstore/dsl.go">infra/document/searchstore/dsl.go</a></td></tr><tr><td>Manager 工厂</td><td><a href="../infra/document/searchstore/impl/impl.go">infra/document/searchstore/impl/impl.go</a></td></tr><tr><td>Milvus 实现</td><td><a href="../infra/document/searchstore/impl/milvus/">infra/document/searchstore/impl/milvus/</a></td></tr><tr><td>ES 实现</td><td><a href="../infra/document/searchstore/impl/elasticsearch/">infra/document/searchstore/impl/elasticsearch/</a></td></tr><tr><td>Reranker 接口</td><td><a href="../infra/document/rerank/rerank.go">infra/document/rerank/rerank.go</a></td></tr><tr><td>RRF 实现</td><td><a href="../infra/document/rerank/impl/rrf/rrf.go">infra/document/rerank/impl/rrf/rrf.go</a></td></tr><tr><td>Reranker 工厂</td><td><a href="../infra/document/rerank/impl/impl.go">infra/document/rerank/impl/impl.go</a></td></tr><tr><td>NL2SQL</td><td><a href="../infra/document/nl2sql/">infra/document/nl2sql/</a></td></tr><tr><td>MessagesToQuery</td><td><a href="../infra/document/messages2query/">infra/document/messages2query/</a></td></tr><tr><td>EventBus</td><td><a href="../infra/eventbus/">infra/eventbus/</a></td></tr><tr><td>RAGFlow</td><td><a href="../infra/ragflow/client.go">infra/ragflow/client.go</a></td></tr></tbody></table>
+<h3 id="配置层">配置层</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>职责</th><th>文件</th></tr></thead><tbody><tr><td>Thrift 配置</td><td><a href="../api/model/admin/config/config.go">api/model/admin/config/config.go</a></td></tr><tr><td>配置加载</td><td><a href="../bizpkg/config/knowledge/knowledge.go">bizpkg/config/knowledge/knowledge.go</a></td></tr></tbody></table>
+<h2 id="8-小结">8. 小结</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>实现</th></tr></thead><tbody><tr><td>索引方式</td><td>事件驱动异步索引（MQ），两级事件保证顺序</td></tr><tr><td>文档解析</td><td>支持 PDF/TXT/MD/DOCX/CSV/XLSX/JSON/图片，builtin + ppstructure</td></tr><tr><td>分片策略</td><td>Default/Custom/Leveled，默认 ChunkSize=800, Separator=\n, Overlap=10%</td></tr><tr><td>向量存储</td><td>Milvus（默认）/ VikingDB / OceanBase，支持 dense+sparse 混合</td></tr><tr><td>全文检索</td><td>Elasticsearch</td></tr><tr><td>检索编排</td><td>eino compose.Chain DAG，查询改写 → 并行多路召回 → 重排 → 打包</td></tr><tr><td>多路召回</td><td>向量 + ES + NL2SQL（表格），按 SearchType 路由</td></tr><tr><td>重排序</td><td>RRF（默认，本地）/ VikingDB（模型服务），详见 rrf.md</td></tr><tr><td>Query 改写</td><td>LLM 基于对话历史改写，Jinja2 模板</td></tr><tr><td>NL2SQL</td><td>LLM 生成 SQL 查 RDB，表格类型专属</td></tr><tr><td>外部集成</td><td>RAGFlow（互斥模式，当前未启用）</td></tr><tr><td>消息队列</td><td>nsq / kafka / rmq / pulsar / nats</td></tr><tr><td>并发控制</td><td>召回 errgroup limit=2，批量索引 batchSize=100</td></tr></tbody></table>  </div> <div class="post-nav"> <span><a href="/ragflow-ingestion/">← RAGFlow Go Ingestion 链路深度学习笔记</a></span> <span><a href="/springmvc/">Spring MVC 源码深度学习笔记 →</a></span> </div> </article>  </main> <footer class="site-footer"> <div class="inner"> <span>源码深读 · 由 Astro 静态生成 · 内容以 Markdown 源码笔记为唯一事实源</span> </div> </footer> </body></html> <script type="module" src="/_astro/PostLayout.astro_astro_type_script_index_0_lang.B4vzteL_.js"></script>
