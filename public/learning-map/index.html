@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>源码深读知识体系 · 学习路径思维导图</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:"Microsoft YaHei","PingFang SC","Segoe UI",system-ui,sans-serif;background:#f6f7fb;color:#1f2937}
+#app{position:absolute;inset:0;cursor:grab}
+#app.drag{cursor:grabbing}
+#stage{position:absolute;left:0;top:0;transform-origin:0 0}
+svg#line{position:absolute;left:0;top:0;pointer-events:none;z-index:1}
+#nodes{position:absolute;left:0;top:0;z-index:2}
+.node{position:absolute;border-radius:10px;padding:7px 11px;background:#fff;border:1.5px solid #d8dce6;
+  box-shadow:0 1px 3px rgba(16,24,40,.08);font-size:13px;line-height:1.35;cursor:pointer;
+  transition:box-shadow .15s,border-color .15s;user-select:none}
+.node:hover{box-shadow:0 3px 10px rgba(16,24,40,.14)}
+.node .t{font-weight:600}
+.node .h{font-size:11px;color:#6b7280;margin-top:3px;font-weight:400}
+.node.stage{border-radius:12px;padding:10px 14px;font-size:14px;color:#fff;border:none;font-weight:700;width:196px}
+.node.stage .g{font-size:11px;font-weight:400;opacity:.92;margin-top:4px;line-height:1.4}
+.node.doc{width:214px;font-weight:600}
+.node.doc .s{font-size:11px;color:#9ca3af;font-weight:400;margin-top:2px}
+.node.lec{width:272px;background:#fffdf7}
+.node.lec .h{color:#7c6f5a}
+.node.dim{opacity:.18}
+.node.hit{border-color:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,.25)}
+.caret{display:inline-block;width:0;height:0;border-left:6px solid #9ca3af;border-top:4.5px solid transparent;
+  border-bottom:4.5px solid transparent;margin-right:6px;vertical-align:middle;transition:transform .15s}
+.node.closed>.caret{transform:rotate(-90deg)}
+#hud{position:absolute;left:16px;top:14px;z-index:10;display:flex;gap:8px;align-items:center;flex-wrap:wrap;max-width:calc(100% - 32px)}
+#hud input{padding:7px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;width:210px;background:#fff;outline:none}
+#hud input:focus{border-color:#3b82f6}
+.btn{padding:7px 12px;border:1px solid #d1d5db;border-radius:8px;background:#fff;font-size:12px;cursor:pointer;color:#374151}
+.btn:hover{background:#f3f4f6}
+#legend{position:absolute;right:14px;top:14px;z-index:10;background:#fff;border:1px solid #e5e7eb;border-radius:10px;
+  padding:10px 12px;font-size:11.5px;box-shadow:0 2px 8px rgba(16,24,40,.06);width:216px}
+#legend h4{font-size:12px;margin-bottom:6px;color:#111827}
+#legend .row{display:flex;align-items:center;gap:6px;margin:3px 0;color:#4b5563}
+#legend .sw{width:11px;height:11px;border-radius:3px;flex:none}
+#tip{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:10;background:rgba(17,24,39,.86);
+  color:#f9fafb;font-size:12px;padding:7px 14px;border-radius:999px;white-space:nowrap}
+.mm{font-variant-numeric:tabular-nums}
+</style></head><body>
+<div id="app"><div id="stage"><svg id="line"></svg><div id="nodes"></div></div></div>
+<div id="hud">
+  <input id="q" placeholder="搜索文档 / 讲次 / 钩子…">
+  <button class="btn" id="exp">全部展开</button>
+  <button class="btn" id="mid">只看主线+文档</button>
+  <button class="btn" id="col">全部收起</button>
+  <button class="btn" id="fit">复位视图</button>
+</div>
+<div id="legend"></div>
+<div id="tip">拖拽平移 · 滚轮缩放 · 点击节点折叠/展开 · 点击右下角复习节奏</div>
+<script>
+const DATA = [{"id": "s1", "t": "阶段一 · Java 基础打底", "g": "数据结构 → 并发 → JVM 运行时。这是一切上层框架的地基：不懂 HashMap 散列就读不懂 MyBatis 二级缓存，不懂 AQS 就读不懂线程池拒绝策略。", "color": "#3B82F6", "children": [{"id": "s1-java-collections.md", "t": "java-collections", "s": "JDK 集合框架 · 6 讲", "color": "#3B82F6", "children": [{"id": "s1-java-collections.md-0", "t": "List 家族", "hook": "ArrayList 扩容 1.5×；LinkedList 双链表；Arrays.asList 返回的是 Arrays 内部类，不能 add/remove", "children": []}, {"id": "s1-java-collections.md-1", "t": "Map 家族核心", "hook": "HashMap 链表 + 红黑树；LinkedHashMap 覆写 afterNodeInsertion 即得 LRU；TreeMap 走红黑树有序", "children": []}, {"id": "s1-java-collections.md-2", "t": "Set 与 Queue", "hook": "HashSet 就是 HashMap 包壳；PriorityQueue 数组小顶堆；ArrayDeque 循环数组", "children": []}, {"id": "s1-java-collections.md-3", "t": "迭代器与工具类", "hook": "fail-fast = modCount 校验；iterator.remove 会同步 expectedModCount；Collections 三类包装全是装饰器", "children": []}, {"id": "s1-java-collections.md-4", "t": "散列原理", "hook": "容量 2 次幂 → 位与代替取模；树化阈值 8 来自泊松分布；loadFactor 0.75 是时空权衡", "children": []}, {"id": "s1-java-collections.md-5", "t": "并发集合", "hook": "CHM 的 sizeCtl 一个 int 四态 + 协作扩容；COW 写时复制；CLQ 无锁；BlockingQueue 四兄弟", "children": []}]}, {"id": "s1-java-lock.md", "t": "java-lock", "s": "JDK 锁与 AQS · 5 讲", "color": "#3B82F6", "children": [{"id": "s1-java-lock.md-0", "t": "synchronized 与锁升级", "hook": "JDK 21 移除偏向锁，新增 LM_LIGHTWEIGHT；ObjectMonitor 是 LIFO cxq + FIFO EntryList 混合队列", "children": []}, {"id": "s1-java-lock.md-1", "t": "AQS 核心", "hook": "JDK 21 大改：status 替代 waitStatus、节点子类化、acquire 收 6 个参数", "children": []}, {"id": "s1-java-lock.md-2", "t": "ReentrantLock", "hook": "公平与非公平只差一个 hasQueuedPredecessors 判断", "children": []}, {"id": "s1-java-lock.md-3", "t": "读写锁", "hook": "ReentrantReadWriteLock 用高低 16 位分别计数；StampedLock 乐观读靠 stamp 校验", "children": []}, {"id": "s1-java-lock.md-4", "t": "Condition 与 LockSupport", "hook": "Condition 是单链表等待队列；LockSupport 是 permit 语义", "children": []}]}, {"id": "s1-java-concurrent.md", "t": "java-concurrent", "s": "JUC 并发库 · 5 讲", "color": "#3B82F6", "children": [{"id": "s1-java-concurrent.md-0", "t": "Executor 与线程池", "hook": "ctl 高 3 位存状态低 29 位存计数；Worker 继承 AQS 做不可重入锁；四种拒绝策略", "children": []}, {"id": "s1-java-concurrent.md-1", "t": "Future 与 CompletableFuture", "hook": "FutureTask 七态状态机；Completion 继承 ForkJoinTask 实现零成本复用", "children": []}, {"id": "s1-java-concurrent.md-2", "t": "并发容器", "hook": "CHM 用 CAS + synchronized；ReservationNode 占位解决 compute 冲突；COW / BlockingQueue", "children": []}, {"id": "s1-java-concurrent.md-3", "t": "同步器与 ForkJoin", "hook": "AQS 五兄弟；ForkJoinPool work-stealing 偷任务", "children": []}, {"id": "s1-java-concurrent.md-4", "t": "时间工具与杂项", "hook": "TimeUnit 换算；ThreadLocalRandom 避免竞争；ScheduledThreadPoolExecutor", "children": []}]}, {"id": "s1-java-thread.md", "t": "java-thread", "s": "JDK 线程 · 5 讲", "color": "#3B82F6", "children": [{"id": "s1-java-thread.md-0", "t": "Thread 基础与生命周期", "hook": "Thread.State 枚举；interrupt 是协作式；start0 是 native", "children": []}, {"id": "s1-java-thread.md-1", "t": "ThreadLocal", "hook": "挂在 Thread 上的弱 key 强 value 哈希表 → value 泄漏的根源", "children": []}, {"id": "s1-java-thread.md-2", "t": "虚拟线程", "hook": "continuation + ForkJoinPool + 九态状态机；注意 carrier 钉住；State 只暴露 WAITING", "children": []}, {"id": "s1-java-thread.md-3", "t": "ThreadGroup", "hook": "JDK 21 已退化为逻辑分组 + 异常派发链", "children": []}, {"id": "s1-java-thread.md-4", "t": "HotSpot 线程实现", "hook": "JavaThread 反射调 Java；OSThread 薄壳；SMR 安全回收", "children": []}]}, {"id": "s1-jdk.md", "t": "jdk", "s": "HotSpot JVM · 5 讲", "color": "#3B82F6", "children": [{"id": "s1-jdk.md-0", "t": "类加载机制", "hook": "双亲委派；ClassFileParser 流式拆包；InstanceKlass 是运行时类", "children": []}, {"id": "s1-jdk.md-1", "t": "运行时数据区", "hook": "堆 / Metaspace / 栈帧 / oop 对象头", "children": []}, {"id": "s1-jdk.md-2", "t": "JIT 编译器", "hook": "C1/C2 分层编译；CompileBroker 派发；OSR 栈上替换", "children": []}, {"id": "s1-jdk.md-3", "t": "GC 家族", "hook": "G1 = region + SATB；ZGC = 染色指针 + 读屏障；另 Serial/Parallel/Shenandoah/Epsilon", "children": []}, {"id": "s1-jdk.md-4", "t": "JMM", "hook": "x86 TSO 下 volatile 几乎免费；OrderAccess acquire-release；DCL 的正确性证据", "children": []}]}]}, {"id": "s2", "t": "阶段二 · Spring 全家桶", "g": "一条请求从进容器到落库的完整链路：Bean 怎么造 → 代理怎么织 → 装配怎么来 → 请求怎么分发 → SQL 怎么执行。", "color": "#22C55E", "children": [{"id": "s2-spring-core.md", "t": "spring-core", "s": "IoC·AOP·事务 · 6 讲", "color": "#22C55E", "children": [{"id": "s2-spring-core.md-0", "t": "BeanFactory 与容器基础", "hook": "DefaultListableBeanFactory 三级缓存；preInstantiateSingletons 预初始化", "children": []}, {"id": "s2-spring-core.md-1", "t": "Bean 生命周期与依赖注入", "hook": "createBean 五步；Aware 回调链；@Autowired 注入点解析", "children": []}, {"id": "s2-spring-core.md-2", "t": "ApplicationContext 与资源加载", "hook": "refresh() 十二步；@Configuration full/lite 与 CGLIB 增强", "children": []}, {"id": "s2-spring-core.md-3", "t": "AOP 代理体系", "hook": "JDK 动态代理 vs CGLIB 选型；AbstractAutoProxyCreator 织入；Advisor/Pointcut 链", "children": []}, {"id": "s2-spring-core.md-4", "t": "SpEL 与切面解析", "hook": "表达式求值链路 vs AspectJ 切点链路，注意能力边界", "children": []}, {"id": "s2-spring-core.md-5", "t": "声明式事务", "hook": "AbstractPlatformTransactionManager 传播行为；TransactionInterceptor；六大失效场景", "children": []}]}, {"id": "s2-springboot.md", "t": "springboot", "s": "自动装配 · 5 讲", "color": "#22C55E", "children": [{"id": "s2-springboot.md-0", "t": "SpringApplication.run 全流程", "hook": "监听器时序；BootstrapContext 分层", "children": []}, {"id": "s2-springboot.md-1", "t": "自动配置", "hook": "AutoConfiguration.imports；条件注解家族；Binder 松弛绑定", "children": []}, {"id": "s2-springboot.md-2", "t": "内嵌 Web 容器", "hook": "ServletWebServerFactory；端口绑定；优雅停机", "children": []}, {"id": "s2-springboot.md-3", "t": "外部化配置", "hook": "ConfigDataEnvironmentPostProcessor；优先级链", "children": []}, {"id": "s2-springboot.md-4", "t": "starter 与构建生态", "hook": "starter 即约定大于配置的落地", "children": []}]}, {"id": "s2-springmvc.md", "t": "springmvc", "s": "Web 请求处理 · 5 讲", "color": "#22C55E", "children": [{"id": "s2-springmvc.md-0", "t": "DispatcherServlet 生命周期", "hook": "doDispatch 九步；HandlerExecutionChain；异常解析链", "children": []}, {"id": "s2-springmvc.md-1", "t": "HandlerMapping 家族", "hook": "PathPattern 匹配器", "children": []}, {"id": "s2-springmvc.md-2", "t": "HandlerAdapter 与参数/返回值", "hook": "HttpMessageConverter 协商；数据绑定", "children": []}, {"id": "s2-springmvc.md-3", "t": "视图与内容协商", "hook": "视图解析 + 内容协商两条路", "children": []}, {"id": "s2-springmvc.md-4", "t": "异步 / CORS / 拦截器 / 异常", "hook": "四个横切能力的挂点", "children": []}]}, {"id": "s2-springcloud.md", "t": "springcloud", "s": "微服务 · 4 讲", "color": "#22C55E", "children": [{"id": "s2-springcloud.md-0", "t": "release train 与 BOM", "hook": "版本火车 + BOM 统一依赖", "children": []}, {"id": "s2-springcloud.md-1", "t": "commons 抽象与 LoadBalancer", "hook": "DiscoveryClient；ServiceInstanceListSupplier 过滤器链", "children": []}, {"id": "s2-springcloud.md-2", "t": "Gateway", "hook": "Route / Predicate / Filter 链；RateLimiter；Reactor Netty", "children": []}, {"id": "s2-springcloud.md-3", "t": "OpenFeign", "hook": "动态代理；Encoder/Decoder；LoadBalancer 集成", "children": []}]}, {"id": "s2-mybatis.md", "t": "mybatis", "s": "持久层 · 6 讲", "color": "#22C55E", "children": [{"id": "s2-mybatis.md-0", "t": "入口与配置体系", "hook": "SqlSessionFactoryBuilder → XMLConfigBuilder → Configuration → DefaultSqlSession", "children": []}, {"id": "s2-mybatis.md-1", "t": "Executor 执行器体系", "hook": "BaseExecutor 一级缓存 + queryStack 防递归；CachingExecutor + TransactionalCache 两阶段提交", "children": []}, {"id": "s2-mybatis.md-2", "t": "StatementHandler 与参数/结果", "hook": "DefaultResultSetHandler 决策树；TypeHandler 查找链；延迟加载", "children": []}, {"id": "s2-mybatis.md-3", "t": "SQL 映射与动态 SQL", "hook": "MappedStatement / SqlSource 三兄弟；SqlNode 节点树；#{} vs ${}", "children": []}, {"id": "s2-mybatis.md-4", "t": "Mapper 接口绑定", "hook": "JDK 动态代理；MapperMethod 分派；ParamNameResolver", "children": []}, {"id": "s2-mybatis.md-5", "t": "插件/缓存/日志", "hook": "Interceptor 拦四大对象；CacheBuilder 装饰链；JDBC 日志代理", "children": []}]}]}, {"id": "s3", "t": "阶段三 · 存储与缓存", "g": "三种存储范式对照读：关系型（MySQL）→ 内存型（Redis）→ 倒排索引（Elasticsearch）。建议同一横向问题（写路径、一致性、故障恢复）三份对照着看。", "color": "#F59E0B", "children": [{"id": "s3-mysql.md", "t": "mysql", "s": "关系型数据库 · 6 讲", "color": "#F59E0B", "children": [{"id": "s3-mysql.md-0", "t": "mysqld 启动与连接线程模型", "hook": "启动序列 + 连接线程模型", "children": []}, {"id": "s3-mysql.md-1", "t": "查询生命周期", "hook": "从 COM_QUERY 到结果包的完整旅程", "children": []}, {"id": "s3-mysql.md-2", "t": "优化器骨架", "hook": "JOIN::optimize 到 AccessPath", "children": []}, {"id": "s3-mysql.md-3", "t": "InnoDB 存储引擎", "hook": "buffer pool；B+ 树；行格式；double write", "children": []}, {"id": "s3-mysql.md-4", "t": "事务、MVCC 与锁", "hook": "read view；undo 版本链；Next-Key；死锁检测", "children": []}, {"id": "s3-mysql.md-5", "t": "redo / undo / binlog", "hook": "两阶段提交与崩溃恢复", "children": []}]}, {"id": "s3-redis.md", "t": "redis", "s": "内存数据库 · 6 讲", "color": "#F59E0B", "children": [{"id": "s3-redis.md-0", "t": "事件驱动核心", "hook": "aeMain / aeProcessEvents / beforeSleep / serverCron / io-threads", "children": []}, {"id": "s3-redis.md-1", "t": "网络层与 RESP 协议", "hook": "readQueryFromClient；RESP3；输出缓冲限制", "children": []}, {"id": "s3-redis.md-2", "t": "命令生命周期", "hook": "processCommand 检查链 → call → propagate", "children": []}, {"id": "s3-redis.md-3", "t": "对象与数据结构", "hook": "encoding 演化；listpack；dict rehash；zset 双结构；过期策略", "children": []}, {"id": "s3-redis.md-4", "t": "持久化", "hook": "RDB fork；AOF 三策略；混合持久化", "children": []}, {"id": "s3-redis.md-5", "t": "复制与集群", "hook": "PSYNC2；gossip；failover", "children": []}]}, {"id": "s3-elasticsearch.md", "t": "elasticsearch", "s": "检索引擎 · 6 讲", "color": "#F59E0B", "children": [{"id": "s3-elasticsearch.md-0", "t": "节点启动与集群发现", "hook": "Coordinator；Raft 改良选主；PreVote", "children": []}, {"id": "s3-elasticsearch.md-1", "t": "索引与分片", "hook": "IndexService；AllocationService；routing", "children": []}, {"id": "s3-elasticsearch.md-2", "t": "写入路径", "hook": "TransportBulkAction；Translog；Refresh / Flush", "children": []}, {"id": "s3-elasticsearch.md-3", "t": "查询与搜索", "hook": "QueryPhase；聚合同一次 Lucene search", "children": []}, {"id": "s3-elasticsearch.md-4", "t": "分布式执行", "hook": "两阶段 query-then-fetch；scroll", "children": []}, {"id": "s3-elasticsearch.md-5", "t": "recovery 与故障转移", "hook": "PeerRecovery；SeqNo；Snapshot", "children": []}]}]}, {"id": "s4", "t": "阶段四 · 分布式中间件", "g": "概念密度最高的两份：Kafka 讲「日志即真相」，Nacos 讲「AP 与 CP 双轨」。读完后段一、二的所有组件都能挂到这两个原语上。", "color": "#A855F7", "children": [{"id": "s4-kafka.md", "t": "kafka", "s": "消息日志系统 · 6 讲", "color": "#A855F7", "children": [{"id": "s4-kafka.md-0", "t": "网络层与请求处理", "hook": "Acceptor / Processor / Purgatory 延迟请求", "children": []}, {"id": "s4-kafka.md-1", "t": "KRaft 元数据与 Controller", "hook": "raft 日志 + snapshot，取代 ZooKeeper", "children": []}, {"id": "s4-kafka.md-2", "t": "存储引擎", "hook": "UnifiedLog / LogSegment / LogCleaner", "children": []}, {"id": "s4-kafka.md-3", "t": "Producer", "hook": "RecordAccumulator；Sender；幂等与事务", "children": []}, {"id": "s4-kafka.md-4", "t": "Consumer", "hook": "Fetcher；再均衡 eager vs cooperative", "children": []}, {"id": "s4-kafka.md-5", "t": "Group Coordinator 与事务", "hook": "组状态机；事务两阶段标记", "children": []}]}, {"id": "s4-nacos.md", "t": "nacos", "s": "注册与配置中心 · 5 讲", "color": "#A855F7", "children": [{"id": "s4-nacos.md-0", "t": "模块装配与启动", "hook": "NacosBootstrap 三段式点火", "children": []}, {"id": "s4-nacos.md-1", "t": "naming 服务发现", "hook": "v2 模型；distro 同步；gRPC 推送；健康检查", "children": []}, {"id": "s4-nacos.md-2", "t": "config 配置中心", "hook": "ConfigCacheService MD5；长轮询 30s", "children": []}, {"id": "s4-nacos.md-3", "t": "一致性协议", "hook": "AP（distro）与 CP（JRaft）双轨制", "children": []}, {"id": "s4-nacos.md-4", "t": "客户端 SDK", "hook": "Naming / Config 双客户端的韧性设计", "children": []}]}]}, {"id": "s5", "t": "阶段五 · 游戏与云原生", "g": "一条独立主线，不依赖 Java 线：匹配（Open Match）→ 开服（Agones），顺序与线上实际调用链一致。Agent 侧见阶段六。", "color": "#EF4444", "children": [{"id": "s5-open-match.md", "t": "open-match", "s": "匹配框架 om-core · 6 讲", "color": "#EF4444", "children": [{"id": "s5-open-match.md-0", "t": "组件拓扑与进程模型", "hook": "v2 砍成单二进制 om-core + 6 个 RPC", "children": []}, {"id": "s5-open-match.md-1", "t": "Ticket 生命周期", "hook": "Ticket ID ≡ Redis Stream entry ID；新票恒为 inactive", "children": []}, {"id": "s5-open-match.md-2", "t": "状态存储抽象", "hook": "XADD / XREAD BLOCK / XTRIM MINID；三个 sync.Map 本地缓存", "children": []}, {"id": "s5-open-match.md-3", "t": "ReplicatedTicketCache", "hook": "setDifference 求活跃票，读路径整个下沉到内存", "children": []}, {"id": "s5-open-match.md-4", "t": "过滤与匹配编排", "hook": "4 种硬编码 filter 而非 CEL；4MB 分块；MMF 双向流", "children": []}, {"id": "s5-open-match.md-5", "t": "Assignment 与观测", "hook": "WatchAssignments 1s 轮询；指标名笔误 om_core.ticket.assigment.watch", "children": []}]}, {"id": "s5-agones.md", "t": "agones", "s": "K8s 游戏服编排 · 6 讲", "color": "#EF4444", "children": [{"id": "s5-agones.md-0", "t": "数据模型：三层 CRD", "hook": "Fleet → GameServerSet → GameServer，ownerRef + label 双轨；11 状态机", "children": []}, {"id": "s5-agones.md-1", "t": "控制面骨架", "hook": "单进程 5 runner；三条队列按状态分流；链式 syncHandler", "children": []}, {"id": "s5-agones.md-2", "t": "GameServer 生命周期与 SDK Server", "hook": ":9357 gRPC；JSON Patch 反向写 CRD；三层健康检查；端口位图", "children": []}, {"id": "s5-agones.md-3", "t": "Fleet 与 GameServerSet 编排", "hook": "MaxSurge 对 Spec.Replicas、MaxUnavailable 对 ReadyReplicas 双基数", "children": []}, {"id": "s5-agones.md-4", "t": "GameServerAllocation", "hook": "聚合 API + 独立 allocator 双路径；失败返回 201 + UnAllocated", "children": []}, {"id": "s5-agones.md-5", "t": "FleetAutoscaler 与观测", "hook": "7 种策略；Buffer 以 Allocated 为基数；OpenCensus 双 exporter", "children": []}]}]}, {"id": "s6", "t": "阶段六 · RAG 与 Agent 工程", "g": "把前五阶段的所有原语拼成一条 AI 应用链路：Agent 编排（OpenCoze）→ 知识入库与检索（RAGFlow Ingestion）→ Agentic RAG。RAGFlow Ingestion 是全库格式模板的来源。", "color": "#0EA5E9", "children": [{"id": "s6-agent/opencoze-agent.md", "t": "opencoze-agent", "s": "Eino 图编排 · 6 讲", "color": "#0EA5E9", "children": [{"id": "s6-agent/opencoze-agent.md-0", "t": "数据模型", "hook": "Draft / Version / Publish 三形态；SingleAgent 只是跨域薄壳", "children": []}, {"id": "s6-agent/opencoze-agent.md-1", "t": "构建期", "hook": "BuildAgent 装配 5 类工具；按有无工具决定 ReAct / 裸 LLM；AllPredecessor 触发", "children": []}, {"id": "s6-agent/opencoze-agent.md-2", "t": "运行期", "hook": "StreamExecute 建 Pipe(10)；runner.Stream 返回值被丢弃，输出只经 callback", "children": []}, {"id": "s6-agent/opencoze-agent.md-3", "t": "五类工具节点", "hook": "数据库工具运行期校验 SQL 表名防越权；newKnowledgeTool 是死代码", "children": []}, {"id": "s6-agent/opencoze-agent.md-4", "t": "知识检索与建议", "hook": "RAGFlow 直连双通道，硬编码 0.3/0.7/8；suggestParser 空函数", "children": []}, {"id": "s6-agent/opencoze-agent.md-5", "t": "发布与端到端", "hook": "七步发布；publish.go:100 并发共享 err 的 bug；三层流 100→10→20", "children": []}]}, {"id": "s6-agent/ingestion-deep-dive.md", "t": "ingestion-deep-dive", "s": "Go Ingestion 链路 · 12 讲", "color": "#0EA5E9", "children": [{"id": "s6-agent/ingestion-deep-dive.md-0", "t": "internal/parser 解析与分块基础库", "hook": "解析器抽象 + 分块原语", "children": []}, {"id": "s6-agent/ingestion-deep-dive.md-1", "t": "chunk 包三阶段流水线", "hook": "chunk 包逐行精读", "children": []}, {"id": "s6-agent/ingestion-deep-dive.md-2", "t": "GeneralChunker 消费现场", "hook": "生产分块是怎么被消费的", "children": []}, {"id": "s6-agent/ingestion-deep-dive.md-3", "t": "Parser 组件边界与规范化", "hook": "组件边界 + 规范化", "children": []}, {"id": "s6-agent/ingestion-deep-dive.md-4", "t": "任务编排：Pipeline 与落库", "hook": "上游 Pipeline 与下游落库", "children": []}, {"id": "s6-agent/ingestion-deep-dive.md-5", "t": "Ingestor 派发与 NATS 消费", "hook": "任务派发 + NATS 消费", "children": []}, {"id": "s6-agent/ingestion-deep-dive.md-6", "t": "LLM 抽取链路", "hook": "Extractor 与 KnowledgeCompiler", "children": []}, {"id": "s6-agent/ingestion-deep-dive.md-7", "t": "检索侧：chunk 怎么被搜回", "hook": "chunk 被搜回来的路径", "children": []}, {"id": "s6-agent/ingestion-deep-dive.md-8", "t": "知识编译与 Agentic RAG 原理", "hook": "原理与端到端演算", "children": []}, {"id": "s6-agent/ingestion-deep-dive.md-9", "t": "Agentic RAG 全流程精讲", "hook": "全流程精讲", "children": []}, {"id": "s6-agent/ingestion-deep-dive.md-10", "t": "知识编译全流程精讲", "hook": "全流程精讲", "children": []}, {"id": "s6-agent/ingestion-deep-dive.md-11", "t": "演进史与速查", "hook": "Python → Go 迁移；模板清单；参数总表", "children": []}]}]}];
+const TIPS = [["先全景后细节", "每份文档先读「速览表 + 全流程图」建立图式，再进讲次。大脑对已有框架的信息吸收率远高于碎片。"], ["一讲一个钩子", "思维导图每个叶子都是\"能脱口而出的一句话\"。复述时先讲钩子，再回头补细节。"], ["精细提问", "读完问自己三个\"为什么\"：为什么是这个阈值？为什么不是另一种结构？为什么这样取舍？"], ["提取练习", "合上书，在纸上重画本图。画不下去的地方就是没学会的地方，回去只补那一块。"], ["间隔重复", "按右侧复习节奏回看各文档末尾的「复习卡」：D1 / D3 / D7 / D14 / D30。"], ["交错对比", "同层组件横向对比（MySQL↔Redis↔ES 的写路径、Kafka↔Nacos 的一致性），比顺序递进更抗遗忘。"], ["双编码", "文字 + mermaid 图一起记，同一信息两种表征，回忆时多一条线索。"]];
+const REVIEW = [["D1", "当天晚上", "只看思维导图叶子钩子，合书复述；卡住的位置标星"], ["D3", "第 3 天", "回看该文档「面试速通」高频 Q&A，先答后对"], ["D7", "第 7 天", "做文档末尾「复习卡」，错的抄进错题本"], ["D14", "第 14 天", "与同阶段另一份文档做交错对比（见对比题组）"], ["D30", "第 30 天", "全图重画一次，能脱稿讲完一条主线即过关"]];
+const INTER = [["写路径对照", "MySQL（buffer pool + redo）· Redis（aof_fsync 三策略）· ES（Translog + Refresh/Flush）"], ["一致性对照", "Kafka（ISR + 水位）· Nacos（distro AP vs JRaft CP）· Agones（乐观并发 + status 非 subresource）"], ["锁与并发对照", "synchronized（ObjectMonitor 混合队列）· AQS（CLH 变体）· CHM（synchronized 桶锁 + CAS）"], ["请求处理对照", "Spring MVC（doDispatch 九步）· Redis（processCommand 链）· Kafka（Processor + Purgatory）"]];
+
+const W = {stage:196, doc:214, lec:272};
+const X = [0, 224, 466];
+const LINE_H = 46, GAP = 12;
+let nodes = [], links = [], rootH = 0, collapsed = new Set();
+
+const stage = document.getElementById('stage');
+const svg = document.getElementById('line');
+const nl = document.getElementById('nodes');
+
+function countLeaves(n){
+  if(!n.children || !n.children.length) return 1;
+  let h=0; for(const c of n.children) h += countLeaves(c);
+  return h;
+}
+
+function layout(n, depth, y){
+  n.depth = depth;
+  if(!n.children || !n.children.length || collapsed.has(n.id)){
+    n.y = y; n.h = (depth===2 ? LINE_H : (depth===1 ? 62 : 66));
+    n.sub = countLeaves(n);
+    return n.h;
+  }
+  let cy = y;
+  for(const c of n.children){ const ch = layout(c, depth+1, cy); cy += ch + GAP; }
+  const first = n.children[0], last = n.children[n.children.length-1];
+  n.y = (first.y + first.h/2 + last.y + last.h/2)/2 - 33;
+  n.h = 66;
+  return cy - GAP - y;
+}
+
+function draw(){
+  const y = 60;
+  rootH = layout({id:'__root__', children:DATA}, -1, y) ;
+  nodes = []; links = [];
+  walk(DATA, 0, 60);
+  let maxY = 0;
+  for(const n of nodes){ maxY = Math.max(maxY, n.y + n.h); }
+  const H = Math.max(maxY + 80, 900);
+  svg.setAttribute('width', X[2]+W.lec+400); svg.setAttribute('height', H);
+  svg.style.width = (X[2]+W.lec+400)+'px'; svg.style.height = H+'px';
+  nl.style.width = (X[2]+W.lec+400)+'px'; nl.style.height = H+'px';
+  let paths = '';
+  for(const l of links){
+    const x1 = l.x1, y1 = l.y1, x2 = l.x2, y2 = l.y2, mx = (x1+x2)/2;
+    paths += `<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="${l.color}" stroke-width="${l.w}" opacity="${l.o}"/>`;
+  }
+  svg.innerHTML = paths;
+  let html = '';
+  for(const n of nodes) html += render(n);
+  nl.innerHTML = html;
+  applyFilter();
+}
+
+function walk(list, depth, y){
+  for(const n of list){
+    n.x = X[depth];
+    n.w = depth===0 ? W.stage : (depth===1 ? W.doc : W.lec);
+    nodes.push(n);
+  }
+  for(const n of list){
+    if(n.children && n.children.length && !collapsed.has(n.id)){
+      walk(n.children, depth+1, y);
+      for(const c of n.children){
+        links.push({x1:n.x+n.w+4, y1:n.y+n.h/2, x2:c.x-4, y2:c.y+c.h/2,
+                    color:n.color||'#c7cdd8', w: depth===0?2:1.4, o: depth===0?.9:.65});
+      }
+    }
+  }
+}
+
+function render(n){
+  const closed = n.children && n.children.length && collapsed.has(n.id);
+  const cls = 'node ' + (n.depth===0?'stage':n.depth===1?'doc':'lec') + (closed?' closed':'');
+  const style = n.depth===0 ? `background:${n.color};` : `border-left:4px solid ${n.color};`;
+  let inner = `<div class="t">`;
+  if(n.children && n.children.length) inner += `<span class="caret"></span>`;
+  inner += esc(n.t) + (closed && n.sub?` <span style="font-weight:400;opacity:.65;font-size:11px">(${n.sub})</span>`:'') + `</div>`;
+  if(n.depth===0 && n.g) inner += `<div class="g">${esc(n.g)}</div>`;
+  if(n.depth===1 && n.s) inner += `<div class="s">${esc(n.s)}</div>`;
+  if(n.depth===2 && n.hook) inner += `<div class="h">${esc(n.hook)}</div>`;
+  return `<div class="${cls}" id="n_${n.id}" style="left:${n.x}px;top:${n.y}px;width:${n.w}px;${style}">${inner}</div>`;
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+// 折叠
+nl.addEventListener('click', e=>{
+  const el = e.target.closest('.node'); if(!el) return;
+  const n = nodes.find(x=>'n_'+x.id===el.id);
+  if(n && n.children && n.children.length){
+    collapsed.has(n.id) ? collapsed.delete(n.id) : collapsed.add(n.id);
+    draw();
+  }
+});
+
+// 平移缩放
+let panX=30, panY=0, zoom=1, sx=0, sy=0, dragging=false;
+const app=document.getElementById('app');
+function apply(){ stage.style.transform = `translate(${panX}px,${panY}px) scale(${zoom})`; }
+app.addEventListener('mousedown', e=>{ if(e.target.closest('.node'))return; dragging=true; sx=e.clientX; sy=e.clientY; app.classList.add('drag'); });
+window.addEventListener('mousemove', e=>{ if(!dragging)return; panX += e.clientX-sx; panY += e.clientY-sy; sx=e.clientX; sy=e.clientY; apply(); });
+window.addEventListener('mouseup', ()=>{ dragging=false; app.classList.remove('drag'); });
+app.addEventListener('wheel', e=>{ e.preventDefault(); const k = e.deltaY<0?1.1:0.9;
+  const r=app.getBoundingClientRect(); const mx=e.clientX-r.left, my=e.clientY-r.top;
+  const nz = Math.min(2.2, Math.max(0.28, zoom*k)); const f=nz/zoom;
+  panX = mx - (mx-panX)*f; panY = my - (my-panY)*f; zoom=nz; apply(); }, {passive:false});
+
+// 搜索
+const inp = document.getElementById('q');
+function applyFilter(){
+  const q = inp.value.trim().toLowerCase();
+  for(const n of nodes){
+    const el = document.getElementById('n_'+n.id); if(!el) continue;
+    if(!q){ el.classList.remove('dim','hit'); continue; }
+    const hay = (n.t + ' ' + (n.hook||'') + ' ' + (n.g||'') + ' ' + (n.s||'')).toLowerCase();
+    if(hay.includes(q)){ el.classList.remove('dim'); el.classList.add('hit'); }
+    else { el.classList.remove('hit'); el.classList.add('dim'); }
+  }
+}
+inp.addEventListener('input', applyFilter);
+
+document.getElementById('exp').onclick = ()=>{ collapsed.clear(); draw(); };
+document.getElementById('col').onclick = ()=>{
+  collapsed.clear();
+  for(const s of DATA){ collapsed.add(s.id); for(const d of s.docs||[]) collapsed.add(d.id); }
+  draw();
+};
+document.getElementById('fit').onclick = ()=>{ panX=30; panY=0; zoom=1; apply(); };
+document.getElementById('mid').onclick = ()=>{
+  collapsed.clear();
+  for(const s of DATA){ collapsed.add(s.id); }
+  draw(); panX=30; panY=0; zoom=1; apply();
+};
+
+// 复习节奏面板
+(function(){
+  const el = document.getElementById('legend');
+  let h = `<h4>图例 · 六条主线</h4>`;
+  for(const s of DATA) h += `<div class="row"><span class="sw" style="background:${s.color}"></span>${esc(s.t)}</div>`;
+  h += `<div style="height:1px;background:#e5e7eb;margin:8px 0"></div><h4>间隔重复节奏</h4>`;
+  for(const r of REVIEW) h += `<div class="row"><b class="mm" style="width:34px;color:#111827">${r[0]}</b>${esc(r[1])}</div>`;
+  h += `<div style="height:1px;background:#e5e7eb;margin:8px 0"></div><h4>交错对比题组</h4>`;
+  for(const i of INTER) h += `<div class="row" style="display:block"><b style="color:#111827">${esc(i[0])}</b><br>${esc(i[1])}</div>`;
+  h += `<div style="height:1px;background:#e5e7eb;margin:8px 0"></div><h4>记忆法</h4>`;
+  for(const t of TIPS) h += `<div class="row" style="display:block"><b style="color:#111827">${esc(t[0])}</b> ${esc(t[1])}</div>`;
+  el.innerHTML = h;
+})();
+
+apply(); draw();
+</script>
+</body></html>

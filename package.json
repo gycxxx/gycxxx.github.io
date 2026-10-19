@@ -1,0 +1,16 @@
+{
+  "name": "deep-dive-site",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "sync": "python scripts/sync_content.py",
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^5.14.1",
+    "mermaid": "^11.10.1"
+  }
+}

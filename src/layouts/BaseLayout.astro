@@ -1,0 +1,79 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description?: string;
+  wide?: boolean;
+  bleed?: boolean;
+}
+
+const {
+  title,
+  description = "源码级技术笔记：中间件、Spring、Java、存储、云原生与 RAG",
+  wide = false,
+  bleed = false,
+} = Astro.props;
+const SITE = "源码深读";
+const path = Astro.url.pathname;
+const nav = [
+  { href: "/", label: "首页" },
+  { href: "/categories/", label: "分类" },
+  { href: "/tags/", label: "标签" },
+  { href: "/learning-path/", label: "学习路线" },
+  { href: "/learning-map/", label: "思维导图" },
+];
+const isOn = (h: string) => (h === "/" ? path === "/" : path.startsWith(h));
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} · {SITE}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="inner">
+        <a class="brand" href="/">
+          <span class="brand-mark">&lt;/&gt;</span>
+          <span class="brand-name">{SITE}</span>
+        </a>
+        <nav class="site-nav">
+          {
+            nav.map((n) => (
+              <a href={n.href} class={isOn(n.href) ? "on" : ""}>
+                {n.label}
+              </a>
+            ))
+          }
+          <a class="nav-gh" href="https://github.com/gycxxx/gycxxx.github.io">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class={bleed ? "main-bleed" : wide ? "main main-wide" : "main"}>
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="inner">
+        <div class="foot-brand">
+          <span class="brand-mark">&lt;/&gt;</span>
+          <b>{SITE}</b>
+          <span>逐文件、逐函数地读源码，结论都带 文件:行号</span>
+        </div>
+        <div class="foot-links">
+          <a href="/categories/">分类</a>
+          <a href="/tags/">标签</a>
+          <a href="/learning-path/">学习路线</a>
+          <a href="/learning-map/">思维导图</a>
+        </div>
+        <p class="foot-note">由 Astro 静态生成 · 内容以 Markdown 源码笔记为唯一事实源</p>
+      </div>
+    </footer>
+  </body>
+</html>

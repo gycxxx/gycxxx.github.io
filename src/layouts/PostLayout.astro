@@ -1,0 +1,103 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+
+interface Props {
+  title: string;
+  date: Date;
+  categories: string[];
+  tags: string[];
+  headings: { depth: number; slug: string; text: string }[];
+  prev?: { href: string; title: string };
+  next?: { href: string; title: string };
+}
+
+const { title, date, categories, tags, headings, prev, next } = Astro.props;
+
+const toc = headings.filter((h) => h.depth >= 2 && h.depth <= 4);
+
+function fmt(d: Date) {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+---
+
+<BaseLayout title={title}>
+  <article class="post">
+    <div class="crumb">
+      <a href="/">首页</a>
+      {
+        categories.map((c) => (
+          <>
+            {" / "}
+            <a href={`/categories/${encodeURIComponent(c)}/`}>{c}</a>
+          </>
+        ))
+      }
+    </div>
+
+    <div class="post-head">
+      <h1>{title}</h1>
+      <div class="page-meta">
+        <time datetime={date.toISOString()}>{fmt(date)}</time>
+        {
+          tags.length > 0 && (
+            <>
+              {" · "}
+              {tags.map((t, i) => (
+                <>
+                  {i > 0 && " "}
+                  <a class="chip" href={`/tags/${encodeURIComponent(t)}/`}>{t}</a>
+                </>
+              ))}
+            </>
+          )
+        }
+      </div>
+    </div>
+
+    {
+      toc.length > 3 && (
+        <nav class="toc">
+          <div class="toc-title">目录</div>
+          <ol>
+            {toc.map((h) => (
+              <li class={`d${h.depth}`}>
+                <a href={`#${h.slug}`}>{h.text}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )
+    }
+
+    <div class="markdown-body">
+      <slot />
+    </div>
+
+    {
+      (prev || next) && (
+        <div class="post-nav">
+          <span>{prev ? <a href={prev.href}>← {prev.title}</a> : ""}</span>
+          <span>{next ? <a href={next.href}>{next.title} →</a> : ""}</span>
+        </div>
+      )
+    }
+  </article>
+</BaseLayout>
+
+<script>
+  // Mermaid 图按需加载：页面里没有 .mermaid 就不下载这 ~1MB 的渲染器。
+  const blocks = document.querySelectorAll(".mermaid");
+  if (blocks.length > 0) {
+    const { default: mermaid } = await import("mermaid");
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: "loose",
+      theme: "default",
+      fontFamily:
+        '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
+ flowchart: { useMaxWidth: true, htmlLabels: true },
+    });
+    await mermaid.run({ querySelector: ".mermaid" });
+  }
+</script>

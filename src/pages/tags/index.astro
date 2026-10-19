@@ -1,0 +1,24 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { allTags } from "../../lib/docs";
+
+const docs = await getCollection("docs");
+const tags = allTags(docs);
+---
+
+<BaseLayout title="标签">
+  <div class="panel">
+    <h1 class="page-title">标签</h1>
+    <div class="page-meta">共 {tags.length} 个标签</div>
+    <div class="chips">
+      {
+        tags.map(([t, list]) => (
+          <a class="chip" href={`/tags/${encodeURIComponent(t)}/`}>
+            {t} ({list.length})
+          </a>
+        ))
+      }
+    </div>
+  </div>
+</BaseLayout>

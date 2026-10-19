@@ -1,0 +1,32 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { groupByCategory } from "../../lib/docs";
+
+const docs = await getCollection("docs");
+const groups = groupByCategory(docs);
+---
+
+<BaseLayout title="分类">
+  <div class="panel">
+    <h1 class="page-title">分类</h1>
+    <div class="page-meta">共 {groups.length} 个分类</div>
+    {
+      groups.map(([cat, list]) => (
+        <section class="group">
+          <h2>
+            <a href={`/categories/${encodeURIComponent(cat)}/`}>{cat}</a>
+            <span class="chip" style="margin-left:8px">{list.length} 篇</span>
+          </h2>
+          <ul class="doc-list">
+            {list.map((d) => (
+              <li>
+                <a href={`/${d.id}/`}>{d.data.title}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </div>
+</BaseLayout>

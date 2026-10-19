@@ -1,0 +1,38 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { sortByDateDesc, excerpt } from "../../lib/docs";
+
+export async function getStaticPaths() {
+  const docs = sortByDateDesc(await getCollection("docs"));
+  const map = new Map<string, typeof docs>();
+  for (const d of docs) {
+    for (const t of d.data.tags) {
+      if (!map.has(t)) map.set(t, []);
+      map.get(t)!.push(d);
+    }
+  }
+  return [...map.entries()].map(([tag, list]) => ({ params: { tag }, props: { tag, list } }));
+}
+
+const { tag, list } = Astro.props;
+---
+
+<BaseLayout title={`标签：${tag}`}>
+  <div class="panel">
+    <div class="crumb"><a href="/">首页</a> / <a href="/tags/">标签</a></div>
+    <h1 class="page-title">{tag}</h1>
+    <div class="page-meta">{list.length} 篇</div>
+    <ul class="doc-list">
+      {
+        list.map((d) => (
+          <li>
+            <a href={`/${d.id}/`}>{d.data.title}</a>
+            <span class="date">{d.data.date.toISOString().slice(0, 10)}</span>
+            <span class="excerpt">{excerpt(d.body)}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</BaseLayout>

@@ -1,0 +1,264 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import "../styles/home.css";
+import { sortByDateDesc, groupByCategory, allTags, href, excerpt } from "../lib/docs";
+
+const docs = sortByDateDesc(await getCollection("docs"));
+const groups = groupByCategory(docs);
+const recent = docs.slice(0, 6);
+const tags = allTags(docs).slice(0, 26);
+const fmt = (d: Date) => d.toISOString().slice(0, 10);
+
+const META: Record<string, { color: string; mark: string; blurb: string }> = {
+  中间件: { color: "#e07a5f", mark: "中", blurb: "消息队列与服务发现的分布式骨架" },
+  Spring: { color: "#6aa84f", mark: "S", blurb: "IoC / AOP / MVC / Boot 自动装配" },
+  存储与缓存: { color: "#3d7ea6", mark: "存", blurb: "Redis、MySQL、Elasticsearch 读写路径" },
+  Java: { color: "#e8a33d", mark: "J", blurb: "集合、并发、锁、线程与 JVM" },
+  游戏与云原生: { color: "#2a9d8f", mark: "云", blurb: "Agones 与 Open Match 的编排与匹配" },
+  RAG: { color: "#8e6fd8", mark: "R", blurb: "切分、召回、融合与检索增强生成" },
+  "RAG 与 Agent": { color: "#b56576", mark: "A", blurb: "Agent 编排、工具调用与知识检索" },
+  学习路线: { color: "#4a7fb5", mark: "路", blurb: "按记忆曲线排的阅读顺序与全景导图" },
+};
+const meta = (c: string) => META[c] ?? { color: "#8a9298", mark: "·", blurb: "" };
+
+const TOOLS = [
+  {
+    href: "/learning-map/",
+    name: "思维导图",
+    desc: "19 份文档、111 讲，按 6 阶段学习顺序铺开，可折叠可搜索",
+    icon: "M4 6h6M4 12h6M4 18h6M14 9h6M14 15h6",
+  },
+  {
+    href: "/learning-path/",
+    name: "学习路线",
+    desc: "16 周排期 + 间隔重复复习点，每组配一句记忆钩子",
+    icon: "M3 18h18M6 14l4-6 4 4 4-8",
+  },
+  {
+    href: "/chm-resize-animation/",
+    name: "CHM 扩容动画",
+    desc: "ConcurrentHashMap 协作扩容的 64 桶分段认领，可单步播放",
+    icon: "M3 5h18v6H3zM3 13h18v6H3zM9 5v6M15 13v6",
+  },
+];
+
+const index = docs.map((d) => ({
+  t: d.data.title,
+  u: href(d),
+  c: d.data.categories.join(" "),
+  g: d.data.tags.join(" "),
+  x: excerpt(d.body, 56),
+}));
+---
+
+<BaseLayout title="首页" description="源码级技术笔记合集" bleed>
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="hero-grid" aria-hidden="true"></div>
+    <div class="hero-inner">
+      <div class="hero-main">
+        <span class="hero-badge">23 份源码笔记 · 全部结论可回源码校验</span>
+        <h1>读源码，<em>读到行号为止</em></h1>
+        <p class="hero-sub">
+          一批逐文件、逐函数的源码深读笔记。每篇遵循同一套结构：全景地图 → 速览 →
+          面试速通 → 分讲精读 → 附录，所有结论都带
+          <code>文件:行号</code>，并由脚本逐条回源码校验。
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="/learning-path/">按学习路线读 →</a>
+          <a class="btn btn-ghost" href="/learning-map/">打开思维导图</a>
+        </div>
+      </div>
+
+      <div class="hero-term">
+        <div class="term-bar">
+          <i></i><i></i><i></i>
+          <span>verify_citations.py</span>
+        </div>
+        <pre class="term-body"><span class="c-dim">$</span> python verify_citations.py
+<span class="c-ok">✓</span> open-match.md       <span class="c-num">209</span> refs OK
+<span class="c-ok">✓</span> agones.md           <span class="c-num">188</span> refs OK
+<span class="c-ok">✓</span> opencoze-agent.md   <span class="c-num">130</span> refs OK
+<span class="c-ok">✓</span> java-collections.md <span class="c-num">111</span> refs OK
+<span class="c-dim">  … 19 more files</span>
+<span class="c-ok">✓</span> <span class="c-hl">3565</span> citations verified, 0 broken</pre>
+      </div>
+    </div>
+
+    <div class="hero-stats">
+      <div class="stat"><b>{docs.length}</b><span>篇笔记</span></div>
+      <div class="stat"><b>{groups.length}</b><span>个分类</span></div>
+      <div class="stat"><b>{allTags(docs).length}</b><span>个标签</span></div>
+      <div class="stat"><b>3565</b><span>条可校验引用</span></div>
+    </div>
+  </section>
+
+  <!-- ============ SEARCH ============ -->
+  <section class="wrap search-sec">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" class="search-ico" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"></circle>
+        <path d="M20 20l-3.5-3.5"></path>
+      </svg>
+      <input
+        id="q"
+        type="search"
+        placeholder="搜索笔记标题、分类或标签…（如 扩容 / Redis / AQS）"
+        autocomplete="off"
+      />
+      <kbd>/</kbd>
+    </div>
+    <div id="result" class="search-result" hidden></div>
+  </section>
+
+  <!-- ============ CATEGORIES ============ -->
+  <section class="wrap sec">
+    <div class="sec-head">
+      <h2>按分类浏览</h2>
+      <a class="sec-more" href="/categories/">全部分类 →</a>
+    </div>
+    <div class="cat-grid">
+      {
+        groups.map(([cat, list]) => (
+          <article class="cat-card" style={`--accent:${meta(cat).color}`}>
+            <a class="cat-head" href={`/categories/${encodeURIComponent(cat)}/`}>
+              <span class="cat-mark">{meta(cat).mark}</span>
+              <span class="cat-titles">
+                <b>{cat}</b>
+                <i>{meta(cat).blurb}</i>
+              </span>
+              <span class="count">{list.length}</span>
+            </a>
+            <ul class="cat-items">
+              {list.slice(0, 4).map((d) => (
+                <li>
+                  <a href={href(d)}>
+                    <span>{d.data.title}</span>
+                    <em>{fmt(d.data.date)}</em>
+                  </a>
+                </li>
+              ))}
+            </ul>
+            {list.length > 4 && (
+              <a class="cat-more" href={`/categories/${encodeURIComponent(cat)}/`}>
+                还有 {list.length - 4} 篇 →
+              </a>
+            )}
+          </article>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- ============ RECENT ============ -->
+  <section class="wrap sec">
+    <div class="sec-head">
+      <h2>最近更新</h2>
+      <span class="sec-note">按笔记更新时间排序</span>
+    </div>
+    <ul class="recent">
+      {
+        recent.map((d) => (
+          <li>
+            <a class="recent-card" href={href(d)}>
+              <span class="recent-date">{fmt(d.data.date)}</span>
+              <span class="recent-body">
+                <b>{d.data.title}</b>
+                <i>{excerpt(d.body, 96)}</i>
+                <span class="recent-tags">
+                  {d.data.categories.map((c) => (
+                    <span class="cat-tag" style={`--accent:${meta(c).color}`}>{c}</span>
+                  ))}
+                </span>
+              </span>
+              <span class="recent-arrow">→</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <!-- ============ TOOLS ============ -->
+  <section class="wrap sec">
+    <div class="sec-head">
+      <h2>工具与入口</h2>
+    </div>
+    <div class="tool-grid">
+      {
+        TOOLS.map((t) => (
+          <a class="tool" href={t.href}>
+            <span class="tool-ico">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d={t.icon} /></svg>
+            </span>
+            <b>{t.name}</b>
+            <span>{t.desc}</span>
+          </a>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- ============ TAGS ============ -->
+  <section class="wrap sec">
+    <div class="sec-head">
+      <h2>标签云</h2>
+      <a class="sec-more" href="/tags/">全部标签 →</a>
+    </div>
+    <div class="chips">
+      {
+        tags.map(([t, list]) => (
+          <a class="chip" href={`/tags/${encodeURIComponent(t)}/`}>
+            {t}
+            <em>{list.length}</em>
+          </a>
+        ))
+      }
+    </div>
+  </section>
+</BaseLayout>
+
+<script define:vars={{ index }}>
+  const q = document.getElementById("q");
+  const box = document.getElementById("result");
+  const norm = (s) => (s || "").toLowerCase();
+
+  function render(kw) {
+    kw = norm(kw.trim());
+    if (!kw) {
+      box.hidden = true;
+      box.innerHTML = "";
+      return;
+    }
+    const hits = index.filter(
+      (d) => norm(d.t).includes(kw) || norm(d.c).includes(kw) || norm(d.g).includes(kw)
+    );
+    box.hidden = false;
+    if (!hits.length) {
+      box.innerHTML = `<p class="sr-empty">没有匹配 “${kw}” 的笔记，换个关键词试试。</p>`;
+      return;
+    }
+    box.innerHTML =
+      `<p class="sr-count">命中 ${hits.length} 篇</p>` +
+      hits
+        .map(
+          (d) =>
+            `<a class="sr-item" href="${d.u}"><b>${d.t}</b><span>${d.c}</span><i>${d.x}</i></a>`
+        )
+        .join("");
+  }
+
+  q.addEventListener("input", (e) => render(e.target.value));
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "/" && document.activeElement !== q) {
+      e.preventDefault();
+      q.focus();
+    }
+    if (e.key === "Escape" && document.activeElement === q) {
+      q.value = "";
+      render("");
+      q.blur();
+    }
+  });
+</script>
