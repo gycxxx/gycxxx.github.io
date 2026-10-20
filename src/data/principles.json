@@ -336,6 +336,78 @@
   "c": "中间件"
  },
  {
+  "q": "为什么要用 ElasticSearch？和 MySQL 有什么不同？",
+  "a": "MySQL 强在事务与关联查询，但 LIKE '%kw%' 全表扫、多条件 OR 组合、海量文本的场景直接崩；ES 用倒排索引把\"词→文档\"做成字典，亚秒级全文检索 + 聚合分析，水平扩展分片并行。典型架构：MySQL 做主存储保事务，Binlog/Canal 异步同步 ES 承担搜索流量——本文与 mysql.md 是一对",
+  "d": "第一/二讲",
+  "s": "elasticsearch",
+  "t": "Elasticsearch 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "ElasticSearch 为什么快？",
+  "a": "四层叠加：①倒排索引——查询词直接定位文档列表，不逐条比对；②分片并行——一个查询拆到所有相关分片同时执行，协调节点归并；③filter 不计分且可缓存——布尔子句里能进 filter 的绝不进 must；④列式聚合——数值字段的 doc values 顺序读盘，聚合排序不走倒排。再叠加 segment 不可变（顺序读、mmap 友好）与 BM25 的短文档偏好调优",
+  "d": "第三/四讲",
+  "s": "elasticsearch",
+  "t": "Elasticsearch 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "ES 支持哪些数据类型？和 MySQL 怎么映射？",
+  "a": "大类：text（分词全文）、keyword（精确/排序/聚合）、数值（long/integer/float/scaled_float）、日期、布尔、二进制、对象/嵌套、地理点/形状。映射：VARCHAR→text + .keyword 多字段（9.x 动态映射自动建）、INT/BIGINT→integer/long、DECIMAL→scaled_float 或 keyword、DATETIME→date。decimal 没有原生二进制浮点之外的类型，见下条",
+  "d": "第二讲",
+  "s": "elasticsearch",
+  "t": "Elasticsearch 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "倒排索引是什么？",
+  "a": "正排是\"文档→包含哪些词\"，倒排把它翻过来：\"词项→包含它的文档列表（postings）\"——查询只需在词典里找到词、取出文档列表做交集/并集，与文档总量无关。Lucene 的 segment 里词典压缩成 FST、postings 带位置信息（支撑 phrase 查询）、数值/日期字段另有 BKD 树与 doc values 列式结构",
+  "d": "第三讲",
+  "s": "elasticsearch",
+  "t": "Elasticsearch 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "ES 不支持 decimal，如何避免丢失精度？",
+  "a": "float/double 是 IEEE 二进制浮点，0.1 这类十进制小数存进去就有表示误差。三条路：①scaled_float——指定 scaling_factor（如 100）做定点缩放，金额分场景够用；②存 keyword/long——字符串自行解析或直接存\"分\"；③精度敏感就继续放 MySQL，ES 只索引不参与计算。聚合求和前先想清楚类型",
+  "d": "第二/四讲",
+  "s": "elasticsearch",
+  "t": "Elasticsearch 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "Elasticsearch 支持事务吗？为什么？",
+  "a": "不支持多文档 ACID 事务，只有单文档操作原子。原因：分布式系统下跨分片/跨节点的两阶段提交代价高、延迟大，与 ES\"近实时、高吞吐、可水平扩展\"的定位冲突；一致性需求（版本号 _version/if_seq_no 乐观并发控制）只到单文档级。要事务就在 MySQL 侧完成，ES 只做检索投影",
+  "d": "第一/五讲",
+  "s": "elasticsearch",
+  "t": "Elasticsearch 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "什么是 ES 的深度分页问题？如何解决？",
+  "a": "from + size 深分页时，每个分片都要取出 from + size 条交给协调节点归并后再丢弃——from=10000 就要在分片侧搬 1 万条，内存与 CPU 双爆炸。解法：①search_after——用上一页最后一个 sort 值当游标往后续，分片侧直接定位；②PIT（point-in-time）——先打快照再 search_after，避免翻页期间数据变化导致重复/漏页；③全量遍历用 scroll（已不推荐新场景，让位 search_after）",
+  "d": "第五讲",
+  "s": "elasticsearch",
+  "t": "Elasticsearch 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "如何优化 ElasticSearch 搜索性能？",
+  "a": "一份速查清单：字段选型对（keyword 别建成 text）、布尔查询能进 filter 就进（缓存 + 不计分）、批量写入用 _bulk 并调大 refresh_interval、分片控制在 20–50GB/片、深分页改 search_after/PIT、聚合走高基数时加 keyword 子字段或限流、路由（routing）把查询收敛到目标分片、避免脚本字段与 wildcard 前导通配",
+  "d": "第三/四/五讲",
+  "s": "elasticsearch",
+  "t": "Elasticsearch 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "如何保证 ES 和数据库的数据一致性？",
+  "a": "ES 是\"最终一致\"的投影库，不追求强一致：主流是 Binlog 监听（Canal/Maxwell/Debezium）+ MQ 异步同步——MySQL 提交后从 binlog 捞变更投递给 ES，天然保序、可重放；配合定时对账补偿漏刷。要更强就双写 + 事务消息（复杂度上台阶）。别把 ES 当唯一真相源，真相永远在 MySQL",
+  "d": "mysql.md 联动",
+  "s": "elasticsearch",
+  "t": "Elasticsearch 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
   "q": "ArrayList 怎么扩容？",
   "a": "满则走 grow()：ArraysSupport.newLength 首选增长 0.5 倍（约 1.5 倍），System.arraycopy 批量搬迁，摊还 O(1)",
   "d": "第一讲",
@@ -552,6 +624,70 @@
   "c": "Java"
  },
  {
+  "q": "ArrayList、LinkedList 与 Vector 的区别？",
+  "a": "三者都是 List：ArrayList 数组 + arraycopy；LinkedList 双向链表 + 指针改写；Vector 是 ArrayList 的全同步祖先版，每个方法一把大锁，扩容默认翻倍（capacityIncrement 可指定），已被官方弃用——要并发读多写少用 CopyOnWriteArrayList，要并发哈希用 CHM",
+  "d": "第一/六讲",
+  "s": "java-collections",
+  "t": "Java 集合框架源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "HashMap、Hashtable 和 ConcurrentHashMap 的区别？",
+  "a": "三层递进：HashMap 快但不安全；Hashtable 给整个表加 synchronized（读写全互斥，单线程也付锁代价），且 key/value 都不许 null；CHM 只锁桶头 + 空桶 CAS，读无锁，同样不许 null（null 会被歧义成\"不存在\"）",
+  "d": "第五/六讲",
+  "s": "java-collections",
+  "t": "Java 集合框架源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "Java 集合框架怎么分类？",
+  "a": "两大接口：Collection（List 有序可重复 / Set 无序不重复 / Queue 队列）与 Map（键值对，不属于 Collection）。并发实现单独一族：ConcurrentHashMap/CopyOnWriteArrayList/ConcurrentLinkedQueue/BlockingQueue 家族，选型先问\"并发吗、读多还是写多\"",
+  "d": "第一讲",
+  "s": "java-collections",
+  "t": "Java 集合框架源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "HashMap 的扩容机制？",
+  "a": "size > capacity × loadFactor（默认 12 > 16×0.75）触发 resize()：容量翻倍、阈值翻倍，按 e.hash & oldCap 把桶拆成 lo/hi 两条链表顺序迁到新表——免重算 hash，这是 2 次幂容量的红利；单线程安全，并发扩容会丢数据",
+  "d": "第五讲",
+  "s": "java-collections",
+  "t": "Java 集合框架源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "HashMap 的 remove 怎么实现的？",
+  "a": "定位桶后遍历：命中就比较 hash/==/equals 三连，是头节点直接改 table[i]，否则持 prev 指针摘链；红黑树走 removeTreeNode 删完可能要 untreeify/balanceDeletion 回血；删除后 modCount++——这就是迭代中直接 remove 抛 CME 的原因",
+  "d": "第四讲",
+  "s": "java-collections",
+  "t": "Java 集合框架源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "HashMap 的 get/put 底层流程？",
+  "a": "put：spread(h) 扰动 → (n-1) & hash 落桶 → 空桶 CAS 填节点 / 链表尾插或树插 / 超阈值树化 → ++size 够阈值 resize。get：同一套定位 → 头节点比 hash+equals / 链表或红黑树查找 → 命中取 val；全程不加锁，所以并发 put 时 get 可能读到旧值或死循环（JDK 7）",
+  "d": "第五讲",
+  "s": "java-collections",
+  "t": "Java 集合框架源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "Set 如何保证元素不重复？",
+  "a": "HashSet 复用 HashMap：value 固定为 PRESENT，去重 = 先比 hashCode 定位桶、再 equals 逐一比对，两者都相等才判重；所以存入自定义对象必须成对实现 equals/hashCode，且 hashCode 在对象生命周期内要稳定。TreeSet 则换成 compareTo/Comparator 判重",
+  "d": "第三讲",
+  "s": "java-collections",
+  "t": "Java 集合框架源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "fail-fast 和 fail-safe 的区别？",
+  "a": "fail-fast：迭代时检查 modCount，发现被结构性修改立刻抛 CME（ArrayList/HashMap 常规迭代器），不保证检测到；fail-safe：迭代的是副本或快照（CopyOnWriteArrayList 的数组快照、ConHashMap 的弱一致视图），不抛 CME 但可能读到过期数据——用\"一致性换不抛异常\"",
+  "d": "第四/六讲",
+  "s": "java-collections",
+  "t": "Java 集合框架源码深度学习笔记",
+  "c": "Java"
+ },
+ {
   "q": "线程池七个参数？`execute` 的执行流程？",
   "a": "七参数：corePoolSize/maximumPoolSize/keepAliveTime+unit/workQueue/threadFactory/handler。执行流程：core 未满直接建核心线程；否则入队并二次检查（入队后池子关了或线程没了）；队满才建非核心线程，到 max 就拒绝",
   "d": "第一讲",
@@ -675,6 +811,142 @@
   "q": "`ThreadLocalRandom` 为什么快？",
   "a": "seed/probe 存在 Thread 对象字段里用 Unsafe 直读写，无竞争、不查 ThreadLocal 哈希表；getProbe() 还被 CHM 的 CounterCell 选槽复用",
   "d": "第五讲",
+  "s": "java-concurrent",
+  "t": "Java 并发库（JUC）源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "线程池有几种创建方式？",
+  "a": "Executors 五工厂（newFixedThreadPool/newCachedThreadPool/newSingleThreadExecutor/newScheduledThreadPool/newWorkStealingPool）+ 直接 new ThreadPoolExecutor。前四个全有坑（无界队列或无界线程数 → OOM），阿里规约要求手写构造器指定有界队列 + 明确拒绝策略",
+  "d": "第一讲",
+  "s": "java-concurrent",
+  "t": "Java 并发库（JUC）源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "线程池的拒绝策略有哪些？",
+  "a": "内置四种：AbortPolicy（默认，抛 RejectedExecutionException）、CallerRunsPolicy（退回提交线程自己跑，天然背压）、DiscardPolicy（静默丢弃）、DiscardOldestPolicy（挤掉队列头部最旧的）；都不满足就实现 RejectedExecutionHandler 自定义（落库/记日志/延迟重试）",
+  "d": "第一讲",
+  "s": "java-concurrent",
+  "t": "Java 并发库（JUC）源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "线程数设置多少合适？",
+  "a": "CPU 密集型 ≈ 核数 +1（留一席给缺页/GC）；IO 密集型 ≈ 核数 ×（1 + 等待时间/计算时间），等得越久线程越多。实际以上帝视角公式起步，再用压测和队列堆积监控回调——动态线程池就是把这个过程自动化",
+  "d": "第一讲",
+  "s": "java-concurrent",
+  "t": "Java 并发库（JUC）源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "动态线程池实现原理？",
+  "a": "包装 ThreadPoolExecutor 暴露 setCorePoolSize/setMaximumPoolSize/setQueue 之类的 setter，配置中心（Nacos/Apollo）推送时热改参数，同时采集队列水位/拒绝次数/活跃线程数做监控告警。注意 setQueue 会丢任务，多数实现只热改线程数不动队列",
+  "d": "第一讲",
+  "s": "java-concurrent",
+  "t": "Java 并发库（JUC）源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "任务特别多、队列满了怎么办？",
+  "a": "三条路：①换 CallerRunsPolicy 让生产者跟着减速（背压）；②队列必须有界——无界队列（newFixedThreadPool 默认 Integer.MAX_VALUE）只会把内存撑爆；③真的不能拒就分级：核心业务单独池 + 非核心业务降级/异步化。队列长度按\"峰值任务量 × 平均处理时长\"估算，别拍脑袋",
+  "d": "第一讲",
+  "s": "java-concurrent",
+  "t": "Java 并发库（JUC）源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "多线程上下文切换是什么？",
+  "a": "CPU 换个线程执行要保存/恢复寄存器、程序计数器、栈指针，还要刷 TLB/缓存局部性——纯纯的额外开销，锁竞争激烈时切换次数爆炸、吞吐反降。减少手段：减少锁粒度、CAS 自旋、无锁结构、协程/虚拟线程把\"线程级切换\"变成\"用户态调度\"",
+  "d": "第一讲",
+  "s": "java-concurrent",
+  "t": "Java 并发库（JUC）源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "创建线程有几种方式？",
+  "a": "五种：继承 Thread、实现 Runnable、实现 Callable+FutureTask（有返回值）、线程池/Executor 提交（生产标准姿势）、JDK 21 Thread.ofVirtual() 虚拟线程。start() 只能调一次；直接调 run() 只是普通方法调用，没有新线程",
+  "d": "java-thread.md",
+  "s": "java-concurrent",
+  "t": "Java 并发库（JUC）源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "并发和并行的区别？",
+  "a": "并发是\"多个任务在同一时段内都被推进\"（可交替执行，单核也行），并行是\"多个任务在同一时刻真的同时在跑\"（多核才可能）。线程池解决的是并发调度；能不能并行取决于核数与任务间依赖",
+  "d": "第一讲",
+  "s": "java-concurrent",
+  "t": "Java 并发库（JUC）源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "Java 中常见的锁有哪些？",
+  "a": "按语义分：乐观（CAS）/悲观（synchronized、ReentrantLock）；按公平性分公平/非公平；按重入分可重入/不可重入；按粒度分读写锁（ReentrantReadWriteLock、StampedLock）；按形态分自旋锁、互斥锁、条件锁。Java 层最终都落到 CAS + park/unpark 两个原语上",
+  "d": "java-lock.md",
+  "s": "java-concurrent",
+  "t": "Java 并发库（JUC）源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "什么是线程死锁，如何排查？",
+  "a": "两个以上线程互相持有对方要的锁且都不肯放手（互相等待成环）。排查：jstack <pid> 找 Found one Java-level deadlock，或 jcmd Thread.print 看 waiting to lock 互相引用；解决：固定加锁顺序、尝试锁（tryLock 超时）、缩小锁范围、消除嵌套锁",
+  "d": "perf-troubleshooting.md",
+  "s": "java-concurrent",
+  "t": "Java 并发库（JUC）源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "线程、进程、协程的区别？",
+  "a": "进程是资源分配单位（独立地址空间），线程是 CPU 调度单位（共享进程内存、有独立栈），协程是用户态调度单位（栈自己管、切换不进内核）。Java 里平台线程 = 1:1 内核线程，虚拟线程 = M:N 用户态调度，一个虚拟线程被 park 不影响载体线程上的其他虚拟线程",
+  "d": "java-thread.md",
+  "s": "java-concurrent",
+  "t": "Java 并发库（JUC）源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`ThreadLocal` 使用场景有哪些？",
+  "a": "三层之间传参不想逐层加参数（用户上下文/ traceId）、每个线程一份的重对象（SimpleDateFormat、非线程安全工具类）、跨框架的隐式上下文（Spring 的事务同步管理器、Feign 的请求拦截）。铁律：线程池场景用完必须 remove()，否则串味 + 内存泄漏",
+  "d": "java-thread.md",
+  "s": "java-concurrent",
+  "t": "Java 并发库（JUC）源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`ThreadLocalMap` 和 `HashMap` 的区别？",
+  "a": "结构不同：HashMap 是数组+链表/红黑树（拉链法），ThreadLocalMap 是开放寻址（冲突往后线性探测）；key 是弱引用（Entry extends WeakReference<ThreadLocal>），GC 时 key 被回收、value 成孤儿，靠 expungeStaleEntry 惰性清理；初始容量 16、扩容翻倍，没有负载因子",
+  "d": "java-thread.md",
+  "s": "java-concurrent",
+  "t": "Java 并发库（JUC）源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "volatile 能保证原子性吗？",
+  "a": "不能。i++ 是读-改-写三步，volatile 只保证每步可见，不保证三步之间不被插队——多线程下照样丢更新。要原子性用 AtomicInteger（CAS）或 synchronized；要计数且高并发写优先 LongAdder",
+  "d": "jdk.md",
+  "s": "java-concurrent",
+  "t": "Java 并发库（JUC）源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "LongAdder 和 AtomicLong 的区别？",
+  "a": "AtomicLong 是单变量 CAS 自旋：并发高时所有线程抢同一个热点，失败重试空转烧 CPU；LongAdder 学 CHM 的 CounterCell 分段计数——写操作打到不同 cell 上几乎无竞争，sum() 时再汇总，读是弱一致的。高并发计数用 LongAdder，需要精确 CAS 语义（compare-and-set）才用 AtomicLong",
+  "d": "第五讲",
+  "s": "java-concurrent",
+  "t": "Java 并发库（JUC）源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "什么是 CAS？存在什么问题？",
+  "a": "CAS = compare-and-swap：读期望值 → 与新值一起交给 CPU 原子指令（cmpxchg）→ 相等才写入，失败重试。三大问题：①ABA（加版本号/AtomicStampedReference 解）；②自旋开销（竞争激烈时白烧 CPU）；③只能保护一个变量（多变量一致性还得上锁）。它是 Java 并发包的基石：AQS、CHM、原子类底层都是它",
+  "d": "java-lock.md",
+  "s": "java-concurrent",
+  "t": "Java 并发库（JUC）源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "什么是 happens-before 原则？",
+  "a": "JMM 定义的一套\"跨线程可见性\"推断规则：程序顺序、监视器锁（unlock 先于后续 lock）、volatile 写先于读、传递性、线程 start/join、中断检测等。作用是让开发者不用懂内存屏障也能推出\"这个写对那个读一定可见\"——比如 volatile 写 happens-before 于后续同变量的读，所以 DCL 的实例发布才安全",
+  "d": "jdk.md",
   "s": "java-concurrent",
   "t": "Java 并发库（JUC）源码深度学习笔记",
   "c": "Java"
@@ -907,6 +1179,30 @@
   "q": "读 `.gz` 文件为什么要套三层？",
   "a": "new GZIPInputStream(new BufferedInputStream(new FileInputStream(f)) 每层各司其职：File 出字节、Buffered 减系统调用、Inflater 解压、GZIP 认 gzip 格式。GZIPInputStream 本身 extends InflaterInputStream（:45），是装饰器叠装饰器",
   "d": "`java/util/zip/GZIPInputStream.java:45`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "AIO、BIO 和 NIO 的区别？",
+  "a": "BIO 同步阻塞：accept/read 都阻塞，一连接一线程，连接数上千就扛不住；NIO 同步非阻塞：一个 Selector 多路复用管多个 channel，就绪后才自己动手读写，线程仍在用户态跑；AIO 异步非阻塞：AsynchronousChannel 提交读写 + 回调/Future，OS 干完通知，线程连\"等就绪\"都省了。AIO 在 Linux 上实现一度粗糙（Netty 都弃用），JDK 21 虚拟线程让\"一请求一线程\"重新变香后存在感更弱",
+  "d": "第五讲",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "如何理解 select、poll、epoll？",
+  "a": "三者都是\"一次系统调用等一批 fd\"：select 有 fd 上限（1024）且每次调用都要把 fd 集合从用户态拷进内核、内核再全量遍历；poll 去掉数量上限但仍是全量遍历；epoll 把 fd 一次性注册进内核（epoll_ctl），内核维护就绪链表，epoll_wait 只把就绪的拷回来——成本 O(就绪数) 而非 O(总连接数)，万级长连接只有 epoll 扛得住。Java 的 Selector 就是这层封装：Linux 上 JDK 走 EPollSelectorProvider 产出的 EPollSelectorImpl（epoll_wait，EPollSelectorImpl.java:49），本文档深读的 PollSelectorImpl（PollSelectorImpl.java:45，poll(2)）是 Unix 兜底实现",
+  "d": "第五讲",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "同步、异步、阻塞、非阻塞怎么理解？",
+  "a": "两组正交的概念，别混：同步/异步问\"调用方要不要等结果\"——同步等返回值、异步拿回调/Future 事后通知；阻塞/非阻塞问\"等待时线程在干嘛\"——阻塞是挂起让出 CPU、非阻塞是立刻返回 EAGAIN 去干别的。四种组合：同步阻塞（BIO）、同步非阻塞（NIO 就绪后主动读）、异步阻塞（没人用）、异步非阻塞（AIO 完成队列）。NIO 的\"非阻塞\"常指\"读不阻塞\"，Selector 的 select() 本身仍是同步阻塞地等就绪",
+  "d": "第五讲",
   "s": "java-io",
   "t": "Java IO 源码深度学习笔记",
   "c": "Java"
@@ -1296,6 +1592,94 @@
   "c": "Java"
  },
  {
+  "q": "强引用、软引用、弱引用和虚引用的区别？",
+  "a": "强引用（Object o = new Object()）永不回收；软引用（SoftReference，Reference.java:47）内存不足才回收，适合缓存（GC 维护时间戳 clock，SoftReference.java:87，越久未用越先回收）；弱引用（WeakReference）下次 GC 就走，ThreadLocalMap 的 key 就是它；虚引用（PhantomReference）无法通过 get() 拿到对象，只配 ReferenceQueue 跟踪\"已被回收\"这个事件，替代 finalize 做清理",
+  "d": "第二/四讲",
+  "s": "jdk",
+  "t": "JVM 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "JVM 垃圾回收算法有哪些？",
+  "a": "三大基础算法：复制（半区复制，新生代 Serial/ParNew 用）、标记-清除（不移动，有碎片）、标记-压缩（整理后无碎片，老年代 Serial/Parallel 用）。分代收集就是组合拳：新生代复制 + 老年代标记压缩；G1 起改为 region 级混合收集，算法没变、调度单位变了",
+  "d": "第四讲",
+  "s": "jdk",
+  "t": "JVM 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "新生代和老年代的 GC 算法有哪些？",
+  "a": "新生代几乎都是复制：Eden + 2 个 Survivor（默认 8:1:1），Minor GC 把活对象复制到 Survivor，年龄过阈值 promote 老年代；老年代传统是标记-压缩（Serial/Parallel），CMS 是唯一并发标记-清除的异类（已删），G1/ZGC 走 region 级并发标记 + 转移",
+  "d": "第四讲",
+  "s": "jdk",
+  "t": "JVM 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "YoungGC 和 FullGC 的触发条件是什么？",
+  "a": "YoungGC：Eden 放不下新对象（TLAB 外分配失败）或分配担保预测老年代也放不下；FullGC：老年代满/晋升失败、大对象在 G1 里 to-space 耗尽、Metaspace 扩容失败、显式 System.gc()（可用 -XX:+DisableExplicitGC 关掉，JVM_GC 路径）。健康的线上应用 FullGC 频率应趋近 0——每次都意味着停顿一次，反查 perf-troubleshooting.md 剧本 D",
+  "d": "第四讲＋perf 剧本 D",
+  "s": "jdk",
+  "t": "JVM 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "CMS 和 G1 的区别？",
+  "a": "CMS：老年代并发收集，初始标记+重新标记两次 STW，中间并发标记、并发清除——快但产生碎片、有浮动垃圾，并发失败（Concurrent Mode Failure）退化 Serial STW  Full GC，且只收老年代；G1：堆切 region、可预测停顿，标记后只回收\"垃圾多\"的 CSet（含部分老年代 = Mixed GC），转移即整理无碎片。CMS 已在 JDK 14 删除，新项目直接 G1/ZGC",
+  "d": "第四讲",
+  "s": "jdk",
+  "t": "JVM 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "满足什么条件 Java 类会被卸载？",
+  "a": "三个同时满足：该类所有实例已被回收、加载它的 ClassLoader 已被回收、Class 对象本身无任何引用。判定靠 GC 时 ClassLoaderDataGraph 遍历问 is_unloading——加载器一死，挂在它名下的元数据整块可回收；启动类加载器加载的类永不卸载（它自己不会被回收）",
+  "d": "第一讲",
+  "s": "jdk",
+  "t": "JVM 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "Class 常量池、运行时常量池、字符串常量池的关系？",
+  "a": "Class 常量池在编译期写进 class 文件（字面量 + 符号引用）；类加载时搬进运行时常量池（方法区/Metaspace），符号引用在此解析为直接引用并缓存；字符串常量池独立存在，专存字符串字面量与 intern() 结果，JDK 7 起从永久代挪到堆里。三者是\"文件 → 方法区 → 堆\"的搬运关系",
+  "d": "第一讲",
+  "s": "jdk",
+  "t": "JVM 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "AOT 和 JIT 有什么区别？",
+  "a": "JIT 是运行期编译：先解释执行攒 profile，热点过 CompileThreshold 交给 C1/C2/Graal 编译，激进但依赖运行时信息、可能 deopt；AOT 是部署前编译（jaotc/GraalVM native-image）：启动快、无预热抖动、内存可控，但拿不到运行期 profile，峰值吞吐通常低于 JIT。选型看场景：短任务/冷启动敏感选 AOT，长跑服务 JIT 上限更高",
+  "d": "第三讲",
+  "s": "jdk",
+  "t": "JVM 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "内存泄漏和内存溢出的区别？",
+  "a": "泄漏是\"该死的没死\"——对象已无用但被无用引用挂着（集合只加不清、ThreadLocal 不 remove、监听器不注销），老年代缓慢上涨；溢出是\"要的没地给\"——一次分配超过堆上限直接 OutOfMemoryError。泄漏是因、溢出是果：排查先 dump（-XX:+HeapDumpOnOutOfMemoryError）看支配树找意外引用链",
+  "d": "第四讲＋perf 剧本 D",
+  "s": "jdk",
+  "t": "JVM 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "有哪些常用的 JVM 启动参数？",
+  "a": "堆：-Xms/-Xmx（生产设等值免伸缩抖动）、-Xmn/-XX:NewRatio、-XX:MaxMetaspaceSize；GC：-XX:+UseG1GC、-XX:MaxGCPauseMillis、-XX:+UseZGC；诊断：-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=、-Xlog:gc*（JDK9+ 统一日志）、-XX:+PrintFlagsFinal。所有 -XX: 选项的定义处就是 globals.hpp，拿不准翻源码比背博客靠谱",
+  "d": "第二/三讲",
+  "s": "jdk",
+  "t": "JVM 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "Java 是编译型还是解释型语言？",
+  "a": "都不是纯的——javac 先把源码编译成平台无关的字节码（.class，跨平台靠这一步），JVM 再解释执行字节码，同时 JIT 把热点方法编译成机器码。准确说法是\"静态编译到字节码 + 解释执行 + 运行期 JIT 编译\"的混合模式，一次编写到处运行的底气来自字节码这层中间表示",
+  "d": "第三讲",
+  "s": "jdk",
+  "t": "JVM 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
   "q": "ISR 与 HW/LEO 是什么关系？",
   "a": "ISR 是与 leader 保持同步的副本集合，follower 追平后 leader 才推进 HW；消费上界按隔离级别分别取 LEO/HW/LSO",
   "d": "第一讲、第三讲",
@@ -1403,6 +1787,30 @@
   "q": "如何防僵尸 producer？",
   "a": "pid fence 靠 epoch 单调递增：InitProducerId 对同一 transactionalId 总是提升 epoch，旧 producer（哪怕是僵尸）的任何请求都被拒收 PRODUCER_FENCED",
   "d": "第六讲",
+  "s": "kafka",
+  "t": "Kafka 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "Kafka 如何实现顺序消费？",
+  "a": "保序的两级保证：producer 侧同一分区单 in-flight（max.in.flight.requests.per.connection ≤ 5 + 幂等靠 sequence 重排序，乱序也能纠正）；consumer 侧单线程单分区——分区是顺序的最小单元，一个分区同时只被一个消费者消费，多线程消费同一分区就破序。要全局顺序只能单分区，要吞吐就按 key 哈希分区保\"相关消息\"有序",
+  "d": "第四讲、第五讲",
+  "s": "kafka",
+  "t": "Kafka 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "Kafka 如何保证消息不丢失？",
+  "a": "三段各设防线：producer acks=all + retries 拉满 + 发送失败回调兜底；broker min.insync.replicas ≥ 2（ISR 至少两个副本 ack 才认）、unclean.leader.election.enable=false（不许落后副本当选）；consumer 关自动提交、业务处理成功后手动提交 offset（先处理后提交，重复好过丢失）。全链闭合才叫不丢",
+  "d": "第一讲、第五讲",
+  "s": "kafka",
+  "t": "Kafka 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "Kafka 消息的发送过程简单介绍一下？",
+  "a": "producer send() 只是把 record 塞进 RecordAccumulator：序列化 → 按分区器选分区 → 挂到分区别队或新建批次（RecordAccumulator.java:275）→ 后台 Sender 线程按 broker 节点 drain 批次（:852-937）凑成 ProduceRequest → 过网络到 broker → KafkaApis.handleProduceRequest → ReplicaManager.appendRecords → UnifiedLog.append 落盘 → 等 ISR ack 到 requiredOffset → ProduceResponse 回客户端（acks=all 时 DelayedProduce 会挂起等满足条件）",
+  "d": "第四讲",
   "s": "kafka",
   "t": "Kafka 源码深度学习笔记",
   "c": "中间件"
@@ -1546,6 +1954,38 @@
  {
   "q": "statement 的解析顺序有什么讲究？",
   "a": "XMLMapperBuilder 固定顺序：cache-ref → cache → parameterMap → resultMap → sql → statements；跨文件引用靠「不完整元素」机制延后补齐，最终 buildAllStatements 按 resultMaps→cacheRefs→statements→methods fail-fast",
+  "d": "第一讲",
+  "s": "mybatis",
+  "t": "MyBatis 源码深度学习笔记",
+  "c": "Spring"
+ },
+ {
+  "q": "MyBatis 和 Hibernate 有什么区别？",
+  "a": "定位相反：Hibernate 是全自动 ORM（对象关系映射 + 一级/二级缓存 + 自动 DDL + HQL），SQL 由框架生成，学习曲线陡、调优要懂它；MyBatis 是半自动 SQL 映射——SQL 自己写、它只管执行与结果映射，可控可优化但样板代码多。国内互联网默认 MyBatis（SQL 可控、易 review、易分库分表），复杂领域模型/快速原型才上 Hibernate",
+  "d": "第一讲",
+  "s": "mybatis",
+  "t": "MyBatis 源码深度学习笔记",
+  "c": "Spring"
+ },
+ {
+  "q": "MyBatis 是怎么实现字段映射的？",
+  "a": "两大对象分工：StatementHandler 出 JDBC 语句、ParameterHandler 绑参数、ResultSetHandler 收结果——列转属性发生在 DefaultResultSetHandler：有 resultMap 按声明逐列映射（含嵌套、类型转换器），无声明走自动映射（列名下划线转驼峰 mapUnderscoreToCamelCase，按列名匹配属性），多列嵌套查询/延迟加载也在这一层实现",
+  "d": "第三讲",
+  "s": "mybatis",
+  "t": "MyBatis 源码深度学习笔记",
+  "c": "Spring"
+ },
+ {
+  "q": "MyBatis 如何执行批量操作？",
+  "a": "三条路：①ExecutorType.BATCH——BatchExecutor 把同一 MappedStatement 的连续调用攒在一起，flushStatements 时一次性 executeBatch（注意与上一条 SQL 不同则断批，BatchExecutor.java:62）；②XML 里单条 <foreach> 拼多值 INSERT，一次往返；③Spring 事务里 sqlSession 批量刷。JDBC 层 rewriteBatchedStatements=true 才真正合并网络包",
+  "d": "第三讲",
+  "s": "mybatis",
+  "t": "MyBatis 源码深度学习笔记",
+  "c": "Spring"
+ },
+ {
+  "q": "说说 JDBC 的执行步骤？",
+  "a": "六步：加载驱动 → DriverManager.getConnection 建连 → Connection.prepareStatement 预编译（占位符 ?）→ setXxx 绑定参数 → executeQuery/executeUpdate 执行（ResultSet 遍历）→ 关闭资源。MyBatis 的四大对象正是对这六步的分层封装：DataSource 管连接、StatementHandler 管语句生命周期、ParameterHandler 管绑定、ResultSetHandler 管结果",
   "d": "第一讲",
   "s": "mybatis",
   "t": "MyBatis 源码深度学习笔记",
@@ -1696,6 +2136,110 @@
   "c": "存储与缓存"
  },
  {
+  "q": "char 和 varchar 的区别？",
+  "a": "char 定长：写入右补空格、读出再去尾部空格，不怕碎片；varchar 变长：行内存 1~2 字节长度前缀，省空间但更新容易页分裂/行迁移。定长内容（hash、UUID、状态码）用 char，不定长文本用 varchar——会不会溢出看行格式不看列长度，DYNAMIC 下超长部分整体走溢出页",
+  "d": "第三讲",
+  "s": "mysql",
+  "t": "MySQL 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "InnoDB 和 MyISAM 有什么区别？",
+  "a": "InnoDB：数据即聚簇索引（挂在主键上）、行级锁、MVCC、事务、外键、redo 崩溃恢复；MyISAM：数据/索引分离的堆表、表级锁、无事务无 MVCC、但 count(*) 有 O(1) 计数器、全文索引老牌。5.5 起默认存储引擎就是 InnoDB，MyISAM 只剩历史遗留和极少数只读场景",
+  "d": "第三/五讲",
+  "s": "mysql",
+  "t": "MySQL 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "MySQL 深度分页如何优化？",
+  "a": "LIMIT 100000, 10 要先把前 10 万行捞出来再丢掉，成本在\"搬\"不在\"找\"。三板斧：①延迟关联——子查询先走覆盖索引只取主键，再回表拿整行；②游标分页——WHERE id > 上一页最大id LIMIT n，把\"跳过 N 行\"变成\"从定位点往后读\"；③业务改版成\"加载更多/滚动翻页\"。索引解决定位，解决不了搬运",
+  "d": "第四讲",
+  "s": "mysql",
+  "t": "MySQL 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "唯一索引和主键索引的区别？",
+  "a": "主键：一表一个、聚簇索引（叶子即整行）、绝不接受 null；唯一索引：一表可多个、二级索引（叶子存\"索引列+主键\"）、允许多个 null（null != null 不判重）。代价上唯一索引还多一笔\"必须读页做唯一性检查\"，所以 change buffer 救不了它（只缓存非唯一二级索引修改）",
+  "d": "第三/四讲",
+  "s": "mysql",
+  "t": "MySQL 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "`count(1)`、`count(*)` 与 `count(列名)` 的区别？",
+  "a": "count(*) 与 count(1) 等价：不取值，优化器挑成本最低的索引扫行数；count(列名) 只统计该列非 null 的行，必须把值读出来判断；count(主键) 走聚簇索引。InnoDB 没有 MyISAM 那种 O(1) 计数器，哪种都是扫索引——大表统计要靠 information_schema 估算或离线数",
+  "d": "第四讲",
+  "s": "mysql",
+  "t": "MySQL 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "InnoDB 中索引类型有哪些？",
+  "a": "按结构分：B+ 树索引（聚簇 + 二级）、AHI 自适应哈希索引（自动给稳定的等值查询前缀建，btr_ahi_parts 分区锁保护，不是全表哈希）；按功能分：主键索引、唯一索引、普通索引、联合索引（最左前缀）、前缀索引、覆盖索引、全文/空间索引。默认战场是 B+ 树",
+  "d": "第三/四讲",
+  "s": "mysql",
+  "t": "MySQL 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "truncate、delete、drop 的区别？",
+  "a": "delete：逐行删、记 undo/redo、可回滚、可带 WHERE、不释放空间、不动自增值；truncate：整表抹掉重建（DDL），快、不可回滚、自增计数复位、释放空间；drop：连表定义一起删。truncate/drop 都是隐式提交的 DDL，别在事务里用",
+  "d": "第三讲",
+  "s": "mysql",
+  "t": "MySQL 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "用了索引还是很慢，可能是什么原因？",
+  "a": "索引没真走：列上有函数/运算、隐式类型转换、前导模糊 LIKE '%x'；走了但代价高：回表行太多（非覆盖索引）、区分度太低（性别/状态位）、统计信息过期选错索引；SQL 写法：深分页、ORDER BY 触发 filesort、大 IN 列表；最后也可能是锁等待/IO 打满，与索引无关。先 EXPLAIN 看 type/key/rows/Extra 四列再下结论",
+  "d": "第四讲",
+  "s": "mysql",
+  "t": "MySQL 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "设计索引时应遵循哪些原则？",
+  "a": "为 WHERE/JOIN/ORDER BY 的高频组合服务而不是越多越好：区分度高的列放联合索引前置、利用覆盖索引避免回表、控制索引数量（每个索引都是写放大 + 优化器选错概率）、长列用前缀索引、删除冗余与从未用过的索引、表结构变更后及时 ANALYZE TABLE 刷新统计信息",
+  "d": "第三/四讲",
+  "s": "mysql",
+  "t": "MySQL 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "什么是最左前缀匹配？为什么要遵守？",
+  "a": "联合索引 (a,b,c) 的 B+ 树按 a→b→c 的字典序组织，只有查询从最左列开始且不跳列，后面的列才能借排序结构收敛范围；缺了 a（或中间断档），MySQL 只能用到部分索引甚至退化为全扫/哈希过滤。\"遵守\"不是规矩而是 B+ 树的物理事实——索引列顺序设计错了，建了也白建",
+  "d": "第四讲",
+  "s": "mysql",
+  "t": "MySQL 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "乐观锁与悲观锁怎么实现？",
+  "a": "悲观锁假设一定冲突：SELECT ... FOR UPDATE（next-key lock 锁范围，RR 下防幻读）或应用层互斥，冲突多的时候少做无畏重试；乐观锁假设基本不冲突：加 version 列或时间戳，UPDATE ... SET v=v+1, version=version+1 WHERE id=? AND version=?，影响行数为 0 就说明被改过、走重试/失败分支，读多写少时吞吐远高于锁",
+  "d": "第五讲",
+  "s": "mysql",
+  "t": "MySQL 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "InnoDB 的表级锁、页级锁、行级锁？",
+  "a": "行级锁是逻辑的：记录锁（锁单行）、间隙锁 gap（锁\"行与行之间\"防幻读，仅 RR）、next-key（记录 + 左开右闭间隙）；表级有意向锁 IS/IX（行锁意图登记，让表锁判断\"有没有行锁\"不用全表扫）和 MDL 元数据锁（DDL 与读写互斥）；页级只是 InnoDB 内部结构锁（如 AHI 分区锁），不是用户可选的粒度",
+  "d": "第五讲",
+  "s": "mysql",
+  "t": "MySQL 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "InnoDB 加索引，这个时候会锁表吗？",
+  "a": "5.6 起是 Online DDL：默认 ALGORITHM=INPLACE 允许并发 DML，只在\"准备/提交\"两个极短点拿排他元数据锁；ALGORITHM=COPY 才整表重建阻塞写，LOCK 子句还能再收并发度。所以加索引不等于锁表——但大表 INPLACE 期间有主从延迟与 IO 压力，稳妥做法仍是低峰执行或 pt-osc/gh-ost 这类无锁变更工具",
+  "d": "第三讲",
+  "s": "mysql",
+  "t": "MySQL 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
   "q": "Nacos 如何保证 AP 与 CP 的取舍？",
   "a": "临时实例（默认 ephemeral=true）走 AP：distro 本机写即成功，靠延迟广播 + 定期校验 + 快照补齐做到最终一致；持久实例走 CP：JRaft 多数派提交才返回；判决写在业务写方法里，ProtocolManager 只懒加载管生命周期",
   "d": "第四讲",
@@ -1802,6 +2346,22 @@
  {
   "q": "Nacos 2.x 与 3.x 的差异？",
   "a": "NacosApplication 被 NacosBootstrap 多上下文取代；UDP 推送在 3.2.0 已移除，gRPC 一统客户端与节点间通信；v2 数据模型迁入 core/v2/，HTTP 管理 API 在 v3",
+  "d": "第一、二讲",
+  "s": "nacos",
+  "t": "Nacos 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "Nacos 与 Eureka、ZooKeeper 的区别？",
+  "a": "Eureka：纯 AP，客户端心跳续约 + 客户端缓存，自我保护模式宁可返回过期实例也不踢人，无控制台即配置能力弱；ZooKeeper：CP，ZAB 强一致， leader 选举期间注册服务不可用，临时节点掉线即删（网络抖动误判多）；Nacos 两者皆可——临时实例走 AP（心跳 + 客户端故障转移），持久实例走 CP（Raft），还顺手把配置中心一起做了。选型本质是\"注册一致性要 CP 还是可用性要 AP\"的取舍",
+  "d": "第一讲",
+  "s": "nacos",
+  "t": "Nacos 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "Nacos 如何实现服务注册与发现？",
+  "a": "注册：客户端 gRPC 调 NamingPushService 上报实例（IP/端口/权重/元数据/临时标志）→ 服务端 ServiceManager 按四元组（namespace/group/name/ephemeral）定位 Service 落盘/入内存 → distro 协议同步到集群其他节点；发现：客户端订阅后收推送变更，未变更时 5~10s 拉取兜底，本地 ServiceInfoHolder 缓存 + FailoverReactor 容灾——AP 与最终一致都在这条链上体现",
   "d": "第一、二讲",
   "s": "nacos",
   "t": "Nacos 源码深度学习笔记",
@@ -2448,6 +3008,134 @@
   "c": "存储与缓存"
  },
  {
+  "q": "Redis 数据类型有哪几种？",
+  "a": "5 种基础：string（计数/缓存/分布式锁）、hash（对象字段）、list（ timelines/简单队列）、set（去重/交集并集）、zset（排行/范围查询）；3 种扩展：stream（消息队列，XADD/XREADGROUP）、bitmaps/hyperloglog（位统计/基数估算）、geospatial（地理位置）。每个 key 只有一个类型，TYPE 命令可查",
+  "d": "第四讲",
+  "s": "redis",
+  "t": "Redis 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "Redis 和 Memcached 的区别？",
+  "a": "MC 是纯缓存：只存字符串、多线程模型、无持久化、无原生集群、value 上限 1MB；Redis 是数据结构服务器：命令单线程执行、5+ 种类型、RDB/AOF 持久化、主从/Sentinel/Cluster、Lua 脚本。纯缓存且要榨多核可以 MC，要功能/一致性/运维体系选 Redis",
+  "d": "第一讲",
+  "s": "redis",
+  "t": "Redis 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "Redis 和 Caffeine 的区别？",
+  "a": "Caffeine 是进程内本地缓存：无网络往返（微秒级）、W-TinyLFU 高频淘汰、受堆大小约束、进程重启即丢失、多实例间天然不一致；Redis 是独立服务：跨进程共享、有 RTT 成本、可持久化。标准姿势是两级缓存——Caffeine 顶热点扛并发，Redis 做共享兜底",
+  "d": "第一讲",
+  "s": "redis",
+  "t": "Redis 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "Key 和 Value 的设计原则有哪些？",
+  "a": "key：业务:对象:id 冒号分层（可读 + 聚合统计），别超长也别太短；大 value 必须拆（hash 按 field、list 分段），否则读写一次卡整条命令路径；热点 key 加随机后缀打散到多节点；批量 key 用 hash tag {} 保证同槽。统一约定 TTL 并加随机抖动",
+  "d": "第二/六讲",
+  "s": "redis",
+  "t": "Redis 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "Redis 分布式锁如何实现？",
+  "a": "加锁 SET key <uuid> NX PX <ttl>（一条命令保证\"不存在才设 + 过期\"原子）；释放用 Lua 先比对 value 再 DEL，防止误解锁别人的锁；业务时间长就起看门狗线程续期。单节点 Redis 锁是 AP 语义（主从切换可能丢锁），严格互斥用 Redlock 多节点或直接上 etcd/ZooKeeper",
+  "d": "第三讲",
+  "s": "redis",
+  "t": "Redis 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "怎么解决缓存和数据库的一致性问题？",
+  "a": "没有免费的一致性，只有取舍：主流是旁路缓存（cache-aside）——读先缓存后 DB 回填，写先更新数据库再删缓存（而非更新缓存，避免并发写覆盖），配 binlog 监听（Canal）+ MQ 重放做最终补偿；对一致性敏感的读用分布式锁串行化。接受毫秒~秒级不一致并让业务幂等，是互联网公司的常态",
+  "d": "第三讲",
+  "s": "redis",
+  "t": "Redis 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "Redis 如何实现发布订阅？",
+  "a": "SUBSCRIBE/PSUBSCRIBE 订阅频道或模式，PUBLISH 广播，实现在 src/pubsub.c。特性：发布者不等确认、不落盘、订阅者离线即丢消息、无消费组——所以只适合做\"通知/失效广播\"这类可丢场景；要可靠消息队列用 stream（有 ACK、消费组、持久化）",
+  "d": "第六讲",
+  "s": "redis",
+  "t": "Redis 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "谈谈 Redis 的内存淘汰策略？",
+  "a": "maxmemory 到顶后八种：noeviction（默认，直接返回 OOM 错误）、volatile-*（只淘汰带 TTL 的）/allkeys-* × lru/lfu/random。LRU 是近似的：随机采样几个比 idle 再挑最旧的（evict.c），不是精确全表；LFU 按访问频次 + lfu-decay-time 对数衰减。做缓存用 allkeys-lru/lfu，做持久存储用 noeviction + 扩容",
+  "d": "第五讲",
+  "s": "redis",
+  "t": "Redis 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "Redis 事务和 Lua 脚本的区别？",
+  "a": "MULTI/EXEC 只是把命令打包进队列一次性执行，保证原子不保证一致：执行阶段出错不回滚（后面命令照跑），中间也不能拿前一条的结果做判断；Lua 脚本（EVAL/EVALSHA）整个脚本单线程原子执行、内部可读中间值写分支、可一次往返多次操作，还有 busy 脚本超时保护与 SCRIPT KILL。复杂原子逻辑选 Lua，简单打包用事务",
+  "d": "第三讲",
+  "s": "redis",
+  "t": "Redis 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "Redis 为什么要自定义 SDS？",
+  "a": "C 字符串三个硬伤：不记录长度（strlen O(n)）、遇 \\0 截断（二进制不安全）、拼接易溢出。SDS 头部带 len/free/flags（编码分级）：O(1) 取长度、二进制安全、空间预分配（sdsMakeRoomFor）+ 惰性释放省掉频繁 realloc，还有 embstr 让短字符串 robj+sds 一次分配",
+  "d": "第二讲",
+  "s": "redis",
+  "t": "Redis 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "Redis 如何高效安全的遍历所有 Key？",
+  "a": "严禁 KEYS *（O(n) 阻塞单线程，生产事故源）；用 SCAN cursor COUNT n MATCH pattern 游标迭代——每次只返回一小批 + 新游标，可能返回重复 key（业务要幂等），大集合用 SSCAN/HSCAN/ZSCAN 按 field 维度扫。先 OBJECT ENCODING/MEMORY USAGE 探测大 key 再决定处理策略",
+  "d": "第二讲",
+  "s": "redis",
+  "t": "Redis 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "缓存击穿、穿透、雪崩是什么？怎么防？",
+  "a": "穿透：请求根本不存在的数据（恶意 id）每次直击 DB——布隆过滤器/空值缓存/参数校验；击穿：单个热点 key 过期瞬间高并发同时回源——互斥锁只放一个去重建，或逻辑过期永不过期；雪崩：大批 key 同时过期或 Redis 整体宕机——TTL 加随机抖动、多级缓存、集群高可用、限流降级兜底",
+  "d": "第五讲",
+  "s": "redis",
+  "t": "Redis 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "Redis 集群模式有哪几种？",
+  "a": "三种：主从复制（读写分离 + 手动/哨兵故障转移）、Sentinel 哨兵（监控 + 自动故障转移，仍是单主写）、Cluster（16384 槽数据分片 + gossip + 去中心化，客户端按槽直连节点、水平扩展写能力）。选型看数据量与写入并发：单机内存装得下且写不高 → 主从/哨兵；要扩容 → Cluster",
+  "d": "第六讲",
+  "s": "redis",
+  "t": "Redis 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "什么是 Redis 集群脑裂，怎么解决？",
+  "a": "网络分区时旧 master 落在少数派一侧仍对外收写，恢复后发现它已被降位、这批写整体丢失即脑裂。缓解：min-replicas-to-write + min-replicas-max-lag——健康从库不够就拒绝写（checkGoodReplicasStatus，src/server.c:4715），从源头限制\"少数派侧还能写多久\"；再配 cluster-require-full-coverage 等参数收紧",
+  "d": "第六讲",
+  "s": "redis",
+  "t": "Redis 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "什么是 Redis 的数据分片？",
+  "a": "Cluster 把 key 空间切成 16384 个 hash slot：CRC16(key) mod 16384 算槽位，槽再分配到各节点；客户端缓存 slot→node 路由，落错节点收 MOVED 重定向后纠偏；需要多 key 操作（事务/发布订阅/ Lua）时用 hash tag {tag} 强制相关 key 落同一槽",
+  "d": "第六讲",
+  "s": "redis",
+  "t": "Redis 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
+  "q": "为什么 Redis 不支持回滚？",
+  "a": "事务只在命令入队阶段做语法/参数检查（此时报错整票拒绝），执行阶段的错（如 LPUSH 一个 string）不中断也不回滚——官方哲学是\"执行错说明是程序 bug，应该修代码而不是运行时兜底\"，且回滚会拖慢每个命令的执行路径。要全或无语义请用 Lua 脚本",
+  "d": "第三讲",
+  "s": "redis",
+  "t": "Redis 源码深度学习笔记",
+  "c": "存储与缓存"
+ },
+ {
   "q": "Sentinel 和 Hystrix 差异？",
   "a": "Sentinel 是控制台+规则热更+多维度流控（并发不隔离、用信号量做隔离）；Hystrix 是线程池隔离+熔断器先行者（已停更）",
   "d": "设计对比",
@@ -2587,6 +3275,30 @@
   "q": "`SphU.entry` 忘了 exit 会怎样？",
   "a": "线程数统计泄漏（increaseThreadNum 加了不减），最终所有请求被线程数规则拒——必须 try-finally",
   "d": "`StatisticSlot.java:62`",
+  "s": "sentinel",
+  "t": "Sentinel 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "漏桶和令牌桶有什么区别？",
+  "a": "漏桶：请求进桶、恒定速率流出，桶满则拒——强制平滑，任何突发都削平，适合\"下游不能受任何冲击\"；令牌桶：按速率往桶里放令牌、请求取到令牌才过，允许有界突发（攒下的令牌一次放出），适合\"平时限流、允许偶发高峰\"。Sentinel 的匀速器 DefaultController（RateLimiterController + GC 周期任务）本质上更接近漏桶思路的\"间隔通过\"，WarmUpController 则在冷启动时放行量渐变",
+  "d": "`DefaultController` / `RateLimiterController` / `WarmUpController`",
+  "s": "sentinel",
+  "t": "Sentinel 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "什么是预热？它有什么作用？",
+  "a": "冷启动的系统（刚重启的缓存/DB 连接池/JIT 未热）承受不住正常流量，预热让阈值从低到高渐变，把\"开机即洪峰\"摊薄。Sentinel 的 WarmUpController 按 coldFactor（默认 3）从 threshold/coldFactor 起步，经过一个 warm-up period 才升到满阈值；Redis 侧也有类似的 active-defrag/连接池预热概念——本质是给系统留出自愈时间",
+  "d": "`WarmUpController`",
+  "s": "sentinel",
+  "t": "Sentinel 源码深度学习笔记",
+  "c": "中间件"
+ },
+ {
+  "q": "什么是服务降级？",
+  "a": "压力过大时主动关闭非核心功能、返回兜底数据，把资源留给核心链路：关闭推荐/关闭详情页富文本只留骨架、读走缓存旧值、写走异步队列。降级是\"取舍\"（牺牲体验保可用），限流是\"准入\"（超了不让进），熔断是\"止损\"（下游挂了别再打它）——三者常配套使用，Sentinel 的 fallback 机制即降级落点",
+  "d": "熔断降级一节",
   "s": "sentinel",
   "t": "Sentinel 源码深度学习笔记",
   "c": "中间件"
@@ -2736,6 +3448,30 @@
   "c": "Spring"
  },
  {
+  "q": "谈谈 Spring 的 IOC？",
+  "a": "控制反转 = 把\"对象自己 new 依赖\"翻转为\"容器按定义创建并注入依赖\"：getBean 是总入口，定义经 BeanDefinition 描述、BeanFactoryPostProcessor 加工、BeanPostProcessor 增强，单例池 + 三级缓存解决循环依赖。好处是解耦与可测试（换实现不动代码），代价是启动变慢、调试链路变长",
+  "d": "第一、三讲",
+  "s": "spring-core",
+  "t": "Spring 核心源码深度学习笔记（IoC · AOP · 事务）",
+  "c": "Spring"
+ },
+ {
+  "q": "Spring 中创建 Bean 有几种方式？",
+  "a": "五类：无参构造器（默认）、静态工厂方法、实例工厂方法（@Bean 方法本质是工厂）、FactoryBean#getObject（区别于 BeanFactory：前者产对象、后者是容器）、Autowired 注入的构造器选优。实例化统一经 InstantiationStrategy（默认 CGLIB SimpleInstantiationStrategy 反射调构造器）",
+  "d": "第一讲",
+  "s": "spring-core",
+  "t": "Spring 核心源码深度学习笔记（IoC · AOP · 事务）",
+  "c": "Spring"
+ },
+ {
+  "q": "Spring Bean 的生命周期是怎么样的？",
+  "a": "概览链：实例化（构造器）→ 属性填充（populateBean，触发依赖注入）→ BeanNameAware/BeanFactoryAware 等 Aware 回调 → BeanPostProcessor.postProcessBeforeInitialization → @PostConstruct/init-method → postProcessAfterInitialization（AOP 代理通常在这里生成）→ 使用 → 销毁（@PreDestroy/DisposableBean）→ 完整版见第七讲的逐环精读",
+  "d": "第七讲",
+  "s": "spring-core",
+  "t": "Spring 核心源码深度学习笔记（IoC · AOP · 事务）",
+  "c": "Spring"
+ },
+ {
   "q": "Spring Boot 自动配置原理？",
   "a": "候选自动配置类全部登记在 META-INF/spring/*.imports（Boot 4 核心模块仅 12 个，全仓约 100 份），AutoConfigurationImportSelector 以\"加载 → 去重 → 排除 → 过滤 → 排序\"五步漏斗处理，再由条件注解逐个裁决；用户 Bean 永远先注册，自动配置只做\"查漏补缺\"",
   "d": "第二讲",
@@ -2864,6 +3600,54 @@
   "c": "Spring"
  },
  {
+  "q": "SpringBoot 和 Spring 的区别是什么？",
+  "a": "Spring 是 IoC/AOP 容器 + 一库可选模块，用要自己凑（选版本、写配置、配 Web 容器）；Spring Boot 是约定大于配置的脚手架：自动配置 + starter 依赖管理 + 内嵌容器 + 生产级端点，把\"拼装\"变成\"开箱即用\"。Boot 不替换 Spring，只是把 Spring 的装配自动化了",
+  "d": "第一讲",
+  "s": "springboot",
+  "t": "Spring Boot 源码深度学习笔记",
+  "c": "Spring"
+ },
+ {
+  "q": "Spring 中的 Bean 是线程安全的吗？",
+  "a": "容器本身不管线程安全：单例 Bean 被所有请求共享，无状态的（只读依赖别人）安全，有可变状态的（成员变量累加/缓存）不安全。默认单例下要共享状态就上 ThreadLocal、原型作用域、或把状态挪到方法局部变量/数据库。Spring 的有状态 Bean（controller/service）默认写法就是\"无状态\"",
+  "d": "spring-core.md",
+  "s": "springboot",
+  "t": "Spring Boot 源码深度学习笔记",
+  "c": "Spring"
+ },
+ {
+  "q": "Spring AOP 在什么场景下会失效？",
+  "a": "四种经典翻车：①同类内自调用（this.method() 绕过代理，本质是没走代理对象）；②方法非 public（CGLIB/JDK 代理都拦不了，@Transactional 明确要求 public）；③final 方法/类（CGLIB 无法继承）；④切点表达式写错没匹配上。解法：注入自身代理（AopContext.currentProxy()）、拆类、换 AopContext 暴露代理开关",
+  "d": "spring-core.md",
+  "s": "springboot",
+  "t": "Spring Boot 源码深度学习笔记",
+  "c": "Spring"
+ },
+ {
+  "q": "Spring 中用到了哪些设计模式？",
+  "a": "工厂（BeanFactory/FactoryBean）、单例（默认 bean 作用域，三级缓存池化）、代理（AOP 动态代理）、模板方法（JdbcTemplate/RestTemplate 固定流程留钩子）、策略（InstantiationStrategy、Resource 加载）、观察者（事件/监听器 ApplicationEventPublisher）、适配器（HandlerAdapter MVC）、责任链（拦截器链/Filter 链）、建造者（BeanDefinitionBuilder）——面试答\"BeanFactory+三级缓存解决循环依赖\"最加分",
+  "d": "spring-core.md",
+  "s": "springboot",
+  "t": "Spring Boot 源码深度学习笔记",
+  "c": "Spring"
+ },
+ {
+  "q": "Spring 事务失效可能是哪些原因？",
+  "a": "六个高频原因：非 public 方法上标注；同类自调用绕过代理；异常被 try-catch 吞了（默认只对 RuntimeException/Error 回滚，checked 要配 rollbackFor）；抛出的异常类型不对（Exception 不回滚）；数据库引擎不支持事务（MyISAM）；没走 Spring 代理（手动 new 的对象）。排查先看\"代理有没有生效、异常有没有穿透\"",
+  "d": "spring-core.md",
+  "s": "springboot",
+  "t": "Spring Boot 源码深度学习笔记",
+  "c": "Spring"
+ },
+ {
+  "q": "Spring Boot Controller 层怎么实现并发安全的？",
+  "a": "Controller 默认单例且被所有请求共享，并发安全靠\"无状态\"：不把请求相关数据放成员变量，参数从方法签名进、结果往响应写；要复用重对象用 ThreadLocal（用完 remove）。真正要串行化的共享状态（库存/名额）下沉到数据库（乐观锁 version）或分布式锁——Web 层并发安全的答案永远是\"别在单例里藏状态\"",
+  "d": "spring-core.md",
+  "s": "springboot",
+  "t": "Spring Boot 源码深度学习笔记",
+  "c": "Spring"
+ },
+ {
   "q": "Spring Cloud 和 Spring Boot 是什么关系？",
   "a": "一组独立发版的 Spring Boot 子项目 + 一套 release train 版本协调机制，不是单体框架",
   "d": "第一讲",
@@ -2986,6 +3770,46 @@
  {
   "q": "Feign 的熔断怎么接入？",
   "a": "FeignCircuitBreakerTargeter 按 fallback / fallbackFactory 分三条路给 builder 塞 circuitBreakerFactory；没有 fallback 就退化成普通代理",
+  "d": "第四讲",
+  "s": "springcloud",
+  "t": "Spring Cloud 源码深度学习笔记",
+  "c": "Spring"
+ },
+ {
+  "q": "什么是微服务？它带来哪些挑战？",
+  "a": "按业务能力把单体拆成一组可独立开发/部署/伸缩的小服务，各自有边界与数据。换来的是团队并行与局部伸缩，付出的是分布式税：网络不可靠、分布式事务、最终一致性、链路排查难、测试与运维复杂度上升——Spring Cloud 全家桶（注册配置/网关/熔断/负载均衡）就是来填这些坑的",
+  "d": "第一讲",
+  "s": "springcloud",
+  "t": "Spring Cloud 源码深度学习笔记",
+  "c": "Spring"
+ },
+ {
+  "q": "Zuul、Gateway 和 Nginx 有什么区别？",
+  "a": "Nginx 是 L7 反向代理/静态服务器（C 写、性能天花板、配置即代码但不动态）；Zuul 1.x 是 Servlet 同步阻塞模型（2.x 才 Netty）；Gateway 是 Spring 生态原生网关：Reactor + Netty 异步非阻塞、谓词/过滤器工厂可编程、与注册中心/负载均衡/限流深度集成。要高性能静态转发用 Nginx，要业务级动态路由与治理用 Gateway",
+  "d": "第三讲",
+  "s": "springcloud",
+  "t": "Spring Cloud 源码深度学习笔记",
+  "c": "Spring"
+ },
+ {
+  "q": "Dubbo 和 Feign 有什么区别？",
+  "a": "协议层不同：Dubbo 是独立 RPC 框架（自有协议、Netty 长连接、序列化协议、注册中心、治理全家桶，二进制性能好）；Feign 是 HTTP 声明式客户端——把 RestTemplate 模板调用变成接口方法，解决的是\"怎么优雅发 HTTP\"，不解决服务治理。生产常见组合：内部走 Dubbo，跨语言/对外开放走 HTTP（Feign + Gateway）",
+  "d": "第四讲",
+  "s": "springcloud",
+  "t": "Spring Cloud 源码深度学习笔记",
+  "c": "Spring"
+ },
+ {
+  "q": "HTTP 和 RPC 的区别？",
+  "a": "RPC 是\"像调本地方法一样调远程\"的统称，通常自有协议 + 长连接 + 高效序列化（二进制）+ 内置服务发现治理；HTTP 是万维网通用协议，无状态短连接、文本/JSON、生态通用但每次要重建连接、头部冗余。内网高并发内部调用选 RPC（省带宽与连接开销），对外开放/浏览器场景选 HTTP。gRPC/Thrift 是 RPC 的代表，Feign 的默认形态是 HTTP RPC 化",
+  "d": "第四讲",
+  "s": "springcloud",
+  "t": "Spring Cloud 源码深度学习笔记",
+  "c": "Spring"
+ },
+ {
+  "q": "Feign 第一次调用为什么会很慢？怎么解决？",
+  "a": "首次调用要现做契约解析、生成动态代理、建连接池、拉取服务实例列表，还要等首次 JIT 预热；之后走缓存就快了。解决：应用启动后主动预热（健康检查通过后打一次空调用/触发懒加载）、连接池预热、把 FeignClient 扫描提前、对延迟敏感的核心接口预留预热窗口。这和\"JVM 启动慢\"是同一类冷启动问题",
   "d": "第四讲",
   "s": "springcloud",
   "t": "Spring Cloud 源码深度学习笔记",
