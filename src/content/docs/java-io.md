@@ -243,37 +243,40 @@ readInt()                                  DataInputStream.java:389
 | 2 | `read()` 为什么返回 int 不返回 byte？ | 需要用 `-1` 表示 EOF，byte 的取值域不够。`InputStream.read():182` 注释明说 | `java/io/InputStream.java:182` |
 | 3 | 一次 `read(byte[])` 一定读满数组吗？ | **不一定**。`FileInputStream.read(byte[],off,len):277` 直接透传 native `readBytes0`，底层 `read(2)` 对普通文件通常读满，但管道/网络随时可能短读；必须循环或用 `readNBytes` | `java/io/FileInputStream.java:277` |
 | 4 | `BufferedInputStream` 为什么快？ | 把多次小 `read` 合并成一次 `fill()` 批量读（默认 8192 字节缓冲，`:62`），减少 `read(2)` 系统调用次数；`mark/reset` 也靠同一块 `buf` | `java/io/BufferedInputStream.java:256` |
-| 5 | `mark` 之后读超多少会失效？ | `marklimit`（构造第二参数或 `mark(readlimit)`）。`fill()` 里若 `pos - markpos > marklimit` 就丢弃 mark（`markpos = -1`） | `java/io/BufferedInputStream.java:467` |
-| 6 | `DataInputStream.readUTF` 和 `Writer.write("…")` 一样吗？ | **不一样**。`readUTF:632` 是**改长的 UTF-8**（2 字节长度前缀 +  supplemental 字符拆成代理对按 3 字节编码、`\0` 编码成 2 字节），和标准 UTF-8 不兼容，只能和 `DataOutputStream.writeUTF:337` 配对 | `java/io/DataInputStream.java:554` |
+| 5 | `mark` 之后读超多少会失效？ | `marklimit`（构造第二参数或 `mark(readlimit)`）。`fill():256` 里若 `pos - markpos > marklimit` 就丢弃 mark（`markpos = -1`，`:267`） | `java/io/BufferedInputStream.java:267` |
+| 6 | `DataInputStream.readUTF` 和 `Writer.write("…")` 一样吗？ | **不一样**。`readUTF:554` 是**改长的 UTF-8**（2 字节长度前缀 +  supplemental 字符拆成代理对按 3 字节编码、`\0` 编码成 2 字节），和标准 UTF-8 不兼容，只能和 `DataOutputStream.writeUTF:337` 配对 | `java/io/DataInputStream.java:554` |
 | 7 | `InputStreamReader` 是字节流还是字符流？ | **字符流**（`extends Reader`，`java/io/InputStreamReader.java:69`），内部持有 `StreamDecoder`；构造时**立刻读前几个字节探测 BOM/编码**（`sd = StreamDecoder.forInputStreamReader(in, this)`，`:81-89`） | `java/io/InputStreamReader.java:81` |
-| 8 | 跨 `read` 调用中文字为什么会乱？ | 多字节字符可能被系统调用**切断在两次 read 之间**，`StreamDecoder` 用 `bb` 残字节缓冲解决：半字符留在 `ByteBuffer` 里下次继续解 | `sun/nio/cs/StreamDecoder.java:123` |
-| 9 | `available()` 返回值可信吗？ | **不可信**。注释原文"an estimate"（`:457`），普通文件返回剩余字节，网络流返回 0 不代表没数据；不要用它决定"是否读完" | `java/io/FileInputStream.java:457` |
-| 10 | `File` 和 `Path` 什么关系？ | JDK 7 起 `Path` 是主力，`File` 是遗留 API（`java.io.File` 仍在维护）。`File` 内部所有操作委托 `FileSystem FS`（`File.java:160`），`File.toPath():727` 两者互转 | `java/io/File.java:160` |
+| 8 | 跨 `read` 调用中文字为什么会乱？ | 多字节字符可能被系统调用**切断在两次 read 之间**，`StreamDecoder` 用 `bb` 残字节缓冲解决：半字符留在 `ByteBuffer`（`:229`）里下次继续解 | `sun/nio/cs/StreamDecoder.java:229` |
+| 9 | `available()` 返回值可信吗？ | **不可信**。注释原文"an estimate"（`:458`），普通文件返回剩余字节，网络流返回 0 不代表没数据；不要用它决定"是否读完" | `java/io/FileInputStream.java:458` |
+| 10 | `File` 和 `Path` 什么关系？ | JDK 7 起 `Path` 是主力，`File` 是遗留 API（`java.io.File` 仍在维护）。`File` 内部所有操作委托 `FileSystem FS`（`File.java:160`），`File.toPath():2093` 两者互转 | `java/io/File.java:160` |
 | 11 | `RandomAccessFile` 和 `FileInputStream` 本质差异？ | 它是**同一个 native fd 上既可读又可写、光标可 `seek` 自由定位**；`"rws"`/`"rwd"` 模式控制每次写的元数据/内容同步强度（构造 `:130`） | `java/io/RandomAccessFile.java:130` |
-| 12 | NIO 的 `Buffer` 三个指针？ | `mark <= position <= limit <= capacity`（不变量在 `Buffer.java:217` 注释）；写模式 `limit==capacity`，读完 `flip()` 切读模式（`limit=position, position=0`，`:1009`），读完再 `clear()` | `java/nio/Buffer.java:217` |
+| 12 | NIO 的 `Buffer` 三个指针？ | `mark <= position <= limit <= capacity`（不变量在 `Buffer.java:217` 注释）；写模式 `limit==capacity`，读完 `flip()` 切读模式（`limit=position, position=0`，`:484`），读完再 `clear()` | `java/nio/Buffer.java:484` |
 | 13 | `HeapByteBuffer` 和 `DirectByteBuffer`？ | 前者快在分配（数组）、后者快在 IO（无内核态拷贝）；`DirectByteBuffer` 受 `-XX:MaxDirectMemorySize` 限制，靠 `Cleaner`/`Unsafe` 释放（`Bits.java` 管理 reserveMemory） | `java/nio/Direct-X-Buffer.java.template` |
 | 14 | `FileChannel.map` 是什么原理？ | `mmap(2)`：把文件映射进进程地址空间，返回 `MappedByteBuffer`（`FileChannelImpl.map:1412`）；读是缺页中断按需加载，写直接落 page cache | `sun/nio/ch/FileChannelImpl.java:1412` |
-| 15 | `MappedByteBuffer` 什么时候被释放？ | **不确定**。`map` 时注册 `DefaultUnmapper` 到 `Cleaner`（`:1341`），GC 触发才 `unmap`；大文件要用 `cleaner().clean()` 或 `Arena` 主动释放，否则 fd 占满 | `sun/nio/ch/FileChannelImpl.java:1341` |
-| 16 | `FileChannel.force()` 是 fsync 吗？ | 是。`force(false)` → `fsync(2)`（数据+元数据）、`force(true)` → `fdatasync` 风格只刷数据（`:1074`） | `sun/nio/ch/FileChannelImpl.java:1074` |
+| 15 | `MappedByteBuffer` 什么时候被释放？ | **不确定**。`map` 时注册 `DefaultUnmapper` 到 `Cleaner`（`:1341`），GC 触发才 `unmap`；大文件要用 `cleaner().clean()` 或 `Arena` 主动释放，否则映射会**占满进程地址空间**（mmap 不耗 fd、耗地址空间），后续 mmap 直接失败 | `sun/nio/ch/FileChannelImpl.java:1341` |
+| 16 | `FileChannel.force()` 是 fsync 吗？ | 是。`force(false)` 只刷**数据**（`fdatasync` 风格）、`force(true)` 数据 + 元数据都刷（`fsync(2)`）（`force(boolean):633`）——**默认传 false 就够用，元数据场景才传 true** | `sun/nio/ch/FileChannelImpl.java:633` |
 | 17 | `transferTo`/`transferFrom` 零拷贝？ | 对普通文件会走 `FileDispatcher.transferTo` → Linux `sendfile`（一次系统调用、数据不过用户态）；不支持时退化为循环 read/write | `sun/nio/ch/FileChannelImpl.java:934` |
 | 18 | Selector 怎么做到一个线程管多个连接？ | 注册时把 fd 和关注事件写进本地内存 `pollArray`（struct pollfd 数组，`PollSelectorImpl.java:53`），`doSelect` 一次 `poll(2)` 拿所有就绪 fd | `sun/nio/ch/PollSelectorImpl.java:97` |
 | 19 | `Selector.wakeup()` 不阻塞 select 的原理？ | Linux 实现是一根**自建管道**（`PipeImpl`，fd0/fd1 两个字段 `:56-57`）：注册读端到 pollArray，`wakeup()` 往写端写 1 字节，`poll` 立刻返回 | `sun/nio/ch/PollSelectorImpl.java:240` |
 | 20 | `select()` 返回 0 就绪也可能白跑一趟？ | 是。`wakeup` 写的字节、`updateKeys` 延迟注册都会让 `poll` 提前返回但**没有就绪事件**，所以 `selectNow` 后要复查 cancelledKeys | `sun/nio/ch/SelectorImpl.java:120` |
-| 21 | 序列化怎么写同一个对象两次？ | 第一次 `TC_OBJECT` 全文，第二次只写 `TC_REFERENCE` + 句柄号（`writeObject0:…` 的 `handles.assign(obj)` 查表）；句柄表 `HandleTable` 从 0xff71 开始 | `java/io/ObjectOutputStream.java:180` |
-| 22 | `serialVersionUID` 不写会怎样？ | 运行时按类结构**自动计算**哈希（`ObjectStreamClass.computeDefaultSUID`），加个字段就变，反序列化直接 `InvalidClassException`。必须显式声明 | `java/io/ObjectStreamClass.java` |
-| 23 | `readObject` 里能强转吗？ | **不能直接信**。反序列化是"从不可信字节造对象"的入口，JDK 9+ 提供 `ObjectInputFilter`（`ObjectInputStream.java:1281` `setObjectInputFilter`）做白名单过滤 | `java/io/ObjectInputStream.java:1281` |
-| 24 | `PipedInputStream` 死锁怎么发生的？ | 写端写满 1024 字节会 `awaitSpace`（`:273`）等读端读；读端不读、双方都阻塞就死锁。且读写两端**不是线程安全的同一把锁**，需两个线程 | `java/io/PipedInputStream.java:273` |
+| 21 | 序列化怎么写同一个对象两次？ | 第一次 `TC_OBJECT` 全文，第二次只写 `TC_REFERENCE` + 句柄号（`writeHandle:1105`，句柄由 `handles.assign` 在 `writeOrdinaryObject:1295` 里分配）；wire 上的句柄从 `baseWireHandle = 0x7e0000` 起（`ObjectStreamConstants.java:139`） | `java/io/ObjectOutputStream.java:1105`、`java/io/ObjectStreamConstants.java:139` |
+| 22 | `serialVersionUID` 不写会怎样？ | 运行时按类结构**自动计算**哈希（`computeDefaultSUID:1593`），加个字段就变，反序列化直接 `InvalidClassException`。必须显式声明 | `java/io/ObjectStreamClass.java:1593` |
+| 23 | `readObject` 里能强转吗？ | **能转，但别信类型**。`readObject` 返回 `Object`，用的时候必须强转，类对不上会在使用点抛 `ClassCastException`——强转本身不做校验。真正的防线有三道：`serialVersionUID` 不匹配在读任何字段**之前**就抛 `InvalidClassException`；JDK 9+ 用 `ObjectInputFilter`（`setObjectInputFilter:1281`）按类名/深度/引用数做白名单；自定义 `readObject` 里自己校验字段合法性。反序列化是"从不可信字节造对象"的入口，生产环境必须配过滤器 | `java/io/ObjectInputStream.java:1281` |
+| 24 | `PipedInputStream` 死锁怎么发生的？ | 写端写满 1024 字节会 `awaitSpace:273`（`notifyAll()` 后 `wait(1000)`）等读端腾地方；读端不读、双方都阻塞就死锁。且读写**共用同一把锁**（`synchronized` + `wait/notifyAll`），`awaitSpace` 的等待只能由**另一个线程**的 `read()` 唤醒——单线程自己写自己读必死锁 | `java/io/PipedInputStream.java:273` |
 | 25 | IO 流用完为什么必须 close？ | `FileInputStream` 的 native fd 是**有限资源**，`close():487` 用双检 `closed` + `closeLock` 保证幂等，同时会关掉关联的 `FileChannel`（`:498`）；忘了关靠 `Cleaner` 兜底但时机不定 | `java/io/FileInputStream.java:487` |
 | 26 | 节点流和装饰流的区别？ | 节点流直接 `extends InputStream` 等四基类、**自己是数据源头/终点**（`FileInputStream.java:60`）；装饰流 `extends Filter*`、**持有 `in`/`out` 字段**把请求转发出去，在转发前后加料（`FilterInputStream.java:41`）。判据就一条：看有没有 `in` 字段 | `java/io/FilterInputStream.java:41`、`java/io/FileInputStream.java:60` |
 | 27 | `BufferedInputStream` 包一层后，`read(byte[])` 还有缓冲吗？ | **有**。`FilterInputStream.read(byte[]):94` 故意调 `read(b,0,b.length)` 而非 `in.read(b)`，把请求收敛到三参版本——而 `BufferedInputStream` 恰好重写三参版本，缓冲不会被绕过。注释原文 *"certain subclasses depend on the implementation strategy"* | `java/io/FilterInputStream.java:94` |
 | 28 | 装饰流的 `close()` 会发生什么？ | **级联关闭**：`FilterInputStream.close():169` → `in.close()`；`FilterOutputStream.close():171` 双检后先 `flush()` 再 `out.close()`，flush 抛异常也保证关底层。关最外层 = 关整条链，所以别用装饰流包 `System.in` 后随手 close | `java/io/FilterInputStream.java:169`、`java/io/FilterOutputStream.java:171` |
 | 29 | 读 `.gz` 文件为什么要套三层？ | `new GZIPInputStream(new BufferedInputStream(new FileInputStream(f))` 每层各司其职：File 出字节、Buffered 减系统调用、Inflater 解压、GZIP 认 gzip 格式。`GZIPInputStream` 本身 extends `InflaterInputStream`（`:45`），是装饰器叠装饰器 | `java/util/zip/GZIPInputStream.java:45` |
+| 30 | AIO、BIO 和 NIO 的区别？ | BIO 同步阻塞：`accept`/`read` 都阻塞，一连接一线程，连接数上千就扛不住；NIO 同步非阻塞：一个 `Selector` 多路复用管多个 channel，**就绪后才自己动手读写**，线程仍在用户态跑；AIO 异步非阻塞：`AsynchronousChannel` 提交读写 + 回调/`Future`，OS 干完通知，线程连"等就绪"都省了。AIO 在 Linux 上实现一度粗糙（Netty 都弃用），JDK 21 虚拟线程让"一请求一线程"重新变香后存在感更弱 | 第五讲 |
+| 31 | 如何理解 select、poll、epoll？ | 三者都是"一次系统调用等一批 fd"：select 有 fd 上限（1024）且每次调用都要把 fd 集合从用户态拷进内核、内核再全量遍历；poll 去掉数量上限但仍是全量遍历；epoll 把 fd 一次性注册进内核（`epoll_ctl`），内核维护就绪链表，`epoll_wait` 只把就绪的拷回来——成本 O(就绪数) 而非 O(总连接数)，万级长连接只有 epoll 扛得住。Java 的 `Selector` 就是这层封装：Linux 上 JDK 走 `EPollSelectorProvider` 产出的 `EPollSelectorImpl`（`epoll_wait`，`EPollSelectorImpl.java:49`），本文档深读的 `PollSelectorImpl`（`PollSelectorImpl.java:45`，`poll(2)`）是 Unix 兜底实现 | 第五讲 |
+| 32 | 同步、异步、阻塞、非阻塞怎么理解？ | 两组正交的概念，别混：同步/异步问"**调用方要不要等结果**"——同步等返回值、异步拿回调/`Future` 事后通知；阻塞/非阻塞问"**等待时线程在干嘛**"——阻塞是挂起让出 CPU、非阻塞是立刻返回 EAGAIN 去干别的。四种组合：同步阻塞（BIO）、同步非阻塞（NIO 就绪后主动读）、异步阻塞（没人用）、异步非阻塞（AIO 完成队列）。NIO 的"非阻塞"常指"读不阻塞"，Selector 的 `select()` 本身仍是同步阻塞地等就绪 | 第五讲 |
 
 ### 易错点（最容易讲错的 11 条）
 
 1. **`read(byte[])` 返回 0 ≠ EOF**：0 只可能出现在 `len==0` 的合法调用；EOF 永远是 `-1`。循环读必须判 `-1`。
 2. **`skip(n)` 对普通文件是 `lseek`、对其他流是读出来扔掉**：`FileInputStream.skip:431` 走 `skip0`（native lseek），管道退化为 `super.skip`（读进 2048 缓冲丢弃，`:56` `MAX_SKIP_BUFFER_SIZE`）。
-3. **`BufferedInputStream.close()` 不会关底层流**——它关自己再把底层流**也关掉**（`FilterInputStream.close:169` → `in.close()`），套两层时注意顺序。
+3. **`BufferedInputStream.close()` 不是只关自己**：`FilterInputStream.close:169` 会级联调 `in.close()`，关最外层等于关整条链——套两层装饰流时以为"只关缓冲层、留着文件流"是错的。
 4. **`InputStreamReader` 构造就发起 IO**：探测编码需要读流的前几个字节（BOM），所以"包一层 reader 再往流里写"的场景会卡住。
 5. **`flip()` 不是清空**：`flip` 后 `position=0, limit=原position`，数据还在；`clear()` 才是回到写模式（但同样不清数据，只是复位指针）。
 6. **`DirectByteBuffer` 的 `array()` 抛 `UnsupportedOperationException`**：堆外内存没有 Java 数组视图，`hasArray()` 永远是 false（`Direct-X-Buffer.java.template`）。
@@ -295,7 +298,7 @@ readInt()                                  DataInputStream.java:389
 | `8` | `DataInputStream` 私有 `readBuffer`，`readInt/readLong` 都从这 8 字节里拼 | `java/io/DataInputStream.java:67` |
 | `1024` | `PipedInputStream` 循环缓冲大小 | `java/io/PipedInputStream.java` |
 | `2` | `readUTF` 的长度前缀字节数 | `java/io/DataInputStream.java:554` |
-| `0xff71` | 序列化句柄表起始 handle | `java/io/ObjectOutputStream.java`（`HandleTable`） |
+| `0x7e0000` | 序列化 wire 句柄起始值（`baseWireHandle`，句柄从 0 编号，写出去都加这个基数） | `java/io/ObjectStreamConstants.java:139` |
 | `2147483647` | `Integer.MAX_VALUE`，Buffer position/limit 上限 | `java/nio/Buffer.java:217` |
 
 ---
@@ -822,7 +825,7 @@ private void writeObject0(Object obj, boolean unshared) throws IOException {
 
 ```java
 // java/io/ObjectOutputStream.java:2098
-int assign(Object obj) { ... }   // 给对象分配 handle（从 0xff71 起，:190 附近常量）
+int assign(Object obj) { ... }   // 给对象分配 handle（wire 上从 baseWireHandle=0x7e0000 起，常量在 ObjectStreamConstants.java:139）
 // :2222
 Object lookup(Object obj) { ... } // 查对象是否已分配
 ```

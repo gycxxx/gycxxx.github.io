@@ -119,7 +119,7 @@ flowchart TD
 | 3 | 幂等 Producer 怎么去重？ | pid+epoch+sequence 三元组；sequence 只在首次 drain 时分配、重试带原序号重发，broker 侧 ProducerStateManager 发现序号已见即判重短路，返回已落盘 offset | 第四讲、第三讲 |
 | 4 | 事务 Producer 的两阶段？ | EndTxn → PREPARE_* 先落 `__transaction_state` 日志 → 向所有参与分区广播 TransactionMarker → COMPLETE_*；PREPARE 状态是崩溃恢复的锚点，重启后必须补发未写完的 marker | 第六讲 |
 | 5 | Consumer Group rebalance 流程？ | classic 协议：JoinGroup 上报订阅、SyncGroup 由 leader 算好分配分发全员、Heartbeat 保活；new 协议（KIP-848）：单个 ConsumerGroupHeartbeat 由 broker 指派目标、客户端增量执行并心跳 ack | 第五讲 |
-| 6 | Kafka 为什么快？ | 数据只顺序追加进 `.log`；RecordAccumulator 用分区别队+内存池+sticky 分区把随机写变成批量顺序请求；索引按 4KB 稀疏记录，查找先二分再小范围扫描 | 第三讲、第四讲 |
+| 6 | Kafka 为什么快？ | 五层叠加，缺一层都会掉一个量级：①**顺序追加**，数据只往 `.log` 尾部写，顺序写是磁盘最快模式；②**攒批**，producer 侧 `RecordAccumulator`（`RecordAccumulator.java:68`）分区别队+内存池+sticky 分区（`:275`/`:302`/`:333`），`Sender` 按节点 drain（`:852-937`）把随机写并成批量顺序请求；③**分区即并行单元**，多分区可并行 append，partition 数就是写入并行度；④**读侧零拷贝**，`LogSegment.read`（`LogSegment.java:431`）slice 出共享同一 FileChannel 的视图（不拷字节），`FileRecords.writeTo`（`FileRecords.java:302`）走 `transferFrom`，明文路径直落 `fileChannel.transferTo(position, count, socketChannel)`（`PlaintextTransportLayer.java:213`）——sendfile 全程不过用户态；TLS 加密时这条快路径失效，退化成先解密再写（`SslTransportLayer.java:1003`，`TransferableChannel.java:39` 注释明说 fast path 只对 JDK 内部类生效）；⑤**读路径轻**，`.index` 每 4KB 一条稀疏记录，查找先二分再小范围顺序扫；压缩批 broker 侧只做 CRC/压缩类型初检（`UnifiedLog.java:1128`），不逐条解压。另外全程读写优先命中 OS page cache，刷盘交给内核 | 第三讲、第四讲 |
 | 7 | KRaft 模式解决了什么？ | 4.3.1 已纯 KRaft（无 ZooKeeper）：控制面完全由 `__cluster_metadata-0` 这一条 raft 日志驱动，controller 是唯一写者、单线程事件队列保证"先应用后响应"的顺序一致 | 第二讲 |
 | 8 | 分区副本同步与 leader 选举？ | offset 只在 leader 分配且必须持锁，follower 只校验 offset 衔接（不衔接抛 UnexpectedAppendOffsetException）；leader 变更后按 leader epoch cache 截断恢复，新 leader 由 controller replay 记录时选出 | 第二讲、第三讲 |
 | 9 | log 在磁盘上的结构？ | 一个分区一个目录，每个 segment 四件套 `.log`/`.index`/`.timeindex`/`.txnindex`，外加 producer 状态 `.snapshot`；索引是稀疏的，不是每条消息都有 | 第三讲 |
@@ -128,6 +128,9 @@ flowchart TD
 | 12 | 为什么消费会重复？ | position 随 fetch 读取前进，而不是随 commit 前进；commit 只是把当前位置"存档"供重启/再均衡后恢复，两者之间的窗口就是重复消费窗口 | 第五讲 |
 | 13 | READ_COMMITTED 为什么消费不到最新数据？ | 读上界是 LSO 而非 LEO，未完结事务（Begin 后无 End）会卡住 lastStableOffset 不前进；aborted 事务靠 `.txnindex` 在读取时过滤——存储引擎不删数据，只是"不让你看" | 第三讲、第六讲 |
 | 14 | 如何防僵尸 producer？ | pid fence 靠 epoch 单调递增：InitProducerId 对同一 transactionalId 总是提升 epoch，旧 producer（哪怕是僵尸）的任何请求都被拒收 PRODUCER_FENCED | 第六讲 |
+| 15 | Kafka 如何实现顺序消费？ | 保序的两级保证：producer 侧同一分区单 in-flight（`max.in.flight.requests.per.connection ≤ 5` + 幂等靠 sequence 重排序，乱序也能纠正）；consumer 侧**单线程单分区**——分区是顺序的最小单元，一个分区同时只被一个消费者消费，多线程消费同一分区就破序。要全局顺序只能单分区，要吞吐就按 key 哈希分区保"相关消息"有序 | 第四讲、第五讲 |
+| 16 | Kafka 如何保证消息不丢失？ | 三段各设防线：producer `acks=all` + `retries` 拉满 + 发送失败回调兜底；broker `min.insync.replicas ≥ 2`（ISR 至少两个副本 ack 才认）、`unclean.leader.election.enable=false`（不许落后副本当选）；consumer 关自动提交、业务处理成功后**手动提交 offset**（先处理后提交，重复好过丢失）。全链闭合才叫不丢 | 第一讲、第五讲 |
+| 17 | Kafka 消息的发送过程简单介绍一下？ | producer `send()` 只是把 record 塞进 `RecordAccumulator`：序列化 → 按分区器选分区 → 挂到分区别队或新建批次（`RecordAccumulator.java:275`）→ 后台 `Sender` 线程按 broker 节点 drain 批次（`:852-937`）凑成 `ProduceRequest` → 过网络到 broker → `KafkaApis.handleProduceRequest` → `ReplicaManager.appendRecords` → `UnifiedLog.append` 落盘 → 等 ISR ack 到 requiredOffset → `ProduceResponse` 回客户端（`acks=all` 时 DelayedProduce 会挂起等满足条件） | 第四讲 |
 
 **使用方式**：先答"一句话结论"，面试官点头即过；一旦追问，按右列"深入"跳到对应讲次，
 优先看该讲的端到端演算——它是把结论串成故事的最佳素材。四个最高频的追问方向：
@@ -619,7 +622,7 @@ core/src/main/scala/kafka/log/
 1. `maybeFlushMetadataFile()`（`:1126`）——先确保 `partition.metadata` 落盘，保证崩溃后能恢复 topic-id；
 2. `analyzeAndValidateRecords`（`:1128`）——CRC、magic、压缩类型初检；全部无效直接返回；
 3. 持 `lock` 进入临界区（`:1137`）：
-   - leader 路径：`LogValidator.validateMessagesAndAssignOffsets`（`:1148-1164`）**分配 offset**、必要时重压缩、按 `messageTimestampType` 决定时间戳；follower 路径（`appendAsFollower`，`:1080`）则校验来件 offset 必须衔接，否则抛 `UnexpectedAppendOffsetException`（`:1203`）；
+   - leader 路径：`LogValidator.validateMessagesAndAssignOffsets`（方法体在 `LogValidator.java:123`，调用点 `:1163`）**分配 offset**、必要时重压缩、按 `messageTimestampType` 决定时间戳；follower 路径（`appendAsFollower`，`UnifiedLog.java:1080`）则校验来件 offset 必须衔接，否则抛 `UnexpectedAppendOffsetException`（`:1203`）；
    - 更新 leader epoch cache（`assignEpochStartOffset`，`:1213-1215`）——这是 leader 变更后 truncation 的依据；
    - `maybeRoll`（`:1234`）——segment 满则滚动（判据在 `LogSegment.shouldRoll`，`LogSegment.java:167`：字节超限、到达 `segment.ms`、索引满、offset 无法转相对偏移）；
    - `analyzeAndValidateProducerState`（`:1243`）——按 producer id 检查序号连续性，**重复批次直接短路**（`:1247-1254`），返回旧批次的元数据；

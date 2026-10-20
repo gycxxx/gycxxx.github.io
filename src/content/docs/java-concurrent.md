@@ -173,7 +173,7 @@ flowchart LR
 
 | # | 面试问题 | 一句话结论 | 深入 |
 | --- | --- | --- | --- |
-| 1 | 线程池七个参数？`execute` 的执行流程？ | core 未满直接建核心线程；否则入队并二次检查（入队后池子关了或线程没了）；队满才建非核心线程，到 max 就拒绝 | 第一讲 |
+| 1 | 线程池七个参数？`execute` 的执行流程？ | 七参数：`corePoolSize`/`maximumPoolSize`/`keepAliveTime`+`unit`/`workQueue`/`threadFactory`/`handler`。执行流程：core 未满直接建核心线程；否则入队并二次检查（入队后池子关了或线程没了）；队满才建非核心线程，到 max 就拒绝 | 第一讲 |
 | 2 | 线程池怎么复用线程？核心线程为什么"不死"？ | Worker 在 `runWorker` 循环 `getTask` 从队列取任务，干完不退出；核心线程 `take()` 永久等，非核心 `poll(keepAliveTime)` 超时退出 | 第一讲 |
 | 3 | Worker 为什么继承 AQS 而不是 ReentrantLock？ | 要的是不可重入"运行盾牌"：`runWorker` 每次 `w.lock()` 标记在跑任务，`interruptIdleWorkers` 靠 `tryLock` 只打断空闲线程；可重入会让 `setCorePoolSize` 重入破语义 | 第一讲「拆开讲：为什么可重入会坏事」 |
 | 4 | `shutdown()` 与 `shutdownNow()` 区别？ | shutdown 不接新活、干完旧活，只 interrupt 空闲线程；shutdownNow 不接新活、清空队列并打断所有 Worker | 第一讲 |
@@ -184,11 +184,28 @@ flowchart LR
 | 9 | `Completion` 为什么继承 `ForkJoinTask`？ | 零成本复用其 tag 字段做 `claim()`（CAS 0→1）防重入，异步回调只被执行一次；既能提交给任意 Executor，又能在 ForkJoinPool 高效调度 | 第二讲 |
 | 10 | `thenApply` 与 `thenApplyAsync` 的区别？ | 无后缀 `executor=null`，回调在完成线程（源已完成时是调用者线程）同步执行；Async 后缀提交到 ASYNC_POOL 或指定 Executor，回调重时不阻塞完成线程 | 第二讲 |
 | 11 | `CompletableFuture` 的默认线程池是什么？ | ASYNC_POOL：多核是 `ForkJoinPool.commonPool()`（并行度=CPU 核数-1），单核退化成 `ThreadPerTaskExecutor` 每任务新建线程 | 第二讲 |
-| 12 | `ConcurrentHashMap` 为什么快？ | 空桶 CAS 无锁插入，有桶只 `synchronized` 锁桶头节点——粒度从"锁整表"细化到"锁单桶"，不同桶的并发写互不影响 | 第三讲 |
+| 12 | `ConcurrentHashMap` 为什么快？ | JDK 7 的 Segment 分段锁在 8+ 被弃用，改为 **Node 数组 + CAS + synchronized 锁桶头**：空桶 CAS 无锁插入（`casTabAt`，`ConcurrentHashMap.java:1010`/`:759`），有桶只锁 bin 头节点——粒度从"锁整表"细化到"锁单桶"，不同桶并发写互不影响；**读完全无锁**：`val`/`next` 皆 volatile（`:628`/`:629`），`tabAt` 走 Unsafe acquire 语义（`:759`），get 不加锁；扩容也不是单线程搬——`transfer` 多线程 CAS 抢 stride 段（`:2424`），读者遇 MOVED 会 `helpTransfer`（`:1010` 路径）；计数用 CounterCell 分段（`:2565`）避免单点 CAS 热点 | 第三讲 |
 | 13 | CHM 的 `sizeCtl` 怎么读？扩容为什么快？ | sizeCtl：0=未初始化、正数=阈值/初始容量、-1=初始化中、-(N+1)=N 个线程在扩容；`transfer` 多线程 CAS `transferIndex` 抢 stride 段，putVal 遇 MOVED 会 `helpTransfer` 协助 | 第三讲 |
 | 14 | `CountDownLatch`/`CyclicBarrier`/`Semaphore`/`Phaser` 怎么选？ | 等 N 个一次性事件用 CDL；循环复用/带栅栏动作用 CB；限流用 Semaphore（公平版排队、非公平版 barging）；多阶段+动态注册用 Phaser | 第四讲 |
 | 15 | `ForkJoinPool` 的 work-stealing 原理？ | 每 Worker 一个双端队列：拥有者 top 端 push/pop（LIFO、缓存友好），窃取者 base 端 CAS poll；`scan` 随机起点遍历，避免空闲线程挤窃同一队列 | 第四讲 |
 | 16 | `ThreadLocalRandom` 为什么快？ | seed/probe 存在 Thread 对象字段里用 Unsafe 直读写，无竞争、不查 ThreadLocal 哈希表；`getProbe()` 还被 CHM 的 CounterCell 选槽复用 | 第五讲 |
+| 17 | 线程池有几种创建方式？ | `Executors` 五工厂（`newFixedThreadPool`/`newCachedThreadPool`/`newSingleThreadExecutor`/`newScheduledThreadPool`/`newWorkStealingPool`）+ 直接 `new ThreadPoolExecutor`。前四个全有坑（无界队列或无界线程数 → OOM），阿里规约要求手写构造器指定有界队列 + 明确拒绝策略 | 第一讲 |
+| 18 | 线程池的拒绝策略有哪些？ | 内置四种：`AbortPolicy`（默认，抛 `RejectedExecutionException`）、`CallerRunsPolicy`（退回提交线程自己跑，天然背压）、`DiscardPolicy`（静默丢弃）、`DiscardOldestPolicy`（挤掉队列头部最旧的）；都不满足就实现 `RejectedExecutionHandler` 自定义（落库/记日志/延迟重试） | 第一讲 |
+| 19 | 线程数设置多少合适？ | CPU 密集型 ≈ 核数 +1（留一席给缺页/GC）；IO 密集型 ≈ 核数 ×（1 + 等待时间/计算时间），等得越久线程越多。实际以上帝视角公式起步，再用压测和队列堆积监控回调——动态线程池就是把这个过程自动化 | 第一讲 |
+| 20 | 动态线程池实现原理？ | 包装 `ThreadPoolExecutor` 暴露 `setCorePoolSize`/`setMaximumPoolSize`/`setQueue` 之类的 setter，配置中心（Nacos/Apollo）推送时热改参数，同时采集队列水位/拒绝次数/活跃线程数做监控告警。注意 `setQueue` 会丢任务，多数实现只热改线程数不动队列 | 第一讲 |
+| 21 | 任务特别多、队列满了怎么办？ | 三条路：①换 `CallerRunsPolicy` 让生产者跟着减速（背压）；②队列必须有界——无界队列（`newFixedThreadPool` 默认 `Integer.MAX_VALUE`）只会把内存撑爆；③真的不能拒就分级：核心业务单独池 + 非核心业务降级/异步化。队列长度按"峰值任务量 × 平均处理时长"估算，别拍脑袋 | 第一讲 |
+| 22 | 多线程上下文切换是什么？ | CPU 换个线程执行要保存/恢复寄存器、程序计数器、栈指针，还要刷 TLB/缓存局部性——纯纯的额外开销，锁竞争激烈时切换次数爆炸、吞吐反降。减少手段：减少锁粒度、CAS 自旋、无锁结构、协程/虚拟线程把"线程级切换"变成"用户态调度" | 第一讲 |
+| 23 | 创建线程有几种方式？ | 五种：继承 `Thread`、实现 `Runnable`、实现 `Callable`+`FutureTask`（有返回值）、线程池/`Executor` 提交（生产标准姿势）、JDK 21 `Thread.ofVirtual()` 虚拟线程。`start()` 只能调一次；直接调 `run()` 只是普通方法调用，没有新线程 | java-thread.md |
+| 24 | 并发和并行的区别？ | 并发是"多个任务在**同一时段**内都被推进"（可交替执行，单核也行），并行是"多个任务在**同一时刻**真的同时在跑"（多核才可能）。线程池解决的是并发调度；能不能并行取决于核数与任务间依赖 | 第一讲 |
+| 25 | Java 中常见的锁有哪些？ | 按语义分：乐观（CAS）/悲观（synchronized、ReentrantLock）；按公平性分公平/非公平；按重入分可重入/不可重入；按粒度分读写锁（`ReentrantReadWriteLock`、`StampedLock`）；按形态分自旋锁、互斥锁、条件锁。Java 层最终都落到 CAS + park/unpark 两个原语上 | java-lock.md |
+| 26 | 什么是线程死锁，如何排查？ | 两个以上线程互相持有对方要的锁且都不肯放手（互相等待成环）。排查：`jstack <pid>` 找 `Found one Java-level deadlock`，或 `jcmd Thread.print` 看 `waiting to lock` 互相引用；解决：固定加锁顺序、尝试锁（`tryLock` 超时）、缩小锁范围、消除嵌套锁 | perf-troubleshooting.md |
+| 27 | 线程、进程、协程的区别？ | 进程是资源分配单位（独立地址空间），线程是 CPU 调度单位（共享进程内存、有独立栈），协程是用户态调度单位（栈自己管、切换不进内核）。Java 里平台线程 = 1:1 内核线程，虚拟线程 = M:N 用户态调度，一个虚拟线程被 park 不影响载体线程上的其他虚拟线程 | java-thread.md |
+| 28 | `ThreadLocal` 使用场景有哪些？ | 三层之间传参不想逐层加参数（用户上下文/ traceId）、每个线程一份的重对象（`SimpleDateFormat`、非线程安全工具类）、跨框架的隐式上下文（Spring 的事务同步管理器、Feign 的请求拦截）。铁律：线程池场景用完必须 `remove()`，否则串味 + 内存泄漏 | java-thread.md |
+| 29 | `ThreadLocalMap` 和 `HashMap` 的区别？ | 结构不同：HashMap 是数组+链表/红黑树（拉链法），ThreadLocalMap 是**开放寻址**（冲突往后线性探测）；key 是**弱引用**（`Entry extends WeakReference<ThreadLocal>`），GC 时 key 被回收、value 成孤儿，靠 `expungeStaleEntry` 惰性清理；初始容量 16、扩容翻倍，没有负载因子 | java-thread.md |
+| 30 | volatile 能保证原子性吗？ | 不能。`i++` 是读-改-写三步，volatile 只保证每步可见，不保证三步之间不被插队——多线程下照样丢更新。要原子性用 `AtomicInteger`（CAS）或 `synchronized`；要计数且高并发写优先 `LongAdder` | jdk.md |
+| 31 | LongAdder 和 AtomicLong 的区别？ | AtomicLong 是**单变量 CAS 自旋**：并发高时所有线程抢同一个热点，失败重试空转烧 CPU；LongAdder 学 CHM 的 `CounterCell` 分段计数——写操作打到不同 cell 上几乎无竞争，`sum()` 时再汇总，读是弱一致的。高并发计数用 LongAdder，需要精确 CAS 语义（compare-and-set）才用 AtomicLong | 第五讲 |
+| 32 | 什么是 CAS？存在什么问题？ | CAS = compare-and-swap：读期望值 → 与新值一起交给 CPU 原子指令（`cmpxchg`）→ 相等才写入，失败重试。三大问题：①ABA（加版本号/`AtomicStampedReference` 解）；②自旋开销（竞争激烈时白烧 CPU）；③只能保护一个变量（多变量一致性还得上锁）。它是 Java 并发包的基石：AQS、CHM、原子类底层都是它 | java-lock.md |
+| 33 | 什么是 happens-before 原则？ | JMM 定义的一套"跨线程可见性"推断规则：程序顺序、监视器锁（unlock 先于后续 lock）、volatile 写先于读、传递性、线程 start/join、中断检测等。作用是**让开发者不用懂内存屏障也能推出"这个写对那个读一定可见"**——比如 volatile 写 happens-before 于后续同变量的读，所以 DCL 的实例发布才安全 | jdk.md |
 
 ### 易错点与面试坑
 

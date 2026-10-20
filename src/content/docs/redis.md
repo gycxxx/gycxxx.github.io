@@ -129,9 +129,9 @@ flowchart TD
 
 | # | 面试问题 | 一句话结论 | 深入 |
 | --- | --- | --- | --- |
-| 1 | Redis 为什么快？ | 单线程 Reactor + epoll 多路复用 + 纯内存；ae 层 fd 直接当数组下标，注册与触发都无锁、无上下文切换 | 第一讲 |
+| 1 | Redis 为什么快？ | 六层叠加，缺一不可：①**纯内存**，命令执行完全不碰磁盘（持久化走 fork 子进程 / bio 线程旁路）；②**单主线程执行命令**，无锁竞争、无上下文切换，`aeMain` 一个 while 循环跑完所有事（`src/ae.c:497`）；③**epoll 多路复用**，一个线程管成千上万连接，一次 `epoll_wait` 拿回所有就绪 fd（`src/ae_epoll.c:89`）；④**fd 直接当数组下标**，注册/触发/删除都是 O(1) 数组操作，不查哈希不加锁（`src/ae.h:79`）；⑤**攒着回复**：命令执行完不立刻 write，`beforeSleep` 里统一批量刷（`src/server.c:2104`），多次小 write 合成一次；⑥**数据结构按规模选编码**：hash 就是 dict 哈希表（O(1)，扩容走增量 rehash 不阻塞主循环）、整数集用 intset、小 list/hash/zset 用 listpack 连续内存吃 cache 命中、大 list 才转 quicklist、zset = dict + skiplist 双结构（单点 O(1)、范围 O(logN)）（第四讲）。6.0+ 的 IO 线程只"搬砖"（读 socket/解析 RESP/回写），**命令执行仍全部在主线程** | 第一、二、四讲 |
 | 2 | Redis 6.0/8.x 的多线程是什么？ | IO 线程只"搬砖"：读 socket、解析 RESP、回写 socket；命令执行仍全部在主线程，且 8.x 的 `io-threads` 是启动时固定的不可变配置 | 第一讲 |
-| 3 | 单线程为什么还会阻塞？ | 慢命令（`KEYS *` 级别）靠单轮写上限 64KB 兜底；`appendfsync always` 的同步 fsync、fork 时的 COW、超大 bulk 读取都会拉长单轮循环 | 第一、五讲 |
+| 3 | 单线程为什么还会阻塞？ | 慢命令（`KEYS *` 级别）靠单轮写上限 64KB 兜底；大 key 删除有 lazyfree（`src/lazyfree.c`，`UNLINK`/`lazyfree-lazy-expire`）异步释放兜底；但 `appendfsync always` 的同步 fsync、fork 时的 COW、超大 bulk 读取仍会拉长单轮循环 | 第一、五讲 |
 | 4 | 收到 `+OK` 就代表落盘了吗？ | AOF 的 write 被刻意排在回复客户端之前，只有 `appendfsync always` 才给出"已确认即已持久"的承诺 | 第三、五讲 |
 | 5 | RDB 快照的原理？ | fork 子进程靠 COW 看到 fork 瞬间的内存镜像，写临时文件再 rename 原子替换，全程不加锁 | 第五讲 |
 | 6 | RDB 与 AOF 怎么取舍？混合持久化是什么？ | 8.x 默认 `aof-use-rdb-preamble` 开：AOF 的 BASE 文件直接用 RDB 格式（加载快），INCR 文件追加命令（丢得少），manifest 记录目录结构 | 第五讲 |
@@ -143,8 +143,24 @@ flowchart TD
 | 12 | Cluster 怎么定位一个 key？ | CRC16(key) 映射 16384 个槽，每条命令执行前做槽位归属判定，不属于本节点返回 `MOVED`/`ASK` | 第六讲 |
 | 13 | Cluster 故障检测与故障转移怎么做？ | 每 100ms 发带 gossip 的 PING/PONG，延迟超时标 PFAIL，gossip 收集到多数升 FAIL，slave 发起选举接管 | 第六讲 |
 | 14 | 大 key / 热 key 在源码里有什么抓手？ | 大 bulk 按需读取 + 零拷贝建对象、querybuf 上限、输出缓冲 hard/soft 双档限流；命令执行路径上有逐命令 hotkey 统计 | 第二、三讲 |
-| 15 | 对象为什么有多种编码？zset 为什么快？ | 小规模用连续内存（intset/listpack）换 cache 命中，大规模转离散结构（dict/skiplist/quicklist）；zset = dict + skiplist 双结构，单点 O(1)、范围 O(logN) | 第四讲 |
+| 15 | 对象为什么有多种编码？zset 为什么快？ | 同一份数据按规模在不同编码间切换，本质是**用内存换时间**：小规模用连续内存（intset/listpack）吃 cache 命中、省指针开销，超阈值转离散结构（dict/skiplist/quicklist）——如 zset 元素数过 128 走 `zsetConvert` 转 skiplist（`src/t_zset.c:1439`），删少了还能 `zsetConvertToListpackIfNeeded`（`src/t_zset.c:1523`）回退；zset = **dict + skiplist 双结构**——dict 保单点 O(1)，skiplist 保范围查询与排名 O(logN)（`zslInsert` 随机层数 `src/t_zset.c:254`/`:326`，`span` 支撑 `ZRANK` `src/t_zset.c:645`）；另有 0~9999 共享整数对象（`src/server.c:2204`）零分配复用 | 第四讲 |
 | 16 | 事务 WATCH 的底层是什么？ | 键被修改时经 `touchWatchedKey` 给所有监视者打 `CLIENT_DIRTY_CAS`，EXEC 发现脏标记就整体返回 nil、一条都不执行 | 第三讲 |
+| 17 | Redis 数据类型有哪几种？ | 5 种基础：string（计数/缓存/分布式锁）、hash（对象字段）、list（ timelines/简单队列）、set（去重/交集并集）、zset（排行/范围查询）；3 种扩展：stream（消息队列，`XADD`/`XREADGROUP`）、bitmaps/hyperloglog（位统计/基数估算）、geospatial（地理位置）。每个 key 只有一个类型，`TYPE` 命令可查 | 第四讲 |
+| 18 | Redis 和 Memcached 的区别？ | MC 是纯缓存：只存字符串、多线程模型、无持久化、无原生集群、value 上限 1MB；Redis 是数据结构服务器：命令单线程执行、5+ 种类型、RDB/AOF 持久化、主从/Sentinel/Cluster、Lua 脚本。纯缓存且要榨多核可以 MC，要功能/一致性/运维体系选 Redis | 第一讲 |
+| 19 | Redis 和 Caffeine 的区别？ | Caffeine 是**进程内**本地缓存：无网络往返（微秒级）、W-TinyLFU 高频淘汰、受堆大小约束、进程重启即丢失、多实例间天然不一致；Redis 是**独立服务**：跨进程共享、有 RTT 成本、可持久化。标准姿势是两级缓存——Caffeine 顶热点扛并发，Redis 做共享兜底 | 第一讲 |
+| 20 | Key 和 Value 的设计原则有哪些？ | key：`业务:对象:id` 冒号分层（可读 + 聚合统计），别超长也别太短；大 value 必须拆（hash 按 field、list 分段），否则读写一次卡整条命令路径；热点 key 加随机后缀打散到多节点；批量 key 用 hash tag `{}` 保证同槽。统一约定 TTL 并加随机抖动 | 第二/六讲 |
+| 21 | Redis 分布式锁如何实现？ | 加锁 `SET key <uuid> NX PX <ttl>`（一条命令保证"不存在才设 + 过期"原子）；释放用 **Lua 先比对 value 再 DEL**，防止误解锁别人的锁；业务时间长就起看门狗线程续期。单节点 Redis 锁是 AP 语义（主从切换可能丢锁），严格互斥用 Redlock 多节点或直接上 etcd/ZooKeeper | 第三讲 |
+| 22 | 怎么解决缓存和数据库的一致性问题？ | 没有免费的一致性，只有取舍：主流是旁路缓存（cache-aside）——读先缓存后 DB 回填，写先**更新数据库再删缓存**（而非更新缓存，避免并发写覆盖），配 binlog 监听（Canal）+ MQ 重放做最终补偿；对一致性敏感的读用分布式锁串行化。接受毫秒~秒级不一致并让业务幂等，是互联网公司的常态 | 第三讲 |
+| 23 | Redis 如何实现发布订阅？ | `SUBSCRIBE`/`PSUBSCRIBE` 订阅频道或模式，`PUBLISH` 广播，实现在 `src/pubsub.c`。特性：发布者不等确认、不落盘、**订阅者离线即丢消息**、无消费组——所以只适合做"通知/失效广播"这类可丢场景；要可靠消息队列用 stream（有 ACK、消费组、持久化） | 第六讲 |
+| 24 | 谈谈 Redis 的内存淘汰策略？ | `maxmemory` 到顶后八种：`noeviction`（默认，直接返回 OOM 错误）、`volatile-*`（只淘汰带 TTL 的）/`allkeys-*` × `lru`/`lfu`/`random`。LRU 是**近似**的：随机采样几个比 idle 再挑最旧的（`evict.c`），不是精确全表；LFU 按访问频次 + `lfu-decay-time` 对数衰减。做缓存用 `allkeys-lru/lfu`，做持久存储用 `noeviction` + 扩容 | 第五讲 |
+| 25 | Redis 事务和 Lua 脚本的区别？ | MULTI/EXEC 只是把命令打包进队列一次性执行，保证**原子不保证一致**：执行阶段出错不回滚（后面命令照跑），中间也不能拿前一条的结果做判断；Lua 脚本（`EVAL`/`EVALSHA`）整个脚本单线程原子执行、内部可读中间值写分支、可一次往返多次操作，还有 `busy` 脚本超时保护与 SCRIPT KILL。复杂原子逻辑选 Lua，简单打包用事务 | 第三讲 |
+| 26 | Redis 为什么要自定义 SDS？ | C 字符串三个硬伤：不记录长度（`strlen` O(n)）、遇 `\0` 截断（二进制不安全）、拼接易溢出。SDS 头部带 `len`/`free`/`flags`（编码分级）：O(1) 取长度、二进制安全、空间预分配（`sdsMakeRoomFor`）+ 惰性释放省掉频繁 realloc，还有 embstr 让短字符串 robj+sds 一次分配 | 第二讲 |
+| 27 | Redis 如何高效安全的遍历所有 Key？ | 严禁 `KEYS *`（O(n) 阻塞单线程，生产事故源）；用 `SCAN cursor COUNT n MATCH pattern` 游标迭代——每次只返回一小批 + 新游标，**可能返回重复 key**（业务要幂等），大集合用 `SSCAN`/`HSCAN`/`ZSCAN` 按 field 维度扫。先 `OBJECT ENCODING`/`MEMORY USAGE` 探测大 key 再决定处理策略 | 第二讲 |
+| 28 | 缓存击穿、穿透、雪崩是什么？怎么防？ | 穿透：请求根本不存在的数据（恶意 id）每次直击 DB——布隆过滤器/空值缓存/参数校验；击穿：单个**热点 key** 过期瞬间高并发同时回源——互斥锁只放一个去重建，或逻辑过期永不过期；雪崩：大批 key 同时过期或 Redis 整体宕机——TTL 加随机抖动、多级缓存、集群高可用、限流降级兜底 | 第五讲 |
+| 29 | Redis 集群模式有哪几种？ | 三种：主从复制（读写分离 + 手动/哨兵故障转移）、Sentinel 哨兵（监控 + 自动故障转移，仍是单主写）、Cluster（16384 槽数据分片 + gossip + 去中心化，客户端按槽直连节点、水平扩展写能力）。选型看数据量与写入并发：单机内存装得下且写不高 → 主从/哨兵；要扩容 → Cluster | 第六讲 |
+| 30 | 什么是 Redis 集群脑裂，怎么解决？ | 网络分区时旧 master 落在少数派一侧仍对外收写，恢复后发现它已被降位、这批写整体丢失即脑裂。缓解：`min-replicas-to-write` + `min-replicas-max-lag`——健康从库不够就**拒绝写**（`checkGoodReplicasStatus`，`src/server.c:4715`），从源头限制"少数派侧还能写多久"；再配 `cluster-require-full-coverage` 等参数收紧 | 第六讲 |
+| 31 | 什么是 Redis 的数据分片？ | Cluster 把 key 空间切成 16384 个 hash slot：`CRC16(key) mod 16384` 算槽位，槽再分配到各节点；客户端缓存 slot→node 路由，落错节点收 `MOVED` 重定向后纠偏；需要多 key 操作（事务/发布订阅/ Lua）时用 hash tag `{tag}` 强制相关 key 落同一槽 | 第六讲 |
+| 32 | 为什么 Redis 不支持回滚？ | 事务只在**命令入队阶段**做语法/参数检查（此时报错整票拒绝），执行阶段的错（如 `LPUSH` 一个 string）不中断也不回滚——官方哲学是"执行错说明是程序 bug，应该修代码而不是运行时兜底"，且回滚会拖慢每个命令的执行路径。要全或无语义请用 Lua 脚本 | 第三讲 |
 
 > 记忆顺序建议：先背 1/2/3（并发模型），再背 5~8（持久化），最后背 9~13（复制集群）——这三组是面试出现频率最高的。
 > 如果只来得及准备十分钟：背 1、2、7、9、11、13 这六条，覆盖"快/多线程/丢数据/断线重连/过期/集群"六大必考点。

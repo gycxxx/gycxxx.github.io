@@ -129,6 +129,12 @@ flowchart TD
 | 14 | 内嵌 Tomcat 启动原理？ | `onRefresh` 里从容器取唯一的 `ServletWebServerFactory` Bean 造出 `TomcatWebServer`：`initialize` 阶段 `bindOnInit=false` 只初始化不绑端口，`finishRefresh` 后 `LifecycleProcessor` 才调 `start()` 真正 bind——"Bean 全就绪才开放流量"，零半启动窗口 | 第三讲 |
 | 15 | 优雅停机怎么做的？ | 三段式：`doClose` 先发 `REFUSING_TRAFFIC` 摘流量 → `WebServerGracefulShutdownLifecycle`（专用 phase，早于 stop lifecycle）→ `GracefulShutdown` pause 连接器并每 50ms 轮询在途请求归零；`server.shutdown=graceful` 才开启，默认 immediate | 第三讲 |
 | 16 | 可执行 jar 的原理？ | repackage 三件事：classes 搬进 `BOOT-INF/classes`、依赖原样嵌进 `BOOT-INF/lib/`、MANIFEST 把 `Main-Class` 换成 `JarLauncher`（原主类记入 `Start-Class`）；`java -jar` 的真实入口是 loader——注册 `jar:nested:` 协议 → `LaunchedClassLoader` → 反射调 `Start-Class`，嵌套 jar 全程不解压 | 第五讲 |
+| 17 | SpringBoot 和 Spring 的区别是什么？ | Spring 是 IoC/AOP 容器 + 一库可选模块，用要自己凑（选版本、写配置、配 Web 容器）；Spring Boot 是**约定大于配置的脚手架**：自动配置 + starter 依赖管理 + 内嵌容器 + 生产级端点，把"拼装"变成"开箱即用"。Boot 不替换 Spring，只是把 Spring 的装配自动化了 | 第一讲 |
+| 18 | Spring 中的 Bean 是线程安全的吗？ | 容器本身不管线程安全：单例 Bean 被所有请求共享，**无状态的（只读依赖别人）安全，有可变状态的（成员变量累加/缓存）不安全**。默认单例下要共享状态就上 `ThreadLocal`、原型作用域、或把状态挪到方法局部变量/数据库。Spring 的有状态 Bean（controller/service）默认写法就是"无状态" | spring-core.md |
+| 19 | Spring AOP 在什么场景下会失效？ | 四种经典翻车：①同类内自调用（`this.method()` 绕过代理，本质是没走代理对象）；②方法非 public（CGLIB/JDK 代理都拦不了，`@Transactional` 明确要求 public）；③final 方法/类（CGLIB 无法继承）；④切点表达式写错没匹配上。解法：注入自身代理（`AopContext.currentProxy()`）、拆类、换 `AopContext` 暴露代理开关 | spring-core.md |
+| 20 | Spring 中用到了哪些设计模式？ | 工厂（`BeanFactory`/`FactoryBean`）、单例（默认 bean 作用域，三级缓存池化）、代理（AOP 动态代理）、模板方法（`JdbcTemplate`/`RestTemplate` 固定流程留钩子）、策略（`InstantiationStrategy`、`Resource` 加载）、观察者（事件/监听器 `ApplicationEventPublisher`）、适配器（`HandlerAdapter` MVC）、责任链（拦截器链/Filter 链）、建造者（`BeanDefinitionBuilder`）——面试答"BeanFactory+三级缓存解决循环依赖"最加分 | spring-core.md |
+| 21 | Spring 事务失效可能是哪些原因？ | 六个高频原因：非 public 方法上标注；同类自调用绕过代理；异常被 try-catch 吞了（默认只对 `RuntimeException`/`Error` 回滚，checked 要配 `rollbackFor`）；抛出的异常类型不对（`Exception` 不回滚）；数据库引擎不支持事务（MyISAM）；没走 Spring 代理（手动 new 的对象）。排查先看"代理有没有生效、异常有没有穿透" | spring-core.md |
+| 22 | Spring Boot Controller 层怎么实现并发安全的？ | Controller 默认单例且被所有请求共享，并发安全靠"**无状态**"：不把请求相关数据放成员变量，参数从方法签名进、结果往响应写；要复用重对象用 `ThreadLocal`（用完 remove）。真正要串行化的共享状态（库存/名额）下沉到数据库（乐观锁 version）或分布式锁——Web 层并发安全的答案永远是"别在单例里藏状态" | spring-core.md |
 
 ### 易错点与面试坑
 

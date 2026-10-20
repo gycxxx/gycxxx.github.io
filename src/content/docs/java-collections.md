@@ -145,7 +145,7 @@ flowchart TD
 
 ### 高频 Q&A（先结论）
 
-27 道最高频题的「一句话答案」。先报结论占住阵地，面试官真追问时，按「深入」列展开到对应讲次。
+35 道最高频题的「一句话答案」。先报结论占住阵地，面试官真追问时，按「深入」列展开到对应讲次。
 题目覆盖 List/Map/Set/Queue/迭代器/散列原理/并发容器七大块，顺序大致按被问频率排。
 
 | # | 面试问题 | 一句话结论 | 深入 |
@@ -167,7 +167,7 @@ flowchart TD
 | 15 | fail-fast 是什么？ | 迭代器创建时快照 `expectedModCount`，每次 `next()` 比对 `modCount`，不一致抛 `ConcurrentModificationException`；best-effort，不能作正确性保证 | 第四讲 |
 | 16 | 遍历中想删除元素怎么做？ | 只能用 `iterator.remove()`：它内部调 `list.remove(lastRet)` 后会同步 `expectedModCount`，所以不触发 CME；直接 `list.remove` 必抛 | 第四讲 |
 | 17 | ConcurrentHashMap 怎么保证线程安全？ | 四路降级：空桶 CAS 无锁 → 撞见 `MOVED` 帮忙搬 → `putIfAbsent` 命中首节点无锁 → 都不行才 `synchronized` 锁**桶头** | 第六讲 |
-| 18 | CHM 与 JDK 7 的 Segment 段锁有什么区别？ | JDK 8 起没有 Segment 了，锁粒度从"一段"下沉到"一个桶"；并发度 ≈ 桶数，且无需预分配 Segment | 第六讲 |
+| 18 | CHM 与 JDK 7 的 Segment 段锁有什么区别？ | JDK 8 起没有 Segment 了，锁粒度从"一段"下沉到"一个桶"；并发度 ≈ 桶数，且无需预分配 Segment。最关键的是**读不再需要任何锁**——JDK 7 读也要抢段锁，JDK 8 靠 `val`/`next` volatile 直读 | 第六讲 |
 | 19 | `ConcurrentHashMap.size()` 精确吗？ | 不精确。`baseCount` + `CounterCell[]` 分段求和，求和时别人还在改；元素数可能超 int，官方推荐 `mappingCount()` | 第六讲 |
 | 20 | CHM 扩容时其他线程在干嘛？ | **一起搬**。撞见 `ForwardingNode`（`hash == MOVED`）就 `helpTransfer`，按 `stride` 从 `transferIndex` 认领一段桶 | 第六讲 |
 | 21 | CopyOnWriteArrayList 为什么读不加锁？ | 写时 `Arrays.copyOf` 整份复制后 `volatile` 写回，读直接读 volatile 数组；迭代器持有创建时数组引用作快照，绝不 CME | 第六讲 |
@@ -177,6 +177,14 @@ flowchart TD
 | 25 | `PriorityBlockingQueue` 怎么扩容？ | **先把主锁放了**，用 `allocationSpinLock` 只保护"分配新数组"，分配完再拿锁做 `arraycopy`——把慢操作移出临界区 | 第六讲 |
 | 26 | ConcurrentHashMap 为什么不支持 null？ | `get(key)` 返回 null 必须唯一表示"不存在"；单线程的 HashMap 可以用 `containsKey` 兜底，并发下做不到 | 第六讲 |
 | 27 | `synchronizedMap` 够用吗？ | 不够。它只保证**单方法**原子，复合操作（check-then-put）仍有竞态，还需外部 `synchronized(map)`；不如直接用 CHM 的 `putIfAbsent` | 第六讲 |
+| 28 | ArrayList、LinkedList 与 Vector 的区别？ | 三者都是 List：ArrayList 数组 + arraycopy；LinkedList 双向链表 + 指针改写；Vector 是 ArrayList 的**全同步**祖先版，每个方法一把大锁，扩容默认翻倍（`capacityIncrement` 可指定），已被官方弃用——要并发读多写少用 `CopyOnWriteArrayList`，要并发哈希用 CHM | 第一/六讲 |
+| 29 | HashMap、Hashtable 和 ConcurrentHashMap 的区别？ | 三层递进：HashMap 快但不安全；Hashtable 给整个表加 synchronized（读写全互斥，单线程也付锁代价），且 key/value 都不许 null；CHM 只锁桶头 + 空桶 CAS，读无锁，同样不许 null（null 会被歧义成"不存在"） | 第五/六讲 |
+| 30 | Java 集合框架怎么分类？ | 两大接口：`Collection`（List 有序可重复 / Set 无序不重复 / Queue 队列）与 `Map`（键值对，不属于 Collection）。并发实现单独一族：`ConcurrentHashMap`/`CopyOnWriteArrayList`/`ConcurrentLinkedQueue`/`BlockingQueue` 家族，选型先问"并发吗、读多还是写多" | 第一讲 |
+| 31 | HashMap 的扩容机制？ | `size > capacity × loadFactor`（默认 12 > 16×0.75）触发 `resize()`：容量翻倍、阈值翻倍，按 `e.hash & oldCap` 把桶拆成 lo/hi 两条链表顺序迁到新表——免重算 hash，这是 2 次幂容量的红利；单线程安全，并发扩容会丢数据 | 第五讲 |
+| 32 | HashMap 的 remove 怎么实现的？ | 定位桶后遍历：命中就比较 `hash`/`==`/`equals` 三连，是头节点直接改 `table[i]`，否则持 `prev` 指针摘链；红黑树走 `removeTreeNode` 删完可能要 `untreeify`/`balanceDeletion` 回血；删除后 `modCount++`——这就是迭代中直接 remove 抛 CME 的原因 | 第四讲 |
+| 33 | HashMap 的 get/put 底层流程？ | put：`spread(h)` 扰动 → `(n-1) & hash` 落桶 → 空桶 CAS 填节点 / 链表尾插或树插 / 超阈值树化 → `++size` 够阈值 `resize`。get：同一套定位 → 头节点比 hash+equals / 链表或红黑树查找 → 命中取 `val`；**全程不加锁**，所以并发 put 时 get 可能读到旧值或死循环（JDK 7） | 第五讲 |
+| 34 | Set 如何保证元素不重复？ | `HashSet` 复用 HashMap：value 固定为 `PRESENT`，去重 = 先比 `hashCode` 定位桶、再 `equals` 逐一比对，两者都相等才判重；所以**存入自定义对象必须成对实现 equals/hashCode**，且 hashCode 在对象生命周期内要稳定。`TreeSet` 则换成 `compareTo`/`Comparator` 判重 | 第三讲 |
+| 35 | fail-fast 和 fail-safe 的区别？ | fail-fast：迭代时检查 `modCount`，发现被结构性修改立刻抛 CME（`ArrayList`/`HashMap` 常规迭代器），**不保证检测到**；fail-safe：迭代的是副本或快照（`CopyOnWriteArrayList` 的数组快照、`ConHashMap` 的弱一致视图），不抛 CME 但可能读到过期数据——用"一致性换不抛异常" | 第四/六讲 |
 
 ### 易错点与面试坑
 

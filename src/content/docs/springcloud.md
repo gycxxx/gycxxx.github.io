@@ -132,6 +132,11 @@ flowchart TD
 | 14 | Gateway 怎么限流？ | `RequestRateLimiterGatewayFilterFactory` + 可替换的 `RateLimiter`（Redis 令牌桶 / Bucket4j 本地桶）+ 可替换的 `KeyResolver`，三者经 `Config` 解耦；空 key 默认 403，被限流默认 429 | 第三讲 |
 | 15 | 超时和重试怎么配？ | `NettyRoutingFilter` 超时映射 504；Feign 侧的重试变体 `RetryableFeignBlockingLoadBalancerClient` 由条件注解控制是否装配 | 第三、四讲 |
 | 16 | Feign 的熔断怎么接入？ | `FeignCircuitBreakerTargeter` 按 `fallback` / `fallbackFactory` 分三条路给 builder 塞 `circuitBreakerFactory`；没有 fallback 就退化成普通代理 | 第四讲 |
+| 17 | 什么是微服务？它带来哪些挑战？ | 按业务能力把单体拆成一组可独立开发/部署/伸缩的小服务，各自有边界与数据。换来的是团队并行与局部伸缩，付出的是分布式税：网络不可靠、分布式事务、最终一致性、链路排查难、测试与运维复杂度上升——Spring Cloud 全家桶（注册配置/网关/熔断/负载均衡）就是来填这些坑的 | 第一讲 |
+| 18 | Zuul、Gateway 和 Nginx 有什么区别？ | Nginx 是 L7 反向代理/静态服务器（C 写、性能天花板、配置即代码但不动态）；Zuul 1.x 是 Servlet 同步阻塞模型（2.x 才 Netty）；Gateway 是 Spring 生态原生网关：Reactor + Netty 异步非阻塞、谓词/过滤器工厂可编程、与注册中心/负载均衡/限流深度集成。要高性能静态转发用 Nginx，要业务级动态路由与治理用 Gateway | 第三讲 |
+| 19 | Dubbo 和 Feign 有什么区别？ | 协议层不同：Dubbo 是独立 RPC 框架（自有协议、Netty 长连接、序列化协议、注册中心、治理全家桶，二进制性能好）；Feign 是 **HTTP 声明式客户端**——把 RestTemplate 模板调用变成接口方法，解决的是"怎么优雅发 HTTP"，不解决服务治理。生产常见组合：内部走 Dubbo，跨语言/对外开放走 HTTP（Feign + Gateway） | 第四讲 |
+| 20 | HTTP 和 RPC 的区别？ | RPC 是"像调本地方法一样调远程"的统称，通常自有协议 + 长连接 + 高效序列化（二进制）+ 内置服务发现治理；HTTP 是万维网通用协议，无状态短连接、文本/JSON、生态通用但每次要重建连接、头部冗余。内网高并发内部调用选 RPC（省带宽与连接开销），对外开放/浏览器场景选 HTTP。gRPC/Thrift 是 RPC 的代表，Feign 的默认形态是 HTTP RPC 化 | 第四讲 |
+| 21 | Feign 第一次调用为什么会很慢？怎么解决？ | 首次调用要现做契约解析、生成动态代理、建连接池、拉取服务实例列表，还要等首次 JIT 预热；之后走缓存就快了。解决：应用启动后主动预热（健康检查通过后打一次空调用/触发懒加载）、连接池预热、把 `FeignClient` 扫描提前、对延迟敏感的核心接口预留预热窗口。这和"JVM 启动慢"是同一类冷启动问题 | 第四讲 |
 
 **答题范式**：先报一句话结论（机制名 + 版本事实），答完就停；
 被追问再报关键类名和调用链，最后才展开源码细节；

@@ -84,22 +84,25 @@ Sentinel 的核心可以压缩成**一条责任链 + 一棵统计树 + 三种规
 |---|---|---|---|
 | 1 | Sentinel 和 Hystrix 差异？ | Sentinel 是**控制台+规则热更+多维度流控**（并发不隔离、用信号量做隔离）；Hystrix 是**线程池隔离+熔断器先行者**（已停更） | 设计对比 |
 | 2 | slot 执行顺序？ | 固定顺序：NodeSelector → ClusterBuilder → Log → Statistic → Authority → System → ParamFlow → Flow → CircuitBreaker → Degrade | `Constants.java:76-84` |
-| 3 | slot 顺序怎么定制？ | 实现 `ProcessorSlot` + `@Spi(order=...)`，或自定义 `SlotChainBuilder`（SPI 覆盖 `DefaultSlotChainBuilder`） | `DefaultSlotChainBuilder.java:37` |
+| 3 | slot 顺序怎么定制？ | 实现 `ProcessorSlot` + `@Spi(order=...)`，或自定义 `SlotChainBuilder`（SPI 覆盖 `DefaultSlotChainBuilder`） | `DefaultSlotChainBuilder.java:35` |
 | 4 | 限流有几种效果？ | `DefaultController`（快速失败）+ `WarmUpController`（冷启动预热）+ `ThrottlingController`/`WarmUpRateLimiterController`（**匀速排队**，基于令牌桶+未来预支） | `slots/block/flow/controller/` |
 | 5 | 流控有几种策略？ | 按调用方（`STRATEGY_DIRECT`/`RELATE`/`CHAIN`）与按阈值类型（QPS/线程数）组合；集群模式由 TC 的 TokenService 裁决 | `FlowRule.java` |
 | 6 | 熔断有哪几种？ | 慢调用比例（`DEGRADE_GRADE_RT`）、异常比例（`DEGRADE_GRADE_EXCEPTION_RATIO`）、异常数（`DEGRADE_GRADE_EXCEPTION_COUNT`） | `DegradeRule.java` |
-| 7 | 熔断半开怎么探测？ | `HALF_OPEN` 放行**一个**探测请求：成功 → `fromHalfOpenToClose`（关闭熔断），失败/慢 → `fromHalfOpenToOpen`（重新打开） | `ResponseTimeCircuitBreaker.java:82-95` |
+| 7 | 熔断半开怎么探测？ | OPEN 且 `retryTimeoutArrived()` 时，`fromOpenToHalfOpen` 放行**一个**探测请求（`AbstractCircuitBreaker.java:105`）；探测请求完成时分叉：RT 正常 → `fromHalfOpenToClose`（关闭熔断），失败/慢 → `fromHalfOpenToOpen`（重新打开）（`ResponseTimeCircuitBreaker.java:86-93`） | `ResponseTimeCircuitBreaker.java:86-93`、`AbstractCircuitBreaker.java:105` |
 | 8 | 熔断和限流的区别？ | 限流是"入口控制流量"（对**所有**请求生效）；熔断是"出口保护"（对**满足统计条件**的资源暂停放行，有自动恢复） | `DegradeSlot.java:41` |
 | 9 | 统计窗口多大？ | 秒级 `ArrayMetric(SAMPLE_COUNT=2, 1000ms)` + 分钟级 `ArrayMetric(60, 60000ms)`，底层 `LeapArray` 循环桶 | `StatisticNode.java:96` |
 | 10 | `LeapArray` 并发安全吗？ | 桶数组用 `AtomicReferenceArray` + **CAS 换桶**（`array.compareAndSet(idx, null, window)`），统计值用 `LongAdder`——无锁 | `LeapArray.java:116` |
 | 11 | 规则怎么热更新？ | `RuleManager` 监听 `SentinelProperty`；`NacosDataSource` 等实现把远程配置推成 property 更新，`loadRules` 重建 | `NacosDataSource.java:71` |
 | 12 | 集群限流原理？ | 每个 TokenClient 向 TokenServer 申请配额；`TokenServer` 是独立进程（或嵌入），本地规则只做兜底；超限返回 `TokenResultStatus.BLOCKED` | `TokenService.java:36` |
-| 13 | `@SentinelResource` 两个属性？ | `value`（资源名）+ `blockHandler`（限流降级方法，**方法签名要与原方法一致**）+ `fallback`（业务异常） | `annotation/SentinelResource.java` |
-| 14 | 上下文超限会怎样？ | 超过 `Constants.MAX_CONTEXT_NAME_SIZE`（默认 2000）后新入口进 `NullContext`，**只建 entry 不做规则检查** | `CtSph.java:118` |
-| 15 | 热点参数限流限什么？ | 按**参数值**分别统计：同一资源下 `paramIdx=0` 的 `userId=10086` 单独一个计数器，可设单参数值阈值 + 全局阈值 | `ParamFlowSlot.java:50` |
-| 16 | 系统自适应 BBR 是什么？ | 参考 Google BBR：当 load 超阈值时，若并发线程 > `maxSuccessQps × minRt / 1000`（理论最优并发）则拒绝——**过载时只放进"最优并发数"的请求** | `SystemRuleManager.java:337` |
-| 17 | `entry` 抛了非 BlockException 怎么办？ | `CtSph:155-159` 只记录日志继续返回 entry——**Sentinel 自身异常不拖垮业务**（fail-open） | `CtSph.java:155` |
+| 13 | `@SentinelResource` 有哪些属性？ | `value`（资源名）+ `blockHandler`（限流降级方法，**方法签名要与原方法一致**）+ `fallback`（业务异常） | `annotation/SentinelResource.java` |
+| 14 | 上下文超限会怎样？ | 超过 `Constants.MAX_CONTEXT_NAME_SIZE`（默认 2000）后新入口进 `NullContext`，**只建 entry 不做规则检查** | `CtSph.java:120-121` |
+| 15 | 热点参数限流限什么？ | 按**参数值**分别统计：同一资源下 `paramIdx=0` 的 `userId=10086` 单独一个计数器，可设单参数值阈值 + 全局阈值 | `ParamFlowSlot.java:61` |
+| 16 | 系统自适应 BBR 是什么？ | 参考 Google BBR：当 load 超阈值时，若并发线程 > `maxSuccessQps × minRt / 1000`（理论最优并发）则拒绝——**过载时只放进"最优并发数"的请求** | `SystemRuleManager.java:334-336` |
+| 17 | `entry` 抛了非 BlockException 怎么办？ | `CtSph:152-156` 只记录日志继续返回 entry——**Sentinel 自身异常不拖垮业务**（fail-open） | `CtSph.java:152` |
 | 18 | `SphU.entry` 忘了 exit 会怎样？ | 线程数统计泄漏（`increaseThreadNum` 加了不减），最终所有请求被线程数规则拒——**必须 try-finally** | `StatisticSlot.java:62` |
+| 19 | 漏桶和令牌桶有什么区别？ | 漏桶：请求进桶、**恒定速率**流出，桶满则拒——强制平滑，任何突发都削平，适合"下游不能受任何冲击"；令牌桶：按速率往桶里放令牌、请求取到令牌才过，**允许有界突发**（攒下的令牌一次放出），适合"平时限流、允许偶发高峰"。Sentinel 的匀速器 `DefaultController`（`RateLimiterController` + GC 周期任务）本质上更接近漏桶思路的"间隔通过"，`WarmUpController` 则在冷启动时放行量渐变 | `DefaultController` / `RateLimiterController` / `WarmUpController` |
+| 20 | 什么是预热？它有什么作用？ | 冷启动的系统（刚重启的缓存/DB 连接池/JIT 未热）承受不住正常流量，预热让阈值从低到高渐变，把"开机即洪峰"摊薄。Sentinel 的 `WarmUpController` 按 `coldFactor`（默认 3）从 `threshold/coldFactor` 起步，经过一个 warm-up period 才升到满阈值；Redis 侧也有类似的 `active-defrag`/连接池预热概念——本质是给系统留出自愈时间 | `WarmUpController` |
+| 21 | 什么是服务降级？ | 压力过大时**主动关闭非核心功能、返回兜底数据**，把资源留给核心链路：关闭推荐/关闭详情页富文本只留骨架、读走缓存旧值、写走异步队列。降级是"取舍"（牺牲体验保可用），限流是"准入"（超了不让进），熔断是"止损"（下游挂了别再打它）——三者常配套使用，Sentinel 的 fallback 机制即降级落点 | 熔断降级一节 |
 
 ### 易错点（最容易讲错的 8 条）
 
@@ -219,7 +222,7 @@ if (chain == null) {
 | 维度 | 结论 |
 |---|---|
 | 结构 | `CtSph.entryWithPriority:132` 三道闸 → `lookProcessChain:194` 缓存链 → `chain.entry` 依次过 slot |
-| 关键实现 | 链按 `@Spi(order)` 装配（`DefaultSlotChainBuilder.java:37`），`chainMap` 用整体换 Map 实现无锁读 |
+| 关键实现 | 链按 `@Spi(order)` 装配（`DefaultSlotChainBuilder.java:35`），`chainMap` 用整体换 Map 实现无锁读 |
 | 并发 | 写链加 `LOCK` 双检；读完全无锁；统计值用 `LongAdder` |
 | 协议 | 被拒时 `e.exit(count, args)` 补记账；内部异常 fail-open 只记日志 |
 | 陷阱 | `MAX_SLOT_CHAIN_SIZE` 超限后新资源**直接放行不检查**；`NullContext` 同样静默失效 |

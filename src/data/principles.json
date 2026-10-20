@@ -218,7 +218,7 @@
  {
   "q": "全局锁什么时候拿？",
   "a": "RM 注册分支时把 lockKeys（表名+主键值）报给 TC，TC 的 LockManager 抢先到先得；写冲突抛 LockConflictException 重试",
-  "d": "`server/src/main/java/org/apache/seata/server/storage/db/lock/DataBaseLockManager.java`",
+  "d": "`server/src/main/java/org/apache/seata/server/storage/db/lock/DataBaseLockManager.java:38`",
   "s": "distributed-tx",
   "t": "分布式事务（Seata）源码深度学习笔记",
   "c": "中间件"
@@ -226,7 +226,7 @@
  {
   "q": "脏写怎么防？",
   "a": "本地事务提交前 checkLock 校验全局锁——如果这行记录被别的事务的全局锁占着，本地提交直接失败",
-  "d": "`rm-datasource/src/main/java/org/apache/seata/rm/datasource/ConnectionProxy.java:237`",
+  "d": "`rm-datasource/src/main/java/org/apache/seata/rm/datasource/ConnectionProxy.java:238`",
   "s": "distributed-tx",
   "t": "分布式事务（Seata）源码深度学习笔记",
   "c": "中间件"
@@ -257,7 +257,7 @@
  },
  {
   "q": "TCC 的幂等靠什么？",
-  "a": "confirm/cancel 必须幂等实现；fence 表记录 xid+branchId+action 的状态（PREPARED/COMMITTED/ROLLBACKED），重复调用直接返回上次结果",
+  "a": "confirm/cancel 必须幂等实现；fence 表记录 xid+branchId+action 的状态（TRIED/COMMITTED/ROLLBACKED/SUSPENDED 四态，CommonFenceConstant.java:32-47），重复调用按状态机直接返回上次结果",
   "d": "同上 `:53`",
   "s": "distributed-tx",
   "t": "分布式事务（Seata）源码深度学习笔记",
@@ -274,23 +274,23 @@
  {
   "q": "XA 模式和 AT 差异？",
   "a": "XA 是数据库标准协议（XAResource.prepare/commit），业务无侵入但依赖库支持、性能差；AT 靠 undo_log 补偿，无侵入且快",
-  "d": "`rm-datasource/src/main/java/org/apache/seata/rm/datasource/xa/ConnectionProxyXA.java`",
+  "d": "`rm-datasource/src/main/java/org/apache/seata/rm/datasource/xa/ConnectionProxyXA.java:46`",
   "s": "distributed-tx",
   "t": "分布式事务（Seata）源码深度学习笔记",
   "c": "中间件"
  },
  {
   "q": "TC 挂了正在跑的事务怎么办？",
-  "a": "TC 重启后从存储 reload 会话（SessionHolder.reload），继续驱动到终态；RM 有 report 重试",
-  "d": "`server/src/main/java/org/apache/seata/server/session/SessionHolder.java`",
+  "a": "TC 重启后从存储 reload 会话（SessionHolder.reload:166），继续驱动到终态；RM 有 report 重试",
+  "d": "`server/src/main/java/org/apache/seata/server/session/SessionHolder.java:166`",
   "s": "distributed-tx",
   "t": "分布式事务（Seata）源码深度学习笔记",
   "c": "中间件"
  },
  {
   "q": "`@GlobalTransactional` 传播性有哪些？",
-  "a": "七种：REQUIRED/SUPPORTS/MANDATORY/REQUIRES_NEW/NOT_SUPPORTED/NEVER/NESTED，和 Spring 同名同义",
-  "d": "`tm/src/main/java/org/apache/seata/tm/api/TransactionalTemplate.java:192`",
+  "a": "六种：REQUIRED/SUPPORTS/MANDATORY/REQUIRES_NEW/NOT_SUPPORTED/NEVER（Seata 自己的 Propagation 枚举，MANDATORY 收尾在 :176）。没有 NESTED——switch 落到 default 直接抛 Not Supported Propagation（同文件 :239）。名字和 Spring 像，但不是 Spring 那个枚举，别答\"七种\"",
+  "d": "`tm/src/main/java/org/apache/seata/tm/api/transaction/Propagation.java:176`",
   "s": "distributed-tx",
   "t": "分布式事务（Seata）源码深度学习笔记",
   "c": "中间件"
@@ -305,8 +305,8 @@
  },
  {
   "q": "全局事务超时了会怎样？",
-  "a": "TC timeoutCheck:406 扫到超时会话 → TimeoutRollbacking → 逐分支回滚；RM 提交时若 TC 已判超时，commit(xid) 返回 TimeoutRollbacking 转为回滚",
-  "d": "`server/src/main/java/org/apache/seata/server/coordinator/DefaultCore.java:242`",
+  "a": "TC timeoutCheck:406 扫到超时会话 → TimeoutRollbacking → 逐分支回滚；RM 提交时若 TC 已判超时，commit(xid) 走 isTimeout() 检查（DefaultCore.java:243-245）返回 TimeoutRollbacking 转为回滚",
+  "d": "`server/src/main/java/org/apache/seata/server/coordinator/DefaultCore.java:243`",
   "s": "distributed-tx",
   "t": "分布式事务（Seata）源码深度学习笔记",
   "c": "中间件"
@@ -329,8 +329,8 @@
  },
  {
   "q": "批量插入为什么特殊？",
-  "a": "批量没有 beforeImage，回滚只能按主键删；InsertExecutor/MySQLInsertExecutor 专门处理自增列和 on duplicate update",
-  "d": "`rm-datasource/src/main/java/org/apache/seata/rm/datasource/exec/InsertExecutor.java`",
+  "a": "批量没有 beforeImage，回滚只能按主键删；InsertExecutor/MySQLInsertExecutor 专门处理自增列和 on duplicate update（getPkValues:36）",
+  "d": "`rm-datasource/src/main/java/org/apache/seata/rm/datasource/exec/InsertExecutor.java:36`",
   "s": "distributed-tx",
   "t": "分布式事务（Seata）源码深度学习笔记",
   "c": "中间件"
@@ -473,7 +473,7 @@
  },
  {
   "q": "CHM 与 JDK 7 的 Segment 段锁有什么区别？",
-  "a": "JDK 8 起没有 Segment 了，锁粒度从\"一段\"下沉到\"一个桶\"；并发度 ≈ 桶数，且无需预分配 Segment",
+  "a": "JDK 8 起没有 Segment 了，锁粒度从\"一段\"下沉到\"一个桶\"；并发度 ≈ 桶数，且无需预分配 Segment。最关键的是读不再需要任何锁——JDK 7 读也要抢段锁，JDK 8 靠 val/next volatile 直读",
   "d": "第六讲",
   "s": "java-collections",
   "t": "Java 集合框架源码深度学习笔记",
@@ -553,7 +553,7 @@
  },
  {
   "q": "线程池七个参数？`execute` 的执行流程？",
-  "a": "core 未满直接建核心线程；否则入队并二次检查（入队后池子关了或线程没了）；队满才建非核心线程，到 max 就拒绝",
+  "a": "七参数：corePoolSize/maximumPoolSize/keepAliveTime+unit/workQueue/threadFactory/handler。执行流程：core 未满直接建核心线程；否则入队并二次检查（入队后池子关了或线程没了）；队满才建非核心线程，到 max 就拒绝",
   "d": "第一讲",
   "s": "java-concurrent",
   "t": "Java 并发库（JUC）源码深度学习笔记",
@@ -641,7 +641,7 @@
  },
  {
   "q": "`ConcurrentHashMap` 为什么快？",
-  "a": "空桶 CAS 无锁插入，有桶只 synchronized 锁桶头节点——粒度从\"锁整表\"细化到\"锁单桶\"，不同桶的并发写互不影响",
+  "a": "JDK 7 的 Segment 分段锁在 8+ 被弃用，改为 Node 数组 + CAS + synchronized 锁桶头：空桶 CAS 无锁插入（casTabAt，ConcurrentHashMap.java:1010/:759），有桶只锁 bin 头节点——粒度从\"锁整表\"细化到\"锁单桶\"，不同桶并发写互不影响；读完全无锁：val/next 皆 volatile（:628/:629），tabAt 走 Unsafe acquire 语义（:759），get 不加锁；扩容也不是单线程搬——transfer 多线程 CAS 抢 stride 段（:2424），读者遇 MOVED 会 helpTransfer（:1010 路径）；计数用 CounterCell 分段（:2565）避免单点 CAS 热点",
   "d": "第三讲",
   "s": "java-concurrent",
   "t": "Java 并发库（JUC）源码深度学习笔记",
@@ -713,15 +713,15 @@
  },
  {
   "q": "`mark` 之后读超多少会失效？",
-  "a": "marklimit（构造第二参数或 mark(readlimit)）。fill() 里若 pos - markpos > marklimit 就丢弃 mark（markpos = -1）",
-  "d": "`java/io/BufferedInputStream.java:467`",
+  "a": "marklimit（构造第二参数或 mark(readlimit)）。fill():256 里若 pos - markpos > marklimit 就丢弃 mark（markpos = -1，:267）",
+  "d": "`java/io/BufferedInputStream.java:267`",
   "s": "java-io",
   "t": "Java IO 源码深度学习笔记",
   "c": "Java"
  },
  {
   "q": "`DataInputStream.readUTF` 和 `Writer.write(\"…\")` 一样吗？",
-  "a": "不一样。readUTF:632 是改长的 UTF-8（2 字节长度前缀 +  supplemental 字符拆成代理对按 3 字节编码、\\0 编码成 2 字节），和标准 UTF-8 不兼容，只能和 DataOutputStream.writeUTF:337 配对",
+  "a": "不一样。readUTF:554 是改长的 UTF-8（2 字节长度前缀 +  supplemental 字符拆成代理对按 3 字节编码、\\0 编码成 2 字节），和标准 UTF-8 不兼容，只能和 DataOutputStream.writeUTF:337 配对",
   "d": "`java/io/DataInputStream.java:554`",
   "s": "java-io",
   "t": "Java IO 源码深度学习笔记",
@@ -737,23 +737,23 @@
  },
  {
   "q": "跨 `read` 调用中文字为什么会乱？",
-  "a": "多字节字符可能被系统调用切断在两次 read 之间，StreamDecoder 用 bb 残字节缓冲解决：半字符留在 ByteBuffer 里下次继续解",
-  "d": "`sun/nio/cs/StreamDecoder.java:123`",
+  "a": "多字节字符可能被系统调用切断在两次 read 之间，StreamDecoder 用 bb 残字节缓冲解决：半字符留在 ByteBuffer（:229）里下次继续解",
+  "d": "`sun/nio/cs/StreamDecoder.java:229`",
   "s": "java-io",
   "t": "Java IO 源码深度学习笔记",
   "c": "Java"
  },
  {
   "q": "`available()` 返回值可信吗？",
-  "a": "不可信。注释原文\"an estimate\"（:457），普通文件返回剩余字节，网络流返回 0 不代表没数据；不要用它决定\"是否读完\"",
-  "d": "`java/io/FileInputStream.java:457`",
+  "a": "不可信。注释原文\"an estimate\"（:458），普通文件返回剩余字节，网络流返回 0 不代表没数据；不要用它决定\"是否读完\"",
+  "d": "`java/io/FileInputStream.java:458`",
   "s": "java-io",
   "t": "Java IO 源码深度学习笔记",
   "c": "Java"
  },
  {
   "q": "`File` 和 `Path` 什么关系？",
-  "a": "JDK 7 起 Path 是主力，File 是遗留 API（java.io.File 仍在维护）。File 内部所有操作委托 FileSystem FS（File.java:160），File.toPath():727 两者互转",
+  "a": "JDK 7 起 Path 是主力，File 是遗留 API（java.io.File 仍在维护）。File 内部所有操作委托 FileSystem FS（File.java:160），File.toPath():2093 两者互转",
   "d": "`java/io/File.java:160`",
   "s": "java-io",
   "t": "Java IO 源码深度学习笔记",
@@ -769,8 +769,8 @@
  },
  {
   "q": "NIO 的 `Buffer` 三个指针？",
-  "a": "mark <= position <= limit <= capacity（不变量在 Buffer.java:217 注释）；写模式 limit==capacity，读完 flip() 切读模式（limit=position, position=0，:1009），读完再 clear()",
-  "d": "`java/nio/Buffer.java:217`",
+  "a": "mark <= position <= limit <= capacity（不变量在 Buffer.java:217 注释）；写模式 limit==capacity，读完 flip() 切读模式（limit=position, position=0，:484），读完再 clear()",
+  "d": "`java/nio/Buffer.java:484`",
   "s": "java-io",
   "t": "Java IO 源码深度学习笔记",
   "c": "Java"
@@ -793,7 +793,7 @@
  },
  {
   "q": "`MappedByteBuffer` 什么时候被释放？",
-  "a": "不确定。map 时注册 DefaultUnmapper 到 Cleaner（:1341），GC 触发才 unmap；大文件要用 cleaner().clean() 或 Arena 主动释放，否则 fd 占满",
+  "a": "不确定。map 时注册 DefaultUnmapper 到 Cleaner（:1341），GC 触发才 unmap；大文件要用 cleaner().clean() 或 Arena 主动释放，否则映射会占满进程地址空间（mmap 不耗 fd、耗地址空间），后续 mmap 直接失败",
   "d": "`sun/nio/ch/FileChannelImpl.java:1341`",
   "s": "java-io",
   "t": "Java IO 源码深度学习笔记",
@@ -801,8 +801,8 @@
  },
  {
   "q": "`FileChannel.force()` 是 fsync 吗？",
-  "a": "是。force(false) → fsync(2)（数据+元数据）、force(true) → fdatasync 风格只刷数据（:1074）",
-  "d": "`sun/nio/ch/FileChannelImpl.java:1074`",
+  "a": "是。force(false) 只刷数据（fdatasync 风格）、force(true) 数据 + 元数据都刷（fsync(2)）（force(boolean):633）——默认传 false 就够用，元数据场景才传 true",
+  "d": "`sun/nio/ch/FileChannelImpl.java:633`",
   "s": "java-io",
   "t": "Java IO 源码深度学习笔记",
   "c": "Java"
@@ -841,23 +841,23 @@
  },
  {
   "q": "序列化怎么写同一个对象两次？",
-  "a": "第一次 TC_OBJECT 全文，第二次只写 TC_REFERENCE + 句柄号（writeObject0:… 的 handles.assign(obj) 查表）；句柄表 HandleTable 从 0xff71 开始",
-  "d": "`java/io/ObjectOutputStream.java:180`",
+  "a": "第一次 TC_OBJECT 全文，第二次只写 TC_REFERENCE + 句柄号（writeHandle:1105，句柄由 handles.assign 在 writeOrdinaryObject:1295 里分配）；wire 上的句柄从 baseWireHandle = 0x7e0000 起（ObjectStreamConstants.java:139）",
+  "d": "`java/io/ObjectOutputStream.java:1105`、`java/io/ObjectStreamConstants.java:139`",
   "s": "java-io",
   "t": "Java IO 源码深度学习笔记",
   "c": "Java"
  },
  {
   "q": "`serialVersionUID` 不写会怎样？",
-  "a": "运行时按类结构自动计算哈希（ObjectStreamClass.computeDefaultSUID），加个字段就变，反序列化直接 InvalidClassException。必须显式声明",
-  "d": "`java/io/ObjectStreamClass.java`",
+  "a": "运行时按类结构自动计算哈希（computeDefaultSUID:1593），加个字段就变，反序列化直接 InvalidClassException。必须显式声明",
+  "d": "`java/io/ObjectStreamClass.java:1593`",
   "s": "java-io",
   "t": "Java IO 源码深度学习笔记",
   "c": "Java"
  },
  {
   "q": "`readObject` 里能强转吗？",
-  "a": "不能直接信。反序列化是\"从不可信字节造对象\"的入口，JDK 9+ 提供 ObjectInputFilter（ObjectInputStream.java:1281 setObjectInputFilter）做白名单过滤",
+  "a": "能转，但别信类型。readObject 返回 Object，用的时候必须强转，类对不上会在使用点抛 ClassCastException——强转本身不做校验。真正的防线有三道：serialVersionUID 不匹配在读任何字段之前就抛 InvalidClassException；JDK 9+ 用 ObjectInputFilter（setObjectInputFilter:1281）按类名/深度/引用数做白名单；自定义 readObject 里自己校验字段合法性。反序列化是\"从不可信字节造对象\"的入口，生产环境必须配过滤器",
   "d": "`java/io/ObjectInputStream.java:1281`",
   "s": "java-io",
   "t": "Java IO 源码深度学习笔记",
@@ -865,7 +865,7 @@
  },
  {
   "q": "`PipedInputStream` 死锁怎么发生的？",
-  "a": "写端写满 1024 字节会 awaitSpace（:273）等读端读；读端不读、双方都阻塞就死锁。且读写两端不是线程安全的同一把锁，需两个线程",
+  "a": "写端写满 1024 字节会 awaitSpace:273（notifyAll() 后 wait(1000)）等读端腾地方；读端不读、双方都阻塞就死锁。且读写共用同一把锁（synchronized + wait/notifyAll），awaitSpace 的等待只能由另一个线程的 read() 唤醒——单线程自己写自己读必死锁",
   "d": "`java/io/PipedInputStream.java:273`",
   "s": "java-io",
   "t": "Java IO 源码深度学习笔记",
@@ -1217,7 +1217,7 @@
  },
  {
   "q": "怎么判断对象已死，GC Roots 有哪些",
-  "a": "可达性分析：活对象定义为 GC Roots 可达；Roots 含栈上活跃 frame、全局对象、JNI handles 等，根扫描从这些出发",
+  "a": "可达性分析：活对象定义为 GC Roots 可达。Roots 包括：各线程栈上活跃 frame 的局部变量与操作数栈、类的静态字段、常量池引用、JNI handles、已加载的 class（连带其 classloader）、Thread 对象等；根扫描从这些出发（如 G1 的 FastEvacuateFollowersClosure:770 驱动），标记 + 清除/整理回收不可达者",
   "d": "第四讲",
   "s": "jdk",
   "t": "JVM 源码深度学习笔记",
@@ -1337,7 +1337,7 @@
  },
  {
   "q": "Kafka 为什么快？",
-  "a": "数据只顺序追加进 .log；RecordAccumulator 用分区别队+内存池+sticky 分区把随机写变成批量顺序请求；索引按 4KB 稀疏记录，查找先二分再小范围扫描",
+  "a": "五层叠加，缺一层都会掉一个量级：①顺序追加，数据只往 .log 尾部写，顺序写是磁盘最快模式；②攒批，producer 侧 RecordAccumulator（RecordAccumulator.java:68）分区别队+内存池+sticky 分区（:275/:302/:333），Sender 按节点 drain（:852-937）把随机写并成批量顺序请求；③分区即并行单元，多分区可并行 append，partition 数就是写入并行度；④读侧零拷贝，LogSegment.read（LogSegment.java:431）slice 出共享同一 FileChannel 的视图（不拷字节），FileRecords.writeTo（FileRecords.java:302）走 transferFrom，明文路径直落 fileChannel.transferTo(position, count, socketChannel)（PlaintextTransportLayer.java:213）——sendfile 全程不过用户态；TLS 加密时这条快路径失效，退化成先解密再写（SslTransportLayer.java:1003，TransferableChannel.java:39 注释明说 fast path 只对 JDK 内部类生效）；⑤读路径轻，.index 每 4KB 一条稀疏记录，查找先二分再小范围顺序扫；压缩批 broker 侧只做 CRC/压缩类型初检（UnifiedLog.java:1128），不逐条解压。另外全程读写优先命中 OS page cache，刷盘交给内核",
   "d": "第三讲、第四讲",
   "s": "kafka",
   "t": "Kafka 源码深度学习笔记",
@@ -2321,8 +2321,8 @@
  },
  {
   "q": "Redis 为什么快？",
-  "a": "单线程 Reactor + epoll 多路复用 + 纯内存；ae 层 fd 直接当数组下标，注册与触发都无锁、无上下文切换",
-  "d": "第一讲",
+  "a": "六层叠加，缺一不可：①纯内存，命令执行完全不碰磁盘（持久化走 fork 子进程 / bio 线程旁路）；②单主线程执行命令，无锁竞争、无上下文切换，aeMain 一个 while 循环跑完所有事（src/ae.c:497）；③epoll 多路复用，一个线程管成千上万连接，一次 epoll_wait 拿回所有就绪 fd（src/ae_epoll.c:89）；④fd 直接当数组下标，注册/触发/删除都是 O(1) 数组操作，不查哈希不加锁（src/ae.h:79）；⑤攒着回复：命令执行完不立刻 write，beforeSleep 里统一批量刷（src/server.c:2104），多次小 write 合成一次；⑥数据结构按规模选编码：hash 就是 dict 哈希表（O(1)，扩容走增量 rehash 不阻塞主循环）、整数集用 intset、小 list/hash/zset 用 listpack 连续内存吃 cache 命中、大 list 才转 quicklist、zset = dict + skiplist 双结构（单点 O(1)、范围 O(logN)）（第四讲）。6.0+ 的 IO 线程只\"搬砖\"（读 socket/解析 RESP/回写），命令执行仍全部在主线程",
+  "d": "第一、二、四讲",
   "s": "redis",
   "t": "Redis 源码深度学习笔记",
   "c": "存储与缓存"
@@ -2337,7 +2337,7 @@
  },
  {
   "q": "单线程为什么还会阻塞？",
-  "a": "慢命令（KEYS * 级别）靠单轮写上限 64KB 兜底；appendfsync always 的同步 fsync、fork 时的 COW、超大 bulk 读取都会拉长单轮循环",
+  "a": "慢命令（KEYS * 级别）靠单轮写上限 64KB 兜底；大 key 删除有 lazyfree（src/lazyfree.c，UNLINK/lazyfree-lazy-expire）异步释放兜底；但 appendfsync always 的同步 fsync、fork 时的 COW、超大 bulk 读取仍会拉长单轮循环",
   "d": "第一、五讲",
   "s": "redis",
   "t": "Redis 源码深度学习笔记",
@@ -2433,7 +2433,7 @@
  },
  {
   "q": "对象为什么有多种编码？zset 为什么快？",
-  "a": "小规模用连续内存（intset/listpack）换 cache 命中，大规模转离散结构（dict/skiplist/quicklist）；zset = dict + skiplist 双结构，单点 O(1)、范围 O(logN)",
+  "a": "同一份数据按规模在不同编码间切换，本质是用内存换时间：小规模用连续内存（intset/listpack）吃 cache 命中、省指针开销，超阈值转离散结构（dict/skiplist/quicklist）——如 zset 元素数过 128 走 zsetConvert 转 skiplist（src/t_zset.c:1439），删少了还能 zsetConvertToListpackIfNeeded（src/t_zset.c:1523）回退；zset = dict + skiplist 双结构——dict 保单点 O(1)，skiplist 保范围查询与排名 O(logN)（zslInsert 随机层数 src/t_zset.c:254/:326，span 支撑 ZRANK src/t_zset.c:645）；另有 0~9999 共享整数对象（src/server.c:2204）零分配复用",
   "d": "第四讲",
   "s": "redis",
   "t": "Redis 源码深度学习笔记",
@@ -2466,7 +2466,7 @@
  {
   "q": "slot 顺序怎么定制？",
   "a": "实现 ProcessorSlot + @Spi(order=...)，或自定义 SlotChainBuilder（SPI 覆盖 DefaultSlotChainBuilder）",
-  "d": "`DefaultSlotChainBuilder.java:37`",
+  "d": "`DefaultSlotChainBuilder.java:35`",
   "s": "sentinel",
   "t": "Sentinel 源码深度学习笔记",
   "c": "中间件"
@@ -2497,8 +2497,8 @@
  },
  {
   "q": "熔断半开怎么探测？",
-  "a": "HALF_OPEN 放行一个探测请求：成功 → fromHalfOpenToClose（关闭熔断），失败/慢 → fromHalfOpenToOpen（重新打开）",
-  "d": "`ResponseTimeCircuitBreaker.java:82-95`",
+  "a": "OPEN 且 retryTimeoutArrived() 时，fromOpenToHalfOpen 放行一个探测请求（AbstractCircuitBreaker.java:105）；探测请求完成时分叉：RT 正常 → fromHalfOpenToClose（关闭熔断），失败/慢 → fromHalfOpenToOpen（重新打开）（ResponseTimeCircuitBreaker.java:86-93）",
+  "d": "`ResponseTimeCircuitBreaker.java:86-93`、`AbstractCircuitBreaker.java:105`",
   "s": "sentinel",
   "t": "Sentinel 源码深度学习笔记",
   "c": "中间件"
@@ -2544,7 +2544,7 @@
   "c": "中间件"
  },
  {
-  "q": "`@SentinelResource` 两个属性？",
+  "q": "`@SentinelResource` 有哪些属性？",
   "a": "value（资源名）+ blockHandler（限流降级方法，方法签名要与原方法一致）+ fallback（业务异常）",
   "d": "`annotation/SentinelResource.java`",
   "s": "sentinel",
@@ -2554,7 +2554,7 @@
  {
   "q": "上下文超限会怎样？",
   "a": "超过 Constants.MAX_CONTEXT_NAME_SIZE（默认 2000）后新入口进 NullContext，只建 entry 不做规则检查",
-  "d": "`CtSph.java:118`",
+  "d": "`CtSph.java:120-121`",
   "s": "sentinel",
   "t": "Sentinel 源码深度学习笔记",
   "c": "中间件"
@@ -2562,7 +2562,7 @@
  {
   "q": "热点参数限流限什么？",
   "a": "按参数值分别统计：同一资源下 paramIdx=0 的 userId=10086 单独一个计数器，可设单参数值阈值 + 全局阈值",
-  "d": "`ParamFlowSlot.java:50`",
+  "d": "`ParamFlowSlot.java:61`",
   "s": "sentinel",
   "t": "Sentinel 源码深度学习笔记",
   "c": "中间件"
@@ -2570,15 +2570,15 @@
  {
   "q": "系统自适应 BBR 是什么？",
   "a": "参考 Google BBR：当 load 超阈值时，若并发线程 > maxSuccessQps × minRt / 1000（理论最优并发）则拒绝——过载时只放进\"最优并发数\"的请求",
-  "d": "`SystemRuleManager.java:337`",
+  "d": "`SystemRuleManager.java:334-336`",
   "s": "sentinel",
   "t": "Sentinel 源码深度学习笔记",
   "c": "中间件"
  },
  {
   "q": "`entry` 抛了非 BlockException 怎么办？",
-  "a": "CtSph:155-159 只记录日志继续返回 entry——Sentinel 自身异常不拖垮业务（fail-open）",
-  "d": "`CtSph.java:155`",
+  "a": "CtSph:152-156 只记录日志继续返回 entry——Sentinel 自身异常不拖垮业务（fail-open）",
+  "d": "`CtSph.java:152`",
   "s": "sentinel",
   "t": "Sentinel 源码深度学习笔记",
   "c": "中间件"

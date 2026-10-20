@@ -156,7 +156,7 @@ flowchart TD
 | 4 | 运行时数据区怎么划分 | 线程共享：堆（`CollectedHeap`）+ 方法区（Metaspace）；线程私有：Java 栈（`frame`，`_sp`/`_pc`）+ 本地方法栈 + PC 寄存器 + TLAB | 第二讲 |
 | 5 | `new` 一个对象的完整链路 | 首次使用先触发类加载，再在 TLAB 内 bump-pointer 无锁分配，填对象头（mark word + Klass 指针）+ 字段清零；TLAB 装不下才走 `mem_allocate`，可能触发 GC | 第二讲＋端到端 |
 | 6 | 对象内存布局长什么样 | 对象头（mark word 一块字段编码 hash/age/锁状态/GC 指针）+ 实例数据；64 位下头 8/16 字节，锁与 GC 共用同一 mark word 位段 | 第二讲 |
-| 7 | 怎么判断对象已死，GC Roots 有哪些 | 可达性分析：活对象定义为 GC Roots 可达；Roots 含栈上活跃 frame、全局对象、JNI handles 等，根扫描从这些出发 | 第四讲 |
+| 7 | 怎么判断对象已死，GC Roots 有哪些 | 可达性分析：活对象定义为 GC Roots 可达。Roots 包括：各线程**栈上活跃 frame** 的局部变量与操作数栈、类的**静态字段**、**常量池引用**、**JNI handles**、已加载的 class（连带其 classloader）、Thread 对象等；根扫描从这些出发（如 G1 的 `FastEvacuateFollowersClosure:770` 驱动），标记 + 清除/整理回收不可达者 | 第四讲 |
 | 8 | 各 GC 的特点一句话 | Serial：Eden→Survivor 复制 + 老年代标记压缩，全程 STW；Parallel：并行，吞吐优先；G1：region + CSet + SATB，标记并发；ZGC：彩色指针 + load barrier 近乎全并发；Shenandoah：Brooks 转发指针；Epsilon：no-op 只分不收 | 第四讲 |
 | 9 | G1 为什么停顿可控 | 堆切等大 region，CSet 按 pause prediction 贪心选"垃圾多 + 回收便宜"的 region，逼近 `MaxGCPauseMillis`（默认 200ms）；SATB 写前屏障让并发标记不 STW 重扫全堆；老年代走 Mixed GC 而非 Full GC | 第四讲 |
 | 10 | ZGC 为什么停顿 < 1ms | 彩色指针把 mark/remap 状态编进指针高位，load barrier 读时自愈，标记/转移/重定位全并发，STW 只剩初始/最终标记等极短点 | 第四讲 |
@@ -166,6 +166,17 @@ flowchart TD
 | 14 | volatile 的语义与代价 | 写后 StoreLoad 屏障保证"先初始化再赋引用"不被重排；x86 TSO 上读几乎免费，只有写端 `lock addl`/`xchg`，PPC/AArch64 才需要 `lwsync`/`sync` | 第五讲 |
 | 15 | DCL 为什么必须 volatile | `new` 分"分配内存 → 初始化 → 赋引用"三步，若后两步重排，别人可能读到未初始化对象；volatile 写的 StoreLoad 屏障兜住这个顺序 | 第五讲 |
 | 16 | JDK 21 的 synchronized 怎么实现 | 默认 `LM_LIGHTWEIGHT`：CAS 翻 mark word + 压 LockStack，无竞争完全不创建 `ObjectMonitor`；有竞争才 inflate 走 park/unpark；偏向锁已删除 | 第五讲 |
+| 17 | 强引用、软引用、弱引用和虚引用的区别？ | 强引用（`Object o = new Object()`）永不回收；软引用（`SoftReference`，`Reference.java:47`）内存不足才回收，适合缓存（GC 维护时间戳 `clock`，`SoftReference.java:87`，越久未用越先回收）；弱引用（`WeakReference`）下次 GC 就走，`ThreadLocalMap` 的 key 就是它；虚引用（`PhantomReference`）**无法通过 get() 拿到对象**，只配 `ReferenceQueue` 跟踪"已被回收"这个事件，替代 finalize 做清理 | 第二/四讲 |
+| 18 | JVM 垃圾回收算法有哪些？ | 三大基础算法：**复制**（半区复制，新生代 Serial/ParNew 用）、**标记-清除**（不移动，有碎片）、**标记-压缩**（整理后无碎片，老年代 Serial/Parallel 用）。分代收集就是组合拳：新生代复制 + 老年代标记压缩；G1 起改为 region 级混合收集，算法没变、调度单位变了 | 第四讲 |
+| 19 | 新生代和老年代的 GC 算法有哪些？ | 新生代几乎都是**复制**：Eden + 2 个 Survivor（默认 8:1:1），Minor GC 把活对象复制到 Survivor，年龄过阈值 promote 老年代；老年代传统是**标记-压缩**（Serial/Parallel），CMS 是唯一并发标记-清除的异类（已删），G1/ZGC 走 region 级并发标记 + 转移 | 第四讲 |
+| 20 | YoungGC 和 FullGC 的触发条件是什么？ | YoungGC：Eden 放不下新对象（TLAB 外分配失败）或分配担保预测老年代也放不下；FullGC：老年代满/晋升失败、大对象在 G1 里 to-space 耗尽、Metaspace 扩容失败、显式 `System.gc()`（可用 `-XX:+DisableExplicitGC` 关掉，`JVM_GC` 路径）。**健康的线上应用 FullGC 频率应趋近 0**——每次都意味着停顿一次，反查 perf-troubleshooting.md 剧本 D | 第四讲＋perf 剧本 D |
+| 21 | CMS 和 G1 的区别？ | CMS：老年代并发收集，初始标记+重新标记两次 STW，中间并发标记、并发**清除**——快但产生碎片、有浮动垃圾，并发失败（Concurrent Mode Failure）退化 Serial STW  Full GC，且只收老年代；G1：堆切 region、可预测停顿，标记后只回收"垃圾多"的 CSet（含部分老年代 = Mixed GC），转移即整理无碎片。CMS 已在 JDK 14 删除，新项目直接 G1/ZGC | 第四讲 |
+| 22 | 满足什么条件 Java 类会被卸载？ | 三个同时满足：该类所有实例已被回收、加载它的 `ClassLoader` 已被回收、`Class` 对象本身无任何引用。判定靠 GC 时 `ClassLoaderDataGraph` 遍历问 `is_unloading`——加载器一死，挂在它名下的元数据整块可回收；**启动类加载器加载的类永不卸载**（它自己不会被回收） | 第一讲 |
+| 23 | Class 常量池、运行时常量池、字符串常量池的关系？ | Class 常量池在**编译期**写进 class 文件（字面量 + 符号引用）；类加载时搬进**运行时常量池**（方法区/Metaspace），符号引用在此解析为直接引用并缓存；**字符串常量池**独立存在，专存字符串字面量与 `intern()` 结果，JDK 7 起从永久代挪到堆里。三者是"文件 → 方法区 → 堆"的搬运关系 | 第一讲 |
+| 24 | AOT 和 JIT 有什么区别？ | JIT 是**运行期**编译：先解释执行攒 profile，热点过 `CompileThreshold` 交给 C1/C2/Graal 编译，激进但依赖运行时信息、可能 deopt；AOT 是**部署前**编译（`jaotc`/GraalVM native-image）：启动快、无预热抖动、内存可控，但拿不到运行期 profile，峰值吞吐通常低于 JIT。选型看场景：短任务/冷启动敏感选 AOT，长跑服务 JIT 上限更高 | 第三讲 |
+| 25 | 内存泄漏和内存溢出的区别？ | 泄漏是"该死的没死"——对象已无用但被无用引用挂着（集合只加不清、`ThreadLocal` 不 remove、监听器不注销），老年代缓慢上涨；溢出是"要的没地给"——一次分配超过堆上限直接 `OutOfMemoryError`。**泄漏是因、溢出是果**：排查先 dump（`-XX:+HeapDumpOnOutOfMemoryError`）看支配树找意外引用链 | 第四讲＋perf 剧本 D |
+| 26 | 有哪些常用的 JVM 启动参数？ | 堆：`-Xms`/`-Xmx`（生产设等值免伸缩抖动）、`-Xmn`/`-XX:NewRatio`、`-XX:MaxMetaspaceSize`；GC：`-XX:+UseG1GC`、`-XX:MaxGCPauseMillis`、`-XX:+UseZGC`；诊断：`-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=`、`-Xlog:gc*`（JDK9+ 统一日志）、`-XX:+PrintFlagsFinal`。所有 `-XX:` 选项的定义处就是 `globals.hpp`，拿不准翻源码比背博客靠谱 | 第二/三讲 |
+| 27 | Java 是编译型还是解释型语言？ | 都不是纯的——`javac` 先把源码编译成**平台无关的字节码**（.class，跨平台靠这一步），JVM 再**解释执行**字节码，同时 JIT 把热点方法编译成机器码。准确说法是"静态编译到字节码 + 解释执行 + 运行期 JIT 编译"的混合模式，一次编写到处运行的底气来自字节码这层中间表示 | 第三讲 |
 
 > **话术提示**：被追问时按"结论 → 机制 → 证据"三级展开——
 > 先复述该讲小结的"一句话定位"，再进"三个最值得记住的点"，最后才报源码类名与行号（回原文查，本页不附）。

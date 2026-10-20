@@ -38,7 +38,7 @@ Seata 的分布式事务可以压缩成**三个角色 + 一张状态机 + 四种
 │    └─ GlobalTransactionalInterceptorHandler:164 (invoke)              │
 │         └─ handleGlobalTransaction:188                                │
 │              └─ TransactionalTemplate.execute:190                     │
-│                   ├─ 传播性分派 REQUIRED/NESTED/REQUIRES_NEW...  :192  │
+│                   ├─ 传播性分派 REQUIRED/MANDATORY/REQUIRES_NEW...  :192  │
 │                   ├─ beginTransaction → DefaultGlobalTransaction:190   │
 │                   │     └─ transactionManager.begin → GlobalBeginRequest│
 │                   ├─ business.execute()                               │
@@ -105,21 +105,21 @@ Seata 的分布式事务可以压缩成**三个角色 + 一张状态机 + 四种
 | 3 | AT 一阶段做了什么？ | 解析 SQL → 查**前镜像** → 执行 → 查**后镜像** → 生成 undo_log → 写业务表和 undo_log **同一本地事务**提交 → 注册分支 | `rm-datasource/src/main/java/org/apache/seata/rm/datasource/exec/AbstractDMLBaseExecutor.java:97` |
 | 4 | AT 二阶段回滚原理？ | TC 发 `BranchRollback` → RM 按 undo_log 的 `rollback_info` 反向生成 SQL 执行；**回滚完才删 undo_log**，保证可重入 | `rm-datasource/src/main/java/org/apache/seata/rm/datasource/undo/AbstractUndoLogManager.java:89` |
 | 5 | AT 二阶段提交做什么？ | 删 undo_log（异步，`Phase two committing` 阶段不做业务操作）；一阶段成功即可认为事务完成 | `server/src/main/java/org/apache/seata/server/coordinator/DefaultCoordinator.java:549` |
-| 6 | 全局锁什么时候拿？ | RM 注册分支时把 `lockKeys`（表名+主键值）报给 TC，TC 的 `LockManager` 抢先到先得；写冲突抛 `LockConflictException` 重试 | `server/src/main/java/org/apache/seata/server/storage/db/lock/DataBaseLockManager.java` |
-| 7 | 脏写怎么防？ | 本地事务提交前 `checkLock` 校验全局锁——如果这行记录被别的事务的全局锁占着，本地提交直接失败 | `rm-datasource/src/main/java/org/apache/seata/rm/datasource/ConnectionProxy.java:237` |
+| 6 | 全局锁什么时候拿？ | RM 注册分支时把 `lockKeys`（表名+主键值）报给 TC，TC 的 `LockManager` 抢先到先得；写冲突抛 `LockConflictException` 重试 | `server/src/main/java/org/apache/seata/server/storage/db/lock/DataBaseLockManager.java:38` |
+| 7 | 脏写怎么防？ | 本地事务提交前 `checkLock` 校验全局锁——如果这行记录被别的事务的全局锁占着，本地提交直接失败 | `rm-datasource/src/main/java/org/apache/seata/rm/datasource/ConnectionProxy.java:238` |
 | 8 | AT 的隔离级别？ | **读未提交（RU）**——一阶段提交后别的事务就能读到未全局提交的数据；Seata 默认只加写锁，读靠 undo_log 的 `afterImage` 做补偿查询（`@GlobalLock`） | 设计取舍 |
 | 9 | 空回滚是什么？ | TC 决定回滚但 RM 根本没收到过一阶段（没注册分支）→ RM 要能识别"这个 xid+branchId 我没见过"并不报错 | `tcc/fence` |
 | 10 | 悬挂是什么？ | RM 一阶段网络拥堵，TC 先回滚完（空回滚）， RM 的一阶段后到 → 不回滚就悬挂。fence 表靠 `status` 状态机挡住 | `integration-tx-api/src/main/java/org/apache/seata/integration/tx/api/fence/DefaultCommonFenceHandler.java:24` |
-| 11 | TCC 的幂等靠什么？ | `confirm/cancel` 必须幂等实现；fence 表记录 `xid+branchId+action` 的状态（`PREPARED/COMMITTED/ROLLBACKED`），重复调用直接返回上次结果 | 同上 `:53` |
+| 11 | TCC 的幂等靠什么？ | `confirm/cancel` 必须幂等实现；fence 表记录 `xid+branchId+action` 的状态（`TRIED/COMMITTED/ROLLBACKED/SUSPENDED` 四态，`CommonFenceConstant.java:32-47`），重复调用按状态机直接返回上次结果 | 同上 `:53` |
 | 12 | Saga 和 TCC 差异？ | TCC 三个方法都要业务写；Saga 是**状态机 JSON 编排**，正向服务 + 补偿服务，长事务/遗留系统友好 | `saga/seata-saga-engine/src/main/java/org/apache/seata/saga/engine/StateMachineEngine.java:29` |
-| 13 | XA 模式和 AT 差异？ | XA 是数据库标准协议（`XAResource.prepare/commit`），**业务无侵入但依赖库支持、性能差**；AT 靠 undo_log 补偿，无侵入且快 | `rm-datasource/src/main/java/org/apache/seata/rm/datasource/xa/ConnectionProxyXA.java` |
-| 14 | TC 挂了正在跑的事务怎么办？ | TC 重启后从存储 reload 会话（`SessionHolder.reload`），继续驱动到终态；RM 有 `report` 重试 | `server/src/main/java/org/apache/seata/server/session/SessionHolder.java` |
-| 15 | `@GlobalTransactional` 传播性有哪些？ | 七种：`REQUIRED/SUPPORTS/MANDATORY/REQUIRES_NEW/NOT_SUPPORTED/NEVER/NESTED`，和 Spring 同名同义 | `tm/src/main/java/org/apache/seata/tm/api/TransactionalTemplate.java:192` |
+| 13 | XA 模式和 AT 差异？ | XA 是数据库标准协议（`XAResource.prepare/commit`），**业务无侵入但依赖库支持、性能差**；AT 靠 undo_log 补偿，无侵入且快 | `rm-datasource/src/main/java/org/apache/seata/rm/datasource/xa/ConnectionProxyXA.java:46` |
+| 14 | TC 挂了正在跑的事务怎么办？ | TC 重启后从存储 reload 会话（`SessionHolder.reload:166`），继续驱动到终态；RM 有 `report` 重试 | `server/src/main/java/org/apache/seata/server/session/SessionHolder.java:166` |
+| 15 | `@GlobalTransactional` 传播性有哪些？ | **六种**：`REQUIRED/SUPPORTS/MANDATORY/REQUIRES_NEW/NOT_SUPPORTED/NEVER`（Seata 自己的 `Propagation` 枚举，MANDATORY 收尾在 `:176`）。**没有 `NESTED`**——switch 落到 `default` 直接抛 `Not Supported Propagation`（同文件 `:239`）。名字和 Spring 像，但不是 Spring 那个枚举，别答"七种" | `tm/src/main/java/org/apache/seata/tm/api/transaction/Propagation.java:176` |
 | 16 | 参与者（Participant）能回滚吗？ | **不能**。`rollbackTransaction:395` 开头就判断 `role != Launcher` 直接忽略——只有发起方有权结束全局事务 | `tm/src/main/java/org/apache/seata/tm/api/TransactionalTemplate.java:395` |
-| 17 | 全局事务超时了会怎样？ | TC `timeoutCheck:406` 扫到超时会话 → `TimeoutRollbacking` → 逐分支回滚；RM 提交时若 TC 已判超时，`commit(xid)` 返回 `TimeoutRollbacking` 转为回滚 | `server/src/main/java/org/apache/seata/server/coordinator/DefaultCore.java:242` |
+| 17 | 全局事务超时了会怎样？ | TC `timeoutCheck:406` 扫到超时会话 → `TimeoutRollbacking` → 逐分支回滚；RM 提交时若 TC 已判超时，`commit(xid)` 走 `isTimeout()` 检查（`DefaultCore.java:243-245`）返回 `TimeoutRollbacking` 转为回滚 | `server/src/main/java/org/apache/seata/server/coordinator/DefaultCore.java:243` |
 | 18 | 二阶段提交失败会无限重试吗？ | 不会。有 `MAX_COMMIT_RETRY_TIMEOUT`（`:165`）/`MAX_ROLLBACK_RETRY_TIMEOUT`（`:168`）和 `RETRY_DEAD_THRESHOLD`（`:177`），超过进人工处理（告警） | `server/src/main/java/org/apache/seata/server/coordinator/DefaultCoordinator.java:165` |
 | 19 | 为什么 AT 要求业务表必须有主键？ | 前后镜像按主键定位行；`isMultiPk():114` 还会对复合主键做特殊处理 | `rm-datasource/src/main/java/org/apache/seata/rm/datasource/exec/AbstractDMLBaseExecutor.java:114` |
-| 20 | 批量插入为什么特殊？ | 批量没有 beforeImage，回滚只能按主键删；`InsertExecutor`/`MySQLInsertExecutor` 专门处理自增列和 `on duplicate update` | `rm-datasource/src/main/java/org/apache/seata/rm/datasource/exec/InsertExecutor.java` |
+| 20 | 批量插入为什么特殊？ | 批量没有 beforeImage，回滚只能按主键删；`InsertExecutor`/`MySQLInsertExecutor` 专门处理自增列和 `on duplicate update`（`getPkValues:36`） | `rm-datasource/src/main/java/org/apache/seata/rm/datasource/exec/InsertExecutor.java:36` |
 
 ### 易错点（最容易讲错的 8 条）
 
@@ -165,7 +165,7 @@ Object handleGlobalTransaction(...) {
 
 注意区分两个 handler：`GlobalTransactionalInterceptorHandler`（全局事务）和 `TccActionInterceptorHandler`（TCC 的 try 方法），`CombineTransactionalInterceptorHandler` 管两者叠加的场景。
 
-### 1.2 TransactionalTemplate：七种传播性 + 五步骨架
+### 1.2 TransactionalTemplate：六种传播性 + 五步骨架
 
 ```java
 // tm/src/main/java/org/apache/seata/tm/api/TransactionalTemplate.java:190（节选）
@@ -178,7 +178,7 @@ Object handleGlobalTransaction(...) {
         case REQUIRED:       tx = GlobalTransactionContext.getCurrentOrCreate();   // 最常用
         case NEVER:          existingTransaction(tx) ? throw : business.execute();
         case MANDATORY:      notExistingTransaction(tx) ? throw : 继续;
-        case NESTED:         ...
+        default:             throw new TransactionException("Not Supported Propagation:" + propagation);  // 没有 NESTED
     }
     ...
     try {

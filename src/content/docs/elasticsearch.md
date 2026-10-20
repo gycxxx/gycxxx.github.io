@@ -234,6 +234,22 @@ ES 默认打分是 BM25（TF-IDF 的改进版）。源码位置 `index/similarit
 4. **查询语法**：term vs match 的区别、bool 四子句的计分与性能差异（→ 第四讲）；
 5. **性能优化**：text/keyword 适用场景、Bulk 批量写、合理 refresh 间隔、深分页用 `search_after`/PIT 而非 from+size（→ 第五讲）。
 
+### 9. 高频 Q&A（先结论）
+
+与「犬小哈面试题典」ES 分类逐题对齐后的高频 9 问；先报结论，追问按右列回讲。
+
+| # | 面试问题 | 一句话结论 | 深入 |
+| --- | --- | --- | --- |
+| 1 | 为什么要用 ElasticSearch？和 MySQL 有什么不同？ | MySQL 强在事务与关联查询，但 `LIKE '%kw%'` 全表扫、多条件 OR 组合、海量文本的场景直接崩；ES 用倒排索引把"词→文档"做成字典，亚秒级全文检索 + 聚合分析，水平扩展分片并行。典型架构：MySQL 做主存储保事务，Binlog/Canal 异步同步 ES 承担搜索流量——本文与 mysql.md 是一对 | 第一/二讲 |
+| 2 | ElasticSearch 为什么快？ | 四层叠加：①**倒排索引**——查询词直接定位文档列表，不逐条比对；②**分片并行**——一个查询拆到所有相关分片同时执行，协调节点归并；③**filter 不计分且可缓存**——布尔子句里能进 filter 的绝不进 must；④**列式聚合**——数值字段的 doc values 顺序读盘，聚合排序不走倒排。再叠加 segment 不可变（顺序读、mmap 友好）与 BM25 的短文档偏好调优 | 第三/四讲 |
+| 3 | ES 支持哪些数据类型？和 MySQL 怎么映射？ | 大类：text（分词全文）、keyword（精确/排序/聚合）、数值（long/integer/float/scaled_float）、日期、布尔、二进制、对象/嵌套、地理点/形状。映射：`VARCHAR`→text + `.keyword` 多字段（9.x 动态映射自动建）、`INT/BIGINT`→integer/long、`DECIMAL`→scaled_float 或 keyword、`DATETIME`→date。**decimal 没有原生二进制浮点之外的类型**，见下条 | 第二讲 |
+| 4 | 倒排索引是什么？ | 正排是"文档→包含哪些词"，倒排把它翻过来："**词项→包含它的文档列表（postings）**"——查询只需在词典里找到词、取出文档列表做交集/并集，与文档总量无关。Lucene 的 segment 里词典压缩成 FST、postings 带位置信息（支撑 phrase 查询）、数值/日期字段另有 BKD 树与 doc values 列式结构 | 第三讲 |
+| 5 | ES 不支持 decimal，如何避免丢失精度？ | `float`/`double` 是 IEEE 二进制浮点，0.1 这类十进制小数存进去就有表示误差。三条路：①`scaled_float`——指定 `scaling_factor`（如 100）做定点缩放，金额分场景够用；②存 `keyword`/`long`——字符串自行解析或直接存"分"；③精度敏感就继续放 MySQL，ES 只索引不参与计算。**聚合求和前先想清楚类型** | 第二/四讲 |
+| 6 | Elasticsearch 支持事务吗？为什么？ | **不支持多文档 ACID 事务**，只有单文档操作原子。原因：分布式系统下跨分片/跨节点的两阶段提交代价高、延迟大，与 ES"近实时、高吞吐、可水平扩展"的定位冲突；一致性需求（版本号 `_version`/`if_seq_no` 乐观并发控制）只到单文档级。要事务就在 MySQL 侧完成，ES 只做检索投影 | 第一/五讲 |
+| 7 | 什么是 ES 的深度分页问题？如何解决？ | `from + size` 深分页时，**每个分片**都要取出 `from + size` 条交给协调节点归并后再丢弃——from=10000 就要在分片侧搬 1 万条，内存与 CPU 双爆炸。解法：①`search_after`——用上一页最后一个 sort 值当游标往后续，分片侧直接定位；②PIT（point-in-time）——先打快照再 search_after，避免翻页期间数据变化导致重复/漏页；③全量遍历用 `scroll`（已不推荐新场景，让位 search_after） | 第五讲 |
+| 8 | 如何优化 ElasticSearch 搜索性能？ | 一份速查清单：字段选型对（keyword 别建成 text）、布尔查询能进 filter 就进（缓存 + 不计分）、批量写入用 `_bulk` 并调大 `refresh_interval`、分片控制在 20–50GB/片、深分页改 search_after/PIT、聚合走高基数时加 keyword 子字段或限流、路由（routing）把查询收敛到目标分片、避免脚本字段与 wildcard 前导通配 | 第三/四/五讲 |
+| 9 | 如何保证 ES 和数据库的数据一致性？ | ES 是"最终一致"的投影库，不追求强一致：主流是 **Binlog 监听（Canal/Maxwell/Debezium）+ MQ 异步同步**——MySQL 提交后从 binlog 捞变更投递给 ES，天然保序、可重放；配合定时对账补偿漏刷。要更强就双写 + 事务消息（复杂度上台阶）。**别把 ES 当唯一真相源**，真相永远在 MySQL | mysql.md 联动 |
+
 ---
 
 ## 第一讲：节点启动与集群发现 —— Bootstrap / Node / Coordinator

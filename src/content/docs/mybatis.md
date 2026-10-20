@@ -126,6 +126,10 @@ flowchart TD
 | 16 | 分页怎么做？ | `RowBounds` 是**内存分页**：`skipRows` 跳过 offset 行、`shouldProcessMoreRows` 截断 limit（`DefaultResultSetHandler.java:391-403`）；生产上 PageHelper 类插件是在 Executor 拦截点改写 `BoundSql` | 第三、六讲 |
 | 17 | MyBatis 和 Spring 整合后事务谁管？ | `ManagedTransaction` 的 commit/rollback 全是空实现，事务交给 Spring；`JdbcTransactionFactory` 的 `skipSetAutoCommitOnClose` 专为容器托管连接设计；`SqlSessionTemplate`/`SqlSessionManager` 管会话生命周期 | 第一、五讲 |
 | 18 | statement 的解析顺序有什么讲究？ | `XMLMapperBuilder` 固定顺序：cache-ref → cache → parameterMap → resultMap → sql → statements；跨文件引用靠「不完整元素」机制延后补齐，最终 `buildAllStatements` 按 resultMaps→cacheRefs→statements→methods fail-fast | 第一讲 |
+| 19 | MyBatis 和 Hibernate 有什么区别？ | 定位相反：Hibernate 是全自动 ORM（对象关系映射 + 一级/二级缓存 + 自动 DDL + HQL），SQL 由框架生成，学习曲线陡、调优要懂它；MyBatis 是半自动 SQL 映射——SQL 自己写、它只管执行与结果映射，可控可优化但样板代码多。国内互联网默认 MyBatis（SQL 可控、易 review、易分库分表），复杂领域模型/快速原型才上 Hibernate | 第一讲 |
+| 20 | MyBatis 是怎么实现字段映射的？ | 两大对象分工：`StatementHandler` 出 JDBC 语句、`ParameterHandler` 绑参数、`ResultSetHandler` 收结果——列转属性发生在 `DefaultResultSetHandler`：有 `resultMap` 按声明逐列映射（含嵌套、类型转换器），无声明走自动映射（列名下划线转驼峰 `mapUnderscoreToCamelCase`，按列名匹配属性），多列嵌套查询/延迟加载也在这一层实现 | 第三讲 |
+| 21 | MyBatis 如何执行批量操作？ | 三条路：①`ExecutorType.BATCH`——`BatchExecutor` 把同一 MappedStatement 的连续调用攒在一起，`flushStatements` 时一次性 `executeBatch`（注意与上一条 SQL 不同则断批，`BatchExecutor.java:62`）；②XML 里单条 `<foreach>` 拼多值 INSERT，一次往返；③Spring 事务里 `sqlSession` 批量刷。JDBC 层 `rewriteBatchedStatements=true` 才真正合并网络包 | 第三讲 |
+| 22 | 说说 JDBC 的执行步骤？ | 六步：加载驱动 → `DriverManager.getConnection` 建连 → `Connection.prepareStatement` 预编译（占位符 `?`）→ `setXxx` 绑定参数 → `executeQuery/executeUpdate` 执行（`ResultSet` 遍历）→ 关闭资源。MyBatis 的四大对象正是对这六步的分层封装：`DataSource` 管连接、`StatementHandler` 管语句生命周期、`ParameterHandler` 管绑定、`ResultSetHandler` 管结果 | 第一讲 |
 
 ### 易错点与面试坑
 

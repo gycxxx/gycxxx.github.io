@@ -192,6 +192,9 @@ flowchart LR
 | 16 | BeanPostProcessor 家族有哪些？什么时候执行？ | BeanPostProcessor（初始化前后）、InstantiationAware（实例化前后/填充时）、SmartInstantiationAware（构造器推断/早期引用）、BFPP 与 BDRPP（定义阶段，BDRPP 还能加新定义）；BPP 必须早于普通 bean 注册 | 第二、三讲 |
 | 17 | 事务传播行为有哪几种？默认是哪个？ | 默认 REQUIRED；无已有事务时只有 MANDATORY 抛异常；有已有事务时：NEVER 抛、NOT_SUPPORTED 挂起、REQUIRES_NEW 挂起后开新（连接数翻倍）、NESTED 走 savepoint（默认抛 `NestedTransactionNotSupportedException`）、REQUIRED/SUPPORTS/MANDATORY 复用参与 | 第六讲 |
 | 18 | Spring 事务的底层原理是什么？ | 事务 = 当前线程持有的那个 Connection：`doBegin` 拿连接、关自动提交、绑到线程；提交走 `processCommit` 的 `doCommit`（`con.commit()`）；收尾 `doCleanupAfterCompletion` 解绑并还原 autoCommit | 第六讲 |
+| 19 | 谈谈 Spring 的 IOC？ | 控制反转 = 把"对象自己 new 依赖"翻转为"容器按定义创建并注入依赖"：`getBean` 是总入口，定义经 `BeanDefinition` 描述、`BeanFactoryPostProcessor` 加工、`BeanPostProcessor` 增强，单例池 + 三级缓存解决循环依赖。好处是解耦与可测试（换实现不动代码），代价是启动变慢、调试链路变长 | 第一、三讲 |
+| 20 | Spring 中创建 Bean 有几种方式？ | 五类：无参构造器（默认）、静态工厂方法、实例工厂方法（`@Bean` 方法本质是工厂）、`FactoryBean#getObject`（区别于 BeanFactory：前者产对象、后者是容器）、`Autowired` 注入的构造器选优。实例化统一经 `InstantiationStrategy`（默认 CGLIB `SimpleInstantiationStrategy` 反射调构造器） | 第一讲 |
+| 21 | Spring Bean 的生命周期是怎么样的？ | 概览链：实例化（构造器）→ 属性填充（`populateBean`，触发依赖注入）→ `BeanNameAware`/`BeanFactoryAware` 等 Aware 回调 → `BeanPostProcessor.postProcessBeforeInitialization` → `@PostConstruct`/`init-method` → `postProcessAfterInitialization`（AOP 代理通常在这里生成）→ 使用 → 销毁（`@PreDestroy`/`DisposableBean`）→ 完整版见第七讲的逐环精读 | 第七讲 |
 
 ### 易错点与面试坑
 

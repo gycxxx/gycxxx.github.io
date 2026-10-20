@@ -146,6 +146,8 @@ flowchart TD
 | 12 | 客户端断线恢复怎么做？ | 注册/订阅先缓存意图再执行，断线全部标记未注册，重连后定时重放；服务端 `addServiceInstance` 幂等覆盖使重放安全；Config 监听是"bell + 5s 轮询 + 3min 全量"三速引擎 | 第五讲 |
 | 13 | standalone 与 cluster 的差异？ | standalone 是短路不是特例分支：`DistroProtocol` 直接置初始化完成、不做节点间同步，寻址用 `StandaloneMemberLookup`；`EnvUtil.getStandaloneMode()` 一个布尔扩散到寻址、distro、持久化各处 | 第一讲 |
 | 14 | Nacos 2.x 与 3.x 的差异？ | `NacosApplication` 被 `NacosBootstrap` 多上下文取代；UDP 推送在 3.2.0 已移除，gRPC 一统客户端与节点间通信；v2 数据模型迁入 `core/v2/`，HTTP 管理 API 在 v3 | 第一、二讲 |
+| 15 | Nacos 与 Eureka、ZooKeeper 的区别？ | Eureka：纯 AP，客户端心跳续约 + 客户端缓存，自我保护模式宁可返回过期实例也不踢人，无控制台即配置能力弱；ZooKeeper：CP，ZAB 强一致， leader 选举期间注册服务不可用，临时节点掉线即删（网络抖动误判多）；Nacos 两者皆可——临时实例走 AP（心跳 + 客户端故障转移），持久实例走 CP（Raft），还顺手把配置中心一起做了。选型本质是"注册一致性要 CP 还是可用性要 AP"的取舍 | 第一讲 |
+| 16 | Nacos 如何实现服务注册与发现？ | 注册：客户端 gRPC 调 `NamingPushService` 上报实例（IP/端口/权重/元数据/临时标志）→ 服务端 `ServiceManager` 按四元组（namespace/group/name/ephemeral）定位 Service 落盘/入内存 → distro 协议同步到集群其他节点；发现：客户端订阅后收推送变更，未变更时 5~10s 拉取兜底，本地 `ServiceInfoHolder` 缓存 + `FailoverReactor` 容灾——AP 与最终一致都在这条链上体现 | 第一、二讲 |
 
 追问"为什么这样设计"时的通用答案：所有取舍都指向同一组三角——高可用（AP 本机写即成功）、最终一致（补偿三板斧）、
 读写不对称（CP 用最长 10s 的阻塞换强一致）——先答取舍，再答机制，最后答数值。
