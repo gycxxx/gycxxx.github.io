@@ -1,0 +1,968 @@
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>线上问题排查与性能瓶颈定位实战 · 源码深读</title><meta name="description" content="源码级技术笔记：中间件、Spring、Java、存储、云原生与 RAG"><link rel="icon" href="data:,"><link rel="stylesheet" href="/_astro/aqs-lock.D0PgXYln.css"></head> <body> <header class="site-header"> <div class="inner"> <a class="brand" href="/"> <span class="brand-mark">&lt;/&gt;</span> <span class="brand-name">源码深读</span> </a> <nav class="site-nav"> <a href="/" class> 首页 </a><a href="/#principles" class> 原理速查 </a><a href="/animations/" class> 动画 </a><a href="/categories/" class> 分类 </a><a href="/tags/" class> 标签 </a> </nav> </div> </header> <main class="main">  <article class="post"> <div class="crumb"> <a href="/">首页</a>  / <a href="/categories/Java/">Java</a>  </div> <div class="post-head"> <h1>线上问题排查与性能瓶颈定位实战</h1> <div class="page-meta"> <time datetime="2026-10-20T00:00:00.000Z">2026-10-20</time>  · <a class="chip" href="/tags/%E6%8E%92%E6%9F%A5/">排查</a>  <a class="chip" href="/tags/%E6%80%A7%E8%83%BD/">性能</a>  <a class="chip" href="/tags/JVM/">JVM</a>  <a class="chip" href="/tags/%E8%BF%90%E7%BB%B4/">运维</a>  <a class="chip" href="/tags/%E6%BA%90%E7%A0%81/">源码</a>  </div> </div> <nav class="toc"> <div class="toc-title">目录</div> <ol> <li class="d2"> <a href="#〇全景地图">〇、全景地图</a> </li><li class="d2"> <a href="#速览四讲各自做什么">速览：四讲各自做什么</a> </li><li class="d2"> <a href="#排查速通高频问答">排查速通：高频问答</a> </li><li class="d3"> <a href="#易错点现场最容易踩的-8-条">易错点（现场最容易踩的 8 条）</a> </li><li class="d2"> <a href="#第一讲采集脚本全景--两个快照工具的分工与降级设计">第一讲：采集脚本全景 —— 两个快照工具的分工与降级设计</a> </li><li class="d3"> <a href="#11-perf-snapshotsh容器版kubectl-exec-进-pod">1.1 perf-snapshot.sh：容器版，kubectl exec 进 Pod</a> </li><li class="d3"> <a href="#12-perf-snapshot-hostsh主机版整机视角--线程级-cpu">1.2 perf-snapshot-host.sh：主机版，整机视角 + 线程级 CPU</a> </li><li class="d3"> <a href="#13-两个脚本怎么选">1.3 两个脚本怎么选</a> </li><li class="d3"> <a href="#14-本讲小结">1.4 本讲小结</a> </li><li class="d2"> <a href="#第二讲输出文件字典--每个文件看什么信号指向什么">第二讲：输出文件字典 —— 每个文件看什么、信号指向什么</a> </li><li class="d3"> <a href="#21-指标类文件">2.1 指标类文件</a> </li><li class="d3"> <a href="#22-线程栈类文件">2.2 线程栈类文件</a> </li><li class="d3"> <a href="#23-整机与-gc-类文件仅主机版">2.3 整机与 GC 类文件（仅主机版）</a> </li><li class="d3"> <a href="#24-summarytxt脚本已经帮你做好了归因">2.4 SUMMARY.txt：脚本已经帮你做好了归因</a> </li><li class="d3"> <a href="#25-两个脚本的官方判读顺序">2.5 两个脚本的官方判读顺序</a> </li><li class="d3"> <a href="#26-本讲小结">2.6 本讲小结</a> </li><li class="d2"> <a href="#第三讲五个经典剧本--从现象到根因的完整路径">第三讲：五个经典剧本 —— 从现象到根因的完整路径</a> </li><li class="d3"> <a href="#31-剧本-acpu-飙高报警-process_cpu_usage--80">3.1 剧本 A：CPU 飙高（报警 process_cpu_usage &gt; 80%）</a> </li><li class="d3"> <a href="#32-剧本-b接口-rt-抬升--p99-劣化cpu-可能并不高">3.2 剧本 B：接口 RT 抬升 / P99 劣化（CPU 可能并不高）</a> </li><li class="d3"> <a href="#33-剧本-c死锁--锁竞争接口偶发超时线程数持续上涨">3.3 剧本 C：死锁 / 锁竞争（接口偶发超时、线程数持续上涨）</a> </li><li class="d3"> <a href="#34-剧本-doom--full-gc-风暴pod-反复重启进程-rss-持续上涨">3.4 剧本 D：OOM / Full GC 风暴（Pod 反复重启、进程 RSS 持续上涨）</a> </li><li class="d3"> <a href="#35-剧本-e线程池打满雪崩前兆rt-整体抬升新请求拒绝">3.5 剧本 E：线程池打满（雪崩前兆：RT 整体抬升、新请求拒绝）</a> </li><li class="d3"> <a href="#36-本讲小结">3.6 本讲小结</a> </li><li class="d2"> <a href="#第四讲信号--根因速查表与源码机制">第四讲：信号 → 根因速查表与源码机制</a> </li><li class="d3"> <a href="#41-信号速查总表">4.1 信号速查总表</a> </li><li class="d3"> <a href="#42-源码机制一threadstate-六态每个都是排查语言">4.2 源码机制一：Thread.State 六态，每个都是排查语言</a> </li><li class="d3"> <a href="#43-源码机制二socketread0-是什么现代-jdk-上它长什么样">4.3 源码机制二：socketRead0 是什么，现代 JDK 上它长什么样</a> </li><li class="d3"> <a href="#44-源码机制三waiting-to-lock-与-parking两种锁两种栈">4.4 源码机制三：waiting to lock 与 parking，两种锁两种栈</a> </li><li class="d3"> <a href="#45-源码机制四nid-怎么和-jstack-对上kill--3-为什么能打栈">4.5 源码机制四：nid 怎么和 jstack 对上，kill -3 为什么能打栈</a> </li><li class="d3"> <a href="#46-源码机制五指标是从哪来的">4.6 源码机制五：指标是从哪来的</a> </li><li class="d3"> <a href="#47-本讲小结">4.7 本讲小结</a> </li><li class="d2"> <a href="#第五讲排查纪律--现场保护的-do--dont">第五讲：排查纪律 —— 现场保护的 Do / Don’t</a> </li><li class="d3"> <a href="#51-do">5.1 Do</a> </li><li class="d3"> <a href="#52-dont">5.2 Don’t</a> </li><li class="d3"> <a href="#53-一套标准的排查动作sop">5.3 一套标准的排查动作（SOP）</a> </li><li class="d2"> <a href="#附命令速查卡">附：命令速查卡</a> </li><li class="d3"> <a href="#容器版">容器版</a> </li><li class="d3"> <a href="#主机版">主机版</a> </li><li class="d3"> <a href="#判读入口">判读入口</a> </li><li class="d2"> <a href="#涉及文件索引">涉及文件索引</a> </li> </ol> </nav> <div class="markdown-body">  <h2 id="〇全景地图">〇、全景地图</h2>
+<p>线上问题排查只有三个朴素原则，本笔记的一切方法都从它们推导出来：</p>
+<ol>
+<li><strong>证据优先</strong>：第一件事永远是<strong>快照</strong>，不是重启。重启能恢复业务，但会销毁现场——线程栈、GC 状态、连接数这些”案发现场”只存在于故障当时。</li>
+<li><strong>定量 + 定性</strong>：监控指标告诉你”有多慢、慢在哪个接口”（定量），线程栈告诉你”卡在哪一行代码”（定性）。只看指标是猜，只看栈是盲，两者对照才能定位。</li>
+<li><strong>趁”病中”采集</strong>：故障恢复后再采的快照是无效证据。所以采集脚本必须<strong>一键、快速、只读</strong>——本笔记的两个脚本就是按这个标准写的。</li>
+</ol>
+<p>本笔记围绕仓库里两个快照脚本展开：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>┌────────────────────── 两个采集脚本 ──────────────────────┐</span></span>
+<span class="line"><span>│                                                        │</span></span>
+<span class="line"><span>│  perf-snapshot.sh（容器版）      perf-snapshot-host.sh  │</span></span>
+<span class="line"><span>│  目标：K8s Pod                   目标：物理机/虚拟机 JVM │</span></span>
+<span class="line"><span>│  入口：kubectl exec             入口：本机 JDK 工具     │</span></span>
+<span class="line"><span>│                                                        │</span></span>
+<span class="line"><span>│  预检A exec连通性(:62)           进程定位 PID/关键字/端口│</span></span>
+<span class="line"><span>│  预检B 容器内工具(:83)           JDK 推导 :75-77        │</span></span>
+<span class="line"><span>│       ↓                              ↓                 │</span></span>
+<span class="line"><span>│  ┌── 容器版独有降级 ──┐          ┌── 主机版独有能力 ──┐  │</span></span>
+<span class="line"><span>│  │ 无curl→port-forward│          │ top -H 线程级CPU  │  │</span></span>
+<span class="line"><span>│  │ 无jstack→kill -3   │          │ nid→Java栈映射    │  │</span></span>
+<span class="line"><span>│  │ 信号法(:156)       │          │ vmstat/iostat/ss  │  │</span></span>
+<span class="line"><span>│  └────────────────────┘          │ jstat -gcutil     │  │</span></span>
+<span class="line"><span>│                                  └────────────────────┘  │</span></span>
+<span class="line"><span>└──────────────────────────────────────────────────────────┘</span></span>
+<span class="line"><span>                          ↓ 产出</span></span>
+<span class="line"><span>┌────────────────────── 四类证据 ──────────────────────────┐</span></span>
+<span class="line"><span>│ ① 监控指标    metrics.txt / metrics-slow-api.txt          │</span></span>
+<span class="line"><span>│               metrics-resource.txt                        │</span></span>
+<span class="line"><span>│ ② 线程栈      jstack.txt（N 次采样，不是 trace）           │</span></span>
+<span class="line"><span>│ ③ 聚合分析    analysis-thread-state / -hot-frames /       │</span></span>
+<span class="line"><span>│               -blocked / -cpu-hot-stacks                  │</span></span>
+<span class="line"><span>│ ④ 整机资源    host-resources.txt（仅主机版）               │</span></span>
+<span class="line"><span>└──────────────────────────────────────────────────────────┘</span></span>
+<span class="line"><span>                          ↓ 判读</span></span>
+<span class="line"><span>        容器版：线程状态分布 → 热点栈帧 → 慢接口指标（:259）</span></span>
+<span class="line"><span>        主机版：高CPU线程 → cpu-hot-stacks → 是否在等外部资源（:267）</span></span></code></pre>
+<p>一句话记住全景：<strong>脚本负责把”案发现场”固化成文件，排查负责按”状态分布 → 热点帧 → 指标对照”的顺序读文件</strong>。本笔记第二讲教你读文件，第三讲给你五个经典剧本，第四讲是信号速查表，第五讲解释信号背后的源码机制。</p>
+<hr>
+<h2 id="速览四讲各自做什么">速览：四讲各自做什么</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>讲次</th><th>主题</th><th>核心问题</th><th>不学会怎样</th></tr></thead><tbody><tr><td>第一讲</td><td>采集脚本全景</td><td>两个脚本各采集什么、怎么选、有哪些降级路径</td><td>采集方式不对，拿到假数据或空文件</td></tr><tr><td>第二讲</td><td>输出文件字典</td><td>每个产出文件看什么、什么信号指向什么根因</td><td>面对一堆 txt 不知道从哪读起</td></tr><tr><td>第三讲</td><td>五个经典剧本</td><td>CPU 飙高 / 接口变慢 / 死锁 / OOM / 线程池打满</td><td>遇到故障靠玄学，排查全凭运气</td></tr><tr><td>第四讲</td><td>信号→根因速查 + 源码机制</td><td>一张大表 + Thread.State、阻塞原语、nid 映射的源码级解释</td><td>看得见信号，看不懂为什么</td></tr></tbody></table>
+<hr>
+<h2 id="排查速通高频问答">排查速通：高频问答</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>#</th><th>问题</th><th>一句话结论</th><th>深入</th></tr></thead><tbody><tr><td>1</td><td>线上出问题，第一件事做什么？</td><td><strong>先快照再重启</strong>。重启恢复业务但销毁现场（线程栈/GC/连接数只存在于故障当时）；用 perf-snapshot 脚本一键固化证据，再考虑重启</td><td><code>perf-snapshot.sh:26</code>、<code>perf-snapshot-host.sh:24</code></td></tr><tr><td>2</td><td>容器里和物理机上排查有什么不同？</td><td>容器版靠 <code>kubectl exec</code> 进 Pod，可能遇到无 curl/无 jstack 的精简镜像（有三级降级）；主机版能用 <code>top -H</code> 拿线程级 CPU 并把 nid 映射回 Java 栈，这是容器版拿不到的</td><td><code>perf-snapshot.sh:93-98</code>、<code>perf-snapshot-host.sh:135-145</code></td></tr><tr><td>3</td><td>jstack 采样多少次合适？</td><td>默认 10 次、间隔 1 秒（容器版默认参数）。<strong>jstack 是采样不是 trace</strong>：采样间隔内的短任务会漏，慢任务才会反复出现——热点帧出现次数越多越可能是瓶颈</td><td><code>perf-snapshot.sh:31</code>、<code>perf-snapshot.sh:146-153</code></td></tr><tr><td>4</td><td>线程状态分布怎么读？</td><td>看占比。<code>BLOCKED</code> 多 = 锁竞争；<code>socketRead0</code> 帧多 = 在等外部（DB/Redis/下游）；<code>RUNNABLE</code> 多但 CPU 不高 = 大量线程卡在 native 系统调用</td><td><code>perf-snapshot.sh:196-198</code>、<code>perf-snapshot.sh:236-241</code></td></tr><tr><td>5</td><td>RUNNABLE 一定是在跑 CPU 吗？</td><td><strong>不是</strong>。线程阻塞在 native <code>read(2)</code>/<code>write(2)</code> 时 Java 侧同样显示 RUNNABLE——<code>Thread.State</code> 的 RUNNABLE 注释明说”可能正在等操作系统的处理器等资源”</td><td><code>java/lang/Thread.java:2343</code></td></tr><tr><td>6</td><td>怎么找到真正烧 CPU 的线程？</td><td>主机版：<code>top -b -n1 -H -p PID</code> 抓 CPU>10% 的线程，把十进制 tid 格式化成十六进制 nid，再去 jstack 里 <code>grep nid=0x...</code> 找对应栈（脚本已自动做好 <code>analysis-cpu-hot-stacks.txt</code>）</td><td><code>perf-snapshot-host.sh:140</code>、<code>perf-snapshot-host.sh:216-219</code></td></tr><tr><td>7</td><td>容器里没有 jstack 怎么办？</td><td>信号法：<code>kill -3 &#x3C;java_pid></code> 让 JVM 把线程栈打到 stdout，再从 <code>kubectl logs --tail=1500</code> 里捞（输出混有业务日志，按线程段头搜索）</td><td><code>perf-snapshot.sh:156-173</code></td></tr><tr><td>8</td><td>没有 curl 的容器怎么采指标？</td><td>本地 <code>kubectl port-forward -n &#x3C;ns> pod/&#x3C;pod> &#x3C;port>:&#x3C;port></code>，再 <code>curl http://127.0.0.1:&#x3C;port>/actuator/prometheus</code>。脚本会把这行命令直接打印出来</td><td><code>perf-snapshot.sh:118-122</code></td></tr><tr><td>9</td><td><code>socketRead0</code> 在栈里出现说明什么？</td><td>线程阻塞在 socket 读上——在等下游响应。脚本的 SUMMARY 已按 <code>druid/jedis/okhttp</code> 三类归好命中数，直接看是哪类外部依赖在拖后腿</td><td><code>perf-snapshot.sh:238-241</code>、<code>sun/nio/ch/SocketChannelImpl.java:1373</code></td></tr><tr><td>10</td><td>接口慢但 CPU  idle，去哪找证据？</td><td><code>metrics-slow-api.txt</code>（P99/Max 排行）定位是哪个接口，再对照多次 jstack 的热点帧：如果帧大量停在数据库/Redis/HTTP 客户端的调用处，就是下游慢不是自己慢</td><td><code>perf-snapshot.sh:185-188</code></td></tr><tr><td>11</td><td>怎么判断线程池打满了？</td><td>对比 <code>tomcat_threads_busy_threads</code> 与 <code>tomcat_threads_config_max_threads</code>：busy 贴着 max 且持续不降，就是打满；此时新请求在 accept 队列排队，表现为 RT 整体抬升</td><td><code>perf-snapshot.sh:245-246</code>、<code>TomcatMetricsBinder.java:64</code></td></tr><tr><td>12</td><td>OOM 之后还能采到什么？</td><td>进程已死，jstack/jstat 都采不到。所以 OOM 要靠<strong>事前</strong>配置 <code>-XX:+HeapDumpOnOutOfMemoryError</code>；事后只能看 Pod 的 restart 记录和上一次 OOM 前是否有人采过快照</td><td><code>perf-snapshot-host.sh:166-171</code></td></tr><tr><td>13</td><td><code>waiting to lock</code> 和 <code>parking to wait for</code> 有什么区别？</td><td>前者是 <code>synchronized</code> 监视器锁（线程状态 <code>BLOCKED</code>），后者是 JUC/AQS 锁如 <code>ReentrantLock</code>（线程状态 <code>WAITING</code>）。竞争激烈程度和修复方式不同</td><td><code>java/lang/Thread.java:2352</code>、<code>java/util/concurrent/locks/ReentrantLock.java:322</code></td></tr><tr><td>14</td><td>死锁怎么确认？</td><td>jstack 输出里直接搜 <code>Found one Java-level deadlock</code>。注意容器版 <code>analysis-blocked.txt</code> 的 grep 模式<strong>不含</strong> deadlock 关键词，要自己搜 <code>jstack.txt</code></td><td><code>perf-snapshot.sh:207-208</code>、<code>perf-snapshot-host.sh:225-226</code></td></tr><tr><td>15</td><td><code>/actuator/prometheus</code> 返回 404 怎么办？</td><td>actuator 没暴露该端点。开启 <code>management.endpoints.web.exposure.include</code>（含 prometheus）；脚本探测失败时会把这行配置建议直接打出来</td><td><code>perf-snapshot.sh:134-135</code>、<code>MetricsProperties.java:89</code></td></tr><tr><td>16</td><td>高 CPU 但热点帧全是自家业务代码，说明什么？</td><td>两种可能：真在做重计算（算法/正则/序列化），或 GC 线程在烧 CPU（Young GC 风暴）。看 <code>jstat -gcutil</code> 的 YGC/FGC 增速和 <code>jvm_gc_pause_seconds_max</code> 区分</td><td><code>perf-snapshot-host.sh:175-180</code>、<code>perf-snapshot.sh:249</code></td></tr><tr><td>17</td><td>整机负载高但进程 CPU 不高，查什么？</td><td>主机版的 <code>vmstat</code> 看 <code>r</code>（运行队列）是否超过核数、<code>wa</code>（IO 等待）是否高，<code>iostat -x</code> 看磁盘 <code>%util</code>；再用 <code>ss -ant</code> 看连接堆积。这是”邻居吵闹”或磁盘瓶颈的典型信号</td><td><code>perf-snapshot-host.sh:111-113</code>、<code>perf-snapshot-host.sh:116-124</code></td></tr><tr><td>18</td><td>为什么采集脚本都要做预检？</td><td>避免产出<strong>假数据</strong>：exec 不通时后续所有文件都是空的，会误导排查方向。容器版预检 A 失败立即退出并打印排查清单（namespace 错/Pod 已重建/多容器未指定）</td><td><code>perf-snapshot.sh:61-75</code></td></tr></tbody></table>
+<h3 id="易错点现场最容易踩的-8-条">易错点（现场最容易踩的 8 条）</h3>
+<ol>
+<li><strong>重启前不快照</strong>：故障窗口一过，同样的栈再也采不到。快照只要几十秒，代价极低。</li>
+<li><strong>采样间隔太长</strong>：默认 1 秒是经验值；秒级抖动（如定时任务尖刺）用 1 秒间隔可能整段错过，应缩短间隔加大次数。</li>
+<li><strong>只看线程状态分布下结论</strong>：RUNNABLE 里混着大量”阻塞在 native IO”的线程（见 Q5），必须结合热点帧和 CPU 数据。</li>
+<li><strong>热点帧排行忽略 JDK 前缀过滤</strong>：脚本已排除 <code>java.base/jdk.internal/sun./java.lang/java.util</code> 前缀（<code>perf-snapshot.sh:203</code>），但这些帧恰是锁/IO 阻塞的<strong>现场</strong>（如 <code>LockSupport.park</code>），排查阻塞问题时要回原 <code>jstack.txt</code> 看完整栈。</li>
+<li><strong>把 P99 高当成事故</strong>：先看调用量。QPS 极低的接口 P99 天然波动大，要结合 <code>_count</code> 类和 Max 一起看。</li>
+<li><strong>容器版直接搜 deadlock</strong>：容器版 <code>analysis-blocked.txt</code> 不含 deadlock 模式，死锁证据要搜原始 <code>jstack.txt</code> 的 <code>Found one Java-level deadlock</code>。</li>
+<li><strong>主机版用错 JDK 工具</strong>：jstack/jcmd 版本必须和目标 JVM 匹配，否则栈采不全。脚本用 <code>/proc/PID/exe</code> 反推进程自身的 JDK（<code>perf-snapshot-host.sh:75-77</code>），不要用 PATH 里的另一个 JDK。</li>
+<li><strong>忽略变更时间线</strong>：快照只给”现在为什么坏”，发布记录/配置变更才给”什么时候开始坏”。两者对照才能定责。</li>
+</ol>
+<hr>
+<h2 id="第一讲采集脚本全景--两个快照工具的分工与降级设计">第一讲：采集脚本全景 —— 两个快照工具的分工与降级设计</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：两个脚本各自采集什么？容器和主机的采集能力差在哪？为什么脚本里有这么多”预检”和”降级”？</p>
+</blockquote>
+<h3 id="11-perf-snapshotsh容器版kubectl-exec-进-pod">1.1 perf-snapshot.sh：容器版，kubectl exec 进 Pod</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6F42C1">bash</span><span style="color:#032F62"> scripts/perf-snapshot.sh</span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">pod</span><span style="color:#24292E">名</span><span style="color:#D73A49">></span><span style="color:#24292E"> [容器名] [端口] [采样次数] [间隔秒]</span></span>
+<span class="line"><span style="color:#6A737D"># 示例</span></span>
+<span class="line"><span style="color:#6F42C1">bash</span><span style="color:#032F62"> scripts/perf-snapshot.sh</span><span style="color:#032F62"> zyaimp-card-bizcard-test-8479869bdf-g2sv6</span><span style="color:#032F62"> ""</span><span style="color:#005CC5"> 18006</span></span>
+<span class="line"><span style="color:#6F42C1">bash</span><span style="color:#032F62"> scripts/perf-snapshot.sh</span><span style="color:#032F62"> zyaimp-card-gateway-test-546dd68f65-vqh55</span><span style="color:#032F62"> zyaimp-card-gateway-test</span><span style="color:#005CC5"> 18008</span><span style="color:#005CC5"> 10</span><span style="color:#005CC5"> 1</span></span></code></pre>
+<p>参数默认值（<code>perf-snapshot.sh:30-32</code>）：端口 <code>18006</code>、采样 <code>10</code> 次、间隔 <code>1</code> 秒。namespace 优先取环境变量 <code>NS</code>，未指定时取当前 kubeconfig context 的 namespace（<code>kubectl config view --minify -o jsonpath='{..namespace}'</code>，<code>:36</code>），再兜底 <code>default</code>——<strong>多集群/多命名空间环境一定要显式传 NS</strong>，否则容易采错环境。</p>
+<p>执行分四个阶段，外加两道预检：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>预检 A：kubectl exec 连通性（:62）</span></span>
+<span class="line"><span>  失败 → 立即退出 + 打印排查清单（namespace 错 / Pod 名已变 / 多容器 / NS 未指定）</span></span>
+<span class="line"><span>  目的：采不到数据时明确报错，绝不出空文件误导后续排查</span></span>
+<span class="line"><span>预检 B：容器内工具探测（:83）</span></span>
+<span class="line"><span>  探测 curl/wget/jstack/jcmd/jps → 决定后面走哪条降级路径</span></span></code></pre>
+<p><strong>降级路径一：容器内没有 curl/wget</strong>（<code>HAS_CURL=0</code>）。指标不丢——脚本把 port-forward 命令直接打印给你（<code>:118-122</code>），本地另开终端执行即可拿到同样的 <code>metrics.txt</code>：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6F42C1">kubectl</span><span style="color:#032F62"> port-forward</span><span style="color:#005CC5"> -n</span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">n</span><span style="color:#24292E">s</span><span style="color:#D73A49">></span><span style="color:#032F62"> pod/</span><span style="color:#D73A49">&#x3C;</span><span style="color:#032F62">po</span><span style="color:#24292E">d</span><span style="color:#D73A49">></span><span style="color:#032F62"> 18006:18006</span></span>
+<span class="line"><span style="color:#6F42C1">curl</span><span style="color:#005CC5"> -s</span><span style="color:#032F62"> http://127.0.0.1:18006/actuator/prometheus</span><span style="color:#005CC5"> -o</span><span style="color:#032F62"> perf-xxx/metrics.txt</span></span>
+<span class="line"><span style="color:#6F42C1">curl</span><span style="color:#005CC5"> -s</span><span style="color:#032F62"> http://127.0.0.1:18006/actuator/threaddump</span><span style="color:#005CC5"> -o</span><span style="color:#032F62"> perf-xxx/threaddump.json</span></span></code></pre>
+<p><strong>降级路径二：容器内没有 jstack/jcmd</strong>（常见于 distroless 镜像）。改用<strong>信号法</strong>（<code>:156-173</code>）：先找 Java 进程 PID（先 <code>ps -ef | grep [j]ava</code>，不行再扫 <code>/proc/*/cmdline</code>），然后 <code>kill -3</code> 让 JVM 自己把栈打到 stdout，最后 <code>kubectl logs --tail=1500</code> 把栈捞回来。代价是输出混有业务日志，要按线程段头（<code>="main"</code> 这类）切分。</p>
+<p><strong>阶段 0 端点探测</strong>（<code>:104-116</code>）：依次试 <code>/actuator/prometheus</code>、<code>/metrics</code>、<code>/actuator/metrics</code>，取第一个 200 的；另外探测 <code>/druid/index.html</code>，开启时会顺带拉 <code>/druid/basic.json</code> 并提示你 port-forward 后访问 <code>/druid/sql.html</code> 看慢 SQL。</p>
+<p><strong>阶段 2 的 jstack 采样</strong>（<code>:145-153</code>）有个细节：优先用 <code>jcmd &#x3C;pid> Thread.print</code> 而不是 <code>jstack</code>——<code>jcmd</code> 输出更稳定（不依赖 <code>jsadebugd</code> 那条老链路），且和 <code>jstack</code> 信息等价。</p>
+<h3 id="12-perf-snapshot-hostsh主机版整机视角--线程级-cpu">1.2 perf-snapshot-host.sh：主机版，整机视角 + 线程级 CPU</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6F42C1">bash</span><span style="color:#032F62"> scripts/perf-snapshot-host.sh</span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">PID</span><span style="color:#D73A49">|</span><span style="color:#6F42C1">进程关键字</span><span style="color:#24292E">> [端口] [采样次数] [间隔秒]</span></span>
+<span class="line"><span style="color:#6F42C1">bash</span><span style="color:#032F62"> scripts/perf-snapshot-host.sh</span><span style="color:#005CC5"> 12345</span><span style="color:#6A737D">                    # 按 PID</span></span>
+<span class="line"><span style="color:#6F42C1">bash</span><span style="color:#032F62"> scripts/perf-snapshot-host.sh</span><span style="color:#032F62"> card-bizcard</span><span style="color:#005CC5"> 18006</span><span style="color:#6A737D">       # 按关键字猜进程</span></span>
+<span class="line"><span style="color:#6F42C1">bash</span><span style="color:#032F62"> scripts/perf-snapshot-host.sh</span><span style="color:#032F62"> ""</span><span style="color:#005CC5"> 18006</span><span style="color:#005CC5"> 30</span><span style="color:#005CC5"> 2</span><span style="color:#6A737D">            # 按端口猜进程</span></span></code></pre>
+<p><strong>进程定位三通道</strong>（<code>perf-snapshot-host.sh:41-64</code>）：数字且 <code>/proc/&#x3C;pid></code> 存在 → 直接当 PID；否则按关键字匹配 <code>jps -l</code>（无 jps 退化为 <code>ps -eo pid,args | grep [j]ava</code>），匹配多个取第一个并提示；也可以按监听端口反查（<code>ss -lntp</code> 抓 <code>pid=</code>，无 ss 用 <code>lsof -ti tcp:&#x3C;port></code>）。</p>
+<p><strong>JDK 工具推导</strong>（<code>:75-77</code>）：<code>readlink -f /proc/PID/exe</code> 拿到 java 可执行文件真实路径，上翻两级就是 <code>JDK_HOME</code>，之后 <code>pick_tool</code> 优先用<strong>进程自身的</strong> <code>jstack/jcmd/jstat</code>。这一步很重要：用 PATH 里另一个版本的 JDK 工具去 attach 目标 JVM，可能采出残缺栈或直接失败。</p>
+<p><strong>主机版的独有能力</strong>（容器版拿不到的三样）：</p>
+<ol>
+<li><strong>线程级 CPU</strong>（<code>:135-145</code>）：<code>top -b -n1 -H -p &#x3C;pid></code> 逐线程抓 CPU，筛出 >10% 的线程，把十进制 tid 用 <code>printf '%x'</code> 换成十六进制 nid——jstack 里每个线程头都带 <code>nid=0x...</code>，两者一对就能定位”哪个 Java 线程在烧 CPU”。</li>
+<li><strong>整机资源</strong>（<code>:106-127</code>）：<code>uptime</code>/<code>free</code>/<code>vmstat 1 5</code>/<code>iostat -x 1 3</code>/<code>df</code>/<code>ss -s</code> + 按状态统计连接数 + 到本机端口的连接数 + 进程级 <code>ps</code>（RSS/线程数/状态）。</li>
+<li><strong>GC 实时曲线</strong>（<code>:175-180</code>）：<code>jstat -gcutil &#x3C;pid> 1000 &#x3C;n></code>，看到 FGC 每几次采样就 +1 就是 Full GC 风暴。</li>
+</ol>
+<p><strong>空栈保护</strong>（<code>:166-171</code>）：如果 jstack 采出来不到 10 行，脚本直接给出三种最常见原因——运行用户与 Java 进程不同用户（需 same user 或 root）、JRE 精简版没有 jstack/jcmd、以及”你在容器里，应该用另一个脚本”。</p>
+<h3 id="13-两个脚本怎么选">1.3 两个脚本怎么选</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>perf-snapshot.sh（容器版）</th><th>perf-snapshot-host.sh（主机版）</th></tr></thead><tbody><tr><td>目标环境</td><td>K8s Pod</td><td>物理机/虚拟机上的裸 JVM</td></tr><tr><td>入口</td><td><code>kubectl exec</code></td><td>本机 shell + 进程自身 JDK 工具</td></tr><tr><td>线程级 CPU</td><td>❌ 拿不到</td><td>✅ <code>top -H</code> + nid→栈映射</td></tr><tr><td>整机资源</td><td>❌ 拿不到（容器视角被 cgroup 隔离）</td><td>✅ vmstat/iostat/ss/free</td></tr><tr><td>GC 曲线</td><td>指标里的 <code>jvm_gc_pause_seconds</code></td><td>✅ <code>jstat -gcutil</code> 实时</td></tr><tr><td>主要降级</td><td>无 curl → port-forward；无 jstack → kill -3</td><td>无 jstack → 跳过并告警</td></tr><tr><td>典型场景</td><td>测试环境联调排查、容器内问题定性</td><td>生产物理机 CPU/内存/磁盘问题</td></tr></tbody></table>
+<p><strong>选择规则</strong>：服务跑在 K8s 里用容器版；跑在虚拟机/物理机上用主机版；<strong>主机版能回答”是不是机器/磁盘/邻居的问题”，容器版只能回答”是不是这个进程的问题”</strong>——两者结论完全不同，选错脚本会漏掉半个真相。</p>
+<h3 id="14-本讲小结">1.4 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>结论</th></tr></thead><tbody><tr><td>设计哲学</td><td>只读、一键、快速；预检失败立即退出，绝不出假数据</td></tr><tr><td>容器版核心</td><td>exec 连通性预检 + 工具探测 → 三级降级（port-forward / kill -3 信号法 / 跳过）</td></tr><tr><td>主机版核心</td><td>进程定位三通道 + <code>/proc/PID/exe</code> 反推 JDK + <code>top -H</code> 线程级 CPU + nid 映射</td></tr><tr><td>产出</td><td>指标 / jstack×N / 聚合分析 / SUMMARY.txt 四类证据</td></tr><tr><td>陷阱</td><td>namespace 靠 context 推断可能采错环境；采样是采样不是 trace；jstack 版本必须匹配</td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“容器版问进程，主机版问机器；采不到就降级，采到假数据不如不采。”</em></p>
+<hr>
+<h2 id="第二讲输出文件字典--每个文件看什么信号指向什么">第二讲：输出文件字典 —— 每个文件看什么、信号指向什么</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：<code>SUMMARY.txt</code> 之外的细节文件怎么读？每类信号对应哪类根因？</p>
+</blockquote>
+<h3 id="21-指标类文件">2.1 指标类文件</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>文件</th><th>内容</th><th>看什么</th></tr></thead><tbody><tr><td><code>metrics.txt</code></td><td>actuator/prometheus 全量指标（原始）</td><td>其他指标文件的母本，别直接读</td></tr><tr><td><code>metrics-slow-api.txt</code></td><td><code>http_server_requests_seconds</code> 的 quantile 与 max 按值排序 Top30（<code>perf-snapshot.sh:185-188</code>）</td><td><strong>P99/Max 排行</strong>定位慢接口；对照 <code>_count</code> 看调用量，低QPS 接口的 P99 参考价值有限</td></tr><tr><td><code>metrics-resource.txt</code></td><td>线程池/GC/CPU/熔断/连接池指标族（<code>perf-snapshot.sh:191-192</code>）</td><td><code>tomcat_threads</code>（busy vs max）、<code>jvm_gc_pause_seconds_max</code>、<code>process_cpu_usage</code>、<code>system_load_average</code>、<code>resilience4j</code>（熔断器状态）、<code>hikaricp</code>（连接池 pending/active）、<code>jvm_memory_used_bytes</code>、<code>logback</code>（日志事件堆积）</td></tr></tbody></table>
+<p><code>http_server_requests_seconds</code> 这个指标名不是随手起的：Spring Boot 的 Observation 默认名就是 <code>http.server.requests</code>（<code>ObservationProperties.java:122</code>），Micrometer 转 Prometheus 格式时把点换成下划线、Timer 加 <code>_seconds</code> 后缀——所以排查时看到 <code>http_server_requests_seconds_count</code> 是调用量、<code>_sum</code> 是总耗时、<code>quantile="0.99"</code> 是 P99。</p>
+<h3 id="22-线程栈类文件">2.2 线程栈类文件</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>文件</th><th>内容</th><th>看什么</th></tr></thead><tbody><tr><td><code>jstack.txt</code></td><td>N 次完整线程栈（每次带时间戳头）</td><td>死锁证据（<code>Found one Java-level deadlock</code>）、某个具体线程的完整调用链</td></tr><tr><td><code>analysis-thread-state.txt</code></td><td><code>java.lang.Thread.State</code> 分布统计（<code>perf-snapshot.sh:196-198</code>）</td><td><strong>第一眼文件</strong>：BLOCKED 多 = 锁竞争；TIMED_WAITING 扎堆在某处 = 在 sleep/超时等待</td></tr><tr><td><code>analysis-hot-frames.txt</code></td><td>去掉行号后按”类名+方法”聚合的 Top30，已过滤 JDK 前缀（<code>perf-snapshot.sh:201-204</code>）</td><td><strong>第二眼文件</strong>：反复出现的业务帧就是热点；命中次数 ÷ 采样次数 ≈ 该帧驻留时间占比</td></tr><tr><td><code>analysis-blocked.txt</code></td><td>阻塞/等待外部资源的线程命中（<code>BLOCKED</code>/<code>waiting to lock</code>/<code>socketRead0</code>/<code>druid</code>/<code>jedis</code>/<code>okhttp</code>/<code>feign</code>/<code>resilience4j</code>/<code>Locked ownable</code>）</td><td>阻塞<strong>归因</strong>：等锁还是等外部资源，等的是哪类外部资源</td></tr><tr><td><code>analysis-cpu-hot-stacks.txt</code></td><td>仅主机版：高 CPU 线程（nid）对应的 Java 栈（<code>perf-snapshot-host.sh:212-223</code>）</td><td><strong>CPU 问题第一现场</strong>：烧 CPU 的线程到底在执行什么</td></tr><tr><td><code>top-hot-threads.txt</code></td><td>仅主机版：CPU>10% 线程的 tid → nid 换算表（<code>perf-snapshot-host.sh:138-141</code>）</td><td>从”哪个 OS 线程烧 CPU”到”哪段 Java 代码”的桥梁</td></tr></tbody></table>
+<h3 id="23-整机与-gc-类文件仅主机版">2.3 整机与 GC 类文件（仅主机版）</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>文件</th><th>内容</th><th>看什么</th></tr></thead><tbody><tr><td><code>host-resources.txt</code></td><td>uptime/nproc/free/vmstat/iostat/df/ss/进程 ps（<code>perf-snapshot-host.sh:106-127</code>）</td><td><code>vmstat</code> 的 <code>r</code> vs 核数（CPU 饱和）、<code>wa</code>（IO 等待）、<code>bi/bo</code>（磁盘读写）、<code>ss</code> 的 ESTAB/CLOSE_WAIT 堆积（连接泄漏）、进程 RSS 与线程数</td></tr><tr><td><code>jstat-gcutil.txt</code></td><td><code>jstat -gcutil</code> 序列</td><td><code>O</code> 列（老年代占比）逼近 100 = 内存压力；<code>FGC</code> 增速 = Full GC 频率；<code>YGC</code> 暴涨 = 分配速率异常</td></tr></tbody></table>
+<h3 id="24-summarytxt脚本已经帮你做好了归因">2.4 SUMMARY.txt：脚本已经帮你做好了归因</h3>
+<p><code>SUMMARY.txt</code>（<code>perf-snapshot.sh:221-254</code>、<code>perf-snapshot-host.sh:229-261</code>）不是简单拼接，它把最关键的判断预先算好了：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>1. 线程状态分布                     → 全局健康度</span></span>
+<span class="line"><span>2. 热点栈帧 Top10                   → 代码级热点</span></span>
+<span class="line"><span>3. 阻塞计数及分类（仅容器版/主机版都有）：</span></span>
+<span class="line"><span>   BLOCKED            : N</span></span>
+<span class="line"><span>   waiting to lock    : N</span></span>
+<span class="line"><span>   socketRead0        : N</span></span>
+<span class="line"><span>     ├─ druid/DB      : N      ← 在等数据库</span></span>
+<span class="line"><span>     ├─ jedis/Redis   : N      ← 在等 Redis</span></span>
+<span class="line"><span>     └─ okhttp/Feign  : N      ← 在等下游 HTTP</span></span>
+<span class="line"><span>4. 关键资源指标                     → tomcat 线程数 / CPU / load</span></span>
+<span class="line"><span>5. GC 停顿                          → jvm_gc_pause_seconds_max/sum</span></span>
+<span class="line"><span>6. 慢接口 P99 Top10                 → 定量证据</span></span></code></pre>
+<p>第三块是精华：<code>socketRead0</code> 的命中数被按 <code>druid/jedis/okhttp</code> 拆开统计（<code>perf-snapshot.sh:238-241</code>），你不需要自己 grep 就能回答”到底是谁在拖慢接口”。</p>
+<h3 id="25-两个脚本的官方判读顺序">2.5 两个脚本的官方判读顺序</h3>
+<p>脚本作者把判读顺序写进了最后两行日志，这不是随口说的：</p>
+<ul>
+<li>容器版（<code>perf-snapshot.sh:259</code>）：<strong>线程状态分布 → 热点栈帧 → 慢接口指标</strong>。先看”卡住的线程长什么样”，再看”栈里反复出现什么”，最后用指标验证”确实慢且慢在这个接口”。</li>
+<li>主机版（<code>perf-snapshot-host.sh:266</code>）：<strong>高 CPU 线程 → analysis-cpu-hot-stacks → 是否在等外部资源</strong>。CPU 问题优先看谁在烧；如果不是 CPU 问题，转去判断阻塞归因。</li>
+</ul>
+<p>顺序背后的逻辑：<strong>先二分问题域（CPU 型 vs 等待型），再深入具体帧，最后用指标闭环验证</strong>。跳过前两步直接看指标，很容易把”下游慢”误判成”自己慢”。</p>
+<h3 id="26-本讲小结">2.6 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>结论</th></tr></thead><tbody><tr><td>读文件顺序</td><td>SUMMARY.txt 是入口；细节按”状态分布 → 热点帧 → 指标对照”展开</td></tr><tr><td>指标三件套</td><td>slow-api 定位”哪个接口慢”，resource 定位”哪种资源紧”，gc 定位”是不是 GC 问题”</td></tr><tr><td>栈三件套</td><td>thread-state 看全局，hot-frames 看热点，blocked/cpu-hot-stacks 看归因</td></tr><tr><td>归因已预置</td><td>SUMMARY 已把 socketRead0 按 druid/jedis/okhttp 分类，阻塞归因不用手 grep</td></tr><tr><td>陷阱</td><td>热点帧排行滤掉了 JDK 帧，但锁/IO 阻塞的现场恰恰在 JDK 帧里，要回原栈看</td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“SUMMARY 先定性，分布看全局，热点帧定位，指标来闭环；等 DB 还是等 Redis，脚本已经数好了。”</em></p>
+<hr>
+<h2 id="第三讲五个经典剧本--从现象到根因的完整路径">第三讲：五个经典剧本 —— 从现象到根因的完整路径</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：CPU 飙高、接口变慢、死锁、OOM、线程池打满，各自怎么采、怎么读、怎么修？</p>
+</blockquote>
+<h3 id="31-剧本-acpu-飙高报警-process_cpu_usage--80">3.1 剧本 A：CPU 飙高（报警 process_cpu_usage > 80%）</h3>
+<p><strong>采集</strong>：主机版优先（线程级 CPU 是核心证据），容器版备用。</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6F42C1">bash</span><span style="color:#032F62"> scripts/perf-snapshot-host.sh</span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">pi</span><span style="color:#24292E">d</span><span style="color:#D73A49">></span><span style="color:#005CC5"> 18006</span><span style="color:#005CC5"> 10</span><span style="color:#005CC5"> 1</span></span></code></pre>
+<p><strong>判读路径</strong>：</p>
+<ol>
+<li><code>SUMMARY.txt</code> 第 5 节高 CPU 线程列表 → 拿到 tid/nid；</li>
+<li><code>analysis-cpu-hot-stacks.txt</code> → 烧 CPU 的 Java 栈顶是什么；</li>
+<li>对照 <code>jstat-gcutil.txt</code>：如果烧 CPU 的线程名是 <code>GC task thread</code>/<code>G1 Main</code> 之类，问题不是业务代码而是 <strong>GC 风暴</strong>——看 YGC 增速（分配速率异常：大对象/频繁 new）或 FGC 增速（老年代涨：内存泄漏/缓存过大）；</li>
+<li>如果栈顶是业务代码：经典嫌疑人排行——<strong>复杂正则回溯</strong>（<code>Pattern.matcher</code> 嵌套量化）、<strong>大对象序列化</strong>（JSON/Protobuf 拷来拷去）、<strong>死循环</strong>（边界条件错）、<strong>日志渲染</strong>（字符串拼接打 INFO）。</li>
+</ol>
+<p><strong>修复方向</strong>：算法优化（正则改确定性自动机/限制回溯）；缓存中间结果；降级开关（CPU 高时关闭非核心计算）；GC 问题转内存剧本。</p>
+<p><strong>易错点</strong>：容器里 CPU 报警可能不是自己的进程——用主机版 <code>top</code> 确认进程级 CPU（<code>ps -o pcpu</code>，<code>perf-snapshot-host.sh:126</code>）再采栈，避免给别人的问题打工。</p>
+<h3 id="32-剧本-b接口-rt-抬升--p99-劣化cpu-可能并不高">3.2 剧本 B：接口 RT 抬升 / P99 劣化（CPU 可能并不高）</h3>
+<p><strong>采集</strong>：容器版为主（要慢接口排行）。</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#24292E">NS</span><span style="color:#D73A49">=&#x3C;</span><span style="color:#032F62">ns</span><span style="color:#D73A49">></span><span style="color:#6F42C1"> bash</span><span style="color:#032F62"> scripts/perf-snapshot.sh</span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">po</span><span style="color:#24292E">d</span><span style="color:#D73A49">></span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">containe</span><span style="color:#24292E">r</span><span style="color:#D73A49">></span><span style="color:#005CC5"> 18006</span><span style="color:#005CC5"> 10</span><span style="color:#005CC5"> 1</span></span></code></pre>
+<p><strong>判读路径</strong>：</p>
+<ol>
+<li><code>metrics-slow-api.txt</code> → 哪些接口 P99/Max 高，结合 <code>_count</code> 排除低 QPS 噪声；</li>
+<li><code>analysis-thread-state.txt</code> → 线程卡在哪一类状态；</li>
+<li><code>SUMMARY.txt</code> 第 3 节 → <code>socketRead0</code> 命中及分类：
+<ul>
+<li><code>druid</code> 多 → <strong>数据库慢</strong>：去 Druid 监控页（<code>/druid/sql.html</code>）看慢 SQL；典型根因是缺索引、深分页、大事务、行锁等待（后者在栈里表现为 <code>druid</code> 帧 + BLOCKED）；</li>
+<li><code>jedis</code> 多 → <strong>Redis 慢</strong>：大 key、<code>KEYS</code>/<code>SMEMBERS</code> 大集合、热 key 排队；Redis 单线程模型下一个慢命令堵全部；</li>
+<li><code>okhttp/feign</code> 多 → <strong>下游服务慢</strong>：看下游的 CPU/RT，必要时熔断（<code>resilience4j</code> 指标族能看到熔断器状态迁移）；</li>
+</ul>
+</li>
+<li>如果三类都不高、<code>BLOCKED</code> 高 → 转剧本 C（锁竞争）；如果都不高但 RT 高 → 看 <code>analysis-hot-frames.txt</code> 找自家代码里的计算热点。</li>
+</ol>
+<p><strong>修复方向</strong>：SQL 加索引/改写；连接池参数调优（<code>hikaricp</code> 指标看 pending 是否堆积）；下游加超时+熔断+降级；自家热代码优化。</p>
+<p><strong>关键认知</strong>：<strong>RT 高 ≠ 自己有问题</strong>。本剧本一半以上的案子根因在下游，而”下游慢”的证据就是 <code>socketRead0</code> 帧——这正是脚本把三类外部依赖分开计数的原因。</p>
+<h3 id="33-剧本-c死锁--锁竞争接口偶发超时线程数持续上涨">3.3 剧本 C：死锁 / 锁竞争（接口偶发超时、线程数持续上涨）</h3>
+<p><strong>采集</strong>：两个脚本都行；死锁是瞬时状态，<strong>多次采样提高命中率</strong>（建议采样次数调到 20+）。</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6F42C1">bash</span><span style="color:#032F62"> scripts/perf-snapshot.sh</span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">po</span><span style="color:#24292E">d</span><span style="color:#D73A49">></span><span style="color:#032F62"> ""</span><span style="color:#005CC5"> 18006</span><span style="color:#005CC5"> 20</span><span style="color:#005CC5"> 1</span></span></code></pre>
+<p><strong>判读路径</strong>：</p>
+<ol>
+<li>直接搜 <code>jstack.txt</code> 里的 <code>Found one Java-level deadlock</code>（注意：容器版 <code>analysis-blocked.txt</code> 的 grep 模式不含 deadlock 关键词，<code>perf-snapshot.sh:207-208</code> vs 主机版 <code>:225-226</code> 含）；</li>
+<li>没有死锁但 <code>waiting to lock</code> 命中高 → 锁竞争。区分两类：
+<ul>
+<li>栈里 <code>- waiting to lock &#x3C;0x..> (a java.lang.Object)</code> 且状态 <code>BLOCKED</code> → <code>synchronized</code> 监视器；</li>
+<li>栈里 <code>- parking to wait for &#x3C;0x..> (a java.util.concurrent.locks.ReentrantLock$...)</code> 且状态 <code>WAITING</code> → JUC 锁；</li>
+</ul>
+</li>
+<li><code>analysis-blocked.txt</code> 里找持锁线程（<code>- locked &#x3C;0x..></code>）在干什么——<strong>持锁者不放手的原因才是根因</strong>（常见：持锁做 IO、持锁调下游、嵌套加锁顺序不一致）；</li>
+<li>修复：缩小临界区（IO 移出锁）、统一锁顺序（防死锁）、换 <code>ReentrantLock.tryLock(timeout)</code>、无锁结构（<code>ConcurrentHashMap</code> 分段思维）。</li>
+</ol>
+<p><strong>持锁者视角</strong>：jstack 里线程的 <code>Locked ownable synchronizers</code> 段列出它持有的 AQS 锁，是判断”谁捂着锁”的关键信息（脚本把它列进了 grep 模式，<code>perf-snapshot.sh:207</code>）。</p>
+<h3 id="34-剧本-doom--full-gc-风暴pod-反复重启进程-rss-持续上涨">3.4 剧本 D：OOM / Full GC 风暴（Pod 反复重启、进程 RSS 持续上涨）</h3>
+<p><strong>采集</strong>：主机版（有 jstat 实时曲线）。</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6F42C1">bash</span><span style="color:#032F62"> scripts/perf-snapshot-host.sh</span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">pi</span><span style="color:#24292E">d</span><span style="color:#D73A49">></span><span style="color:#005CC5"> 18006</span><span style="color:#005CC5"> 30</span><span style="color:#005CC5"> 2</span></span></code></pre>
+<p><strong>判读路径</strong>：</p>
+<ol>
+<li><code>jstat-gcutil.txt</code>：<code>O</code> 列（老年代使用率）是否贴着 100%；<code>FGC</code> 列增速——每几次采样 +1 = Full GC 风暴；<code>GCT</code>（总停顿）累计速度；</li>
+<li><code>SUMMARY.txt</code> 的 GC 停顿（容器版看 <code>jvm_gc_pause_seconds_max/sum</code>，<code>perf-snapshot.sh:249</code>）：单次停顿几百 ms 起，RT 会同步劣化；</li>
+<li><code>host-resources.txt</code>：进程 RSS 趋势（多次采样对比）、<code>si/so</code>（swap 使用，swap 一开 GC 停顿放大十倍）；</li>
+<li>根因三分法：<strong>内存泄漏</strong>（RSS 只涨不降，FGC 后 O 不回落——典型嫌疑人：静态 Map 缓存无上限、ThreadLocal 未 remove、监听器未注销）、<strong>分配过快</strong>（YGC 暴涨但 O 稳——大对象/频繁临时对象）、<strong>堆太小</strong>（以上都排除，才是容量问题）。</li>
+</ol>
+<p><strong>事中与事后</strong>：事中（FGC 频繁但还没 OOM）是采栈的黄金窗口；已经 OOM 的进程采不到任何东西——所以生产必须配 <code>-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/logs/dump.hprof</code>，事后用 MAT 分析 dump。脚本在采不到栈时会明确告诉你”进程可能已死”（<code>perf-snapshot-host.sh:166-171</code>）。</p>
+<h3 id="35-剧本-e线程池打满雪崩前兆rt-整体抬升新请求拒绝">3.5 剧本 E：线程池打满（雪崩前兆：RT 整体抬升、新请求拒绝）</h3>
+<p><strong>采集</strong>：容器版（tomcat 指标 + 线程状态分布）。</p>
+<p><strong>判读路径</strong>：</p>
+<ol>
+<li><code>SUMMARY.txt</code> 第 4 节：<code>tomcat_threads_busy_threads</code> vs <code>tomcat_threads_config_max_threads</code>——busy 贴 max 且不降 = 打满；这些指标由 Spring Boot 在应用启动时把 Tomcat 的 Manager 注册进 MeterRegistry（<code>TomcatMetricsBinder.java:64-65</code>）；</li>
+<li><code>analysis-thread-state.txt</code>：如果线程总数接近 max 且大量处于 <code>socketRead0</code>/<code>WAITING</code>，说明<strong>线程都堵在等下游</strong>——线程池不是不够大，是被慢下游占满；</li>
+<li>根因通常是<strong>下游变慢引发的级联占满</strong>：先按剧本 B 定位下游；同时检查有没有加超时（没超时的 HTTP 调用会永久占线程）、有没有熔断（<code>resilience4j</code> 指标看熔断状态，Sentinel 同理）；</li>
+<li>修复三板斧：<strong>超时</strong>（所有外部调用必须有）、<strong>隔离</strong>（不同下游用独立线程池，防一处慢拖垮全局）、<strong>熔断降级</strong>（下游持续失败时快速失败，把线程还给线程池）。</li>
+</ol>
+<p><strong>关联机制</strong>：<code>ThreadPoolExecutor.execute()</code>（<code>ThreadPoolExecutor.java:1292</code>）在队列满且线程数达 max 时走拒绝策略——业务层看到的就是拒绝异常；而<strong>线程被慢下游长期占用</strong>会让队列越排越长，这就是雪崩的标准路径：下游慢 → 线程占满 → 队列堆积 → 上游超时 → 故障扩散。</p>
+<h3 id="36-本讲小结">3.6 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>剧本</th><th>首选脚本</th><th>第一证据</th><th>经典根因</th></tr></thead><tbody><tr><td>A CPU 飙高</td><td>主机版</td><td>高 CPU 线程栈</td><td>正则回溯/大对象序列化/GC 风暴</td></tr><tr><td>B 接口变慢</td><td>容器版</td><td>socketRead0 分类</td><td>DB 慢/Redis 慢/下游慢</td></tr><tr><td>C 死锁/锁竞争</td><td>均可（多次采样）</td><td>waiting to lock + 持锁者栈</td><td>持锁做 IO/锁顺序不一致</td></tr><tr><td>D OOM/GC</td><td>主机版</td><td>jstat O+FGC</td><td>泄漏/分配过快/堆小</td></tr><tr><td>E 线程池打满</td><td>容器版</td><td>busy vs max + 状态分布</td><td>下游慢级联占满</td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“CPU 看谁在烧，RT 看在等谁，死锁看谁捂着锁，OOM 看 O 和 FGC，打满先找下游。”</em></p>
+<hr>
+<h2 id="第四讲信号--根因速查表与源码机制">第四讲：信号 → 根因速查表与源码机制</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：看到每个信号该想到什么？这些信号为什么长这样？</p>
+</blockquote>
+<h3 id="41-信号速查总表">4.1 信号速查总表</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>信号（在哪看到）</th><th>最可能根因</th><th>下一步动作</th></tr></thead><tbody><tr><td><code>process_cpu_usage</code> 高 + <code>system_load_average</code> 高（metrics-resource）</td><td>计算型热点或 GC 风暴</td><td>主机版采高 CPU 线程栈；对照 jstat</td></tr><tr><td><code>process_cpu_usage</code> 高 + load 不高</td><td>单线程死循环/热点计算</td><td>analysis-cpu-hot-stacks 直接定位</td></tr><tr><td>load 高 + 进程 CPU 不高（host-resources）</td><td>邻居进程抢占 / run queue 积压</td><td><code>vmstat</code> 的 <code>r</code>、<code>top</code> 全局视图</td></tr><tr><td><code>wa</code> 高 + <code>%util</code> 高（vmstat/iostat）</td><td>磁盘 IO 瓶颈</td><td>查谁在写盘（日志刷盘、大文件、swap）</td></tr><tr><td><code>si/so</code> 非零（vmstat）</td><td>开了 swap，GC 停顿会被放大</td><td>关闭 swap 或加内存</td></tr><tr><td><code>O</code> 接近 100 + FGC 稳增（jstat-gcutil）</td><td>内存泄漏或老年代过大</td><td>heapdump + MAT；查静态缓存</td></tr><tr><td>YGC 暴涨 + O 平稳（jstat-gcutil）</td><td>分配速率异常</td><td>查大对象、临时对象、数组拷贝</td></tr><tr><td><code>jvm_gc_pause_seconds_max</code> 大（metrics-resource）</td><td>长停顿直接打花 RT</td><td>与慢接口时间线对齐验证</td></tr><tr><td><code>tomcat_threads_busy</code> ≈ <code>max</code>（metrics-resource）</td><td>线程池打满</td><td>状态分布看线程堵在哪；剧本 E</td></tr><tr><td><code>BLOCKED</code> 占比高（analysis-thread-state）</td><td>synchronized 监视器竞争</td><td>analysis-blocked 找持锁者</td></tr><tr><td><code>waiting to lock</code> 命中多（analysis-blocked）</td><td>同上，看持锁者在做什么</td><td>缩小临界区/锁顺序</td></tr><tr><td><code>parking to wait for</code> 命中多（analysis-blocked）</td><td>ReentrantLock/JUC 竞争</td><td>检查锁粒度与公平性需求</td></tr><tr><td><code>socketRead0</code> 多且 druid 命中多（SUMMARY 第 3 节）</td><td>数据库慢</td><td>Druid 慢 SQL 页；查索引/大事务/行锁</td></tr><tr><td><code>socketRead0</code> 多且 jedis 命中多</td><td>Redis 慢/大 key</td><td>Redis 慢日志；拆大 key</td></tr><tr><td><code>socketRead0</code> 多且 okhttp 命中多</td><td>下游 HTTP 慢</td><td>查下游 RT；加超时熔断</td></tr><tr><td><code>TIMED_WAITING</code> 扎堆在 sleep/parkNanos</td><td>主动等待（重试间隔、超时逻辑）</td><td>结合业务帧判断是否合理退避</td></tr><tr><td><code>Found one Java-level deadlock</code>（jstack.txt）</td><td>循环等锁</td><td>按提示的线程对修复锁顺序</td></tr><tr><td><code>CLOSE_WAIT</code> 堆积（ss）</td><td>连接泄漏（对端关了本地没关）</td><td>查连接池/HTTP 客户端的 close 路径</td></tr><tr><td><code>ESTAB</code> 到本端口数过高（ss）</td><td>并发连接超预期/连接泄漏</td><td>对比历史基线</td></tr><tr><td><code>resilience4j</code> 状态 OPEN（metrics-resource）</td><td>熔断已触发，请求在快速失败</td><td>查下游健康；恢复期关注 half-open</td></tr><tr><td><code>hikaricp_connections_pending</code> 高（metrics-resource）</td><td>连接池耗尽，线程在等连接</td><td>加大池/查慢 SQL 占连接不还</td></tr><tr><td><code>logback_events</code> 堆积（metrics-resource）</td><td>日志阻塞（同步 appender 写盘慢）</td><td>改异步 appender；查磁盘</td></tr><tr><td>热点帧反复出现同一业务方法（analysis-hot-frames）</td><td>该方法是真热点</td><td>命中次数÷采样次数 ≈ 驻留占比</td></tr></tbody></table>
+<h3 id="42-源码机制一threadstate-六态每个都是排查语言">4.2 源码机制一：Thread.State 六态，每个都是排查语言</h3>
+<p>jstack 的线程状态来自 <code>java.lang.Thread.State</code> 枚举（<code>java/lang/Thread.java:2331</code>），六态与触发条件：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>状态</th><th>行号</th><th>触发条件（源码注释归纳）</th><th>排查含义</th></tr></thead><tbody><tr><td><code>NEW</code></td><td><code>:2335</code></td><td>线程创建未 start</td><td>通常无排查价值</td></tr><tr><td><code>RUNNABLE</code></td><td><code>:2343</code></td><td>JVM 中执行中——<strong>注释明说”may be waiting for other resources from the operating system such as processor”</strong></td><td>⚠️ 不等于在烧 CPU：阻塞在 native IO 的线程也是 RUNNABLE</td></tr><tr><td><code>BLOCKED</code></td><td><code>:2352</code></td><td>等待监视器锁（<code>synchronized</code>）</td><td>锁竞争现场</td></tr><tr><td><code>WAITING</code></td><td><code>:2373</code></td><td><code>Object.wait()</code> 无超时 / <code>Thread.join()</code> 无超时 / <code>LockSupport.park()</code></td><td>在等某个事件或锁许可</td></tr><tr><td><code>TIMED_WAITING</code></td><td><code>:2387</code></td><td><code>sleep</code> / <code>wait(long)</code> / <code>join(long)</code> / <code>parkNanos</code> / <code>parkUntil</code></td><td>有超时的等待：重试退避、池获取超时</td></tr><tr><td><code>TERMINATED</code></td><td><code>:2393</code></td><td>已结束</td><td>无价值</td></tr></tbody></table>
+<p><strong>RUNNABLE 的陷阱是本表最重要的一行</strong>。线程执行 <code>read(2)</code> 阻塞在内核时，Java 线程状态仍是 RUNNABLE——所以”RUNNABLE 线程多”既可能是计算热点，也可能是全员在等网络/磁盘。区分方法就是主机版的 <code>top -H</code>：RUNNABLE 但 OS 级 CPU 趋近 0，就是在 native 里睡着。这也是为什么容器版判读顺序把”热点帧”放在”状态分布”之后——<strong>帧比状态更接近真相</strong>。</p>
+<h3 id="43-源码机制二socketread0-是什么现代-jdk-上它长什么样">4.3 源码机制二：socketRead0 是什么，现代 JDK 上它长什么样</h3>
+<p>老栈里阻塞的 socket 读顶帧是 <code>java.net.SocketInputStream.read</code> → native <code>socketRead0</code>。在 JDK 25 的源码里，<code>java.net.Socket</code> 的输入流早已换成 NIO 实现：<code>sun.nio.ch.SocketInputStream.read(byte[],off,len)</code>（<code>sun/nio/ch/SocketInputStream.java:75</code>）→ <code>SocketChannelImpl.blockingRead</code>（<code>sun/nio/ch/SocketChannelImpl.java:1373</code>）→ 无超时路径走 <code>tryRead</code> 拿不到就绪数据时 <code>park(Net.POLLIN)</code> 再重试，数据最终由 native <code>read(2)</code> 返回。</p>
+<p><strong>对排查的直接影响</strong>：脚本 grep 的 <code>socketRead0</code> 是老帧名。在现代 JDK 上，同样的”在等网络”现场，栈顶更可能是 <code>SocketChannelImpl.blockingRead</code> 或 <code>SocketInputStream.read</code>。脚本作者显然考虑到了这点——容器版的 grep 模式里 <code>socketRead0</code> 和 <code>SocketInputStream</code> 是<strong>并列</strong>的两个候选（<code>perf-snapshot.sh:207</code>），两个帧名总有一个能命中。如果都没命中但 SUMMARY 里三类外部依赖数字都很大，回 <code>jstack.txt</code> 直接搜 <code>blockingRead</code>。</p>
+<h3 id="44-源码机制三waiting-to-lock-与-parking两种锁两种栈">4.4 源码机制三：waiting to lock 与 parking，两种锁两种栈</h3>
+<p><code>- waiting to lock &#x3C;0x...></code> 出现在 <code>BLOCKED</code> 线程栈顶，对应 <code>synchronized</code> 的监视器竞争：线程在 <code>ObjectMonitor</code> 的 entry list 上排队，JVM 把这种状态直接标为 BLOCKED（<code>Thread.java:2352</code>）。</p>
+<p><code>- parking to wait for &#x3C;0x...> (a java.util.concurrent.locks.ReentrantLock$NonfairSync)</code> 出现在 <code>WAITING</code> 线程栈顶，对应 JUC 锁：<code>ReentrantLock.lock()</code>（<code>java/util/concurrent/locks/ReentrantLock.java:322</code>）→ AQS <code>acquire</code> → <code>LockSupport.park()</code>（<code>java/util/concurrent/locks/LockSupport.java:365</code>）把自己挂起。</p>
+<p><strong>为什么排查时要区分</strong>：监视器竞争没有超时机制（<code>synchronized</code> 进不去就死等），而 AQS 锁有 <code>tryLock</code>/<code>lockInterruptibly</code> 可选语义；两者的修复手段不同（前者缩小临界区，后者还可以改锁策略与公平性）。<code>ReentrantLock</code> 的公平/非公平差异就写在 <code>tryAcquire</code> 的两个实现里（<code>ReentrantLock.java:242</code> 非公平 / <code>:280</code> 公平——公平版排队前会先问一声”前面有人排吗”）。</p>
+<h3 id="45-源码机制四nid-怎么和-jstack-对上kill--3-为什么能打栈">4.5 源码机制四：nid 怎么和 jstack 对上，kill -3 为什么能打栈</h3>
+<p><strong>tid → nid</strong>：<code>top -H</code> 输出里线程 id 是十进制，jstack 线程头里的 <code>nid</code> 是十六进制，脚本用 <code>printf '%x'</code> 换算（<code>perf-snapshot-host.sh:140</code>、<code>:216</code>）。对应关系是 JVM 内部约定：<code>nid</code> 就是 OS 线程的 LWP id 的十六进制形式。对上之后，<code>grep -A25 "nid=0x..."</code> 就能把”烧 CPU 的 OS 线程”翻译成”执行到哪行 Java 代码”。</p>
+<p><strong>kill -3</strong>：<code>SIGQUIT</code> 是 JVM 预留的信号——信号处理函数会把所有线程的栈写到<strong>进程 stdout</strong>，然后继续运行（不停进程、不丢业务）。容器里 stdout 就是容器日志，所以 <code>kubectl logs --tail=1500</code> 能捞回来（<code>perf-snapshot.sh:156-173</code>）。这也是”信号法采的栈混着业务日志”的原因：两者写的是同一个流。</p>
+<h3 id="46-源码机制五指标是从哪来的">4.6 源码机制五：指标是从哪来的</h3>
+<p>排查时看到的每个指标名都能追到注册点，追不上就会在配置里抓瞎：</p>
+<ul>
+<li><code>http_server_requests_seconds</code>：Spring Boot Observation 默认名 <code>http.server.requests</code>（<code>ObservationProperties.java:122</code>）经 Micrometer 转写为 Prometheus 命名；</li>
+<li><code>/actuator/prometheus</code>：actuator 的 Web 端点，id 就是 <code>prometheus</code>（<code>PrometheusScrapeEndpoint.java:45</code>），拉取时执行 <code>scrape()</code>（<code>:70-71</code>）把 MeterRegistry 序列化成 Prometheus 文本格式；</li>
+<li>端点 404：actuator 没暴露它。<code>management.endpoints.web.exposure.include</code> 控制暴露集合，对应 <code>MetricsProperties</code> 的 <code>include</code> 字段（<code>MetricsProperties.java:87-89</code>），脚本在探测失败时给出的开启建议正是这个配置（<code>perf-snapshot.sh:134-135</code>）；</li>
+<li><code>tomcat_threads_*</code>：Spring Boot 在应用启动事件里把 Tomcat 的 Manager 接入 MeterRegistry（<code>TomcatMetricsBinder.java:64-65</code>），所以容器里没装 micrometer/actuator 的启动包，这类指标一个都没有——<strong>没有指标不是没故障，是没装眼睛</strong>。</li>
+</ul>
+<h3 id="47-本讲小结">4.7 本讲小结</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>结论</th></tr></thead><tbody><tr><td>判据顺序</td><td>先二分（CPU 型 vs 等待型）→ 再定位帧 → 最后指标闭环</td></tr><tr><td>六态语义</td><td>RUNNABLE 含 native 阻塞；BLOCKED=监视器；WAITING=park/wait；TIMED_WAITING=带超时等待</td></tr><tr><td>阻塞归因</td><td>waiting to lock→synchronized；parking→JUC；socketRead0/blockingRead→等网络</td></tr><tr><td>证据链</td><td>tid→nid 打通 OS 与 Java；kill -3 借 stdout 打栈；指标名可追到注册点</td></tr><tr><td>陷阱</td><td>现代 JDK 帧名变化（socketRead0→blockingRead）；热点帧滤掉了 JDK 帧但现场在 JDK 帧里</td></tr></tbody></table>
+<p><strong>一句记忆钩子</strong>：<em>“RUNNABLE 会在 native 里睡着，BLOCKED 等的是监视器，parking 等的是 AQS；tid 十六进制一换，OS 线程就现形。”</em></p>
+<hr>
+<h2 id="第五讲排查纪律--现场保护的-do--dont">第五讲：排查纪律 —— 现场保护的 Do / Don’t</h2>
+<blockquote>
+<p><strong>本讲问题</strong>：同样的工具，为什么有人十分钟定位、有人三天定位？</p>
+</blockquote>
+<h3 id="51-do">5.1 Do</h3>
+<ol>
+<li><strong>先快照，再操作</strong>：看到报警第一件事跑采集脚本（只读、几十秒），拿到 <code>perf-&#x3C;时间戳>/</code> 目录后再考虑重启/扩容/回滚。</li>
+<li><strong>趁病中采集</strong>：问题正在发生时采；恢复后同样的栈采不到第二遍。</li>
+<li><strong>多次采样</strong>：jstack 是采样不是 trace，间隔 1 秒会漏短任务；死锁等瞬时状态更要 20+ 次采样。</li>
+<li><strong>保留目录</strong>：<code>perf-&#x3C;时间戳>/</code> 按时间归档，事后复盘、容量规划、对比基线都靠它。</li>
+<li><strong>对照时间线</strong>：把快照时间与发布记录、配置变更、流量波动对齐，一半的问题在”什么时候开始的”这一步就答案自现。</li>
+<li><strong>用对脚本</strong>：K8s 里用容器版，机器上用主机版；要回答”是不是机器的问题”必须主机版。</li>
+</ol>
+<h3 id="52-dont">5.2 Don’t</h3>
+<ol>
+<li><strong>不要重启了再采</strong>：重启是最后手段，不是第一响应。</li>
+<li><strong>不要只看一个指标下结论</strong>：P99 高要看调用量；CPU 高要看是不是 GC；load 高要看是不是邻居。</li>
+<li><strong>不要用错版本的 JDK 工具</strong>：attach 版本不匹配会采出残缺栈（脚本用 <code>/proc/PID/exe</code> 反推 JDK 就是在防这个，<code>perf-snapshot-host.sh:75-77</code>）。</li>
+<li><strong>不要盲信热点帧排行</strong>：它过滤了 JDK 前缀帧，而锁/IO 现场恰好在那些帧里；判阻塞必须回原栈。</li>
+<li><strong>不要在容器里搜 deadlock 于 analysis-blocked.txt</strong>：容器版没把这个词纳入 grep 模式（<code>perf-snapshot.sh:207-208</code>），要搜原始 <code>jstack.txt</code>。</li>
+<li><strong>不要采完不读</strong>：SUMMARY.txt 已经做好归因，不读它等于白采。</li>
+</ol>
+<h3 id="53-一套标准的排查动作sop">5.3 一套标准的排查动作（SOP）</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>1. 确认现象与影响面（哪个接口/哪些用户/什么时间开始）</span></span>
+<span class="line"><span>2. 看历史曲线定基线（是一直高还是突变）</span></span>
+<span class="line"><span>3. 跑采集脚本（容器版/主机版按环境选），保留 perf-* 目录</span></span>
+<span class="line"><span>4. 读 SUMMARY.txt，按判读顺序过三个文件</span></span>
+<span class="line"><span>5. 二分：CPU 型 → 高 CPU 线程栈；等待型 → 阻塞归因（DB/Redis/下游/锁）</span></span>
+<span class="line"><span>6. 定位到具体代码/配置/SQL，验证（改配置观察/复现/explain）</span></span>
+<span class="line"><span>7. 修复 + 回归 + 补监控（让同类问题下次直接报警而非人工发现）</span></span></code></pre>
+<p><strong>一句记忆钩子</strong>：<em>“先快照再重启，趁病中多次采；指标定性、栈定位、时间线定责。”</em></p>
+<hr>
+<h2 id="附命令速查卡">附：命令速查卡</h2>
+<h3 id="容器版">容器版</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6A737D"># 标准采集（显式指定 namespace，防采错环境）</span></span>
+<span class="line"><span style="color:#24292E">NS</span><span style="color:#D73A49">=&#x3C;</span><span style="color:#032F62">ns</span><span style="color:#D73A49">></span><span style="color:#6F42C1"> bash</span><span style="color:#032F62"> scripts/perf-snapshot.sh</span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">po</span><span style="color:#24292E">d</span><span style="color:#D73A49">></span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">containe</span><span style="color:#24292E">r</span><span style="color:#D73A49">></span><span style="color:#005CC5"> 18006</span><span style="color:#005CC5"> 10</span><span style="color:#005CC5"> 1</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D"># 多容器 pod 必须传容器名；端口按服务实际改</span></span>
+<span class="line"><span style="color:#6A737D"># 无 curl 的容器：脚本会打印 port-forward 命令，本地另开终端执行</span></span>
+<span class="line"><span style="color:#6F42C1">kubectl</span><span style="color:#032F62"> port-forward</span><span style="color:#005CC5"> -n</span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">n</span><span style="color:#24292E">s</span><span style="color:#D73A49">></span><span style="color:#032F62"> pod/</span><span style="color:#D73A49">&#x3C;</span><span style="color:#032F62">po</span><span style="color:#24292E">d</span><span style="color:#D73A49">></span><span style="color:#032F62"> 18006:18006</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D"># 无 jstack 的容器：信号法自动启用；或手工验证</span></span>
+<span class="line"><span style="color:#6F42C1">kubectl</span><span style="color:#032F62"> exec</span><span style="color:#005CC5"> -n</span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">n</span><span style="color:#24292E">s</span><span style="color:#D73A49">></span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">po</span><span style="color:#24292E">d</span><span style="color:#D73A49">></span><span style="color:#005CC5"> -c</span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">containe</span><span style="color:#24292E">r</span><span style="color:#D73A49">></span><span style="color:#005CC5"> --</span><span style="color:#032F62"> kill</span><span style="color:#005CC5"> -3</span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">pi</span><span style="color:#24292E">d</span><span style="color:#D73A49">></span></span>
+<span class="line"><span style="color:#6F42C1">kubectl</span><span style="color:#032F62"> logs</span><span style="color:#005CC5"> -n</span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">n</span><span style="color:#24292E">s</span><span style="color:#D73A49">></span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">po</span><span style="color:#24292E">d</span><span style="color:#D73A49">></span><span style="color:#005CC5"> -c</span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">containe</span><span style="color:#24292E">r</span><span style="color:#D73A49">></span><span style="color:#005CC5"> --tail=1500</span><span style="color:#D73A49"> |</span><span style="color:#6F42C1"> less</span></span></code></pre>
+<h3 id="主机版">主机版</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6A737D"># 三种定位方式</span></span>
+<span class="line"><span style="color:#6F42C1">bash</span><span style="color:#032F62"> scripts/perf-snapshot-host.sh</span><span style="color:#005CC5"> 12345</span><span style="color:#005CC5"> 18006</span><span style="color:#005CC5"> 10</span><span style="color:#005CC5"> 1</span><span style="color:#6A737D">     # PID</span></span>
+<span class="line"><span style="color:#6F42C1">bash</span><span style="color:#032F62"> scripts/perf-snapshot-host.sh</span><span style="color:#032F62"> card-bizcard</span><span style="color:#005CC5"> 18006</span><span style="color:#6A737D">   # 关键字</span></span>
+<span class="line"><span style="color:#6F42C1">bash</span><span style="color:#032F62"> scripts/perf-snapshot-host.sh</span><span style="color:#032F62"> ""</span><span style="color:#005CC5"> 18006</span><span style="color:#005CC5"> 30</span><span style="color:#005CC5"> 2</span><span style="color:#6A737D">        # 按端口，加大采样</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D"># 手工三板斧（脚本自动做完，这里是对照原理）</span></span>
+<span class="line"><span style="color:#6F42C1">top</span><span style="color:#005CC5"> -b</span><span style="color:#005CC5"> -n1</span><span style="color:#005CC5"> -H</span><span style="color:#005CC5"> -p</span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">pi</span><span style="color:#24292E">d</span><span style="color:#D73A49">></span><span style="color:#6A737D">                  # 线程级 CPU</span></span>
+<span class="line"><span style="color:#005CC5">printf</span><span style="color:#032F62"> '%x\n'</span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">ti</span><span style="color:#24292E">d</span><span style="color:#D73A49">></span><span style="color:#6A737D">                     # tid → nid</span></span>
+<span class="line"><span style="color:#6F42C1">jstack</span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">pi</span><span style="color:#24292E">d</span><span style="color:#D73A49">></span><span style="color:#D73A49"> |</span><span style="color:#6F42C1"> grep</span><span style="color:#005CC5"> -A25</span><span style="color:#032F62"> "nid=0x..."</span><span style="color:#6A737D">    # 找对应 Java 栈</span></span>
+<span class="line"><span style="color:#6F42C1">jstat</span><span style="color:#005CC5"> -gcutil</span><span style="color:#D73A49"> &#x3C;</span><span style="color:#032F62">pi</span><span style="color:#24292E">d</span><span style="color:#D73A49">></span><span style="color:#005CC5"> 1000</span><span style="color:#005CC5"> 10</span><span style="color:#6A737D">             # GC 曲线</span></span></code></pre>
+<h3 id="判读入口">判读入口</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#005CC5">cd</span><span style="color:#032F62"> perf-</span><span style="color:#D73A49">&#x3C;</span><span style="color:#032F62">时间</span><span style="color:#24292E">戳</span><span style="color:#D73A49">></span><span style="color:#6A737D">       # 或 perfhost-&#x3C;pid>-&#x3C;时间戳></span></span>
+<span class="line"><span style="color:#6F42C1">cat</span><span style="color:#032F62"> SUMMARY.txt</span><span style="color:#6A737D">        # 先读它：归因已预置</span></span>
+<span class="line"><span style="color:#6F42C1">head</span><span style="color:#032F62"> analysis-thread-state.txt</span><span style="color:#6A737D">    # 全局健康度</span></span>
+<span class="line"><span style="color:#6F42C1">head</span><span style="color:#032F62"> analysis-hot-frames.txt</span><span style="color:#6A737D">      # 代码热点</span></span>
+<span class="line"><span style="color:#6F42C1">grep</span><span style="color:#005CC5"> -c</span><span style="color:#032F62"> BLOCKED</span><span style="color:#032F62"> jstack.txt</span><span style="color:#6A737D">         # 锁竞争规模</span></span>
+<span class="line"><span style="color:#6F42C1">grep</span><span style="color:#032F62"> "Found one Java-level deadlock"</span><span style="color:#032F62"> jstack.txt</span><span style="color:#6A737D">   # 死锁实锤</span></span>
+<span class="line"><span style="color:#6F42C1">head</span><span style="color:#032F62"> analysis-cpu-hot-stacks.txt</span><span style="color:#6A737D">  # 仅主机版：CPU 第一现场</span></span></code></pre>
+<hr>
+<h2 id="涉及文件索引">涉及文件索引</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>文件</th><th>行数</th><th>本笔记引用次数</th></tr></thead><tbody><tr><td><code>scripts/perf-snapshot.sh</code></td><td>259</td><td>高（容器版采集逻辑全量）</td></tr><tr><td><code>scripts/perf-snapshot-host.sh</code></td><td>267</td><td>高（主机版采集逻辑全量）</td></tr><tr><td><code>java/lang/Thread.java</code></td><td>2800+</td><td>高（State 六态 <code>:2331-2393</code>）</td></tr><tr><td><code>java/lang/Object.java</code></td><td>900+</td><td>低（wait 合同）</td></tr><tr><td><code>java/util/concurrent/locks/LockSupport.java</code></td><td>500+</td><td>中（park 家族）</td></tr><tr><td><code>java/util/concurrent/locks/ReentrantLock.java</code></td><td>700+</td><td>中（lock/tryAcquire 公平与非公平）</td></tr><tr><td><code>java/util/concurrent/ThreadPoolExecutor.java</code></td><td>1400+</td><td>中（execute 拒绝路径）</td></tr><tr><td><code>sun/nio/ch/SocketInputStream.java</code></td><td>95</td><td>中（现代 JDK 的 socket 读栈顶）</td></tr><tr><td><code>sun/nio/ch/SocketChannelImpl.java</code></td><td>1613</td><td>中（blockingRead 阻塞循环）</td></tr><tr><td><code>module/spring-boot-micrometer-metrics/src/main/java/org/springframework/boot/micrometer/metrics/autoconfigure/MetricsProperties.java</code></td><td>200+</td><td>中（exposure.include）</td></tr><tr><td><code>module/spring-boot-micrometer-metrics/src/main/java/org/springframework/boot/micrometer/metrics/autoconfigure/export/prometheus/PrometheusScrapeEndpoint.java</code></td><td>86</td><td>中（prometheus 端点）</td></tr><tr><td><code>module/spring-boot-micrometer-observation/src/main/java/org/springframework/boot/micrometer/observation/autoconfigure/ObservationProperties.java</code></td><td>150+</td><td>低（http.server.requests 默认名）</td></tr><tr><td><code>module/spring-boot-tomcat/src/main/java/org/springframework/boot/tomcat/metrics/TomcatMetricsBinder.java</code></td><td>99</td><td>中（tomcat 线程指标注册）</td></tr></tbody></table>  </div> <div class="post-nav"> <span><a href="/java-io/">← Java IO 源码深度学习笔记</a></span> <span></span> </div> </article>  </main> <footer class="site-footer"> <div class="inner"> <div class="foot-brand"> <span class="brand-mark">&lt;/&gt;</span> <b>源码深读</b> <span>逐文件、逐函数地读源码，结论都带 文件:行号</span> </div> <div class="foot-links"> <a href="/#principles">原理速查</a> <a href="/animations/">动画</a> <a href="/categories/">分类</a> <a href="/tags/">标签</a> </div> <p class="foot-note">由 Astro 静态生成 · 内容以 Markdown 源码笔记为唯一事实源</p> </div> </footer> </body></html> <script type="module" src="/_astro/PostLayout.astro_astro_type_script_index_0_lang.B4vzteL_.js"></script>
