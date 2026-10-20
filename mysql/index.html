@@ -283,7 +283,85 @@ flowchart LR
 
 
 
-<table><thead><tr><th>#</th><th>面试问题</th><th>一句话结论</th><th>深入</th></tr></thead><tbody><tr><td>1</td><td>MySQL 是一连接一线程吗？thread cache 是什么？</td><td>默认 <code>Per_thread_connection_handler</code> 一连接一线程；thread cache 不是”池里的线程”，而是一群阻塞在条件变量上的线程，来连接就 signal 一个复用，服务完回到 <code>block_until_new_connection</code> 等下一个</td><td>第一讲</td></tr><tr><td>2</td><td>8.0 的 SQL 解析入口是什么？<code>mysql_parse</code> 还在吗？</td><td><code>mysql_parse()</code> 在 8.0 已不存在；入口是 <code>dispatch_sql_command</code> → <code>parse_sql</code> → <code>THD::sql_parser</code> → <code>MYSQLparse</code>，产出 LEX 和 <code>Sql_cmd</code> 两个产物</td><td>第二讲</td></tr><tr><td>3</td><td>prepared statement 为什么能防注入？</td><td>参数值不拼进 SQL 文本，而是用 <code>Item_param</code> 在 LEX 里占位、执行时才填值；这既是防注入的根本，也是”参数化查询可能拿到不同执行计划”的根源</td><td>第二讲</td></tr><tr><td>4</td><td>8.0 有几套优化器？怎么共存？</td><td>老优化器（贪心、只产 left-deep 树）与 hypergraph 优化器（DPhyp 枚举、支持 bushy，默认关闭）并存；两者都产出同一种中间表示 <code>AccessPath</code>，再由同一个 <code>CreateIteratorFromAccessPath</code> 统一变 RowIterator</td><td>第三讲</td></tr><tr><td>5</td><td>buffer pool 的结构是什么？大表扫描会冲掉热数据吗？</td><td>“一个 page_hash + 五个链表”（LRU / free / flush_list / withdraw / unzip_LRU）；LRU 分 young/old 两段，且 <code>Page_fetch::SCAN</code> 模式不把页移到 LRU 头部，全表扫描不置顶</td><td>第四讲</td></tr><tr><td>6</td><td>聚簇索引和二级索引的区别？为什么会回表？</td><td>聚簇索引的 key 是主键、叶子页存整行；二级索引叶子只存”索引列 + 主键值”不存完整行，所以通过二级索引查整行必须回表</td><td>第四讲</td></tr><tr><td>7</td><td>自增主键为什么比随机 UUID 快？</td><td>页分裂前先试右兄弟，顺序插入走 <code>to_right</code> 分支几乎不搬数据；随机键插入方向不定，分裂时代价高得多</td><td>第四讲</td></tr><tr><td>8</td><td>double write 解决什么问题？</td><td>半页写（torn page）：InnoDB 页 16KB 而磁盘通常只保证 4KB 原子写，redo 又是基于完整页的增量，页写坏一半无从修复——所以先顺序写一份完整副本，再写真正的表空间</td><td>第四讲</td></tr><tr><td>9</td><td>change buffer 缓存什么？唯一索引能用吗？</td><td>只缓存非唯一二级索引的修改，等页因别的原因被读入时再 merge；唯一索引必须读页做唯一性检查，享受不到这个优化</td><td>第四讲</td></tr><tr><td>10</td><td>MVCC 的实现原理？</td><td>记录带隐藏列 <code>DB_TRX_ID</code> + <code>DB_ROLL_PTR</code> 串起 undo 版本链；ReadView 在创建瞬间记下活跃事务 id 集合，<code>changes_visible</code> 三段判定可见性——读旧版本不加锁</td><td>第五讲</td></tr><tr><td>11</td><td>四个隔离级别分别解决什么问题？RR 怎么防幻读？</td><td>默认 RR：RU 直接读最新（脏读）、RC 每条语句一个快照、RR 每事务一个快照、SERIALIZABLE 把普通 SELECT 也转成 <code>LOCK IN SHARE MODE</code>；RR 与 RC 的差异就在 read view 创建时机 + 是否用 GAP 锁，而 GAP/Next-Key 锁是文档原话”唯一能阻止幻读的机制”</td><td>第五讲</td></tr><tr><td>12</td><td>普通 SELECT 和 <code>SELECT ... FOR UPDATE</code> 的区别？</td><td>普通 SELECT 走一致性读：顺 <code>DB_ROLL_PTR</code> 回溯 undo 找可见版本，不加锁；加锁读走 <code>lock_clust_rec_read_check_and_lock</code>，读最新已提交版本并加锁</td><td>第五讲</td></tr><tr><td>13</td><td>InnoDB 的锁有哪几种模式？死锁怎么检测？</td><td>S/X 之上叠加四种精确模式位：Next-Key(0) / GAP(512) / REC_NOT_GAP(1024) / INSERT_INTENTION(2048)；死锁由 wait-for 图找环，挑环上 <code>reservation_no</code> 最大（最后加入环）的事务做 victim 回滚</td><td>第五讲</td></tr><tr><td>14</td><td>长事务有什么危害？</td><td>版本链越长，一致性读回溯越慢；purge 不能清任何活跃 ReadView 还需要的版本，最老视图挡住 purge 使 history list 持续增长——而 undo 页本身也在 buffer pool 里、也要写 redo，“读历史版本”可能触发 IO</td><td>第五讲</td></tr><tr><td>15</td><td>redo / undo / binlog 三大日志的分工？</td><td>redo（InnoDB，物理逻辑）保 crash-safe；undo（InnoDB，逻辑）保原子性和 MVCC 版本链；binlog（Server，逻辑）保复制和时间点恢复，并充当 2PC 的仲裁者</td><td>第六讲</td></tr><tr><td>16</td><td>两阶段提交的过程？为什么开了 binlog 就一定是 2PC？</td><td><code>rw_ha_count > 1</code> 才 prepare，而注册 binlog handlerton 后即使只有 InnoDB 计数也是 2；流程：InnoDB prepare（故意不 fsync redo）→ binlog flush/sync → 引擎 commit + redo fsync</td><td>第六讲</td></tr><tr><td>17</td><td>组提交怎么提速？<code>innodb_flush_log_at_trx_commit</code> 三值区别？</td><td>binlog 侧 <code>Commit_stage_manager</code> 每阶段由 leader 攒批一次 fsync，redo 侧 <code>log_write_up_to</code> “推进到某个 LSN”让并发提交自然合并；三值：1=每次提交 write+fsync，2=只 write、fsync 交后台每秒一次，0=write 和 fsync 都交后台</td><td>第六讲</td></tr><tr><td>18</td><td>崩溃恢复的流程？binlog 起什么作用？</td><td>重放 redo（定位 checkpoint → scan → apply）→ <code>trx_resurrect</code> 按 undo 标记复活未决事务 → binlog 收集 XID 由 <code>ha_recover</code> 仲裁：有 XID 则提交，否则回滚；且 redo fsync 必须在 binlog fsync 之后，反了会出现”redo 已提交但 binlog 没有”，从库丢事务</td><td>第六讲</td></tr></tbody></table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>#</th><th>面试问题</th><th>一句话结论</th><th>深入</th></tr></thead><tbody><tr><td>1</td><td>MySQL 是一连接一线程吗？thread cache 是什么？</td><td>默认 <code>Per_thread_connection_handler</code> 一连接一线程；thread cache 不是”池里的线程”，而是一群阻塞在条件变量上的线程，来连接就 signal 一个复用，服务完回到 <code>block_until_new_connection</code> 等下一个</td><td>第一讲</td></tr><tr><td>2</td><td>8.0 的 SQL 解析入口是什么？<code>mysql_parse</code> 还在吗？</td><td><code>mysql_parse()</code> 在 8.0 已不存在；入口是 <code>dispatch_sql_command</code> → <code>parse_sql</code> → <code>THD::sql_parser</code> → <code>MYSQLparse</code>，产出 LEX 和 <code>Sql_cmd</code> 两个产物</td><td>第二讲</td></tr><tr><td>3</td><td>prepared statement 为什么能防注入？</td><td>参数值不拼进 SQL 文本，而是用 <code>Item_param</code> 在 LEX 里占位、执行时才填值；这既是防注入的根本，也是”参数化查询可能拿到不同执行计划”的根源</td><td>第二讲</td></tr><tr><td>4</td><td>8.0 有几套优化器？怎么共存？</td><td>老优化器（贪心、只产 left-deep 树）与 hypergraph 优化器（DPhyp 枚举、支持 bushy，默认关闭）并存；两者都产出同一种中间表示 <code>AccessPath</code>，再由同一个 <code>CreateIteratorFromAccessPath</code> 统一变 RowIterator</td><td>第三讲</td></tr><tr><td>5</td><td>buffer pool 的结构是什么？大表扫描会冲掉热数据吗？</td><td>“一个 page_hash + 五个链表”（LRU / free / flush_list / withdraw / unzip_LRU）；LRU 分 young/old 两段，且 <code>Page_fetch::SCAN</code> 模式不把页移到 LRU 头部，全表扫描不置顶</td><td>第四讲</td></tr><tr><td>6</td><td>聚簇索引和二级索引的区别？为什么会回表？</td><td>聚簇索引的 key 是主键、叶子页存整行；二级索引叶子只存”索引列 + 主键值”不存完整行，所以通过二级索引查整行必须回表</td><td>第四讲</td></tr><tr><td>7</td><td>自增主键为什么比随机 UUID 快？</td><td>页分裂前先试右兄弟，顺序插入走 <code>to_right</code> 分支几乎不搬数据；随机键插入方向不定，分裂时代价高得多</td><td>第四讲</td></tr><tr><td>8</td><td>double write 解决什么问题？</td><td>半页写（torn page）：InnoDB 页 16KB 而磁盘通常只保证 4KB 原子写，redo 又是基于完整页的增量，页写坏一半无从修复——所以先顺序写一份完整副本，再写真正的表空间</td><td>第四讲</td></tr><tr><td>9</td><td>change buffer 缓存什么？唯一索引能用吗？</td><td>只缓存非唯一二级索引的修改，等页因别的原因被读入时再 merge；唯一索引必须读页做唯一性检查，享受不到这个优化</td><td>第四讲</td></tr><tr><td>10</td><td>MVCC 的实现原理？</td><td>记录带隐藏列 <code>DB_TRX_ID</code> + <code>DB_ROLL_PTR</code> 串起 undo 版本链；ReadView 在创建瞬间记下活跃事务 id 集合，<code>changes_visible</code> 三段判定可见性——读旧版本不加锁</td><td>第五讲</td></tr><tr><td>11</td><td>四个隔离级别分别解决什么问题？RR 怎么防幻读？</td><td>默认 RR：RU 直接读最新（脏读）、RC 每条语句一个快照、RR 每事务一个快照、SERIALIZABLE 把普通 SELECT 也转成 <code>LOCK IN SHARE MODE</code>；RR 与 RC 的差异就在 read view 创建时机 + 是否用 GAP 锁，而 GAP/Next-Key 锁是文档原话”唯一能阻止幻读的机制”</td><td>第五讲</td></tr><tr><td>12</td><td>普通 SELECT 和 <code>SELECT ... FOR UPDATE</code> 的区别？</td><td>普通 SELECT 走一致性读：顺 <code>DB_ROLL_PTR</code> 回溯 undo 找可见版本，不加锁；加锁读走 <code>lock_clust_rec_read_check_and_lock</code>，读最新已提交版本并加锁</td><td>第五讲</td></tr><tr><td>13</td><td>InnoDB 的锁有哪几种模式？死锁怎么检测？</td><td>S/X 之上叠加四种精确模式位：Next-Key(0) / GAP(512) / REC_NOT_GAP(1024) / INSERT_INTENTION(2048)；死锁由 wait-for 图找环，挑环上 <code>reservation_no</code> 最大（最后加入环）的事务做 victim 回滚</td><td>第五讲</td></tr><tr><td>14</td><td>长事务有什么危害？</td><td>版本链越长，一致性读回溯越慢；purge 不能清任何活跃 ReadView 还需要的版本，最老视图挡住 purge 使 history list 持续增长——而 undo 页本身也在 buffer pool 里、也要写 redo，“读历史版本”可能触发 IO</td><td>第五讲</td></tr><tr><td>15</td><td>redo / undo / binlog 三大日志的分工？</td><td>redo（InnoDB，物理逻辑）保 crash-safe；undo（InnoDB，逻辑）保原子性和 MVCC 版本链；binlog（Server，逻辑）保复制和时间点恢复，并充当 2PC 的仲裁者</td><td>第六讲</td></tr><tr><td>16</td><td>两阶段提交的过程？为什么开了 binlog 就一定是 2PC？</td><td><code>rw_ha_count > 1</code> 才 prepare，而注册 binlog handlerton 后即使只有 InnoDB 计数也是 2；流程：InnoDB prepare（故意不 fsync redo）→ binlog flush/sync → 引擎 commit + redo fsync</td><td>第六讲</td></tr><tr><td>17</td><td>组提交怎么提速？<code>innodb_flush_log_at_trx_commit</code> 三值区别？</td><td>binlog 侧 <code>Commit_stage_manager</code> 每阶段由 leader 攒批一次 fsync，redo 侧 <code>log_write_up_to</code> “推进到某个 LSN”让并发提交自然合并；三值：1=每次提交 write+fsync，2=只 write、fsync 交后台每秒一次，0=write 和 fsync 都交后台</td><td>第六讲</td></tr><tr><td>18</td><td>崩溃恢复的流程？binlog 起什么作用？</td><td>重放 redo（定位 checkpoint → scan → apply）→ <code>trx_resurrect</code> 按 undo 标记复活未决事务 → binlog 收集 XID 由 <code>ha_recover</code> 仲裁：有 XID 则提交，否则回滚；且 redo fsync 必须在 binlog fsync 之后，反了会出现”redo 已提交但 binlog 没有”，从库丢事务</td><td>第六讲</td></tr><tr><td>19</td><td>char 和 varchar 的区别？</td><td>char 定长：写入右补空格、读出再去尾部空格，不怕碎片；varchar 变长：行内存 1~2 字节长度前缀，省空间但更新容易页分裂/行迁移。定长内容（hash、UUID、状态码）用 char，不定长文本用 varchar——<strong>会不会溢出看行格式不看列长度</strong>，DYNAMIC 下超长部分整体走溢出页</td><td>第三讲</td></tr><tr><td>20</td><td>InnoDB 和 MyISAM 有什么区别？</td><td>InnoDB：数据即聚簇索引（挂在主键上）、行级锁、MVCC、事务、外键、redo 崩溃恢复；MyISAM：数据/索引分离的堆表、表级锁、无事务无 MVCC、但 <code>count(*)</code> 有 O(1) 计数器、全文索引老牌。5.5 起默认存储引擎就是 InnoDB，MyISAM 只剩历史遗留和极少数只读场景</td><td>第三/五讲</td></tr><tr><td>21</td><td>MySQL 深度分页如何优化？</td><td><code>LIMIT 100000, 10</code> 要先把前 10 万行捞出来再丢掉，成本在”搬”不在”找”。三板斧：①延迟关联——子查询先走覆盖索引只取主键，再回表拿整行；②游标分页——<code>WHERE id > 上一页最大id LIMIT n</code>，把”跳过 N 行”变成”从定位点往后读”；③业务改版成”加载更多/滚动翻页”。索引解决定位，解决不了搬运</td><td>第四讲</td></tr><tr><td>22</td><td>唯一索引和主键索引的区别？</td><td>主键：一表一个、聚簇索引（叶子即整行）、绝不接受 null；唯一索引：一表可多个、二级索引（叶子存”索引列+主键”）、允许多个 null（<code>null != null</code> 不判重）。代价上唯一索引还多一笔”必须读页做唯一性检查”，所以 change buffer 救不了它（只缓存非唯一二级索引修改）</td><td>第三/四讲</td></tr><tr><td>23</td><td><code>count(1)</code>、<code>count(*)</code> 与 <code>count(列名)</code> 的区别？</td><td><code>count(*)</code> 与 <code>count(1)</code> 等价：不取值，优化器挑成本最低的索引扫行数；<code>count(列名)</code> 只统计该列<strong>非 null</strong> 的行，必须把值读出来判断；<code>count(主键)</code> 走聚簇索引。InnoDB 没有 MyISAM 那种 O(1) 计数器，哪种都是扫索引——大表统计要靠 <code>information_schema</code> 估算或离线数</td><td>第四讲</td></tr><tr><td>24</td><td>InnoDB 中索引类型有哪些？</td><td>按结构分：B+ 树索引（聚簇 + 二级）、AHI 自适应哈希索引（自动给稳定的等值查询前缀建，<code>btr_ahi_parts</code> 分区锁保护，不是全表哈希）；按功能分：主键索引、唯一索引、普通索引、联合索引（最左前缀）、前缀索引、覆盖索引、全文/空间索引。默认战场是 B+ 树</td><td>第三/四讲</td></tr><tr><td>25</td><td>truncate、delete、drop 的区别？</td><td>delete：逐行删、记 undo/redo、<strong>可回滚</strong>、可带 WHERE、不释放空间、不动自增值；truncate：整表抹掉重建（DDL），快、不可回滚、自增计数复位、释放空间；drop：连表定义一起删。truncate/drop 都是隐式提交的 DDL，别在事务里用</td><td>第三讲</td></tr><tr><td>26</td><td>用了索引还是很慢，可能是什么原因？</td><td>索引没真走：列上有函数/运算、隐式类型转换、前导模糊 <code>LIKE '%x'</code>；走了但代价高：回表行太多（非覆盖索引）、区分度太低（性别/状态位）、统计信息过期选错索引；SQL 写法：深分页、<code>ORDER BY</code> 触发 filesort、大 <code>IN</code> 列表；最后也可能是锁等待/IO 打满，与索引无关。先 <code>EXPLAIN</code> 看 type/key/rows/Extra 四列再下结论</td><td>第四讲</td></tr><tr><td>27</td><td>设计索引时应遵循哪些原则？</td><td>为 WHERE/JOIN/ORDER BY 的高频组合服务而不是越多越好：区分度高的列放联合索引前置、利用覆盖索引避免回表、控制索引数量（每个索引都是写放大 + 优化器选错概率）、长列用前缀索引、删除冗余与从未用过的索引、表结构变更后及时 <code>ANALYZE TABLE</code> 刷新统计信息</td><td>第三/四讲</td></tr><tr><td>28</td><td>什么是最左前缀匹配？为什么要遵守？</td><td>联合索引 <code>(a,b,c)</code> 的 B+ 树按 a→b→c 的字典序组织，只有查询从最左列开始且不跳列，后面的列才能借排序结构收敛范围；缺了 a（或中间断档），MySQL 只能用到部分索引甚至退化为全扫/哈希过滤。“遵守”不是规矩而是 B+ 树的物理事实——索引列顺序设计错了，建了也白建</td><td>第四讲</td></tr><tr><td>29</td><td>乐观锁与悲观锁怎么实现？</td><td>悲观锁假设一定冲突：<code>SELECT ... FOR UPDATE</code>（next-key lock 锁范围，RR 下防幻读）或应用层互斥，冲突多的时候少做无畏重试；乐观锁假设基本不冲突：加 <code>version</code> 列或时间戳，<code>UPDATE ... SET v=v+1, version=version+1 WHERE id=? AND version=?</code>，<strong>影响行数为 0 就说明被改过、走重试/失败分支</strong>，读多写少时吞吐远高于锁</td><td>第五讲</td></tr><tr><td>30</td><td>InnoDB 的表级锁、页级锁、行级锁？</td><td>行级锁是<strong>逻辑</strong>的：记录锁（锁单行）、间隙锁 gap（锁”行与行之间”防幻读，仅 RR）、next-key（记录 + 左开右闭间隙）；表级有<strong>意向锁</strong> IS/IX（行锁意图登记，让表锁判断”有没有行锁”不用全表扫）和 MDL 元数据锁（DDL 与读写互斥）；页级只是 InnoDB 内部结构锁（如 AHI 分区锁），不是用户可选的粒度</td><td>第五讲</td></tr><tr><td>31</td><td>InnoDB 加索引，这个时候会锁表吗？</td><td>5.6 起是 Online DDL：默认 <code>ALGORITHM=INPLACE</code> 允许并发 DML，只在”准备/提交”两个极短点拿排他元数据锁；<code>ALGORITHM=COPY</code> 才整表重建阻塞写，<code>LOCK</code> 子句还能再收并发度。所以加索引不等于锁表——但大表 INPLACE 期间有主从延迟与 IO 压力，稳妥做法仍是低峰执行或 pt-osc/gh-ost 这类无锁变更工具</td><td>第三讲</td></tr></tbody></table>
 <p><strong>如果只背五条</strong>：索引与存储背第 6、7 条（聚簇/回表、自增 vs UUID）；并发背第 10、11、13 条（MVCC、隔离级别与幻读、锁与死锁）；持久化背第 15、16、18 条（三日志、2PC、恢复仲裁）。这三组覆盖了绝大多数 MySQL 面试的主干，其余条目是它们的展开。</p>
 <p><strong>按讲次回查索引</strong>（被追问时按这个顺序翻原文）：</p>
 <ul>
@@ -4438,4 +4516,4 @@ sequenceDiagram
 
 
 
-<table><thead><tr><th>项</th><th>状态</th></tr></thead><tbody><tr><td><code>sql/threadpool_unix.cc</code> 等社区线程池实现</td><td><strong>未检出</strong>（本次稀疏检出不含；8.0.46 社区版无内置线程池）</td></tr><tr><td><code>sql/sql_planner.cc</code></td><td>目录内存在，但本笔记未逐行核对，故未标注行号</td></tr><tr><td><code>storage/innobase/arch</code>、<code>clone</code>、<code>ddl</code>、<code>fts</code>、<code>lob</code>、<code>gis</code>、<code>sync</code>、<code>os</code>、<code>ut</code> 等子目录</td><td>已检出但本笔记未展开，仅在必要时提及</td></tr><tr><td><code>unittest/</code>、<code>extra/</code>、<code>cmake/</code>、<code>client/</code>、<code>plugin/</code>、<code>strings/</code>、<code>mysys/</code></td><td>已检出但本笔记未涉及</td></tr><tr><td><code>sql/rpl_*</code> 复制主链路（除 binlog 组提交与 <code>Commit_order_manager</code> 外）</td><td>已在检出范围，但本笔记未展开</td></tr><tr><td><code>mysql.gtid_executed</code> / <code>sql/rpl_gtid_*</code></td><td>已检出但未逐行核对</td></tr><tr><td><code>sql/binlog/group_commit/</code>（Bgc_ticket_manager 等）</td><td>已检出，本笔记仅从 <code>sql/binlog.cc:8861</code> 的调用点提及</td></tr></tbody></table>  </div> <div class="post-nav"> <span><a href="/nacos/">← Nacos 源码深度学习笔记</a></span> <span><a href="/java-lock/">Java 锁源码深度学习笔记 →</a></span> </div> </article>  </main> <footer class="site-footer"> <div class="inner"> <div class="foot-brand"> <span class="brand-mark">&lt;/&gt;</span> <b>源码深读</b> <span>逐文件、逐函数地读源码，结论都带 文件:行号</span> </div> <div class="foot-links"> <a href="/#principles">原理速查</a> <a href="/animations/">动画</a> <a href="/categories/">分类</a> <a href="/tags/">标签</a> </div> <p class="foot-note">由 Astro 静态生成 · 内容以 Markdown 源码笔记为唯一事实源</p> </div> </footer> </body></html> <script type="module" src="/_astro/PostLayout.astro_astro_type_script_index_0_lang.B4vzteL_.js"></script>
+<table><thead><tr><th>项</th><th>状态</th></tr></thead><tbody><tr><td><code>sql/threadpool_unix.cc</code> 等社区线程池实现</td><td><strong>未检出</strong>（本次稀疏检出不含；8.0.46 社区版无内置线程池）</td></tr><tr><td><code>sql/sql_planner.cc</code></td><td>目录内存在，但本笔记未逐行核对，故未标注行号</td></tr><tr><td><code>storage/innobase/arch</code>、<code>clone</code>、<code>ddl</code>、<code>fts</code>、<code>lob</code>、<code>gis</code>、<code>sync</code>、<code>os</code>、<code>ut</code> 等子目录</td><td>已检出但本笔记未展开，仅在必要时提及</td></tr><tr><td><code>unittest/</code>、<code>extra/</code>、<code>cmake/</code>、<code>client/</code>、<code>plugin/</code>、<code>strings/</code>、<code>mysys/</code></td><td>已检出但本笔记未涉及</td></tr><tr><td><code>sql/rpl_*</code> 复制主链路（除 binlog 组提交与 <code>Commit_order_manager</code> 外）</td><td>已在检出范围，但本笔记未展开</td></tr><tr><td><code>mysql.gtid_executed</code> / <code>sql/rpl_gtid_*</code></td><td>已检出但未逐行核对</td></tr><tr><td><code>sql/binlog/group_commit/</code>（Bgc_ticket_manager 等）</td><td>已检出，本笔记仅从 <code>sql/binlog.cc:8861</code> 的调用点提及</td></tr></tbody></table>  </div> <div class="post-nav"> <span><a href="/redis/">← Redis 源码深度学习笔记</a></span> <span><a href="/nacos/">Nacos 源码深度学习笔记 →</a></span> </div> </article>  </main> <footer class="site-footer"> <div class="inner"> <div class="foot-brand"> <span class="brand-mark">&lt;/&gt;</span> <b>源码深读</b> <span>逐文件、逐函数地读源码，结论都带 文件:行号</span> </div> <div class="foot-links"> <a href="/#principles">原理速查</a> <a href="/animations/">动画</a> <a href="/categories/">分类</a> <a href="/tags/">标签</a> </div> <p class="foot-note">由 Astro 静态生成 · 内容以 Markdown 源码笔记为唯一事实源</p> </div> </footer> </body></html> <script type="module" src="/_astro/PostLayout.astro_astro_type_script_index_0_lang.B4vzteL_.js"></script>

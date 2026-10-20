@@ -212,7 +212,103 @@ flowchart TD
 
 
 
-<table><thead><tr><th>#</th><th>面试问题</th><th>一句话结论</th><th>深入</th></tr></thead><tbody><tr><td>1</td><td>Redis 为什么快？</td><td>单线程 Reactor + epoll 多路复用 + 纯内存；ae 层 fd 直接当数组下标，注册与触发都无锁、无上下文切换</td><td>第一讲</td></tr><tr><td>2</td><td>Redis 6.0/8.x 的多线程是什么？</td><td>IO 线程只”搬砖”：读 socket、解析 RESP、回写 socket；命令执行仍全部在主线程，且 8.x 的 <code>io-threads</code> 是启动时固定的不可变配置</td><td>第一讲</td></tr><tr><td>3</td><td>单线程为什么还会阻塞？</td><td>慢命令（<code>KEYS *</code> 级别）靠单轮写上限 64KB 兜底；<code>appendfsync always</code> 的同步 fsync、fork 时的 COW、超大 bulk 读取都会拉长单轮循环</td><td>第一、五讲</td></tr><tr><td>4</td><td>收到 <code>+OK</code> 就代表落盘了吗？</td><td>AOF 的 write 被刻意排在回复客户端之前，只有 <code>appendfsync always</code> 才给出”已确认即已持久”的承诺</td><td>第三、五讲</td></tr><tr><td>5</td><td>RDB 快照的原理？</td><td>fork 子进程靠 COW 看到 fork 瞬间的内存镜像，写临时文件再 rename 原子替换，全程不加锁</td><td>第五讲</td></tr><tr><td>6</td><td>RDB 与 AOF 怎么取舍？混合持久化是什么？</td><td>8.x 默认 <code>aof-use-rdb-preamble</code> 开：AOF 的 BASE 文件直接用 RDB 格式（加载快），INCR 文件追加命令（丢得少），manifest 记录目录结构</td><td>第五讲</td></tr><tr><td>7</td><td>AOF 三种 fsync 策略各丢多少？</td><td><code>no</code> 交给 OS；<code>everysec</code> 由 bio 线程每秒 fsync、上次 fsync 在飞时最多推迟 2 秒；<code>always</code> 同步 fsync，失败直接退出进程</td><td>第五讲</td></tr><tr><td>8</td><td>AOF 重写（rewrite）在做什么？</td><td>fork 子进程按当前数据集重写 BASE 文件，父进程无感继续写新 INCR；AOF 相对 base 增长超过 <code>aof_rewrite_perc</code> 时自动触发</td><td>第五讲</td></tr><tr><td>9</td><td>主从断线重连必须全量同步吗？</td><td>PSYNC 靠 <code>replid</code> + offset 落在 <code>repl_backlog</code> 窗口内就回 <code>+CONTINUE</code> 部分同步；PSYNC2 的 <code>replid</code>/<code>replid2</code> 双 ID 让级联 failover 也能续传</td><td>第六讲</td></tr><tr><td>10</td><td>全量同步怎么传数据？</td><td>master 跑 BGSAVE 生成 RDB 推给 replica，也支持无盘复制直接写 socket</td><td>第六讲</td></tr><tr><td>11</td><td>过期 key 什么时候删？从库会删吗？</td><td>惰性（读路径判过期）+ 定期（在 CPU 预算内采样清理）；从库只标记过期不删除，等 master 合成 <code>DEL</code></td><td>第四讲</td></tr><tr><td>12</td><td>Cluster 怎么定位一个 key？</td><td>CRC16(key) 映射 16384 个槽，每条命令执行前做槽位归属判定，不属于本节点返回 <code>MOVED</code>/<code>ASK</code></td><td>第六讲</td></tr><tr><td>13</td><td>Cluster 故障检测与故障转移怎么做？</td><td>每 100ms 发带 gossip 的 PING/PONG，延迟超时标 PFAIL，gossip 收集到多数升 FAIL，slave 发起选举接管</td><td>第六讲</td></tr><tr><td>14</td><td>大 key / 热 key 在源码里有什么抓手？</td><td>大 bulk 按需读取 + 零拷贝建对象、querybuf 上限、输出缓冲 hard/soft 双档限流；命令执行路径上有逐命令 hotkey 统计</td><td>第二、三讲</td></tr><tr><td>15</td><td>对象为什么有多种编码？zset 为什么快？</td><td>小规模用连续内存（intset/listpack）换 cache 命中，大规模转离散结构（dict/skiplist/quicklist）；zset = dict + skiplist 双结构，单点 O(1)、范围 O(logN)</td><td>第四讲</td></tr><tr><td>16</td><td>事务 WATCH 的底层是什么？</td><td>键被修改时经 <code>touchWatchedKey</code> 给所有监视者打 <code>CLIENT_DIRTY_CAS</code>，EXEC 发现脏标记就整体返回 nil、一条都不执行</td><td>第三讲</td></tr></tbody></table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>#</th><th>面试问题</th><th>一句话结论</th><th>深入</th></tr></thead><tbody><tr><td>1</td><td>Redis 为什么快？</td><td>六层叠加，缺一不可：①<strong>纯内存</strong>，命令执行完全不碰磁盘（持久化走 fork 子进程 / bio 线程旁路）；②<strong>单主线程执行命令</strong>，无锁竞争、无上下文切换，<code>aeMain</code> 一个 while 循环跑完所有事（<code>src/ae.c:497</code>）；③<strong>epoll 多路复用</strong>，一个线程管成千上万连接，一次 <code>epoll_wait</code> 拿回所有就绪 fd（<code>src/ae_epoll.c:89</code>）；④<strong>fd 直接当数组下标</strong>，注册/触发/删除都是 O(1) 数组操作，不查哈希不加锁（<code>src/ae.h:79</code>）；⑤<strong>攒着回复</strong>：命令执行完不立刻 write，<code>beforeSleep</code> 里统一批量刷（<code>src/server.c:2104</code>），多次小 write 合成一次；⑥<strong>数据结构按规模选编码</strong>：hash 就是 dict 哈希表（O(1)，扩容走增量 rehash 不阻塞主循环）、整数集用 intset、小 list/hash/zset 用 listpack 连续内存吃 cache 命中、大 list 才转 quicklist、zset = dict + skiplist 双结构（单点 O(1)、范围 O(logN)）（第四讲）。6.0+ 的 IO 线程只”搬砖”（读 socket/解析 RESP/回写），<strong>命令执行仍全部在主线程</strong></td><td>第一、二、四讲</td></tr><tr><td>2</td><td>Redis 6.0/8.x 的多线程是什么？</td><td>IO 线程只”搬砖”：读 socket、解析 RESP、回写 socket；命令执行仍全部在主线程，且 8.x 的 <code>io-threads</code> 是启动时固定的不可变配置</td><td>第一讲</td></tr><tr><td>3</td><td>单线程为什么还会阻塞？</td><td>慢命令（<code>KEYS *</code> 级别）靠单轮写上限 64KB 兜底；大 key 删除有 lazyfree（<code>src/lazyfree.c</code>，<code>UNLINK</code>/<code>lazyfree-lazy-expire</code>）异步释放兜底；但 <code>appendfsync always</code> 的同步 fsync、fork 时的 COW、超大 bulk 读取仍会拉长单轮循环</td><td>第一、五讲</td></tr><tr><td>4</td><td>收到 <code>+OK</code> 就代表落盘了吗？</td><td>AOF 的 write 被刻意排在回复客户端之前，只有 <code>appendfsync always</code> 才给出”已确认即已持久”的承诺</td><td>第三、五讲</td></tr><tr><td>5</td><td>RDB 快照的原理？</td><td>fork 子进程靠 COW 看到 fork 瞬间的内存镜像，写临时文件再 rename 原子替换，全程不加锁</td><td>第五讲</td></tr><tr><td>6</td><td>RDB 与 AOF 怎么取舍？混合持久化是什么？</td><td>8.x 默认 <code>aof-use-rdb-preamble</code> 开：AOF 的 BASE 文件直接用 RDB 格式（加载快），INCR 文件追加命令（丢得少），manifest 记录目录结构</td><td>第五讲</td></tr><tr><td>7</td><td>AOF 三种 fsync 策略各丢多少？</td><td><code>no</code> 交给 OS；<code>everysec</code> 由 bio 线程每秒 fsync、上次 fsync 在飞时最多推迟 2 秒；<code>always</code> 同步 fsync，失败直接退出进程</td><td>第五讲</td></tr><tr><td>8</td><td>AOF 重写（rewrite）在做什么？</td><td>fork 子进程按当前数据集重写 BASE 文件，父进程无感继续写新 INCR；AOF 相对 base 增长超过 <code>aof_rewrite_perc</code> 时自动触发</td><td>第五讲</td></tr><tr><td>9</td><td>主从断线重连必须全量同步吗？</td><td>PSYNC 靠 <code>replid</code> + offset 落在 <code>repl_backlog</code> 窗口内就回 <code>+CONTINUE</code> 部分同步；PSYNC2 的 <code>replid</code>/<code>replid2</code> 双 ID 让级联 failover 也能续传</td><td>第六讲</td></tr><tr><td>10</td><td>全量同步怎么传数据？</td><td>master 跑 BGSAVE 生成 RDB 推给 replica，也支持无盘复制直接写 socket</td><td>第六讲</td></tr><tr><td>11</td><td>过期 key 什么时候删？从库会删吗？</td><td>惰性（读路径判过期）+ 定期（在 CPU 预算内采样清理）；从库只标记过期不删除，等 master 合成 <code>DEL</code></td><td>第四讲</td></tr><tr><td>12</td><td>Cluster 怎么定位一个 key？</td><td>CRC16(key) 映射 16384 个槽，每条命令执行前做槽位归属判定，不属于本节点返回 <code>MOVED</code>/<code>ASK</code></td><td>第六讲</td></tr><tr><td>13</td><td>Cluster 故障检测与故障转移怎么做？</td><td>每 100ms 发带 gossip 的 PING/PONG，延迟超时标 PFAIL，gossip 收集到多数升 FAIL，slave 发起选举接管</td><td>第六讲</td></tr><tr><td>14</td><td>大 key / 热 key 在源码里有什么抓手？</td><td>大 bulk 按需读取 + 零拷贝建对象、querybuf 上限、输出缓冲 hard/soft 双档限流；命令执行路径上有逐命令 hotkey 统计</td><td>第二、三讲</td></tr><tr><td>15</td><td>对象为什么有多种编码？zset 为什么快？</td><td>同一份数据按规模在不同编码间切换，本质是<strong>用内存换时间</strong>：小规模用连续内存（intset/listpack）吃 cache 命中、省指针开销，超阈值转离散结构（dict/skiplist/quicklist）——如 zset 元素数过 128 走 <code>zsetConvert</code> 转 skiplist（<code>src/t_zset.c:1439</code>），删少了还能 <code>zsetConvertToListpackIfNeeded</code>（<code>src/t_zset.c:1523</code>）回退；zset = <strong>dict + skiplist 双结构</strong>——dict 保单点 O(1)，skiplist 保范围查询与排名 O(logN)（<code>zslInsert</code> 随机层数 <code>src/t_zset.c:254</code>/<code>:326</code>，<code>span</code> 支撑 <code>ZRANK</code> <code>src/t_zset.c:645</code>）；另有 0~9999 共享整数对象（<code>src/server.c:2204</code>）零分配复用</td><td>第四讲</td></tr><tr><td>16</td><td>事务 WATCH 的底层是什么？</td><td>键被修改时经 <code>touchWatchedKey</code> 给所有监视者打 <code>CLIENT_DIRTY_CAS</code>，EXEC 发现脏标记就整体返回 nil、一条都不执行</td><td>第三讲</td></tr><tr><td>17</td><td>Redis 数据类型有哪几种？</td><td>5 种基础：string（计数/缓存/分布式锁）、hash（对象字段）、list（ timelines/简单队列）、set（去重/交集并集）、zset（排行/范围查询）；3 种扩展：stream（消息队列，<code>XADD</code>/<code>XREADGROUP</code>）、bitmaps/hyperloglog（位统计/基数估算）、geospatial（地理位置）。每个 key 只有一个类型，<code>TYPE</code> 命令可查</td><td>第四讲</td></tr><tr><td>18</td><td>Redis 和 Memcached 的区别？</td><td>MC 是纯缓存：只存字符串、多线程模型、无持久化、无原生集群、value 上限 1MB；Redis 是数据结构服务器：命令单线程执行、5+ 种类型、RDB/AOF 持久化、主从/Sentinel/Cluster、Lua 脚本。纯缓存且要榨多核可以 MC，要功能/一致性/运维体系选 Redis</td><td>第一讲</td></tr><tr><td>19</td><td>Redis 和 Caffeine 的区别？</td><td>Caffeine 是<strong>进程内</strong>本地缓存：无网络往返（微秒级）、W-TinyLFU 高频淘汰、受堆大小约束、进程重启即丢失、多实例间天然不一致；Redis 是<strong>独立服务</strong>：跨进程共享、有 RTT 成本、可持久化。标准姿势是两级缓存——Caffeine 顶热点扛并发，Redis 做共享兜底</td><td>第一讲</td></tr><tr><td>20</td><td>Key 和 Value 的设计原则有哪些？</td><td>key：<code>业务:对象:id</code> 冒号分层（可读 + 聚合统计），别超长也别太短；大 value 必须拆（hash 按 field、list 分段），否则读写一次卡整条命令路径；热点 key 加随机后缀打散到多节点；批量 key 用 hash tag <code>{}</code> 保证同槽。统一约定 TTL 并加随机抖动</td><td>第二/六讲</td></tr><tr><td>21</td><td>Redis 分布式锁如何实现？</td><td>加锁 <code>SET key &#x3C;uuid> NX PX &#x3C;ttl></code>（一条命令保证”不存在才设 + 过期”原子）；释放用 <strong>Lua 先比对 value 再 DEL</strong>，防止误解锁别人的锁；业务时间长就起看门狗线程续期。单节点 Redis 锁是 AP 语义（主从切换可能丢锁），严格互斥用 Redlock 多节点或直接上 etcd/ZooKeeper</td><td>第三讲</td></tr><tr><td>22</td><td>怎么解决缓存和数据库的一致性问题？</td><td>没有免费的一致性，只有取舍：主流是旁路缓存（cache-aside）——读先缓存后 DB 回填，写先<strong>更新数据库再删缓存</strong>（而非更新缓存，避免并发写覆盖），配 binlog 监听（Canal）+ MQ 重放做最终补偿；对一致性敏感的读用分布式锁串行化。接受毫秒~秒级不一致并让业务幂等，是互联网公司的常态</td><td>第三讲</td></tr><tr><td>23</td><td>Redis 如何实现发布订阅？</td><td><code>SUBSCRIBE</code>/<code>PSUBSCRIBE</code> 订阅频道或模式，<code>PUBLISH</code> 广播，实现在 <code>src/pubsub.c</code>。特性：发布者不等确认、不落盘、<strong>订阅者离线即丢消息</strong>、无消费组——所以只适合做”通知/失效广播”这类可丢场景；要可靠消息队列用 stream（有 ACK、消费组、持久化）</td><td>第六讲</td></tr><tr><td>24</td><td>谈谈 Redis 的内存淘汰策略？</td><td><code>maxmemory</code> 到顶后八种：<code>noeviction</code>（默认，直接返回 OOM 错误）、<code>volatile-*</code>（只淘汰带 TTL 的）/<code>allkeys-*</code> × <code>lru</code>/<code>lfu</code>/<code>random</code>。LRU 是<strong>近似</strong>的：随机采样几个比 idle 再挑最旧的（<code>evict.c</code>），不是精确全表；LFU 按访问频次 + <code>lfu-decay-time</code> 对数衰减。做缓存用 <code>allkeys-lru/lfu</code>，做持久存储用 <code>noeviction</code> + 扩容</td><td>第五讲</td></tr><tr><td>25</td><td>Redis 事务和 Lua 脚本的区别？</td><td>MULTI/EXEC 只是把命令打包进队列一次性执行，保证<strong>原子不保证一致</strong>：执行阶段出错不回滚（后面命令照跑），中间也不能拿前一条的结果做判断；Lua 脚本（<code>EVAL</code>/<code>EVALSHA</code>）整个脚本单线程原子执行、内部可读中间值写分支、可一次往返多次操作，还有 <code>busy</code> 脚本超时保护与 SCRIPT KILL。复杂原子逻辑选 Lua，简单打包用事务</td><td>第三讲</td></tr><tr><td>26</td><td>Redis 为什么要自定义 SDS？</td><td>C 字符串三个硬伤：不记录长度（<code>strlen</code> O(n)）、遇 <code>\0</code> 截断（二进制不安全）、拼接易溢出。SDS 头部带 <code>len</code>/<code>free</code>/<code>flags</code>（编码分级）：O(1) 取长度、二进制安全、空间预分配（<code>sdsMakeRoomFor</code>）+ 惰性释放省掉频繁 realloc，还有 embstr 让短字符串 robj+sds 一次分配</td><td>第二讲</td></tr><tr><td>27</td><td>Redis 如何高效安全的遍历所有 Key？</td><td>严禁 <code>KEYS *</code>（O(n) 阻塞单线程，生产事故源）；用 <code>SCAN cursor COUNT n MATCH pattern</code> 游标迭代——每次只返回一小批 + 新游标，<strong>可能返回重复 key</strong>（业务要幂等），大集合用 <code>SSCAN</code>/<code>HSCAN</code>/<code>ZSCAN</code> 按 field 维度扫。先 <code>OBJECT ENCODING</code>/<code>MEMORY USAGE</code> 探测大 key 再决定处理策略</td><td>第二讲</td></tr><tr><td>28</td><td>缓存击穿、穿透、雪崩是什么？怎么防？</td><td>穿透：请求根本不存在的数据（恶意 id）每次直击 DB——布隆过滤器/空值缓存/参数校验；击穿：单个<strong>热点 key</strong> 过期瞬间高并发同时回源——互斥锁只放一个去重建，或逻辑过期永不过期；雪崩：大批 key 同时过期或 Redis 整体宕机——TTL 加随机抖动、多级缓存、集群高可用、限流降级兜底</td><td>第五讲</td></tr><tr><td>29</td><td>Redis 集群模式有哪几种？</td><td>三种：主从复制（读写分离 + 手动/哨兵故障转移）、Sentinel 哨兵（监控 + 自动故障转移，仍是单主写）、Cluster（16384 槽数据分片 + gossip + 去中心化，客户端按槽直连节点、水平扩展写能力）。选型看数据量与写入并发：单机内存装得下且写不高 → 主从/哨兵；要扩容 → Cluster</td><td>第六讲</td></tr><tr><td>30</td><td>什么是 Redis 集群脑裂，怎么解决？</td><td>网络分区时旧 master 落在少数派一侧仍对外收写，恢复后发现它已被降位、这批写整体丢失即脑裂。缓解：<code>min-replicas-to-write</code> + <code>min-replicas-max-lag</code>——健康从库不够就<strong>拒绝写</strong>（<code>checkGoodReplicasStatus</code>，<code>src/server.c:4715</code>），从源头限制”少数派侧还能写多久”；再配 <code>cluster-require-full-coverage</code> 等参数收紧</td><td>第六讲</td></tr><tr><td>31</td><td>什么是 Redis 的数据分片？</td><td>Cluster 把 key 空间切成 16384 个 hash slot：<code>CRC16(key) mod 16384</code> 算槽位，槽再分配到各节点；客户端缓存 slot→node 路由，落错节点收 <code>MOVED</code> 重定向后纠偏；需要多 key 操作（事务/发布订阅/ Lua）时用 hash tag <code>{tag}</code> 强制相关 key 落同一槽</td><td>第六讲</td></tr><tr><td>32</td><td>为什么 Redis 不支持回滚？</td><td>事务只在<strong>命令入队阶段</strong>做语法/参数检查（此时报错整票拒绝），执行阶段的错（如 <code>LPUSH</code> 一个 string）不中断也不回滚——官方哲学是”执行错说明是程序 bug，应该修代码而不是运行时兜底”，且回滚会拖慢每个命令的执行路径。要全或无语义请用 Lua 脚本</td><td>第三讲</td></tr></tbody></table>
 <blockquote>
 <p>记忆顺序建议：先背 1/2/3（并发模型），再背 5<del>8（持久化），最后背 9</del>13（复制集群）——这三组是面试出现频率最高的。
 如果只来得及准备十分钟：背 1、2、7、9、11、13 这六条，覆盖”快/多线程/丢数据/断线重连/过期/集群”六大必考点。</p>
@@ -2904,4 +3000,4 @@ flowchart TD
 
 
 
-<table><thead><tr><th>主题</th><th>文件</th></tr></thead><tbody><tr><td>事件循环</td><td><code>src/ae.h</code>, <code>src/ae.c</code>, <code>src/ae_epoll.c</code>, <code>src/ae_kqueue.c</code>, <code>src/ae_evport.c</code>, <code>src/ae_select.c</code>, <code>src/monotonic.c</code></td></tr><tr><td>多线程 IO</td><td><code>src/iothread.c</code>, <code>src/eventnotifier.c</code>, <code>src/threads_mngr.c</code>, <code>src/setcpuaffinity.c</code></td></tr><tr><td>socket 与连接</td><td><code>src/anet.h</code>, <code>src/anet.c</code>, <code>src/connection.h</code>, <code>src/connection.c</code>, <code>src/socket.c</code>, <code>src/tls.c</code></td></tr><tr><td>客户端与协议</td><td><code>src/networking.c</code>, <code>src/resp_parser.c</code>, <code>src/resp_parser.h</code>, <code>src/client_comp.c</code></td></tr><tr><td>服务器主体</td><td><code>src/server.c</code>, <code>src/server.h</code>, <code>src/config.c</code>, <code>src/config.h</code>, <code>src/version.h</code></td></tr><tr><td>命令表</td><td><code>src/commands.def</code>, <code>src/commands.c</code>, <code>src/commands/</code>（每命令一份 JSON）</td></tr><tr><td>命令生命周期</td><td><code>src/server.c</code>, <code>src/db.c</code>, <code>src/multi.c</code>, <code>src/acl.c</code>, <code>src/slowlog.c</code>, <code>src/latency.c</code>, <code>src/blocked.c</code></td></tr><tr><td>对象层</td><td><code>src/object.h</code>, <code>src/object.c</code>, <code>src/keymeta.c</code>, <code>src/keymeta.h</code></td></tr><tr><td>底层结构</td><td><code>src/dict.h</code>, <code>src/dict.c</code>, <code>src/kvstore.h</code>, <code>src/kvstore.c</code>, <code>src/intset.c</code>, <code>src/listpack.c</code>, <code>src/quicklist.c</code>, <code>src/sparsearray.c</code>, <code>src/rax.c</code>, <code>src/ebuckets.c</code>, <code>src/estore.c</code></td></tr><tr><td>类型实现</td><td><code>src/t_string.c</code>, <code>src/t_list.c</code>, <code>src/t_set.c</code>, <code>src/t_hash.c</code>, <code>src/t_zset.c</code>, <code>src/t_stream.c</code>, <code>src/t_array.c</code></td></tr><tr><td>键空间与过期</td><td><code>src/db.c</code>, <code>src/expire.c</code>, <code>src/evict.c</code>, <code>src/defrag.c</code>, <code>src/lazyfree.c</code></td></tr><tr><td>持久化</td><td><code>src/rdb.h</code>, <code>src/rdb.c</code>, <code>src/aof.c</code>, <code>src/rio.h</code>, <code>src/rio.c</code>, <code>src/childinfo.c</code>, <code>src/bio.c</code>, <code>src/lzf_c.c</code>, <code>src/lzf_d.c</code>, <code>src/crc64.c</code>, <code>src/crccombine.c</code></td></tr><tr><td>复制</td><td><code>src/replication.c</code>, <code>src/syncio.c</code></td></tr><tr><td>集群</td><td><code>src/cluster.h</code>, <code>src/cluster.c</code>, <code>src/cluster_legacy.c</code>, <code>src/cluster_asm.c</code>, <code>src/cluster_slot_stats.c</code>, <code>src/crc16.c</code>, <code>src/crc16_slottable.h</code></td></tr><tr><td>其它相关</td><td><code>src/pubsub.c</code>, <code>src/notify.c</code>, <code>src/module.c</code>, <code>src/script.c</code>, <code>src/functions.c</code>, <code>src/eval.c</code>, <code>src/debug.c</code>, <code>src/util.c</code>, <code>src/sds.c</code>, <code>src/zmalloc.c</code>（<code>deps/</code> 下）</td></tr></tbody></table>  </div> <div class="post-nav"> <span><a href="/springboot/">← Spring Boot 源码深度学习笔记</a></span> <span><a href="/nacos/">Nacos 源码深度学习笔记 →</a></span> </div> </article>  </main> <footer class="site-footer"> <div class="inner"> <div class="foot-brand"> <span class="brand-mark">&lt;/&gt;</span> <b>源码深读</b> <span>逐文件、逐函数地读源码，结论都带 文件:行号</span> </div> <div class="foot-links"> <a href="/#principles">原理速查</a> <a href="/animations/">动画</a> <a href="/categories/">分类</a> <a href="/tags/">标签</a> </div> <p class="foot-note">由 Astro 静态生成 · 内容以 Markdown 源码笔记为唯一事实源</p> </div> </footer> </body></html> <script type="module" src="/_astro/PostLayout.astro_astro_type_script_index_0_lang.B4vzteL_.js"></script>
+<table><thead><tr><th>主题</th><th>文件</th></tr></thead><tbody><tr><td>事件循环</td><td><code>src/ae.h</code>, <code>src/ae.c</code>, <code>src/ae_epoll.c</code>, <code>src/ae_kqueue.c</code>, <code>src/ae_evport.c</code>, <code>src/ae_select.c</code>, <code>src/monotonic.c</code></td></tr><tr><td>多线程 IO</td><td><code>src/iothread.c</code>, <code>src/eventnotifier.c</code>, <code>src/threads_mngr.c</code>, <code>src/setcpuaffinity.c</code></td></tr><tr><td>socket 与连接</td><td><code>src/anet.h</code>, <code>src/anet.c</code>, <code>src/connection.h</code>, <code>src/connection.c</code>, <code>src/socket.c</code>, <code>src/tls.c</code></td></tr><tr><td>客户端与协议</td><td><code>src/networking.c</code>, <code>src/resp_parser.c</code>, <code>src/resp_parser.h</code>, <code>src/client_comp.c</code></td></tr><tr><td>服务器主体</td><td><code>src/server.c</code>, <code>src/server.h</code>, <code>src/config.c</code>, <code>src/config.h</code>, <code>src/version.h</code></td></tr><tr><td>命令表</td><td><code>src/commands.def</code>, <code>src/commands.c</code>, <code>src/commands/</code>（每命令一份 JSON）</td></tr><tr><td>命令生命周期</td><td><code>src/server.c</code>, <code>src/db.c</code>, <code>src/multi.c</code>, <code>src/acl.c</code>, <code>src/slowlog.c</code>, <code>src/latency.c</code>, <code>src/blocked.c</code></td></tr><tr><td>对象层</td><td><code>src/object.h</code>, <code>src/object.c</code>, <code>src/keymeta.c</code>, <code>src/keymeta.h</code></td></tr><tr><td>底层结构</td><td><code>src/dict.h</code>, <code>src/dict.c</code>, <code>src/kvstore.h</code>, <code>src/kvstore.c</code>, <code>src/intset.c</code>, <code>src/listpack.c</code>, <code>src/quicklist.c</code>, <code>src/sparsearray.c</code>, <code>src/rax.c</code>, <code>src/ebuckets.c</code>, <code>src/estore.c</code></td></tr><tr><td>类型实现</td><td><code>src/t_string.c</code>, <code>src/t_list.c</code>, <code>src/t_set.c</code>, <code>src/t_hash.c</code>, <code>src/t_zset.c</code>, <code>src/t_stream.c</code>, <code>src/t_array.c</code></td></tr><tr><td>键空间与过期</td><td><code>src/db.c</code>, <code>src/expire.c</code>, <code>src/evict.c</code>, <code>src/defrag.c</code>, <code>src/lazyfree.c</code></td></tr><tr><td>持久化</td><td><code>src/rdb.h</code>, <code>src/rdb.c</code>, <code>src/aof.c</code>, <code>src/rio.h</code>, <code>src/rio.c</code>, <code>src/childinfo.c</code>, <code>src/bio.c</code>, <code>src/lzf_c.c</code>, <code>src/lzf_d.c</code>, <code>src/crc64.c</code>, <code>src/crccombine.c</code></td></tr><tr><td>复制</td><td><code>src/replication.c</code>, <code>src/syncio.c</code></td></tr><tr><td>集群</td><td><code>src/cluster.h</code>, <code>src/cluster.c</code>, <code>src/cluster_legacy.c</code>, <code>src/cluster_asm.c</code>, <code>src/cluster_slot_stats.c</code>, <code>src/crc16.c</code>, <code>src/crc16_slottable.h</code></td></tr><tr><td>其它相关</td><td><code>src/pubsub.c</code>, <code>src/notify.c</code>, <code>src/module.c</code>, <code>src/script.c</code>, <code>src/functions.c</code>, <code>src/eval.c</code>, <code>src/debug.c</code>, <code>src/util.c</code>, <code>src/sds.c</code>, <code>src/zmalloc.c</code>（<code>deps/</code> 下）</td></tr></tbody></table>  </div> <div class="post-nav"> <span><a href="/spring-core/">← Spring 核心源码深度学习笔记（IoC · AOP · 事务）</a></span> <span><a href="/mysql/">MySQL 源码深度学习笔记 →</a></span> </div> </article>  </main> <footer class="site-footer"> <div class="inner"> <div class="foot-brand"> <span class="brand-mark">&lt;/&gt;</span> <b>源码深读</b> <span>逐文件、逐函数地读源码，结论都带 文件:行号</span> </div> <div class="foot-links"> <a href="/#principles">原理速查</a> <a href="/animations/">动画</a> <a href="/categories/">分类</a> <a href="/tags/">标签</a> </div> <p class="foot-note">由 Astro 静态生成 · 内容以 Markdown 源码笔记为唯一事实源</p> </div> </footer> </body></html> <script type="module" src="/_astro/PostLayout.astro_astro_type_script_index_0_lang.B4vzteL_.js"></script>
