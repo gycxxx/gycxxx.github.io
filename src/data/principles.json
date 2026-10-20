@@ -880,6 +880,38 @@
   "c": "Java"
  },
  {
+  "q": "节点流和装饰流的区别？",
+  "a": "节点流直接 extends InputStream 等四基类、自己是数据源头/终点（FileInputStream.java:60）；装饰流 extends Filter*、持有 in/out 字段把请求转发出去，在转发前后加料（FilterInputStream.java:41）。判据就一条：看有没有 in 字段",
+  "d": "`java/io/FilterInputStream.java:41`、`java/io/FileInputStream.java:60`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`BufferedInputStream` 包一层后，`read(byte[])` 还有缓冲吗？",
+  "a": "有。FilterInputStream.read(byte[]):94 故意调 read(b,0,b.length) 而非 in.read(b)，把请求收敛到三参版本——而 BufferedInputStream 恰好重写三参版本，缓冲不会被绕过。注释原文 *\"certain subclasses depend on the implementation strategy\"*",
+  "d": "`java/io/FilterInputStream.java:94`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "装饰流的 `close()` 会发生什么？",
+  "a": "级联关闭：FilterInputStream.close():169 → in.close()；FilterOutputStream.close():171 双检后先 flush() 再 out.close()，flush 抛异常也保证关底层。关最外层 = 关整条链，所以别用装饰流包 System.in 后随手 close",
+  "d": "`java/io/FilterInputStream.java:169`、`java/io/FilterOutputStream.java:171`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "读 `.gz` 文件为什么要套三层？",
+  "a": "new GZIPInputStream(new BufferedInputStream(new FileInputStream(f)) 每层各司其职：File 出字节、Buffered 减系统调用、Inflater 解压、GZIP 认 gzip 格式。GZIPInputStream 本身 extends InflaterInputStream（:45），是装饰器叠装饰器",
+  "d": "`java/util/zip/GZIPInputStream.java:45`",
+  "s": "java-io",
+  "t": "Java IO 源码深度学习笔记",
+  "c": "Java"
+ },
+ {
   "q": "synchronized 与 ReentrantLock 的区别？",
   "a": "synchronized 是 JVM 层内置锁（monitorenter 字节码 → ObjectSynchronizer → ObjectMonitor），无竞争走 mark word 快速路径、竞争自动膨胀；ReentrantLock 是 Java 层 AQS 显式锁（volatile state + CLH 变种双向链表），需手动 lock/unlock，可选公平/非公平",
   "d": "第一、三讲",

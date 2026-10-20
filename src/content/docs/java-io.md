@@ -41,7 +41,7 @@ Java IO 在源码层面可以压缩成**两套并行的 API + 一个公共编解
 │                └─ PipedInputStream    → 1024 循环缓冲 + receive/awaitSpace│
 │                                                                          │
 │  Reader ───────┬─ InputStreamReader → StreamDecoder（解码内核）           │
-│                ├─ BufferedReader    → readLine()（:320 找 \n/\r）         │
+│                ├─ BufferedReader    → readLine()（:321 找 \n/\r）         │
 │                └─ PipedReader / CharArrayReader / StringReader            │
 │                                                                          │
 │  ObjectInputStream / ObjectOutputStream（序列化协议，第六讲）              │
@@ -74,9 +74,153 @@ Java IO 在源码层面可以压缩成**两套并行的 API + 一个公共编解
 
 一句话记住全景：**IO 流是"一个方向一条管子"，NIO 是"一个双向端点 + 一块缓冲 + 一个多路复用器"**；两者的字符/字节互转都走同一个 `StreamDecoder`，两者的文件操作都最终落到同一个 native fd。
 
+再给这张图加一个身份维度——**节点流与装饰流**：`FileInputStream`/`ByteArrayInputStream`/`PipedInputStream`/`ObjectInputStream` 直接继承 `InputStream`，自己是数据的源头或终点，叫**节点流**；`BufferedInputStream`/`DataInputStream`/`PushbackInputStream` 继承 `FilterInputStream`，持有被装饰者的引用并把请求转发出去，叫**装饰流**。这个坐标系的完整展开见下一节「分类学」，它是理解六讲里每一个类的位置的前提。
+
+---
+
+## 分类学：节点流与装饰流 —— IO 世界的两种身份
+
+> **本节问题**：`FileInputStream` 和 `BufferedInputStream` 差在哪？为什么装饰流全都姓 `Filter`？`new DataInputStream(new BufferedInputStream(fis))` 这行代码进去以后，请求是怎么一层层走到内核的？
+
+六讲里有一条贯穿始终的暗线——**节点流（node stream）与装饰流（filter stream）**。这不是教科书硬造的话题标签，而是写死在类结构里的身份：装饰流一律继承四个 `Filter*` 基类之一，节点流直接继承 `InputStream`/`OutputStream`/`Reader`/`Writer`。先建立这个坐标系，后面每一讲的类才能各就其位。
+
+### 1.1 判定标准：看有没有一个 `in` 字段
+
+| 身份 | 类结构 | 数据角色 | 代表（源码） |
+|---|---|---|---|
+| **节点流** | `extends InputStream` 等四基类 | 自己就是数据的**源头或终点**（文件、内存数组、管道、序列化协议） | `FileInputStream.java:60`、`ByteArrayInputStream.java:46`、`CharArrayReader.java:38`、`ObjectInputStream.java:248` |
+| **装饰流** | `extends FilterInputStream` 等四基类 | 自己不产数据，**持有被装饰者引用**，在转发路上加料 | `BufferedInputStream.java:60`、`DataInputStream.java:51`、`PushbackInputStream.java:55` |
+
+`FilterInputStream` 的全部家当，就是一个字段加一串原样转发：
+
+```java
+// java/io/FilterInputStream.java:41-72
+public class FilterInputStream extends InputStream {
+    protected volatile InputStream in;      // :45 被装饰者
+
+    @Override
+    public int read() throws IOException {
+        return in.read();                    // :70-72 透明转发
+    }
+}
+```
+
+这正是 GoF **装饰器模式**的标准长相：与被装饰者同接口、持引用、转发请求、前后加料。Java IO 是这个模式最著名的落地——`FileInputStream` 是具体类，没法用继承加缓冲，装饰器用组合优雅解掉。
+
+### 1.2 FilterInputStream：九个方法，九个 `in.xxx()`
+
+| 方法 | 行号 | 转发目标 |
+|---|---|---|
+| `read()` | `:70` | `in.read()` |
+| `read(byte[])` | `:94` | `read(b, 0, b.length)` ← **注意，不是 `in.read(b)`** |
+| `read(byte[],off,len)` | `:118` | `in.read(b, off, len)` |
+| `skip(long)` | `:137` | `in.skip(n)` |
+| `available()` | `:156` | `in.available()` |
+| `close()` | `:169` | `in.close()` |
+| `mark(int)` / `reset()` / `markSupported()` | `:190` / `:215` / `:234` | 全部转给 `in` |
+
+`read(byte[])` 那行是**全类最重要的三行代码**，注释把理由写得很直白（`:80-86`）：
+
+> It is important that it does *not* do `in.read(b)` instead; certain subclasses of `FilterInputStream` depend on the implementation strategy actually used.
+
+翻译一下：基类把单参/数组方法**统一收敛到三参版本**，子类（如 `BufferedInputStream`）只需要重写 `read(byte[],off,len)` 一个点，外层怎么包都绕不过缓冲。如果基类偷懒直接 `in.read(b)`，`BufferedInputStream` 的整块 buf 就成了摆设。这种"自我委派"是读 JDK 源码时第一个反直觉的地方，也是面试里"为什么 `bis.read(byte[])` 没绕过缓冲"的标准答案。
+
+`FilterOutputStream` 复制了同一个把戏：`write(byte[]):109` → `write(b, 0, b.length)`，`:99-102` 的 @implNote 同样声明 *"does not call the one-argument write method of its underlying output stream"*。
+
+### 1.3 输出侧与字符侧：同一套把戏复制三遍
+
+- **`FilterOutputStream`**（`java/io/FilterOutputStream.java:46`）：字段 `out`（`:50`）+ `closed` volatile（`:55`）+ `closeLock`（`:60`）。`write(int):88`、`write(byte[],off,len):135`、`flush():154` 全转发；`close():171` 双检通过后**先 `flush()` 再 `out.close()`**，且 flush 抛异常时 finally 里仍会补一次 `out.close()`（`:185-192`）——底层流保证被关。
+- **`FilterReader`**（`java/io/FilterReader.java:41`，**abstract**）：字段 `in`（`:46`）。构造器 `super(in)`（`:54-57`）把底层 Reader 传给 `Reader` 的锁字段——**装饰器和被装饰者共享同一把锁**，在它的子类上做同步时要留个心眼。
+- **`FilterWriter`**（`java/io/FilterWriter.java:41`）：字段 `out`（`:46`），`write(char[],off,len):82` 转发。全 `java.base` 检索一遍，**没有任何类继承它**——字符侧的写装饰需求被 `BufferedWriter`（`java/io/BufferedWriter.java:74`）接手了。它的兄弟 `FilterReader` 则有 `PushbackReader`（`java/io/PushbackReader.java:38`）一个独子。
+
+### 1.4 装饰流全家福
+
+java.io 自家的装饰流：
+
+| 装饰流 | 基类 | 加了什么料 | 关键源码 |
+|---|---|---|---|
+| `BufferedInputStream` | FilterInputStream | `byte[] buf`，把 N 次 `read(2)` 合成一次 `fill()` | `fill():256` |
+| `DataInputStream` | FilterInputStream + `DataInput` | 基本类型家族；私有 8 字节 `readBuffer`（`:67`） | `readFully():209`、`readInt():389`、`readUTF():554` |
+| `PushbackInputStream` | FilterInputStream | `unread` 把字节塞回流头，解析器的"后悔药" | `read():133`、`unread(int):205` |
+| `LineNumberInputStream` | FilterInputStream | 边读边数行号——**已废弃**（`:51`，按字节数行） | `read():92` |
+| `DataOutputStream` | FilterOutputStream + `DataOutput` | `writeUTF` 等 | `writeUTF():337` |
+| `BufferedOutputStream` | FilterOutputStream | 写缓冲，`flush` 才下沉 | `write(int):151`、`flush():202` |
+| `PrintStream` | FilterOutputStream | 自动 flush + `println` 家族（`System.out` 就是它） | `java/io/PrintStream.java:64` |
+| `PushbackReader` | FilterReader | 字符版回推 | `java/io/PushbackReader.java:38` |
+| `LineNumberReader` | **BufferedReader** | 字符版行号（替代上面那个废弃类） | `java/io/LineNumberReader.java:51` |
+
+JDK 其他包里还有一大批同族——这才是装饰器模式在 JDK 里的真正势力范围：
+
+| 装饰流 | 包 | 加了什么料 | 源码 |
+|---|---|---|---|
+| `CheckedInputStream` / `CheckedOutputStream` | `java.util.zip` | 边读/边写边算校验和（`Checksum`） | `CheckedInputStream.java:40` |
+| `DeflaterOutputStream` / `InflaterInputStream` | `java.util.zip` | 压缩 / 解压（`Deflater`/`Inflater`） | `DeflaterOutputStream.java:59`、`InflaterInputStream.java:60` |
+| `GZIPInputStream` | `java.util.zip` | **InflaterInputStream 的再装饰**，加 gzip 头尾 | `GZIPInputStream.java:45` |
+| `ZipInputStream` | `java.util.zip` | 同样是 InflaterInputStream 的子类，解 zip 条目流 | `ZipInputStream.java:78` |
+| `CipherInputStream` / `CipherOutputStream` | `javax.crypto` | 流过时加解密 | `CipherInputStream.java:77` |
+| `DigestInputStream` / `DigestOutputStream` | `java.security` | 流过时算摘要 | `DigestInputStream.java:72` |
+
+两处值得停一下的细节：
+
+- **`DataInputStream.readInt` 不是四次 `in.read()`**。它走 `readFully(readBuffer, 0, 4)`（`readInt():389`），内部一个 `while` 循环调 `in.read` 直到读满 4 字节（`:209-217`）——"要么读满要么 `EOFException`"的语义对所有基本类型一致。
+- **`GZIPInputStream` 是装饰器叠装饰器**（`InflaterInputStream` 再包一层），读一个 `.gz` 文件的经典三层链 `new GZIPInputStream(new BufferedInputStream(new FileInputStream(f)))` 每个类各司其职：File 出字节、Buffered 减系统调用、Inflater 解压、GZIP 认 gzip 格式。而它的字节版前辈 `LineNumberInputStream` 因为"一个字节一个字符"的错误假设被 `@Deprecated`（`:46-51`）——同一节里能看到 JDK 自己如何淘汰一个坏装饰器。
+
+### 1.5 装饰链：请求从外往里，数据从里往外
+
+```java
+DataInputStream in = new DataInputStream(
+                        new BufferedInputStream(
+                            new FileInputStream("data.bin")));
+int v = in.readInt();
+```
+
+调用链（每一层都可以截留请求，截不住才继续下沉）：
+
+```
+readInt()                                  DataInputStream.java:389
+ └─ readFully(readBuffer, 0, 4)            私有 8 字节缓冲（:67）+ while 循环（:209）
+     └─ in.read(b, off, len)               → BufferedInputStream.read(byte[],off,len)
+         ├─ 缓冲有货：直接拷走，0 次系统调用
+         └─ 缓冲空：fill():256
+             └─ FileInputStream.read(byte[]):277
+                 └─ native readBytes0
+```
+
+三条铁律：
+
+1. **越靠近数据源的装饰流包在最内层**。`new BufferedInputStream(new DataInputStream(fis))` 也能编译运行，但 `readFully` 的小请求会把缓冲优势吃光——顺序反了，性能差一个量级；
+2. **业务代码只持有最外层**。底下叠了几层对使用方完全透明，这是装饰器模式的可组合性，也是 IO API 几十年不用改签名的原因；
+3. **`close()` 是级联的**。`FilterInputStream.close():169` → `in.close()`；`FilterOutputStream.close():171` → `flush()` + `out.close()`。关最外层等于关整条链——所以**别用装饰流包住 `System.in` 之后随手 close**，标准输入会被一起关掉。
+
+### 1.6 边界情况：三个"不像装饰流"的大户
+
+按"是否持有 `in` 字段"判定，JDK 自己也有几个模糊地带，面试时能讲清这些才算真懂：
+
+| 类 | 按继承算身份 | 实际面貌 | 源码 |
+|---|---|---|---|
+| `BufferedReader` | 节点流（`extends Reader`） | 却持有 `private Reader in`（`:77`）+ 自管 `char[]` 缓冲——**是装饰器却不姓 Filter**，因为它自己管锁和缓冲，不需要透明转发 | `java/io/BufferedReader.java:76` |
+| `InputStreamReader` | 节点流（`extends Reader`） | 字节→字符的**桥接器**（Adapter），内核是 `StreamDecoder`，不是往 Reader 上加料 | `java/io/InputStreamReader.java:69` |
+| `ObjectInputStream` | 节点流（`extends InputStream`） | 序列化**协议解析器**，内部走 `BlockDataInputStream bin`（`:305`），数据源头是它自己实现的协议层 | `java/io/ObjectInputStream.java:248` |
+
+一句话：**"节点流/装饰流"是按类结构一刀切的坐标系，不是功能定义**。带缓冲的不一定是装饰流（`BufferedReader`），不带缓冲的也可以是（`LineNumberInputStream`）。
+
+### 1.7 本节小结
+
+| 维度 | 结论 |
+|---|---|
+| 判定 | 装饰流 `extends Filter*` 且持有 `in`/`out` 字段；节点流直接 extends 四基类，自己是数据源头/终点 |
+| 转发 | `Filter*` 全部方法原样转给 `in`/`out`；`read(byte[])`/`write(byte[])` 自我收敛到三参版本，给子类留唯一覆写点 |
+| 组装 | 数据源在最内层，一层套一层；业务只持有最外层；请求从外往里、数据从里往外 |
+| 关闭 | 级联：关外层 = 关整条链；`FilterOutputStream.close` 先 flush 再关底层，flush 失败也保证关底层 |
+| 例外 | `BufferedReader`/`InputStreamReader`/`ObjectInputStream` 按继承算节点流，但各有缓冲/桥接/协议的真实身份 |
+
+**一句记忆钩子**：*"Filter 全家一个 in 字段包打天下，单参转三参是给子类留的后门；关外层等于关全链。"*
+
 ---
 
 ## 速览：六讲各自做了什么（先看这个再进细节）
+
+> 前置阅读：上一节「分类学」横切六讲——节点流 vs 装饰流的身份判定、`Filter*` 转发基类与装饰链组装规则，是下面每一讲的公共背景。
 
 | 讲次 | 主题 | 核心类 | 要回答的问题 | 不学会怎样 |
 |---|---|---|---|---|
@@ -120,8 +264,12 @@ Java IO 在源码层面可以压缩成**两套并行的 API + 一个公共编解
 | 23 | `readObject` 里能强转吗？ | **不能直接信**。反序列化是"从不可信字节造对象"的入口，JDK 9+ 提供 `ObjectInputFilter`（`ObjectInputStream.java:1281` `setObjectInputFilter`）做白名单过滤 | `java/io/ObjectInputStream.java:1281` |
 | 24 | `PipedInputStream` 死锁怎么发生的？ | 写端写满 1024 字节会 `awaitSpace`（`:273`）等读端读；读端不读、双方都阻塞就死锁。且读写两端**不是线程安全的同一把锁**，需两个线程 | `java/io/PipedInputStream.java:273` |
 | 25 | IO 流用完为什么必须 close？ | `FileInputStream` 的 native fd 是**有限资源**，`close():487` 用双检 `closed` + `closeLock` 保证幂等，同时会关掉关联的 `FileChannel`（`:498`）；忘了关靠 `Cleaner` 兜底但时机不定 | `java/io/FileInputStream.java:487` |
+| 26 | 节点流和装饰流的区别？ | 节点流直接 `extends InputStream` 等四基类、**自己是数据源头/终点**（`FileInputStream.java:60`）；装饰流 `extends Filter*`、**持有 `in`/`out` 字段**把请求转发出去，在转发前后加料（`FilterInputStream.java:41`）。判据就一条：看有没有 `in` 字段 | `java/io/FilterInputStream.java:41`、`java/io/FileInputStream.java:60` |
+| 27 | `BufferedInputStream` 包一层后，`read(byte[])` 还有缓冲吗？ | **有**。`FilterInputStream.read(byte[]):94` 故意调 `read(b,0,b.length)` 而非 `in.read(b)`，把请求收敛到三参版本——而 `BufferedInputStream` 恰好重写三参版本，缓冲不会被绕过。注释原文 *"certain subclasses depend on the implementation strategy"* | `java/io/FilterInputStream.java:94` |
+| 28 | 装饰流的 `close()` 会发生什么？ | **级联关闭**：`FilterInputStream.close():169` → `in.close()`；`FilterOutputStream.close():171` 双检后先 `flush()` 再 `out.close()`，flush 抛异常也保证关底层。关最外层 = 关整条链，所以别用装饰流包 `System.in` 后随手 close | `java/io/FilterInputStream.java:169`、`java/io/FilterOutputStream.java:171` |
+| 29 | 读 `.gz` 文件为什么要套三层？ | `new GZIPInputStream(new BufferedInputStream(new FileInputStream(f))` 每层各司其职：File 出字节、Buffered 减系统调用、Inflater 解压、GZIP 认 gzip 格式。`GZIPInputStream` 本身 extends `InflaterInputStream`（`:45`），是装饰器叠装饰器 | `java/util/zip/GZIPInputStream.java:45` |
 
-### 易错点（最容易讲错的 8 条）
+### 易错点（最容易讲错的 11 条）
 
 1. **`read(byte[])` 返回 0 ≠ EOF**：0 只可能出现在 `len==0` 的合法调用；EOF 永远是 `-1`。循环读必须判 `-1`。
 2. **`skip(n)` 对普通文件是 `lseek`、对其他流是读出来扔掉**：`FileInputStream.skip:431` 走 `skip0`（native lseek），管道退化为 `super.skip`（读进 2048 缓冲丢弃，`:56` `MAX_SKIP_BUFFER_SIZE`）。
@@ -131,6 +279,9 @@ Java IO 在源码层面可以压缩成**两套并行的 API + 一个公共编解
 6. **`DirectByteBuffer` 的 `array()` 抛 `UnsupportedOperationException`**：堆外内存没有 Java 数组视图，`hasArray()` 永远是 false（`Direct-X-Buffer.java.template`）。
 7. **`Selector` 的 `selectedKeys()` 用完必须 `remove()`**：`SelectorImpl` 的 `selectedKeys` 不会自动清（`select` 里 `processEvents` 按 key 的 `nioInterestOps` 重新计算，`Iterator.remove` 是**你的**责任，`sun/nio/ch/PollSelectorImpl.java:172`）。
 8. **序列化不保存 `static` 和 `transient` 字段**：`ObjectStreamClass` 只收集非 static 非 transient 字段（`getDefaultSerialFields`），`transient` 想参与得自己实现 `writeObject/readObject`（`java/io/ObjectOutputStream.java:404`）。
+9. **装饰顺序写反，性能差一个量级**：`new BufferedInputStream(new DataInputStream(fis))` 也能跑，但 `readFully` 的小请求（`DataInputStream.java:209`）会把缓冲优势吃光——靠近数据源的装饰流必须包在最内层。
+10. **`LineNumberInputStream` 已废弃**（`java/io/LineNumberInputStream.java:51`）：它按"一个字节一个字符"数行号，多字节编码下必错；字符流请用 `LineNumberReader`（`java/io/LineNumberReader.java:51`）。
+11. **`BufferedReader` 不是装饰流**：它 `extends Reader` 且持有 `private Reader in`（`:77`），却不姓 `Filter`——自己管缓冲和锁，透明转发反而碍事。按"有没有 in 字段"判节点/装饰会在这里翻车，正确判据是**类结构**。
 
 ### 数值速记
 
@@ -140,6 +291,8 @@ Java IO 在源码层面可以压缩成**两套并行的 API + 一个公共编解
 | `8192` | `FileInputStream`/`BufferedInputStream` 默认缓冲 | `java/io/FileInputStream.java:62`、`BufferedInputStream.java:62` |
 | `16384` | `InputStream.readAllBytes` 首缓冲 | `java/io/InputStream.java:58` |
 | `2048` | `InputStream.skip` 的丢弃缓冲 | `java/io/InputStream.java:56` |
+| `1` | `PushbackInputStream` 单参构造的默认回推缓冲（字节） | `java/io/PushbackInputStream.java:109` |
+| `8` | `DataInputStream` 私有 `readBuffer`，`readInt/readLong` 都从这 8 字节里拼 | `java/io/DataInputStream.java:67` |
 | `1024` | `PipedInputStream` 循环缓冲大小 | `java/io/PipedInputStream.java` |
 | `2` | `readUTF` 的长度前缀字节数 | `java/io/DataInputStream.java:554` |
 | `0xff71` | 序列化句柄表起始 handle | `java/io/ObjectOutputStream.java`（`HandleTable`） |
@@ -719,6 +872,7 @@ private static final int DEFAULT_PIPE_SIZE = 1024;   // 循环缓冲大小
 
 | 阶段 | 内容 | 时长建议 | 产出 |
 |---|---|---|---|
+| 入门前 | 「分类学」一节（节点流/装饰流） | 0.5h | 说清 `Filter*` 四基类与装饰链组装顺序 |
 | 第 1 天 | 第一、二讲（字节流 + 缓冲/数据流） | 3h | 能手写一个"按行读文件 + 统计"不调 read() 单字节 |
 | 第 3 天 | 第三讲（字符流/编解码） | 2h | 解释一次 UTF-8 跨 read 乱码故障 |
 | 第 7 天 | 第四讲（File/RAF） | 2h | 用 RAF 实现大文件分页读 |
@@ -742,10 +896,15 @@ private static final int DEFAULT_PIPE_SIZE = 1024;   // 循环缓冲大小
 13. `serialVersionUID` 不声明会怎样？
 14. `PipedInputStream` 单线程使用为什么死锁？
 15. `readFully` 和 `read(byte[])` 的语义差异？
+16. 节点流和装饰流怎么判定？`Filter*` 四个基类各转发什么？
+17. `FilterInputStream.read(byte[])` 为什么不直接 `in.read(b)`？直接写会错过什么？
+18. 装饰流的 `close()` 为什么危险？`FilterOutputStream.close` 的 flush 失败路径怎么保证底层流还被关？
+19. 读 `.gz` 文件的三层链每层各干什么？顺序反了会怎样？
+20. `BufferedReader` 带缓冲为什么不算装饰流？
 
 ### 六讲记忆钩子串烧
 
-*"read 返回 int 是为了给 -1 留位，close 上锁是为了给并发留命"* → *"缓冲流一块数组三指针"* → *"字符流 = bb 残字节 + leftover 残字符，解码三态"* → *"File 只是路径，fd 在流里"* → *"flip 切读、clear 切写；一条自建管道叫醒 poll"* → *"句柄表让循环引用不死；管道是 1024 字节信箱，单线程用必锁死"*
+*"Filter 全家一个 in 字段包打天下，单参转三参是给子类留的后门；关外层等于关全链"* → *"read 返回 int 是为了给 -1 留位，close 上锁是为了给并发留命"* → *"缓冲流一块数组三指针"* → *"字符流 = bb 残字节 + leftover 残字符，解码三态"* → *"File 只是路径，fd 在流里"* → *"flip 切读、clear 切写；一条自建管道叫醒 poll"* → *"句柄表让循环引用不死；管道是 1024 字节信箱，单线程用必锁死"*
 
 ---
 
@@ -759,7 +918,12 @@ private static final int DEFAULT_PIPE_SIZE = 1024;   // 循环缓冲大小
 | `java/io/BufferedInputStream.java` | 520+ | 高（fill/mark/reset） |
 | `java/io/DataInputStream.java` | 674 | 高（readInt/readUTF/readFully） |
 | `java/io/DataOutputStream.java` | 200+ | 中（writeUTF） |
-| `java/io/PushbackInputStream.java` | 300+ | 低 |
+| `java/io/FilterInputStream.java` | 237 | 高（装饰流基类、转发九法、自委派） |
+| `java/io/FilterOutputStream.java` | 203 | 中（close 双检 + 级联关闭） |
+| `java/io/FilterReader.java` | 125 | 低（共享锁的构造器细节） |
+| `java/io/PushbackInputStream.java` | 407 | 中（read/unread 回推） |
+| `java/io/LineNumberInputStream.java` | 291 | 低（已废弃的装饰流样例） |
+| `java/io/BufferedOutputStream.java` | 206 | 中（flush 下沉） |
 | `java/io/InputStreamReader.java` | 210 | 中 |
 | `java/io/BufferedReader.java` | 700+ | 中（readLine） |
 | `sun/nio/cs/StreamDecoder.java` | 400+ | 高（implRead 三态机） |
