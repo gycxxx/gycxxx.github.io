@@ -2048,6 +2048,150 @@
   "c": "RAG 与 Agent"
  },
  {
+  "q": "线上出问题，第一件事做什么？",
+  "a": "先快照再重启。重启恢复业务但销毁现场（线程栈/GC/连接数只存在于故障当时）；用 perf-snapshot 脚本一键固化证据，再考虑重启",
+  "d": "`perf-snapshot.sh:26`、`perf-snapshot-host.sh:24`",
+  "s": "perf-troubleshooting",
+  "t": "线上问题排查与性能瓶颈定位实战",
+  "c": "Java"
+ },
+ {
+  "q": "容器里和物理机上排查有什么不同？",
+  "a": "容器版靠 kubectl exec 进 Pod，可能遇到无 curl/无 jstack 的精简镜像（有三级降级）；主机版能用 top -H 拿线程级 CPU 并把 nid 映射回 Java 栈，这是容器版拿不到的",
+  "d": "`perf-snapshot.sh:93-98`、`perf-snapshot-host.sh:135-145`",
+  "s": "perf-troubleshooting",
+  "t": "线上问题排查与性能瓶颈定位实战",
+  "c": "Java"
+ },
+ {
+  "q": "jstack 采样多少次合适？",
+  "a": "默认 10 次、间隔 1 秒（容器版默认参数）。jstack 是采样不是 trace：采样间隔内的短任务会漏，慢任务才会反复出现——热点帧出现次数越多越可能是瓶颈",
+  "d": "`perf-snapshot.sh:31`、`perf-snapshot.sh:146-153`",
+  "s": "perf-troubleshooting",
+  "t": "线上问题排查与性能瓶颈定位实战",
+  "c": "Java"
+ },
+ {
+  "q": "线程状态分布怎么读？",
+  "a": "看占比。BLOCKED 多 = 锁竞争；socketRead0 帧多 = 在等外部（DB/Redis/下游）；RUNNABLE 多但 CPU 不高 = 大量线程卡在 native 系统调用",
+  "d": "`perf-snapshot.sh:196-198`、`perf-snapshot.sh:236-241`",
+  "s": "perf-troubleshooting",
+  "t": "线上问题排查与性能瓶颈定位实战",
+  "c": "Java"
+ },
+ {
+  "q": "RUNNABLE 一定是在跑 CPU 吗？",
+  "a": "不是。线程阻塞在 native read(2)/write(2) 时 Java 侧同样显示 RUNNABLE——Thread.State 的 RUNNABLE 注释明说\"可能正在等操作系统的处理器等资源\"",
+  "d": "`java/lang/Thread.java:2343`",
+  "s": "perf-troubleshooting",
+  "t": "线上问题排查与性能瓶颈定位实战",
+  "c": "Java"
+ },
+ {
+  "q": "怎么找到真正烧 CPU 的线程？",
+  "a": "主机版：top -b -n1 -H -p PID 抓 CPU>10% 的线程，把十进制 tid 格式化成十六进制 nid，再去 jstack 里 grep nid=0x... 找对应栈（脚本已自动做好 analysis-cpu-hot-stacks.txt）",
+  "d": "`perf-snapshot-host.sh:140`、`perf-snapshot-host.sh:216-219`",
+  "s": "perf-troubleshooting",
+  "t": "线上问题排查与性能瓶颈定位实战",
+  "c": "Java"
+ },
+ {
+  "q": "容器里没有 jstack 怎么办？",
+  "a": "信号法：kill -3 <java_pid> 让 JVM 把线程栈打到 stdout，再从 kubectl logs --tail=1500 里捞（输出混有业务日志，按线程段头搜索）",
+  "d": "`perf-snapshot.sh:156-173`",
+  "s": "perf-troubleshooting",
+  "t": "线上问题排查与性能瓶颈定位实战",
+  "c": "Java"
+ },
+ {
+  "q": "没有 curl 的容器怎么采指标？",
+  "a": "本地 kubectl port-forward -n <ns> pod/<pod> <port>:<port>，再 curl http://127.0.0.1:<port>/actuator/prometheus。脚本会把这行命令直接打印出来",
+  "d": "`perf-snapshot.sh:118-122`",
+  "s": "perf-troubleshooting",
+  "t": "线上问题排查与性能瓶颈定位实战",
+  "c": "Java"
+ },
+ {
+  "q": "`socketRead0` 在栈里出现说明什么？",
+  "a": "线程阻塞在 socket 读上——在等下游响应。脚本的 SUMMARY 已按 druid/jedis/okhttp 三类归好命中数，直接看是哪类外部依赖在拖后腿",
+  "d": "`perf-snapshot.sh:238-241`、`sun/nio/ch/SocketChannelImpl.java:1373`",
+  "s": "perf-troubleshooting",
+  "t": "线上问题排查与性能瓶颈定位实战",
+  "c": "Java"
+ },
+ {
+  "q": "接口慢但 CPU  idle，去哪找证据？",
+  "a": "metrics-slow-api.txt（P99/Max 排行）定位是哪个接口，再对照多次 jstack 的热点帧：如果帧大量停在数据库/Redis/HTTP 客户端的调用处，就是下游慢不是自己慢",
+  "d": "`perf-snapshot.sh:185-188`",
+  "s": "perf-troubleshooting",
+  "t": "线上问题排查与性能瓶颈定位实战",
+  "c": "Java"
+ },
+ {
+  "q": "怎么判断线程池打满了？",
+  "a": "对比 tomcat_threads_busy_threads 与 tomcat_threads_config_max_threads：busy 贴着 max 且持续不降，就是打满；此时新请求在 accept 队列排队，表现为 RT 整体抬升",
+  "d": "`perf-snapshot.sh:245-246`、`TomcatMetricsBinder.java:64`",
+  "s": "perf-troubleshooting",
+  "t": "线上问题排查与性能瓶颈定位实战",
+  "c": "Java"
+ },
+ {
+  "q": "OOM 之后还能采到什么？",
+  "a": "进程已死，jstack/jstat 都采不到。所以 OOM 要靠事前配置 -XX:+HeapDumpOnOutOfMemoryError；事后只能看 Pod 的 restart 记录和上一次 OOM 前是否有人采过快照",
+  "d": "`perf-snapshot-host.sh:166-171`",
+  "s": "perf-troubleshooting",
+  "t": "线上问题排查与性能瓶颈定位实战",
+  "c": "Java"
+ },
+ {
+  "q": "`waiting to lock` 和 `parking to wait for` 有什么区别？",
+  "a": "前者是 synchronized 监视器锁（线程状态 BLOCKED），后者是 JUC/AQS 锁如 ReentrantLock（线程状态 WAITING）。竞争激烈程度和修复方式不同",
+  "d": "`java/lang/Thread.java:2352`、`java/util/concurrent/locks/ReentrantLock.java:322`",
+  "s": "perf-troubleshooting",
+  "t": "线上问题排查与性能瓶颈定位实战",
+  "c": "Java"
+ },
+ {
+  "q": "死锁怎么确认？",
+  "a": "jstack 输出里直接搜 Found one Java-level deadlock。注意容器版 analysis-blocked.txt 的 grep 模式不含 deadlock 关键词，要自己搜 jstack.txt",
+  "d": "`perf-snapshot.sh:207-208`、`perf-snapshot-host.sh:225-226`",
+  "s": "perf-troubleshooting",
+  "t": "线上问题排查与性能瓶颈定位实战",
+  "c": "Java"
+ },
+ {
+  "q": "`/actuator/prometheus` 返回 404 怎么办？",
+  "a": "actuator 没暴露该端点。开启 management.endpoints.web.exposure.include（含 prometheus）；脚本探测失败时会把这行配置建议直接打出来",
+  "d": "`perf-snapshot.sh:134-135`、`MetricsProperties.java:89`",
+  "s": "perf-troubleshooting",
+  "t": "线上问题排查与性能瓶颈定位实战",
+  "c": "Java"
+ },
+ {
+  "q": "高 CPU 但热点帧全是自家业务代码，说明什么？",
+  "a": "两种可能：真在做重计算（算法/正则/序列化），或 GC 线程在烧 CPU（Young GC 风暴）。看 jstat -gcutil 的 YGC/FGC 增速和 jvm_gc_pause_seconds_max 区分",
+  "d": "`perf-snapshot-host.sh:175-180`、`perf-snapshot.sh:249`",
+  "s": "perf-troubleshooting",
+  "t": "线上问题排查与性能瓶颈定位实战",
+  "c": "Java"
+ },
+ {
+  "q": "整机负载高但进程 CPU 不高，查什么？",
+  "a": "主机版的 vmstat 看 r（运行队列）是否超过核数、wa（IO 等待）是否高，iostat -x 看磁盘 %util；再用 ss -ant 看连接堆积。这是\"邻居吵闹\"或磁盘瓶颈的典型信号",
+  "d": "`perf-snapshot-host.sh:111-113`、`perf-snapshot-host.sh:116-124`",
+  "s": "perf-troubleshooting",
+  "t": "线上问题排查与性能瓶颈定位实战",
+  "c": "Java"
+ },
+ {
+  "q": "为什么采集脚本都要做预检？",
+  "a": "避免产出假数据：exec 不通时后续所有文件都是空的，会误导排查方向。容器版预检 A 失败立即退出并打印排查清单（namespace 错/Pod 已重建/多容器未指定）",
+  "d": "`perf-snapshot.sh:61-75`",
+  "s": "perf-troubleshooting",
+  "t": "线上问题排查与性能瓶颈定位实战",
+  "c": "Java"
+ },
+ {
   "q": "文档解析的完整链路是什么？",
   "a": "上传入队（DB 状态机 + NATS JetStream 发布）→ Ingestor consumeLoop 派发 → PipelineExecutor 装配 doc_id/tenant_id/kb_id/lang → Pipeline 跑 File→Parser→Chunker→Tokenizer → processOutput 八步落库 → 任务标记 COMPLETED",
   "d": "第五、六讲",

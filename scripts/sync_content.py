@@ -47,6 +47,7 @@ DOCS = [
     ("java-io.md", "java-io", "2026-10-19", ["Java"], ["IO", "NIO", "源码"]),
     ("distributed-tx.md", "distributed-tx", "2026-10-19", ["中间件"], ["分布式事务", "Seata", "AT", "TCC", "源码"]),
     ("sentinel.md", "sentinel", "2026-10-19", ["中间件"], ["Sentinel", "限流", "熔断", "源码"]),
+    ("perf-troubleshooting.md", "perf-troubleshooting", "2026-10-20", ["Java"], ["排查", "性能", "JVM", "运维", "源码"]),
     # 已下架：learning-path.md（学习路线）与 learning-map.html（思维导图）
     # 源文件仍在 D:/work/2026/deep-dive/，需要时把这两行加回来即可重新发布。
     # ("learning-path.md", "learning-path", "2026-10-17", ["学习路线"], ["思维导图", "学习路径", "记忆方法"]),
