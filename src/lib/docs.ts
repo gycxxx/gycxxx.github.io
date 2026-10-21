@@ -5,6 +5,8 @@ export const CATEGORY_ORDER = [
   "Spring",
   "存储与缓存",
   "Java",
+  "计算机网络",
+  "操作系统",
   "游戏与云原生",
   "RAG",
   "RAG 与 Agent",
