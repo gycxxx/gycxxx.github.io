@@ -1,0 +1,708 @@
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Java 基础源码深度学习笔记 · 源码深读</title><meta name="description" content="源码级技术笔记：中间件、Spring、Java、存储、云原生与 RAG"><link rel="icon" href="data:,"><link rel="stylesheet" href="/_astro/aqs-lock.D0PgXYln.css"></head> <body> <header class="site-header"> <div class="inner"> <a class="brand" href="/"> <span class="brand-mark">&lt;/&gt;</span> <span class="brand-name">源码深读</span> </a> <nav class="site-nav"> <a href="/" class> 首页 </a><a href="/#principles" class> 原理速查 </a><a href="/animations/" class> 动画 </a><a href="/categories/" class> 分类 </a><a href="/tags/" class> 标签 </a> </nav> </div> </header> <main class="main">  <article class="post"> <div class="crumb"> <a href="/">首页</a>  / <a href="/categories/Java/">Java</a>  </div> <div class="post-head"> <h1>Java 基础源码深度学习笔记</h1> <div class="page-meta"> <time datetime="2026-10-21T00:00:00.000Z">2026-10-21</time>  · <a class="chip" href="/tags/Java%20%E5%9F%BA%E7%A1%80/">Java 基础</a>  <a class="chip" href="/tags/String/">String</a>  <a class="chip" href="/tags/%E5%8F%8D%E5%B0%84/">反射</a>  <a class="chip" href="/tags/%E5%BA%8F%E5%88%97%E5%8C%96/">序列化</a>  <a class="chip" href="/tags/%E6%BA%90%E7%A0%81/">源码</a>  </div> </div> <nav class="toc"> <div class="toc-title">目录</div> <ol> <li class="d2"> <a href="#〇全景地图">〇、全景地图</a> </li><li class="d2"> <a href="#第一讲-string-家族">第一讲 String 家族</a> </li><li class="d3"> <a href="#11-不可变是怎么焊死的">1.1 不可变是怎么”焊死”的</a> </li><li class="d3"> <a href="#12-compact-strings为什么是-byte-不是-char">1.2 Compact Strings：为什么是 byte[] 不是 char[]</a> </li><li class="d3"> <a href="#13-hashcode-缓存为什么需要两个字段">1.3 hashCode 缓存：为什么需要两个字段</a> </li><li class="d3"> <a href="#14-常量池与-intern">1.4 常量池与 intern</a> </li><li class="d3"> <a href="#15-拼接的三种姿势与代价">1.5 拼接的三种姿势与代价</a> </li><li class="d3"> <a href="#16-stringbuilder-vs-stringbuffer">1.6 StringBuilder vs StringBuffer</a> </li><li class="d2"> <a href="#第二讲-包装类-与-equalshashcode">第二讲 包装类、== 与 equals/hashCode</a> </li><li class="d3"> <a href="#21-integercache-128127-是缓存区间">2.1 IntegerCache：-128~127 是缓存区间</a> </li><li class="d3"> <a href="#22--与-equals-的分工">2.2 == 与 equals 的分工</a> </li><li class="d3"> <a href="#23-equals--hashcode-契约必背四条">2.3 equals / hashCode 契约（必背四条）</a> </li><li class="d3"> <a href="#24-值传递还是引用传递">2.4 值传递还是引用传递</a> </li><li class="d2"> <a href="#第三讲-反射与泛型">第三讲 反射与泛型</a> </li><li class="d3"> <a href="#31-classforname-的第二个参数很关键">3.1 Class.forName 的第二个参数很关键</a> </li><li class="d3"> <a href="#32-getmethod-与-getdeclaredmethod-的区别">3.2 getMethod 与 getDeclaredMethod 的区别</a> </li><li class="d3"> <a href="#33-methodinvoke-的两个坑">3.3 Method.invoke 的两个坑</a> </li><li class="d3"> <a href="#34-泛型擦除编译期的事运行时没有">3.4 泛型擦除：编译期的事，运行时没有</a> </li><li class="d2"> <a href="#第四讲-异常与序列化">第四讲 异常与序列化</a> </li><li class="d3"> <a href="#41-throwable-的四要素">4.1 Throwable 的四要素</a> </li><li class="d3"> <a href="#42-受检-vs-非受检">4.2 受检 vs 非受检</a> </li><li class="d3"> <a href="#43-序列化的五个结论">4.3 序列化的五个结论</a> </li><li class="d2"> <a href="#第五讲-object-契约与常用工具">第五讲 Object 契约与常用工具</a> </li><li class="d3"> <a href="#51-object-的-11-个方法面试常问object-有哪些方法">5.1 Object 的 11 个方法（面试常问”Object 有哪些方法”）</a> </li><li class="d3"> <a href="#52-system-三件套">5.2 System 三件套</a> </li><li class="d3"> <a href="#53-深拷贝-vs-浅拷贝">5.3 深拷贝 vs 浅拷贝</a> </li><li class="d3"> <a href="#54-final--finally--finalize">5.4 final / finally / finalize</a> </li><li class="d3"> <a href="#55-枚举天生单例">5.5 枚举：天生单例</a> </li><li class="d2"> <a href="#六面试高频-qa">六、面试高频 Q&amp;A</a> </li><li class="d2"> <a href="#七易错点清单">七、易错点清单</a> </li><li class="d2"> <a href="#八数值速记">八、数值速记</a> </li><li class="d2"> <a href="#九复习卡">九、复习卡</a> </li><li class="d2"> <a href="#十文件索引">十、文件索引</a> </li> </ol> </nav> <div class="markdown-body">  <blockquote>
+<p>基于 <code>src/java.base/share/classes/java/lang/</code>、<code>java/util/</code>、<code>java/io/</code> 下最”基础”那批类的逐文件精读整理而成：<code>String</code>、<code>AbstractStringBuilder</code>、<code>StringBuilder</code>、<code>StringBuffer</code>、<code>Integer</code>、<code>Object</code>、<code>Class</code>、<code>Throwable</code>、<code>Enum</code>、<code>System</code>、<code>Objects</code>，以及 <code>java/lang/reflect/Method</code>、<code>java/io/ObjectOutputStream</code>。</p>
+<p>阅读顺序即学习顺序：<strong>String 家族 → 包装类与 equals/hashCode → 反射与泛型 → 异常与序列化 → Object 契约与常用工具</strong>。</p>
+<p>所有结论均标注了源文件位置（格式 <code>src/java.base/share/classes/java/lang/xxx.java:行号</code>），建议对照代码阅读。</p>
+<p><strong>版本基线</strong>：OpenJDK <strong>21（jdk-21-ga）</strong>，精确 commit <code>890adb6410dab4606a4f26a942aed02fb2f55387</code>，commit 时间 <code>2023-08-09 20:19:41 +0000</code>；第四讲序列化部分取自 OpenJDK 主线（commit <code>6c48f4ed</code>，2025-08-12），因为 <code>java.io</code> 不在 21 精简检出目录内。</p>
+<p>本文档只覆盖”语言与基础库”层面的高频考点；集合见 <code>java-collections.md</code>、并发见 <code>java-concurrent.md</code>、IO 见 <code>java-io.md</code>、JVM 见 <code>jdk.md</code>。</p>
+</blockquote>
+<hr>
+<h2 id="〇全景地图">〇、全景地图</h2>
+<p>Java 基础的高频考点其实集中在<strong>五个小内核</strong>上，每个内核背后都只有一两个真正需要看源码的地方：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>┌───────────────────────── Java 基础五大内核 ─────────────────────────┐</span></span>
+<span class="line"><span>│                                                                     │</span></span>
+<span class="line"><span>│  ① String 家族        ② 包装类 / == vs equals                      │</span></span>
+<span class="line"><span>│     String(final)         Integer.valueOf → IntegerCache[-128,127]  │</span></span>
+<span class="line"><span>│     + byte[] value        Object.equals == 引用比较                 │</span></span>
+<span class="line"><span>│     + coder(Latin1/UTF16) hashCode 契约：equals 同 → hash 必同       │</span></span>
+<span class="line"><span>│     + hash 缓存                                                     │</span></span>
+<span class="line"><span>│     StringBuilder/StringBuffer                                      │</span></span>
+<span class="line"><span>│                                                                     │</span></span>
+<span class="line"><span>│  ③ 反射与泛型          ④ 异常与序列化                              │</span></span>
+<span class="line"><span>│     Class.forName(初始化开关)  Throwable: cause / suppressed        │</span></span>
+<span class="line"><span>│     Method.invoke(包装异常)    fillInStackTrace(栈快照开销)          │</span></span>
+<span class="line"><span>│     泛型擦除 + Signature 属性  serialVersionUID / transient         │</span></span>
+<span class="line"><span>│                                                                     │</span></span>
+<span class="line"><span>│  ⑤ Object 契约与工具                                                │</span></span>
+<span class="line"><span>│     getClass/hashCode/equals/clone/finalize/wait/notify             │</span></span>
+<span class="line"><span>│     System.arraycopy(native) / nanoTime(单调) / identityHashCode     │</span></span>
+<span class="line"><span>└─────────────────────────────────────────────────────────────────────┘</span></span></code></pre>
+<p>一句话主线：<strong>Java 里”相等”有两套语义（<code>==</code> 比身份、<code>equals</code> 比内容），“不可变”靠 final 类 + final 数组字段实现，“泛型”只在编译期存在，“异常”的本质是一次栈快照</strong>。</p>
+<hr>
+<h2 id="第一讲-string-家族">第一讲 String 家族</h2>
+<h3 id="11-不可变是怎么焊死的">1.1 不可变是怎么”焊死”的</h3>
+<p><code>String</code> 的不可变由三重 final 保证（<code>src/java.base/share/classes/java/lang/String.java:142</code>）：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> final</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> String</span><span style="color:#6A737D">                    // :142  ① 类 final，不能被继承改写</span></span>
+<span class="line"><span style="color:#24292E">    ...</span></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> byte[] value;              </span><span style="color:#6A737D">// :158  ② 存储数组 private final</span></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> byte coder;                </span><span style="color:#6A737D">// :171  ③ 编码标记（LATIN1 / UTF16）</span></span></code></pre>
+<p><code>value</code> 是 <code>private</code> 且没有任何 setter/写方法，外部拿不到引用；类又是 <code>final</code>，子类也塞不进来。所以 String 一诞生内容就定了，<strong>所有”看起来在改”的方法（substring/concat/replace）都是 new 一个新 String</strong>：</p>
+<ul>
+<li><code>substring</code>（<code>:2802</code>）：JDK 7u6 之后不再共享底层数组，一律拷贝（老版本共享 <code>char[]</code> 会造成”大字符串泄漏”）</li>
+<li><code>concat</code>（<code>:2891</code>）：拼完直接 <code>new String(buf, true)</code></li>
+</ul>
+<p>不可变带来的三个真实收益，面试答这三句就够：<strong>① 可缓存 hash ② 天然线程安全 ③ 常量池可共享</strong>。</p>
+<h3 id="12-compact-strings为什么是-byte-不是-char">1.2 Compact Strings：为什么是 <code>byte[]</code> 不是 <code>char[]</code></h3>
+<p>JDK 9 起 <code>String</code> 内部从 <code>char[]</code>（UTF-16，每字符 2 字节）改成 <code>byte[]</code> + <code>coder</code>：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">static</span><span style="color:#D73A49"> final</span><span style="color:#D73A49"> boolean</span><span style="color:#24292E"> COMPACT_STRINGS;   </span><span style="color:#6A737D">// :223</span></span></code></pre>
+<ul>
+<li>内容全是 Latin-1（ISO-8859-1，含 ASCII）→ <code>coder = LATIN1</code>，<strong>每字符 1 字节</strong>，内存直接减半</li>
+<li>一旦出现非 Latin-1 字符 → <code>coder = UTF16</code>，退回 2 字节</li>
+<li><code>coder</code> 也就是 <code>equals</code>（<code>:1857</code>）里为什么要先比 <code>coder</code> 再逐字节比较的原因</li>
+</ul>
+<h3 id="13-hashcode-缓存为什么需要两个字段">1.3 hashCode 缓存：为什么需要两个字段</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> int</span><span style="color:#24292E"> hash;              </span><span style="color:#6A737D">// :174   默认 0</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> boolean</span><span style="color:#24292E"> hashIsZero;    </span><span style="color:#6A737D">// :180   默认 false</span></span></code></pre>
+<p><code>hash</code> 缓存计算结果，但它同时用 0 表示”还没算过”。如果某个字符串的 hash 恰好就是 0，就会每次重算。于是 JDK 又加了 <code>hashIsZero</code> 来区分”未计算”与”算出来是 0”：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> int</span><span style="color:#6F42C1"> hashCode</span><span style="color:#24292E">() {                       </span><span style="color:#6A737D">// :2354</span></span>
+<span class="line"><span style="color:#D73A49">    int</span><span style="color:#24292E"> h </span><span style="color:#D73A49">=</span><span style="color:#24292E"> hash;</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (h </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> 0</span><span style="color:#D73A49"> &#x26;&#x26;</span><span style="color:#D73A49"> !</span><span style="color:#24292E">hashIsZero) {              </span><span style="color:#6A737D">// :2364  未计算 且 不是"0 的结果"</span></span>
+<span class="line"><span style="color:#24292E">        h </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> isLatin1</span><span style="color:#24292E">() </span><span style="color:#D73A49">?</span><span style="color:#24292E"> StringLatin1.</span><span style="color:#6F42C1">hashCode</span><span style="color:#24292E">(value)</span></span>
+<span class="line"><span style="color:#D73A49">                       :</span><span style="color:#24292E"> StringUTF16.</span><span style="color:#6F42C1">hashCode</span><span style="color:#24292E">(value);</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (h </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> 0</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">            hashIsZero </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> true</span><span style="color:#24292E">;                </span><span style="color:#6A737D">// :2368  标记为"真的是 0"</span></span>
+<span class="line"><span style="color:#24292E">        } </span><span style="color:#D73A49">else</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">            hash </span><span style="color:#D73A49">=</span><span style="color:#24292E"> h;</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#24292E"> h;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>这是经典的”<strong>用 0 做哨兵值就得再配一个布尔</strong>”技巧，值得记住。</p>
+<h3 id="14-常量池与-intern">1.4 常量池与 <code>intern</code></h3>
+<ul>
+<li>字面量（<code>"abc"</code>）在编译期进 class 常量池，类加载时进<strong>字符串常量池</strong>（JDK 7 起常量池从永久代搬到堆里，所以会被 GC 回收）</li>
+<li>运行期拼接出来的字符串<strong>不在池里</strong>，<code>new String("abc")</code> 一定在堆上新建对象</li>
+<li><code>public native String intern()</code>（<code>:4636</code>）：有则返池里那份，无则把当前对象<strong>引用</strong>放进池再返回</li>
+</ul>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">String a </span><span style="color:#D73A49">=</span><span style="color:#032F62"> "abc"</span><span style="color:#24292E">;            </span><span style="color:#6A737D">// 池</span></span>
+<span class="line"><span style="color:#24292E">String b </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> String</span><span style="color:#24292E">(</span><span style="color:#032F62">"abc"</span><span style="color:#24292E">);</span><span style="color:#6A737D">// 堆</span></span>
+<span class="line"><span style="color:#24292E">a </span><span style="color:#D73A49">==</span><span style="color:#24292E"> b                </span><span style="color:#6A737D">// false</span></span>
+<span class="line"><span style="color:#24292E">a </span><span style="color:#D73A49">==</span><span style="color:#24292E"> b.</span><span style="color:#6F42C1">intern</span><span style="color:#24292E">()       </span><span style="color:#6A737D">// true（intern 返回池里那一份）</span></span></code></pre>
+<h3 id="15-拼接的三种姿势与代价">1.5 拼接的三种姿势与代价</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>姿势</th><th>编译后做了什么</th><th>适用</th></tr></thead><tbody><tr><td>字面量相加 <code>"a"+"b"</code></td><td>编译期常量折叠，直接是 <code>"ab"</code></td><td>常量</td></tr><tr><td>变量相加 <code>s1 + s2</code></td><td>JDK 9 起是 <code>invokedynamic</code>，落在 <code>StringConcatFactory.makeConcat</code>（<code>src/java.base/share/classes/java/lang/invoke/StringConcatFactory.java:204</code>），策略可切换</td><td>单次拼接</td></tr><tr><td>循环里 <code>s += x</code></td><td><strong>每轮 new 一个 StringBuilder 再 toString</strong> → O(n²)</td><td>禁止</td></tr></tbody></table>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// 反例：n 轮 → n 个 StringBuilder + n 个 String</span></span>
+<span class="line"><span style="color:#24292E">String s </span><span style="color:#D73A49">=</span><span style="color:#032F62"> ""</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#D73A49">for</span><span style="color:#24292E"> (String p </span><span style="color:#D73A49">:</span><span style="color:#24292E"> parts) s </span><span style="color:#D73A49">+=</span><span style="color:#24292E"> p;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 正例：一个 StringBuilder 到底</span></span>
+<span class="line"><span style="color:#24292E">StringBuilder sb </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> StringBuilder</span><span style="color:#24292E">(</span><span style="color:#005CC5">1024</span><span style="color:#24292E">); </span><span style="color:#6A737D">// 预估容量，避免反复扩容</span></span>
+<span class="line"><span style="color:#D73A49">for</span><span style="color:#24292E"> (String p </span><span style="color:#D73A49">:</span><span style="color:#24292E"> parts) sb.</span><span style="color:#6F42C1">append</span><span style="color:#24292E">(p);</span></span></code></pre>
+<p><code>StringBuilder</code> 的扩容来自父类 <code>AbstractStringBuilder</code>（<code>src/java.base/share/classes/java/lang/AbstractStringBuilder.java:67</code> 存 <code>byte[] value</code>；<code>:225</code> <code>ensureCapacity</code>；<code>:259</code> <code>newCapacity</code>，即”旧容量 × 2 + 2”，不够就用最小需要值）。</p>
+<h3 id="16-stringbuilder-vs-stringbuffer">1.6 StringBuilder vs StringBuffer</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>维度</th><th>StringBuilder</th><th>StringBuffer</th></tr></thead><tbody><tr><td>类定义</td><td><code>src/java.base/share/classes/java/lang/StringBuilder.java:91</code></td><td><code>src/java.base/share/classes/java/lang/StringBuffer.java:112</code></td></tr><tr><td>append</td><td><code>:178</code> 无锁</td><td><code>:311</code> <strong><code>synchronized</code></strong></td></tr><tr><td>toString</td><td><code>:473</code> 每次新建</td><td><code>:735</code>，带 <code>toStringCache</code>（<code>:121</code>），重复 toString 命中缓存</td></tr><tr><td>结论</td><td>单线程首选</td><td>多线程共享才用；局部变量一律 StringBuilder</td></tr></tbody></table>
+<blockquote>
+<p><strong>易错</strong>：<code>StringBuffer</code> 的线程安全是”方法级 synchronized”，复合操作（<code>append(a).append(b)</code> 之间）仍可能被打断，与 <code>synchronizedMap</code> 一样的毛病。</p>
+</blockquote>
+<hr>
+<h2 id="第二讲-包装类-与-equalshashcode">第二讲 包装类、== 与 equals/hashCode</h2>
+<h3 id="21-integercache-128127-是缓存区间">2.1 IntegerCache：-128~127 是缓存区间</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#24292E"> Integer </span><span style="color:#6F42C1">valueOf</span><span style="color:#24292E">(</span><span style="color:#D73A49">int</span><span style="color:#24292E"> i) {                       </span><span style="color:#6A737D">// :1067</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (i </span><span style="color:#D73A49">>=</span><span style="color:#24292E"> IntegerCache.low </span><span style="color:#D73A49">&#x26;&#x26;</span><span style="color:#24292E"> i </span><span style="color:#D73A49">&#x3C;=</span><span style="color:#24292E"> IntegerCache.high)     </span><span style="color:#6A737D">// low/high 见下方</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#24292E"> IntegerCache.cache[i </span><span style="color:#D73A49">+</span><span style="color:#24292E"> (</span><span style="color:#D73A49">-</span><span style="color:#24292E">IntegerCache.low)];</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> Integer</span><span style="color:#24292E">(i);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> IntegerCache</span><span style="color:#24292E"> {      </span><span style="color:#6A737D">// src/java.base/share/classes/java/lang/Integer.java:1008</span></span>
+<span class="line"><span style="color:#D73A49">    static</span><span style="color:#D73A49"> final</span><span style="color:#D73A49"> int</span><span style="color:#24292E"> low </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> -</span><span style="color:#005CC5">128</span><span style="color:#24292E">;         </span><span style="color:#6A737D">// :1009  下界写死</span></span>
+<span class="line"><span style="color:#D73A49">    static</span><span style="color:#D73A49"> final</span><span style="color:#D73A49"> int</span><span style="color:#24292E"> high;               </span><span style="color:#6A737D">// :1010  上界默认 127，可用</span></span>
+<span class="line"><span style="color:#6A737D">                                         //        -XX:AutoBoxCacheMax 或</span></span>
+<span class="line"><span style="color:#6A737D">                                         //        java.lang.Integer.IntegerCache.high 调大</span></span></code></pre>
+<p>所以：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">Integer a </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 127</span><span style="color:#24292E">, b </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 127</span><span style="color:#24292E">;  a </span><span style="color:#D73A49">==</span><span style="color:#24292E"> b;   </span><span style="color:#6A737D">// true  （同一份缓存对象）</span></span>
+<span class="line"><span style="color:#24292E">Integer c </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 128</span><span style="color:#24292E">, d </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 128</span><span style="color:#24292E">;  c </span><span style="color:#D73A49">==</span><span style="color:#24292E"> d;   </span><span style="color:#6A737D">// false （两次 new）</span></span>
+<span class="line"><span style="color:#24292E">Integer e </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 128</span><span style="color:#24292E">; </span><span style="color:#D73A49">int</span><span style="color:#24292E"> f </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 128</span><span style="color:#24292E">; e </span><span style="color:#D73A49">==</span><span style="color:#24292E"> f;</span><span style="color:#6A737D">// true  （e 自动拆箱成 int 再比数值）</span></span></code></pre>
+<p><strong>规则一句话</strong>：包装类与包装类 <code>==</code> 比引用（可能踩缓存边界）；包装类与基本类型 <code>==</code> 会拆箱比数值。永远用 <code>equals</code> 或 <code>Objects.equals</code>。</p>
+<h3 id="22--与-equals-的分工">2.2 <code>==</code> 与 <code>equals</code> 的分工</h3>
+<p><code>Object</code> 的默认实现：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> boolean</span><span style="color:#6F42C1"> equals</span><span style="color:#24292E">(Object obj) { </span><span style="color:#D73A49">return</span><span style="color:#24292E"> (</span><span style="color:#005CC5">this</span><span style="color:#D73A49"> ==</span><span style="color:#24292E"> obj); }  </span><span style="color:#6A737D">// :163</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> native</span><span style="color:#D73A49"> int</span><span style="color:#6F42C1"> hashCode</span><span style="color:#24292E">();                                 </span><span style="color:#6A737D">// :103  默认与身份相关</span></span></code></pre>
+<ul>
+<li><code>==</code>：基本类型比<strong>值</strong>，引用类型比<strong>地址（身份）</strong></li>
+<li><code>equals</code>：默认就是 <code>==</code>，重写后比<strong>内容</strong></li>
+<li><code>Objects.equals(a, b)</code>（<code>src/java.base/share/classes/java/util/Objects.java:63</code>）：先 <code>a == b</code> 短路再做 null 安全比较，写起来最省心</li>
+</ul>
+<h3 id="23-equals--hashcode-契约必背四条">2.3 equals / hashCode 契约（必背四条）</h3>
+<ol>
+<li>自反：<code>x.equals(x)</code> 为 true</li>
+<li>对称：<code>x.equals(y)</code> ⇔ <code>y.equals(x)</code></li>
+<li>传递：<code>x.equals(y)</code> 且 <code>y.equals(z)</code> ⇒ <code>x.equals(z)</code></li>
+<li>一致 + <strong>hash 一致</strong>：<code>x.equals(y)</code> ⇒ <code>x.hashCode() == y.hashCode()</code>（反过来不成立，哈希冲突允许）</li>
+</ol>
+<blockquote>
+<p><strong>后果</strong>：只重写 <code>equals</code> 不重写 <code>hashCode</code>，放进 <code>HashMap</code>/<code>HashSet</code> 就会”存得进去取不出来”。<code>Objects.hash(...)</code>（<code>:132</code>）内部就是 <code>Arrays.hashCode</code>，重写 hashCode 时直接用它。</p>
+</blockquote>
+<h3 id="24-值传递还是引用传递">2.4 值传递还是引用传递</h3>
+<p><strong>Java 只有值传递</strong>。引用类型传的是”引用的副本”：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">void</span><span style="color:#6F42C1"> f</span><span style="color:#24292E">(StringBuilder sb) {</span></span>
+<span class="line"><span style="color:#24292E">    sb.</span><span style="color:#6F42C1">append</span><span style="color:#24292E">(</span><span style="color:#032F62">"x"</span><span style="color:#24292E">);      </span><span style="color:#6A737D">// 有效：副本引用指向同一个对象</span></span>
+<span class="line"><span style="color:#24292E">    sb </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> StringBuilder</span><span style="color:#24292E">(); </span><span style="color:#6A737D">// 无效：只是把副本指向了新对象</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<hr>
+<h2 id="第三讲-反射与泛型">第三讲 反射与泛型</h2>
+<h3 id="31-classforname-的第二个参数很关键">3.1 <code>Class.forName</code> 的第二个参数很关键</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#24292E"> Class</span><span style="color:#D73A49">&#x3C;?></span><span style="color:#6F42C1"> forName</span><span style="color:#24292E">(String className)                          </span><span style="color:#6A737D">// src/java.base/share/classes/java/lang/Class.java:409</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#24292E"> Class</span><span style="color:#D73A49">&#x3C;?></span><span style="color:#6F42C1"> forName</span><span style="color:#24292E">(String name, </span><span style="color:#D73A49">boolean</span><span style="color:#24292E"> initialize,           </span><span style="color:#6A737D">// :501</span></span>
+<span class="line"><span style="color:#24292E">                               ClassLoader loader)</span></span></code></pre>
+<p><code>initialize=false</code> 只加载不初始化（<strong>不执行 static 块</strong>）。JDBC 老写法 <code>Class.forName("com.mysql.cj.jdbc.Driver")</code> 依赖的就是”加载即初始化，Driver 静态块里注册自己”——SPI 时代已经不需要手写。</p>
+<h3 id="32-getmethod-与-getdeclaredmethod-的区别">3.2 getMethod 与 getDeclaredMethod 的区别</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>方法</th><th>行号</th><th>语义</th></tr></thead><tbody><tr><td><code>getMethod</code></td><td><code>Class.java:2385</code></td><td>本类 + 父类的 <strong>public</strong> 方法</td></tr><tr><td><code>getDeclaredMethod</code></td><td><code>Class.java:2838</code></td><td>本类<strong>所有</strong>方法（含 private/protected/包级），不含继承</td></tr><tr><td><code>getDeclaredField</code></td><td><code>Class.java:2772</code></td><td>同上，字段版</td></tr><tr><td><code>privateGetDeclaredMethods</code></td><td><code>Class.java:3570</code></td><td>真正去解析 class 文件的方法表</td></tr></tbody></table>
+<p><code>private</code> 方法拿到后还要 <code>setAccessible(true)</code>；JDK 9 模块系统之后跨模块反射会抛 <code>InaccessibleObjectException</code>，需要 <code>--add-opens</code>。</p>
+<h3 id="33-methodinvoke-的两个坑">3.3 Method.invoke 的两个坑</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#24292E"> Object </span><span style="color:#6F42C1">invoke</span><span style="color:#24292E">(Object obj, Object... args)   </span><span style="color:#6A737D">// src/java.base/share/classes/java/lang/reflect/Method.java:558</span></span></code></pre>
+<ol>
+<li><strong>异常被包一层</strong>：目标方法抛出的任何异常都被包成 <code>InvocationTargetException</code>，要 <code>getTargetException()</code>/<code>getCause()</code> 才能拿到原始异常——日志里满屏 <code>InvocationTargetException</code> 就是这个原因</li>
+<li><strong>性能</strong>：反射调用要走 <code>MethodAccessor</code>（JDK 内部有 native → 字节码生成的”膨胀”机制，调用次数超过阈值后生成专用字节码加速），但仍无法享受 JIT 内联与逃逸分析。<strong>热路径上应缓存 <code>Method</code> 对象，或直接改成接口调用 / MethodHandle</strong></li>
+</ol>
+<h3 id="34-泛型擦除编译期的事运行时没有">3.4 泛型擦除：编译期的事，运行时没有</h3>
+<ul>
+<li>擦除发生在编译期：<code>List&#x3C;String></code> 与 <code>List&#x3C;Integer></code> 运行时是同一个 <code>List</code>，<code>instanceof List&#x3C;String></code> 非法</li>
+<li>编译器自动插入 <code>checkcast</code> 保证类型安全；返回协变类型时会生成<strong>桥接方法</strong>（bridge method）</li>
+<li><strong>但泛型信息并没有 100% 丢</strong>：类/方法/字段上的泛型签名写在 class 文件的 <code>Signature</code> 属性里，反射能读回来：</li>
+</ul>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#24292E"> Type </span><span style="color:#6F42C1">getGenericReturnType</span><span style="color:#24292E">()   </span><span style="color:#6A737D">// src/java.base/share/classes/java/lang/reflect/Method.java:297</span></span></code></pre>
+<p>这就是为什么 Spring/MyBatis 能靠反射还原出 <code>List&#x3C;User></code> 的真实参数类型。</p>
+<ul>
+<li>通配符遵循 <strong>PECS</strong>：<code>Producer extends</code>（只往外拿，用 <code>? extends T</code>）、<code>Consumer super</code>（只往里塞，用 <code>? super T</code>）</li>
+</ul>
+<hr>
+<h2 id="第四讲-异常与序列化">第四讲 异常与序列化</h2>
+<h3 id="41-throwable-的四要素">4.1 Throwable 的四要素</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">private</span><span style="color:#24292E"> Throwable cause </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> this</span><span style="color:#24292E">;                          </span><span style="color:#6A737D">// src/java.base/share/classes/java/lang/Throwable.java:200</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#24292E"> List&#x3C;</span><span style="color:#D73A49">Throwable</span><span style="color:#24292E">> suppressedExceptions </span><span style="color:#D73A49">=</span><span style="color:#24292E"> SUPPRESSED_SENTINEL;  </span><span style="color:#6A737D">// :235</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#6F42C1"> Throwable</span><span style="color:#24292E">(String message) { ... </span><span style="color:#6F42C1">fillInStackTrace</span><span style="color:#24292E">(); }          </span><span style="color:#6A737D">// :272 / :258</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> final</span><span style="color:#D73A49"> synchronized</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> addSuppressed</span><span style="color:#24292E">(Throwable exception)     </span><span style="color:#6A737D">// :1094</span></span></code></pre>
+<ul>
+<li><code>cause = this</code> 是”哨兵”：没设置过 cause 时 <code>cause</code> 指向自己，<code>getCause()</code> 靠判断 <code>cause != this</code> 决定返回 null</li>
+<li>构造时立刻调 <code>fillInStackTrace()</code>（<code>:258</code>）——<strong>异常的成本主要在这里</strong>：遍历栈帧填 <code>StackTraceElement[]</code>。高频抛异常（如用异常做流程控制）会明显拖慢</li>
+<li><code>suppressedExceptions</code>：try-with-resources 的 close 失败不会吞掉主异常，而是 <code>addSuppressed</code> 挂在主异常上（<code>:1094</code>），打印时显示 <code>Suppressed:</code></li>
+</ul>
+<h3 id="42-受检-vs-非受检">4.2 受检 vs 非受检</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>Throwable</span></span>
+<span class="line"><span>├── Error                 —— JVM 级（OOM/StackOverflow），不该捕获</span></span>
+<span class="line"><span>└── Exception</span></span>
+<span class="line"><span>    ├── RuntimeException  —— 非受检（NPE/IOOBE/ClassCast），可捕可不捕</span></span>
+<span class="line"><span>    └── 其他 Exception    —— 受检（IOException/SQLException），必须 catch 或 throws</span></span></code></pre>
+<p><code>RuntimeException</code> 及其子类属于”编程错误”，编译器不强制；受检异常强制你处理，是 Java 唯一强制错误处理的机制（也是被吐槽最多的设计）。</p>
+<h3 id="43-序列化的五个结论">4.3 序列化的五个结论</h3>
+<p><code>ObjectOutputStream.writeObject</code>（<code>src/java.base/share/classes/java/io/ObjectOutputStream.java:319</code>）→ <code>writeObject0</code>（<code>:1006</code>）：</p>
+<ol>
+<li><code>Serializable</code> 是<strong>标记接口</strong>，没有方法；不实现就抛 <code>NotSerializableException</code></li>
+<li><code>serialVersionUID</code> 不一致 → <code>InvalidClassException</code>。<strong>显式声明</strong>它，否则类改一个字段就全废</li>
+<li><code>transient</code> 字段被跳过；<strong>static 字段不参与序列化</strong>（它属于类不属于对象）</li>
+<li>反序列化<strong>不走构造器</strong>（绕过构造逻辑，这也是反序列化漏洞的根源之一）</li>
+<li>枚举特殊：所有 enum 的 <code>serialVersionUID</code> 固定为 0L（<code>:144-145</code>），且反序列化会走 <code>valueOf</code> 保证单例</li>
+</ol>
+<hr>
+<h2 id="第五讲-object-契约与常用工具">第五讲 Object 契约与常用工具</h2>
+<h3 id="51-object-的-11-个方法面试常问object-有哪些方法">5.1 Object 的 11 个方法（面试常问”Object 有哪些方法”）</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>方法</th><th>行号</th><th>说明</th></tr></thead><tbody><tr><td><code>getClass()</code></td><td><code>src/java.base/share/classes/java/lang/Object.java:67</code></td><td>final native，返回运行时 Class</td></tr><tr><td><code>hashCode()</code></td><td><code>:103</code></td><td>native，与身份相关（可被重写）</td></tr><tr><td><code>equals(Object)</code></td><td><code>:163</code></td><td>默认 <code>==</code></td></tr><tr><td><code>clone()</code></td><td><code>:229</code></td><td>protected native，不实现 <code>Cloneable</code> 就抛 <code>CloneNotSupportedException</code>；<strong>默认浅拷贝</strong></td></tr><tr><td><code>toString()</code></td><td>—</td><td>默认 <code>类名@16进制hash</code></td></tr><tr><td><code>notify()</code> / <code>notifyAll()</code></td><td><code>:293</code> / <code>:318</code></td><td>必须在 <code>synchronized</code> 块内调用</td></tr><tr><td><code>wait()</code> / <code>wait(long)</code></td><td>—</td><td>释放锁并等待；<strong>必须写在 while 循环里防虚假唤醒</strong></td></tr><tr><td><code>finalize()</code></td><td><code>:592</code></td><td>JDK 9 起废弃（<code>@Deprecated</code>），不确定何时执行，<strong>不要用</strong></td></tr></tbody></table>
+<h3 id="52-system-三件套">5.2 System 三件套</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> native</span><span style="color:#D73A49"> long</span><span style="color:#6F42C1"> currentTimeMillis</span><span style="color:#24292E">();   </span><span style="color:#6A737D">// src/java.base/share/classes/java/lang/System.java:527  挂钟时间，会被 NTP 回拨</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> native</span><span style="color:#D73A49"> long</span><span style="color:#6F42C1"> nanoTime</span><span style="color:#24292E">();            </span><span style="color:#6A737D">// :571  单调时间，只适合算耗时差</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> native</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> arraycopy</span><span style="color:#24292E">(...);        </span><span style="color:#6A737D">// :666  本地实现，比手写循环快</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> native</span><span style="color:#D73A49"> int</span><span style="color:#6F42C1"> identityHashCode</span><span style="color:#24292E">(Object x); </span><span style="color:#6A737D">// :684  拿"未被重写"的 hashCode</span></span></code></pre>
+<p><strong>记时一律用 <code>nanoTime()</code></strong>：<code>currentTimeMillis</code> 可能因校时被回拨，算出负数耗时。</p>
+<h3 id="53-深拷贝-vs-浅拷贝">5.3 深拷贝 vs 浅拷贝</h3>
+<ul>
+<li>浅拷贝：只复制对象本身，内部引用字段仍指向同一对象（<code>Object.clone</code> 默认行为）</li>
+<li>深拷贝：连引用链一起复制（手写递归 / 序列化再反序列化 / 拷贝构造器）</li>
+<li>数组 <code>clone()</code> 也是浅拷贝</li>
+</ul>
+<h3 id="54-final--finally--finalize">5.4 final / finally / finalize</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>关键字</th><th>层面</th><th>语义</th></tr></thead><tbody><tr><td><code>final</code></td><td>类/方法/变量</td><td>类不可继承、方法不可重写、变量引用不可再指（<strong>对象内容可变</strong>）</td></tr><tr><td><code>finally</code></td><td>语句块</td><td>一定会执行（除非 <code>System.exit</code> / 线程被 kill / JVM 崩溃）</td></tr><tr><td><code>finalize</code></td><td>方法</td><td>已废弃，JDK 9+ 标记 <code>@Deprecated</code>（<code>Object.java:592</code>）</td></tr></tbody></table>
+<p><code>final</code> 字段还有 <strong>JMM 语义</strong>：构造器中正确初始化的 final 字段，无需同步即可被其他线程看见（配合”构造器不逸出 this”）。</p>
+<h3 id="55-枚举天生单例">5.5 枚举：天生单例</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> abstract</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> Enum</span><span style="color:#24292E">&#x3C;</span><span style="color:#D73A49">E</span><span style="color:#D73A49"> extends</span><span style="color:#24292E"> Enum&#x3C;</span><span style="color:#D73A49">E</span><span style="color:#24292E">>>      </span><span style="color:#6A737D">// src/java.base/share/classes/java/lang/Enum.java:80</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> String name()                          </span><span style="color:#6A737D">// :101</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> int ordinal()                          </span><span style="color:#6A737D">// :127</span></span>
+<span class="line"><span style="color:#D73A49">protected</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> Object clone()                      </span><span style="color:#6A737D">// :202  直接抛异常，禁止克隆</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#24292E"> &#x3C;</span><span style="color:#D73A49">T</span><span style="color:#D73A49"> extends</span><span style="color:#24292E"> Enum&#x3C;</span><span style="color:#D73A49">T</span><span style="color:#24292E">>> T valueOf(...)    </span><span style="color:#6A737D">// :285  底层是 enum 的静态 map 查找</span></span></code></pre>
+<p><code>clone</code> 被 final 化并抛异常 + 反序列化走 <code>valueOf</code> ⇒ <strong>enum 是实现单例最稳的方式</strong>。</p>
+<hr>
+<h2 id="六面试高频-qa">六、面试高频 Q&#x26;A</h2>
+<p>27 道最高频题的「一句话答案」。先报结论占住阵地，面试官真追问时，按「深入」列展开到对应讲次。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>#</th><th>问题</th><th>答案（先给结论）</th><th>深入</th></tr></thead><tbody><tr><td>1</td><td>String 为什么不可变？</td><td>类 <code>final</code>（<code>String.java:142</code>）+ 存储数组 <code>private final byte[] value</code>（<code>:158</code>）+ 无任何写方法；所有”修改”方法都 new 新对象</td><td>第一讲</td></tr><tr><td>2</td><td>String 内部为什么是 <code>byte[]</code> 不是 <code>char[]</code>？</td><td>JDK 9 Compact Strings：Latin-1 内容按 1 字节存，内存减半；<code>coder</code>（<code>:171</code>）标记编码，<code>COMPACT_STRINGS</code>（<code>:223</code>）总开关</td><td>第一讲</td></tr><tr><td>3</td><td><code>String s = new String("abc")</code> 创建几个对象？</td><td>常量池已有 <code>"abc"</code> 时<strong>只创建 1 个堆对象</strong>；没有则 2 个（池里一份 + 堆上一份）</td><td>第一讲</td></tr><tr><td>4</td><td><code>intern()</code> 做了什么？</td><td>池里有就返回池中引用，没有就把当前对象引用放进去再返回；JDK 7 起常量池在堆中，可被 GC（<code>String.java:4636</code>）</td><td>第一讲</td></tr><tr><td>5</td><td>String 的 hashCode 为什么要缓存？</td><td>字符串作 HashMap key 极频繁；缓存靠 <code>hash</code>（<code>:174</code>）+ <code>hashIsZero</code>（<code>:180</code>）两个字段区分”未算”与”算出 0”</td><td>第一讲</td></tr><tr><td>6</td><td>循环里用 <code>+</code> 拼接字符串有什么问题？</td><td>每轮 new 一个 StringBuilder 再 toString，O(n²)；应显式持有一个 <code>StringBuilder</code> 并预设容量</td><td>第一讲</td></tr><tr><td>7</td><td>StringBuilder 与 StringBuffer 区别？</td><td>后者方法全部 <code>synchronized</code>（<code>StringBuffer.java:311</code>）且带 <code>toStringCache</code>（<code>:121</code>）；单线程一律用 StringBuilder</td><td>第一讲</td></tr><tr><td>8</td><td><code>Integer a=127, b=127; a==b</code> 为什么是 true？</td><td><code>valueOf</code>（<code>Integer.java:1067</code>）走 <code>IntegerCache</code>，默认缓存 <code>-128~127</code>（<code>:1009</code>）；128 就越界 new 了</td><td>第二讲</td></tr><tr><td>9</td><td><code>==</code> 和 <code>equals</code> 的区别？</td><td><code>==</code> 比身份（引用类型比地址）；<code>equals</code> 默认就是 <code>==</code>（<code>Object.java:163</code>），重写后比内容</td><td>第二讲</td></tr><tr><td>10</td><td>为什么重写 equals 必须重写 hashCode？</td><td>契约要求 equals 相等则 hash 必相等；否则 HashMap 里存得进、取不出</td><td>第二讲</td></tr><tr><td>11</td><td>Java 是值传递还是引用传递？</td><td><strong>只有值传递</strong>：引用类型传的是”引用的副本”，改副本指向不影响实参，改副本指向对象的内容会影响</td><td>第二讲</td></tr><tr><td>12</td><td><code>Class.forName</code> 有什么讲究？</td><td>两参版（<code>:501</code>）可传 <code>initialize=false</code> 只加载不初始化（不执行 static 块）；单参版（<code>:409</code>）会初始化</td><td>第三讲</td></tr><tr><td>13</td><td>getMethod 与 getDeclaredMethod 区别？</td><td><code>getMethod</code>（<code>:2385</code>）取本类+父类 public；<code>getDeclaredMethod</code>（<code>:2838</code>）取本类全部（含 private），不含继承</td><td>第三讲</td></tr><tr><td>14</td><td>反射慢在哪？怎么做才不慢？</td><td>走 <code>MethodAccessor</code>、无法内联与逃逸分析；缓存 Class/Method 对象，热路径改接口或 MethodHandle</td><td>第三讲</td></tr><tr><td>15</td><td>反射调用为啥总看到 <code>InvocationTargetException</code>？</td><td><code>Method.invoke</code>（<code>reflect/Method.java:558</code>）把目标异常包了一层，要 <code>getCause()</code> 才拿到原始异常</td><td>第三讲</td></tr><tr><td>16</td><td>什么是泛型擦除？</td><td>编译期把 <code>T</code> 替换为边界（无边界为 Object）并插 <code>checkcast</code>；运行时 <code>List&#x3C;String></code> 与 <code>List&#x3C;Integer></code> 同类</td><td>第三讲</td></tr><tr><td>17</td><td>泛型信息真的一点都不剩吗？</td><td>类/方法/字段的泛型签名写在 class 文件 <code>Signature</code> 属性里，反射能读回（<code>reflect/Method.java:297</code>）</td><td>第三讲</td></tr><tr><td>18</td><td>受检异常与非受检异常的区别？</td><td><code>RuntimeException</code>/<code>Error</code> 是非受检（编译器不强制）；其余 <code>Exception</code> 是受检，必须 catch 或 throws</td><td>第四讲</td></tr><tr><td>19</td><td>finally 一定会执行吗？</td><td>除非 <code>System.exit</code>、线程被 kill、JVM 崩溃；<strong>且 finally 里的 return 会覆盖 try 的返回值</strong>（别这么写）</td><td>第四讲</td></tr><tr><td>20</td><td>try-with-resources 的异常去哪了？</td><td>close 失败不吞主异常，而是 <code>addSuppressed</code>（<code>Throwable.java:1094</code>）挂上去，打印时显示 <code>Suppressed:</code></td><td>第四讲</td></tr><tr><td>21</td><td>为什么不建议用异常控制流程？</td><td>构造异常要 <code>fillInStackTrace</code>（<code>Throwable.java:258</code>）遍历整个栈，成本远高于一次判断</td><td>第四讲</td></tr><tr><td>22</td><td>serialVersionUID 有什么用？</td><td>版本校验：不一致直接 <code>InvalidClassException</code>；不显式声明则由编译器按类结构生成，改字段就失效</td><td>第四讲</td></tr><tr><td>23</td><td><code>transient</code> 关键字的作用？</td><td>标记字段不参与序列化；反序列化后为基本类型默认值。注意 <strong>static 字段本来就不参与</strong></td><td>第四讲</td></tr><tr><td>24</td><td>Object 有哪些方法？</td><td><code>getClass</code>/<code>hashCode</code>/<code>equals</code>/<code>clone</code>/<code>toString</code>/<code>notify</code>/<code>notifyAll</code>/<code>wait</code>×3/<code>finalize</code>（<code>Object.java:67~592</code>）</td><td>第五讲</td></tr><tr><td>25</td><td>深拷贝与浅拷贝？</td><td>浅拷贝只复制一层（<code>Object.clone</code> 默认，<code>:229</code>），内部引用共享；深拷贝要递归或序列化</td><td>第五讲</td></tr><tr><td>26</td><td>记时该用 <code>currentTimeMillis</code> 还是 <code>nanoTime</code>？</td><td>算耗时一律 <code>nanoTime</code>（<code>System.java:571</code>）——单调不回拨；<code>currentTimeMillis</code>（<code>:527</code>）是挂钟时间</td><td>第五讲</td></tr><tr><td>27</td><td>为什么推荐用枚举实现单例？</td><td><code>clone</code> 被 final 化抛异常（<code>Enum.java:202</code>）、反序列化走 <code>valueOf</code>（<code>:285</code>）保证同一实例、天然防反射攻击</td><td>第五讲</td></tr></tbody></table>
+<hr>
+<h2 id="七易错点清单">七、易错点清单</h2>
+<ol>
+<li><strong><code>Integer</code> 用 <code>==</code> 比较</strong>：缓存边界（-128~127）内外行为不一致，一律 <code>equals</code></li>
+<li><strong><code>substring</code> 老版本共享数组</strong>：JDK 7u6 前截取大字符串会拖住整个 char[]；现已拷贝（<code>String.java:2802</code>），但老代码迁移仍要留意</li>
+<li><strong><code>finally</code> 里写 <code>return</code></strong>：会吞掉 try/catch 的返回值与异常</li>
+<li><strong><code>final</code> 修饰引用</strong>：限制的是”引用不可再指”，对象内部照样能改</li>
+<li><strong>catch 顺序</strong>：子类异常必须写在父类之前，否则编译不过（<code>Exception</code> 不能写在 <code>IOException</code> 前）</li>
+<li><strong><code>wait</code> 不用 while</strong>：存在虚假唤醒，必须 <code>while (条件) wait()</code></li>
+<li><strong>反射拿到的异常</strong>：不 <code>getCause()</code> 就永远看不到真实错误</li>
+<li><strong>重写 <code>equals</code> 忘了 <code>hashCode</code></strong>：HashSet/HashMap 行为异常</li>
+<li><strong><code>StringBuffer</code> 的”线程安全”是方法级</strong>：复合操作仍不安全</li>
+<li><strong><code>Objects.requireNonNull</code>（<code>util/Objects.java:231</code>）比手写 if 抛出更简洁</strong>：别再写 <code>if (x == null) throw new NPE()</code></li>
+</ol>
+<hr>
+<h2 id="八数值速记">八、数值速记</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>数值</th><th>含义</th><th>出处</th></tr></thead><tbody><tr><td><code>-128 ~ 127</code></td><td>Integer 缓存区间（上界可调）</td><td><code>Integer.java:1009-1010</code></td></tr><tr><td><code>0</code></td><td><code>String.hash</code> 的”未计算”哨兵值</td><td><code>String.java:174</code></td></tr><tr><td><code>LATIN1 / UTF16</code></td><td><code>String.coder</code> 两个取值</td><td><code>String.java:171</code></td></tr><tr><td><code>旧容量 × 2 + 2</code></td><td><code>AbstractStringBuilder</code> 扩容公式</td><td><code>AbstractStringBuilder.java:259</code></td></tr><tr><td><code>0L</code></td><td>所有枚举的固定 <code>serialVersionUID</code></td><td><code>ObjectOutputStream.java:144-145</code></td></tr><tr><td><code>1 / 5 / 10</code></td><td>线程优先级 MIN/NORM/MAX（OS 可能忽略）</td><td><code>Thread.java:363/368/373</code></td></tr></tbody></table>
+<blockquote>
+<p>优先级这条顺带提醒：Java 线程优先级靠不住——它映射到 OS 优先级，而 OS 可能直接忽略（<code>Thread.java:636</code> 的 <code>onSpinWait()</code> 反而是更靠谱的自旋提示）。</p>
+</blockquote>
+<hr>
+<h2 id="九复习卡">九、复习卡</h2>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled> 能不看源码说出 String 不可变的三重保证，并解释 <code>byte[] + coder</code> 的意义</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能画出 <code>s += x</code> 在循环里的对象创建过程，并说出正确写法</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能背出 equals/hashCode 四条契约，说出违反后 HashMap 的具体表现</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出 IntegerCache 上下界与”包装类 vs 基本类型 == 比较”的拆箱规则</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能解释”泛型擦除”与”Signature 属性”这对看似矛盾的事实</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出 <code>Method.invoke</code> 的两个坑（异常包装、性能）</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出 Throwable 的 cause/suppressed 两个机制各自的触发场景</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出序列化的 5 条结论（含 static 不参与、反序列化不走构造器）</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能列出 Object 的 11 个方法，并说出 finalize 已废弃</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能解释 <code>nanoTime</code> 与 <code>currentTimeMillis</code> 的差别</li>
+</ul>
+<hr>
+<h2 id="十文件索引">十、文件索引</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>文件</th><th>行数</th><th>说明</th></tr></thead><tbody><tr><td><code>src/java.base/share/classes/java/lang/String.java</code></td><td>4913</td><td>不可变、Compact Strings、hash 缓存、intern</td></tr><tr><td><code>src/java.base/share/classes/java/lang/AbstractStringBuilder.java</code></td><td>1972</td><td><code>byte[] value</code> 与扩容 <code>newCapacity</code></td></tr><tr><td><code>src/java.base/share/classes/java/lang/StringBuilder.java</code></td><td>525</td><td>单线程拼接</td></tr><tr><td><code>src/java.base/share/classes/java/lang/StringBuffer.java</code></td><td>810</td><td>synchronized + toStringCache</td></tr><tr><td><code>src/java.base/share/classes/java/lang/Integer.java</code></td><td>2091</td><td>IntegerCache、valueOf、parseInt</td></tr><tr><td><code>src/java.base/share/classes/java/lang/Object.java</code></td><td>593</td><td>11 个方法之家</td></tr><tr><td><code>src/java.base/share/classes/java/lang/Class.java</code></td><td>4782</td><td>forName、getMethod、getDeclaredField</td></tr><tr><td><code>src/java.base/share/classes/java/lang/reflect/Method.java</code></td><td>827</td><td>invoke 与泛型签名</td></tr><tr><td><code>src/java.base/share/classes/java/lang/Throwable.java</code></td><td>1133</td><td>cause / suppressed / fillInStackTrace</td></tr><tr><td><code>src/java.base/share/classes/java/lang/Enum.java</code></td><td>372</td><td>天然单例</td></tr><tr><td><code>src/java.base/share/classes/java/lang/System.java</code></td><td>2673</td><td>arraycopy / nanoTime / identityHashCode</td></tr><tr><td><code>src/java.base/share/classes/java/util/Objects.java</code></td><td>515</td><td>equals/hash/requireNonNull</td></tr><tr><td><code>src/java.base/share/classes/java/io/ObjectOutputStream.java</code></td><td>2296</td><td>序列化主链路</td></tr></tbody></table>  </div> <div class="post-nav"> <span><a href="/operating-system/">← 操作系统源码深度学习笔记</a></span> <span><a href="/ai-agent/">AI Agent 源码深度学习笔记 →</a></span> </div> </article>  </main> <footer class="site-footer"> <div class="inner"> <div class="foot-brand"> <span class="brand-mark">&lt;/&gt;</span> <b>源码深读</b> <span>逐文件、逐函数地读源码，结论都带 文件:行号</span> </div> <div class="foot-links"> <a href="/#principles">原理速查</a> <a href="/animations/">动画</a> <a href="/categories/">分类</a> <a href="/tags/">标签</a> </div> <p class="foot-note">由 Astro 静态生成 · 内容以 Markdown 源码笔记为唯一事实源</p> </div> </footer> </body></html> <script type="module" src="/_astro/PostLayout.astro_astro_type_script_index_0_lang.B4vzteL_.js"></script>

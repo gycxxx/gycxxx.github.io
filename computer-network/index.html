@@ -1,0 +1,611 @@
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>计算机网络源码深度学习笔记 · 源码深读</title><meta name="description" content="源码级技术笔记：中间件、Spring、Java、存储、云原生与 RAG"><link rel="icon" href="data:,"><link rel="stylesheet" href="/_astro/aqs-lock.D0PgXYln.css"></head> <body> <header class="site-header"> <div class="inner"> <a class="brand" href="/"> <span class="brand-mark">&lt;/&gt;</span> <span class="brand-name">源码深读</span> </a> <nav class="site-nav"> <a href="/" class> 首页 </a><a href="/#principles" class> 原理速查 </a><a href="/animations/" class> 动画 </a><a href="/categories/" class> 分类 </a><a href="/tags/" class> 标签 </a> </nav> </div> </header> <main class="main">  <article class="post"> <div class="crumb"> <a href="/">首页</a>  / <a href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/">计算机网络</a>  </div> <div class="post-head"> <h1>计算机网络源码深度学习笔记</h1> <div class="page-meta"> <time datetime="2026-10-21T00:00:00.000Z">2026-10-21</time>  · <a class="chip" href="/tags/TCP/">TCP</a>  <a class="chip" href="/tags/HTTP/">HTTP</a>  <a class="chip" href="/tags/HTTPS/">HTTPS</a>  <a class="chip" href="/tags/DNS/">DNS</a>  <a class="chip" href="/tags/%E7%BD%91%E7%BB%9C/">网络</a>  <a class="chip" href="/tags/%E6%BA%90%E7%A0%81/">源码</a>  </div> </div> <nav class="toc"> <div class="toc-title">目录</div> <ol> <li class="d2"> <a href="#〇全景地图">〇、全景地图</a> </li><li class="d2"> <a href="#第一讲-分层与封装">第一讲 分层与封装</a> </li><li class="d3"> <a href="#11-为什么要分层">1.1 为什么要分层</a> </li><li class="d3"> <a href="#12-三个必记的层--地址对应">1.2 三个必记的”层 ↔ 地址”对应</a> </li><li class="d2"> <a href="#第二讲-tcp可靠是怎么做到的">第二讲 TCP：可靠是怎么做到的</a> </li><li class="d3"> <a href="#21-三次握手为什么不是两次">2.1 三次握手：为什么不是两次</a> </li><li class="d3"> <a href="#22-四次挥手与-time_wait">2.2 四次挥手与 TIME_WAIT</a> </li><li class="d3"> <a href="#23-java-侧能看到的-tcp-细节">2.3 Java 侧能看到的 TCP 细节</a> </li><li class="d3"> <a href="#24-可靠传输的四根支柱">2.4 可靠传输的四根支柱</a> </li><li class="d3"> <a href="#25-tcp-粘包拆包">2.5 TCP 粘包/拆包</a> </li><li class="d2"> <a href="#第三讲-udp-与-socket-api">第三讲 UDP 与 Socket API</a> </li><li class="d3"> <a href="#31-udp-是什么">3.1 UDP 是什么</a> </li><li class="d3"> <a href="#32-java-侧">3.2 Java 侧</a> </li><li class="d3"> <a href="#33-socket-编程最小骨架tcp">3.3 Socket 编程最小骨架（TCP）</a> </li><li class="d2"> <a href="#第四讲-http-与-https">第四讲 HTTP 与 HTTPS</a> </li><li class="d3"> <a href="#41-请求响应报文">4.1 请求/响应报文</a> </li><li class="d3"> <a href="#42-方法与状态码">4.2 方法与状态码</a> </li><li class="d3"> <a href="#43-长连接与连接池java-侧真凭实据">4.3 长连接与连接池（Java 侧真凭实据）</a> </li><li class="d3"> <a href="#44-chunked-分块传输">4.4 chunked 分块传输</a> </li><li class="d3"> <a href="#45-cookie">4.5 Cookie</a> </li><li class="d3"> <a href="#46-https--http-over-tls">4.6 HTTPS = HTTP over TLS</a> </li><li class="d2"> <a href="#第五讲-dnsurl-与工程化">第五讲 DNS、URL 与工程化</a> </li><li class="d3"> <a href="#51-dns-解析与-jdk-缓存">5.1 DNS 解析与 JDK 缓存</a> </li><li class="d3"> <a href="#52-uri-vs-url高频">5.2 URI vs URL（高频）</a> </li><li class="d3"> <a href="#53-url-编码">5.3 URL 编码</a> </li><li class="d3"> <a href="#54-io-多路复用select--poll--epoll">5.4 IO 多路复用：select / poll / epoll</a> </li><li class="d2"> <a href="#六面试高频-qa">六、面试高频 Q&amp;A</a> </li><li class="d2"> <a href="#七易错点清单">七、易错点清单</a> </li><li class="d2"> <a href="#八数值速记">八、数值速记</a> </li><li class="d2"> <a href="#九复习卡">九、复习卡</a> </li><li class="d2"> <a href="#十文件索引">十、文件索引</a> </li> </ol> </nav> <div class="markdown-body">  <blockquote>
+<p>基于 <code>src/java.base/share/classes/java/net/</code>（<code>Socket</code>、<code>ServerSocket</code>、<code>DatagramSocket</code>、<code>InetAddress</code>、<code>HttpURLConnection</code>、<code>URI</code>/<code>URL</code>、<code>URLEncoder</code>、<code>HttpCookie</code>、<code>CookieManager</code>）、<code>sun/net/www/</code>（<code>KeepAliveCache</code>、<code>ChunkedOutputStream</code>）、<code>javax/net/ssl/</code> 以及 <code>src/java.base/linux/classes/sun/nio/ch/EPollSelectorImpl.java</code> 的精读整理而成。</p>
+<p>阅读顺序即学习顺序：<strong>分层与封装 → TCP → UDP 与 Socket API → HTTP/HTTPS → DNS 与工程化（含 IO 多路复用）</strong>。</p>
+<p>所有结论均标注了源文件位置（格式 <code>src/java.base/share/classes/java/net/xxx.java:行号</code>），建议对照代码阅读。</p>
+<p><strong>版本基线</strong>：OpenJDK 主线 commit <code>6c48f4ed</code>，commit 时间 <code>2025-08-12 17:15:36 +0000</code>。</p>
+<p>协议本身（RFC 行为）没有”源码”可引，凡是协议规则部分均为规范描述；凡是能落到 JDK 实现上的，都挂了真实行号——这也是本文的取舍：<strong>用 Java 侧的 API 行为去反证协议行为</strong>。NIO/Selector 的更细内容见 <code>java-io.md</code>。</p>
+</blockquote>
+<hr>
+<h2 id="〇全景地图">〇、全景地图</h2>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>┌──────── 七层 OSI ────────┐   ┌──────── TCP/IP 四层 ────────┐   ┌──── PDU ────┐</span></span>
+<span class="line"><span>│ 7 应用层                 │   │                             │   │  报文/数据   │</span></span>
+<span class="line"><span>│   HTTP / HTTPS / DNS     │──▶│ 应用层  HttpURLConnection    │   │  Message    │</span></span>
+<span class="line"><span>│ 6 表示层  TLS/SSL/编码    │   │        CookieManager/SSL     │   │             │</span></span>
+<span class="line"><span>│ 5 会话层                 │   │                             │   │             │</span></span>
+<span class="line"><span>├──────────────────────────┤   ├─────────────────────────────┤   ├─────────────┤</span></span>
+<span class="line"><span>│ 4 传输层                 │   │ 传输层  Socket(SocketImpl)   │   │ 段 Segment  │</span></span>
+<span class="line"><span>│   TCP / UDP              │──▶│        DatagramSocket        │   │ 数据报       │</span></span>
+<span class="line"><span>├──────────────────────────┤   ├─────────────────────────────┤   ├─────────────┤</span></span>
+<span class="line"><span>│ 3 网络层  IP / ICMP       │──▶│ 网际层  InetAddress / IP      │   │ 包 Packet   │</span></span>
+<span class="line"><span>├──────────────────────────┤   ├─────────────────────────────┤   ├─────────────┤</span></span>
+<span class="line"><span>│ 2 数据链路层 以太网/ARP   │──▶│ 链路层  （网卡驱动，JDK 不触达）│   │ 帧 Frame    │</span></span>
+<span class="line"><span>│ 1 物理层                 │   │                             │   │ 比特         │</span></span>
+<span class="line"><span>└──────────────────────────┘   └─────────────────────────────┘   └─────────────┘</span></span></code></pre>
+<p><strong>封装 = 加头</strong>：应用数据 → 加 TCP/UDP 头 → 加 IP 头 → 加以太网头尾 → 发出去；收端反向剥头。<strong>每一层只看自己那一段头</strong>，这就是分层的本质。</p>
+<p>一句话主线：<strong>TCP 负责”可靠”，IP 负责”可达”，HTTP 负责”语义”</strong>。面试里所有网络题基本都能归到这三件事上。</p>
+<hr>
+<h2 id="第一讲-分层与封装">第一讲 分层与封装</h2>
+<h3 id="11-为什么要分层">1.1 为什么要分层</h3>
+<ul>
+<li><strong>解耦</strong>：换链路层（以太网→WiFi→5G）不用改 HTTP</li>
+<li><strong>复用</strong>：IP 之上可以跑 TCP 也可以跑 UDP</li>
+<li><strong>可诊断</strong>：抓包时按层看（arp / ip / tcp / http 过滤器）</li>
+</ul>
+<h3 id="12-三个必记的层--地址对应">1.2 三个必记的”层 ↔ 地址”对应</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>层</th><th>寻址依据</th><th>典型设备</th></tr></thead><tbody><tr><td>网络层</td><td>IP 地址</td><td>路由器</td></tr><tr><td>数据链路层</td><td>MAC 地址</td><td>交换机</td></tr><tr><td>传输层</td><td>端口号（+IP 组成四元组）</td><td>—</td></tr></tbody></table>
+<p><strong>四元组</strong>（源 IP、源端口、目的 IP、目的端口）唯一确定一条 TCP 连接——这是 socket 的本质，也是”一台机器最多能开多少连接”问题的起点。</p>
+<hr>
+<h2 id="第二讲-tcp可靠是怎么做到的">第二讲 TCP：可靠是怎么做到的</h2>
+<h3 id="21-三次握手为什么不是两次">2.1 三次握手：为什么不是两次</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>客户端                                     服务端</span></span>
+<span class="line"><span>  |---- SYN  (seq=x)               ------->|   客户端：我要连，我的序号从 x 开始</span></span>
+<span class="line"><span>  |&#x3C;------- SYN+ACK (seq=y,ack=x+1) -------|   服务端：收到，我的序号从 y 开始</span></span>
+<span class="line"><span>  |---- ACK (ack=y+1)              ------->|   客户端：收到你的序号</span></span>
+<span class="line"><span>  状态：ESTABLISHED                        状态：ESTABLISHED</span></span></code></pre>
+<p><strong>两次不够的关键原因</strong>：两次握手只能确认”客户端→服务端”的序列号，服务端无法确认自己的初始序号被客户端收到。若失效的旧 SYN 重传到服务端，两次握手会直接建立一条<strong>幽灵连接</strong>并分配资源；三次握手下，旧连接请求因客户端不会回 ACK 而作废。</p>
+<h3 id="22-四次挥手与-time_wait">2.2 四次挥手与 TIME_WAIT</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>主动方                                     被动方</span></span>
+<span class="line"><span>  |---- FIN (seq=u)              -------->|   我说完了</span></span>
+<span class="line"><span>  |&#x3C;------- ACK (ack=u+1)         --------|   知道了（被动方可能还有数据要发）</span></span>
+<span class="line"><span>  |&#x3C;------- FIN (seq=v)           --------|   我也说完了</span></span>
+<span class="line"><span>  |---- ACK (ack=v+1)            -------->|   知道了</span></span>
+<span class="line"><span>  进入 TIME_WAIT（2MSL，通常 1~4 分钟）        收到后 CLOSE</span></span></code></pre>
+<ul>
+<li><strong>为什么四次</strong>：TCP 是全双工，两个方向要分别关闭；被动态的 ACK 和 FIN 通常不能合并（中间还要把剩余数据发完）</li>
+<li><strong>TIME_WAIT 的两个作用</strong>：① 保证最后一个 ACK 能到达（丢了的话对方会重发 FIN）② 让本连接的残余报文在网络中消散，避免污染新连接</li>
+<li><strong>大量 TIME_WAIT 的处理</strong>：主动关闭方才进 TIME_WAIT。服务器侧应尽量避免主动关闭；开启 <code>SO_REUSEADDR</code>（<code>src/java.base/share/classes/java/net/ServerSocket.java:770</code>）可复用处于 TIME_WAIT 的地址，否则重启会 <code>BindException: Address already in use</code></li>
+</ul>
+<h3 id="23-java-侧能看到的-tcp-细节">2.3 Java 侧能看到的 TCP 细节</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>场景</th><th>API</th><th>位置</th></tr></thead><tbody><tr><td>建连（触发三次握手）</td><td><code>Socket.connect(endpoint, timeout)</code></td><td><code>src/java.base/share/classes/java/net/Socket.java:639</code></td></tr><tr><td>无超时版建连</td><td><code>Socket.connect(endpoint)</code></td><td><code>:596</code></td></tr><tr><td>半连接/全连接队列长度</td><td><code>ServerSocket.bind(endpoint, backlog)</code> / <code>new ServerSocket(port, backlog)</code></td><td><code>src/java.base/share/classes/java/net/ServerSocket.java:310</code> / <code>:177</code></td></tr><tr><td>关闭行为（四次挥手）</td><td><code>Socket.setSoLinger(on, linger)</code></td><td><code>src/java.base/share/classes/java/net/Socket.java:1153</code></td></tr><tr><td>读超时</td><td><code>Socket.setSoTimeout(timeout)</code></td><td><code>:1273</code></td></tr><tr><td>小包合并（Nagle）开关</td><td><code>Socket.setTcpNoDelay(boolean)</code></td><td><code>:1116</code></td></tr><tr><td>心跳探活</td><td><code>Socket.setKeepAlive(boolean)</code></td><td><code>:1431</code></td></tr><tr><td>地址复用</td><td><code>ServerSocket.setReuseAddress(boolean)</code></td><td><code>src/java.base/share/classes/java/net/ServerSocket.java:770</code></td></tr></tbody></table>
+<p>几个直接能答的追问：</p>
+<ul>
+<li><strong><code>backlog</code> 是干什么的</strong>：服务端 <code>listen</code> 的队列长度。JDK 里透传给 <code>bind</code>（<code>:310</code>）。队列满后新连接被丢弃/拒连，客户端表现为连接超时或 RST</li>
+<li><strong><code>SO_LINGER</code> 的作用</strong>：默认 <code>close()</code> 立即返回（数据由内核继续发）；设置 <code>SO_LINGER</code> 后 <code>close()</code> 会<strong>阻塞直到数据发完或超时</strong>；设为 0 则直接发 RST（异常关闭，丢弃缓冲数据）——这就是”四次挥手 vs RST”的分界点（<code>:1153</code>）</li>
+<li><strong><code>TCP_NODELAY</code></strong>：关掉 Nagle 算法。Nagle 会把小包攒起来再发（省带宽、增延迟），交互型应用（RPC、游戏、终端）应 <code>setTcpNoDelay(true)</code>（<code>:1116</code>）</li>
+<li><strong><code>SO_TIMEOUT</code> 不是连接超时</strong>：它只作用于 <code>read()</code>，建连超时要用 <code>connect(endpoint, timeout)</code>（<code>:639</code>）</li>
+</ul>
+<h3 id="24-可靠传输的四根支柱">2.4 可靠传输的四根支柱</h3>
+<ol>
+<li><strong>序列号 + 确认号</strong>：每个字节都有序号，ACK 表示”这之前的都收到了”（累积确认）</li>
+<li><strong>超时重传</strong>：RTO 动态计算（基于 RTT 采样），超时未 ACK 就重发</li>
+<li><strong>滑动窗口</strong>：接收方通告窗口（rwnd）做<strong>流量控制</strong>，防止把接收方冲垮</li>
+<li><strong>拥塞控制</strong>：发送方自己维护 cwnd，经典四阶段——<strong>慢启动（指数增长）→ 拥塞避免（线性增长）→ 快重传（收到 3 个重复 ACK 立刻重传）→ 快恢复（不回到慢启动，直接从新阈值线性爬）</strong></li>
+</ol>
+<blockquote>
+<p>区分清楚：<strong>流量控制是”接收方扛不扛得住”，拥塞控制是”网络扛不扛得住”</strong>。</p>
+</blockquote>
+<h3 id="25-tcp-粘包拆包">2.5 TCP 粘包/拆包</h3>
+<p>TCP 是<strong>字节流</strong>，没有消息边界；UDP 是<strong>数据报</strong>，有边界。粘包的根源是字节流 + 缓冲区合并/Nagle，解决办法固定三件套：① 定长消息 ② 分隔符 ③ <strong>长度字段（最常用，如 HTTP 的 <code>Content-Length</code>/chunked）</strong>。</p>
+<hr>
+<h2 id="第三讲-udp-与-socket-api">第三讲 UDP 与 Socket API</h2>
+<h3 id="31-udp-是什么">3.1 UDP 是什么</h3>
+<p>无连接、不重传、不排序、无拥塞控制，<strong>只加 8 字节头</strong>（源端口/目的端口/长度/校验和）。所以它快、它简单、它可能丢。</p>
+<p>适合：音视频（丢一帧无所谓，延迟敏感）、DNS 查询、广播/多播、QUIC（在 UDP 上自己实现可靠）。</p>
+<h3 id="32-java-侧">3.2 Java 侧</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">DatagramSocket ds </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> DatagramSocket</span><span style="color:#24292E">(</span><span style="color:#005CC5">9999</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">ds.</span><span style="color:#6F42C1">connect</span><span style="color:#24292E">(addr, port);   </span><span style="color:#6A737D">// src/java.base/share/classes/java/net/DatagramSocket.java:414  仅"默认对端"，不建连</span></span>
+<span class="line"><span style="color:#24292E">ds.</span><span style="color:#6F42C1">send</span><span style="color:#24292E">(packet);          </span><span style="color:#6A737D">// :592</span></span>
+<span class="line"><span style="color:#24292E">ds.</span><span style="color:#6F42C1">setBroadcast</span><span style="color:#24292E">(</span><span style="color:#005CC5">true</span><span style="color:#24292E">);    </span><span style="color:#6A737D">// :908  开启广播（UDP 才有）</span></span></code></pre>
+<p>注意 <code>UDP 的 connect</code> 只是绑定默认地址（过滤来源、省去每次填地址），<strong>不产生任何握手</strong>。</p>
+<h3 id="33-socket-编程最小骨架tcp">3.3 Socket 编程最小骨架（TCP）</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">try</span><span style="color:#24292E"> (ServerSocket ss </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> ServerSocket</span><span style="color:#24292E">(</span><span style="color:#005CC5">8080</span><span style="color:#24292E">, </span><span style="color:#005CC5">128</span><span style="color:#24292E">);   </span><span style="color:#6A737D">// backlog=128</span></span>
+<span class="line"><span style="color:#24292E">     Socket s </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ss.</span><span style="color:#6F42C1">accept</span><span style="color:#24292E">()) {</span></span>
+<span class="line"><span style="color:#24292E">    s.</span><span style="color:#6F42C1">setTcpNoDelay</span><span style="color:#24292E">(</span><span style="color:#005CC5">true</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">    s.</span><span style="color:#6F42C1">setSoTimeout</span><span style="color:#24292E">(</span><span style="color:#005CC5">30_000</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">    InputStream in </span><span style="color:#D73A49">=</span><span style="color:#24292E"> s.</span><span style="color:#6F42C1">getInputStream</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">    ...</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<hr>
+<h2 id="第四讲-http-与-https">第四讲 HTTP 与 HTTPS</h2>
+<h3 id="41-请求响应报文">4.1 请求/响应报文</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>请求行：GET /api/user HTTP/1.1         状态行：HTTP/1.1 200 OK</span></span>
+<span class="line"><span>请求头：Host / Accept / Cookie ...       响应头：Content-Type / Set-Cookie ...</span></span>
+<span class="line"><span>空行                                    空行</span></span>
+<span class="line"><span>请求体（GET 通常没有）                    响应体</span></span></code></pre>
+<h3 id="42-方法与状态码">4.2 方法与状态码</h3>
+<ul>
+<li>方法：<code>GET</code>（安全、幂等、可缓存）、<code>POST</code>（非幂等）、<code>PUT</code>（幂等）、<code>DELETE</code>（幂等）、<code>HEAD</code>、<code>PATCH</code>、<code>OPTIONS</code></li>
+<li>状态码速记：<code>1xx</code> 继续 / <code>2xx</code> 成功（200、201 Created、204 No Content）/ <code>3xx</code> 重定向（<strong>301 永久、302 临时、304 未修改走缓存</strong>）/ <code>4xx</code> 客户端错（<strong>400 参数错、401 未认证、403 无权限、404 不存在、405 方法不允许</strong>）/ <code>5xx</code> 服务端错（<strong>500、502 网关坏、503 不可用、504 网关超时</strong>）</li>
+</ul>
+<h3 id="43-长连接与连接池java-侧真凭实据">4.3 长连接与连接池（Java 侧真凭实据）</h3>
+<p>HTTP/1.1 默认 <code>Connection: keep-alive</code>。JDK 的实现在 <code>KeepAliveCache</code>：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> KeepAliveCache</span><span style="color:#24292E"> ...                </span><span style="color:#6A737D">// src/java.base/share/classes/sun/net/www/http/KeepAliveCache.java:49</span></span>
+<span class="line"><span style="color:#D73A49">static</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> int MAX_CONNECTIONS = 5;          </span><span style="color:#6A737D">// :85  默认每目标最多 5 条空闲长连接</span></span>
+<span class="line"><span style="color:#24292E">result = Integer.getInteger("http.maxConnections", MAX_CONNECTIONS);  </span><span style="color:#6A737D">// :89  可调</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#24292E"> void put(</span><span style="color:#D73A49">final</span><span style="color:#24292E"> URL url, Object obj, HttpClient http)  </span><span style="color:#6A737D">// :114  归还连接</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#24292E"> HttpClient get(URL url, Object obj)                   </span><span style="color:#6A737D">// :202  取连接</span></span></code></pre>
+<p>也就是说 <code>HttpURLConnection</code> 自带一个<strong>每 host 上限 5</strong> 的连接池，超出就新建/关闭。生产环境应换 Apache HttpClient / OkHttp，它们有更完善的池化与超时控制。</p>
+<p><code>disconnect()</code>（<code>src/java.base/share/classes/sun/net/www/protocol/http/HttpURLConnection.java:2698</code>）会真正关闭连接，<strong>不归还连接池</strong>——想复用连接就不要调它。</p>
+<h3 id="44-chunked-分块传输">4.4 chunked 分块传输</h3>
+<p>响应体长度未知时无法写 <code>Content-Length</code>，改用 <code>Transfer-Encoding: chunked</code>（每块带十六进制长度，末尾 0 长度块结束）：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">protected</span><span style="color:#D73A49"> int</span><span style="color:#24292E"> chunkLength </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> -</span><span style="color:#005CC5">1</span><span style="color:#24292E">;                                    </span><span style="color:#6A737D">// src/java.base/share/classes/java/net/HttpURLConnection.java:70</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> setChunkedStreamingMode</span><span style="color:#24292E">(</span><span style="color:#D73A49">int</span><span style="color:#24292E"> chunklen)                  </span><span style="color:#6A737D">// :280</span></span></code></pre>
+<p>发大文件时应显式设置 chunked 或 fixed length；否则 JDK 会把整个 body 缓冲在内存里再发（<code>HttpURLConnection.java:672</code>、<code>:679</code>、<code>:1180</code> 的 <code>streaming()</code> 分支就是干这个判断的）——<strong>这是”上传大文件 OOM”的经典成因</strong>。</p>
+<h3 id="45-cookie">4.5 Cookie</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">private</span><span style="color:#24292E"> String domain;           </span><span style="color:#6A737D">// src/java.base/share/classes/java/net/HttpCookie.java:72</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> boolean</span><span style="color:#6F42C1"> hasExpired</span><span style="color:#24292E">()      </span><span style="color:#6A737D">// :238</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> long</span><span style="color:#6F42C1"> getMaxAge</span><span style="color:#24292E">()          </span><span style="color:#6A737D">// :421</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#6F42C1"> CookieManager</span><span style="color:#24292E">(CookieStore store, CookiePolicy cookiePolicy)  </span><span style="color:#6A737D">// src/java.base/share/classes/java/net/CookieManager.java:152</span></span>
+<span class="line"><span style="color:#24292E">policyCallback </span><span style="color:#D73A49">=</span><span style="color:#24292E"> (cookiePolicy </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> null</span><span style="color:#24292E">) </span><span style="color:#D73A49">?</span><span style="color:#24292E"> CookiePolicy.ACCEPT_ORIGINAL_SERVER  </span><span style="color:#6A737D">// :156</span></span></code></pre>
+<ul>
+<li>Cookie 靠请求头 <code>Cookie</code> / 响应头 <code>Set-Cookie</code> 传递，属性：<code>Domain</code>/<code>Path</code>/<code>Max-Age</code>/<code>Expires</code>/<code>HttpOnly</code>/<code>Secure</code>/<code>SameSite</code></li>
+<li><code>HttpOnly</code> 防 JS 读取（防 XSS 窃取）、<code>Secure</code> 只走 HTTPS、<code>SameSite=Lax/Strict</code> 防 CSRF</li>
+<li>JDK 默认策略 <code>ACCEPT_ORIGINAL_SERVER</code>（<code>:156</code>）：只接受”响应来源主机”的 cookie，且默认存内存（<code>InMemoryCookieStore</code>）</li>
+</ul>
+<h3 id="46-https--http-over-tls">4.6 HTTPS = HTTP over TLS</h3>
+<p>TLS 握手要点（1.2）：ClientHello（支持的套件/随机数）→ ServerHello + 证书 → 客户端验证证书链 + 域名 → 用证书公钥加密/签名交换出<strong>对称会话密钥</strong> → 之后全部走对称加密。</p>
+<p><strong>为什么既用非对称又用对称</strong>：非对称安全地协商密钥（但慢），对称加密大量数据（快）。</p>
+<p>Java 侧两个关键点：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#24292E"> SSLSocketFactory </span><span style="color:#6F42C1">getDefaultSSLSocketFactory</span><span style="color:#24292E">()  </span><span style="color:#6A737D">// src/java.base/share/classes/javax/net/ssl/HttpsURLConnection.java:315</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> setHostnameVerifier</span><span style="color:#24292E">(HostnameVerifier v)          </span><span style="color:#6A737D">// :257</span></span></code></pre>
+<blockquote>
+<p><strong>严禁</strong>在生产里写”信任所有证书 / 关掉主机名校验”——那等于把 HTTPS 降级成明文。证书校验 + 主机名校验是 TLS 防中间人的最后一道防线。</p>
+</blockquote>
+<p>HTTP/2：多路复用（一条连接并发多个流，解决队头阻塞）、头部压缩 HPACK、二进制分帧、服务端推送。HTTP/3：把 TCP 换成 <strong>QUIC（基于 UDP）</strong>，在用户态实现可靠与拥塞控制，彻底解决 TCP 队头阻塞与握手延迟。</p>
+<hr>
+<h2 id="第五讲-dnsurl-与工程化">第五讲 DNS、URL 与工程化</h2>
+<h3 id="51-dns-解析与-jdk-缓存">5.1 DNS 解析与 JDK 缓存</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>浏览器缓存 → 操作系统缓存/hosts → 本地 DNS 服务器（递归）→ 根 → 顶级域 → 权威 DNS（迭代）</span></span></code></pre>
+<p>JDK 侧有独立缓存，由安全属性控制（文档就在 <code>InetAddress</code> 头部）：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>networkaddress.cache.ttl         // src/java.base/share/classes/java/net/InetAddress.java:197   正向解析缓存秒数</span></span>
+<span class="line"><span>networkaddress.cache.negative.ttl（默认 10）  // :224  失败结果缓存 10 秒</span></span></code></pre>
+<p><code>InetAddress.getAllByName0(host)</code>（<code>:779</code>）是真正的解析入口。<strong>坑</strong>：JVM 默认缓存成功的 DNS 结果<strong>直到 JVM 退出</strong>（除非配了 ttl），所以 DNS 切换时 Java 应用可能长时间不生效；运维场景要显式设置 <code>networkaddress.cache.ttl</code>。</p>
+<h3 id="52-uri-vs-url高频">5.2 URI vs URL（高频）</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th></th><th>URI</th><th>URL</th></tr></thead><tbody><tr><td>定义</td><td>统一资源<strong>标识符</strong>（只要能标识）</td><td>统一资源<strong>定位符</strong>（必须能定位，带访问方式）</td></tr><tr><td>类</td><td><code>public final class URI</code>（<code>src/java.base/share/classes/java/net/URI.java:519</code>）</td><td><code>URL</code></td></tr><tr><td>常用方法</td><td><code>normalize()</code>（<code>:1044</code>）路径规整、<code>resolve()</code>（<code>:1104</code>）相对转绝对</td><td><code>openConnection()</code> 真正发起访问</td></tr></tbody></table>
+<blockquote>
+<p><strong><code>URL.equals()</code> 有个著名的坑</strong>：它会做<strong>主机解析</strong>来判断相等（<code>src/java.base/share/classes/java/net/URL.java:1090</code> 的 <code>equals</code> 内部走 <code>getHostAddress()</code>，见 <code>:936</code>），因此 <code>equals</code>/<code>hashCode</code> 可能<strong>阻塞在网络 IO 上</strong>，绝不能放进 HashSet/HashMap 的 key。要判等请用 <code>URI</code> 或 <code>toExternalForm()</code> 字符串比较。</p>
+</blockquote>
+<h3 id="53-url-编码">5.3 URL 编码</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#24292E"> String </span><span style="color:#6F42C1">encode</span><span style="color:#24292E">(String s, String enc)   </span><span style="color:#6A737D">// src/java.base/share/classes/java/net/URLEncoder.java:181</span></span></code></pre>
+<p>按 <code>application/x-www-form-urlencoded</code> 规则编码（空格变 <code>+</code>，非 ASCII 变 <code>%XX</code>）。注意它<strong>不是</strong>通用 URL 编码器——编路径段时空格应为 <code>%20</code>，需用 <code>URI</code> 构造代替。</p>
+<h3 id="54-io-多路复用select--poll--epoll">5.4 IO 多路复用：select / poll / epoll</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th></th><th>select</th><th>poll</th><th>epoll</th></tr></thead><tbody><tr><td>数据结构</td><td>位图 fd_set</td><td>数组 pollfd</td><td>内核红黑树 + 就绪链表</td></tr><tr><td>fd 上限</td><td><code>FD_SETSIZE</code>（1024）</td><td>无</td><td>无</td></tr><tr><td>复杂度</td><td>每次 O(n) 遍历 + 拷贝</td><td>O(n)</td><td><strong>O(就绪数)</strong>，回调式</td></tr><tr><td>触发</td><td>水平</td><td>水平</td><td>水平 + 边缘（ET）</td></tr></tbody></table>
+<p>JDK 的 <code>Selector</code> 在 Linux 上就是 epoll（<code>EPollSelectorImpl</code>）：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">class</span><span style="color:#6F42C1"> EPollSelectorImpl</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> SelectorImpl</span><span style="color:#24292E"> {     </span><span style="color:#6A737D">// src/java.base/linux/classes/sun/nio/ch/EPollSelectorImpl.java:49</span></span>
+<span class="line"><span style="color:#D73A49">    protected</span><span style="color:#D73A49"> int</span><span style="color:#6F42C1"> doSelect</span><span style="color:#24292E">(Consumer&#x3C;</span><span style="color:#D73A49">SelectionKey</span><span style="color:#24292E">> </span><span style="color:#E36209">action</span><span style="color:#24292E">, </span><span style="color:#D73A49">long</span><span style="color:#E36209"> timeout</span><span style="color:#24292E">)  </span><span style="color:#6A737D">// :94  内部 epoll_wait</span></span></code></pre>
+<p>所以 <strong>Java NIO 的高性能不是”Java 自己快”，而是把 epoll 暴露给了 Java</strong>。这也是”为什么 NIO 能撑住 C10K”的标准答案：一个线程 + epoll 就能管住上万个连接。</p>
+<hr>
+<h2 id="六面试高频-qa">六、面试高频 Q&#x26;A</h2>
+<p>26 道最高频题的「一句话答案」。先报结论占住阵地，面试官真追问时，按「深入」列展开到对应讲次。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>#</th><th>问题</th><th>答案（先给结论）</th><th>深入</th></tr></thead><tbody><tr><td>1</td><td>OSI 七层与 TCP/IP 四层怎么对应？</td><td>应用/表示/会话 → 应用层；传输 → 传输层；网络 → 网际层；链路+物理 → 链路层</td><td>第一讲</td></tr><tr><td>2</td><td>为什么要三次握手？</td><td>两次只能确认客户端序号，服务端无法确认自己的初始序号被收到；旧 SYN 重传会建立幽灵连接</td><td>第二讲</td></tr><tr><td>3</td><td>为什么要四次挥手？</td><td>全双工，两个方向分别关闭；被动方的 ACK 与 FIN 之间还要发完剩余数据</td><td>第二讲</td></tr><tr><td>4</td><td>TIME_WAIT 有什么用？为什么要 2MSL？</td><td>① 保证最后 ACK 能到达（丢了对方重发 FIN）② 让残余报文消散；2MSL 刚好覆盖”一去一回”</td><td>第二讲</td></tr><tr><td>5</td><td>服务器大量 TIME_WAIT 怎么办？</td><td>只有主动关闭方才进 TIME_WAIT；让客户端主动关、开 <code>SO_REUSEADDR</code>（<code>ServerSocket.java:770</code>）、调短内核回收</td><td>第二讲</td></tr><tr><td>6</td><td>TCP 怎么保证可靠？</td><td>序列号+累积确认、超时重传、滑动窗口（流量控制）、拥塞控制四阶段</td><td>第二讲</td></tr><tr><td>7</td><td>流量控制和拥塞控制的区别？</td><td>流量控制看接收方 rwnd（别冲垮对端）；拥塞控制看网络 cwnd（别冲垮网络）</td><td>第二讲</td></tr><tr><td>8</td><td>TCP 粘包怎么解决？</td><td>协议层定边界：定长 / 分隔符 / <strong>长度字段</strong>（HTTP 的 Content-Length 与 chunked 就是后者）</td><td>第二讲</td></tr><tr><td>9</td><td><code>SO_LINGER</code> 是什么？</td><td>关闭行为开关：默认 close 立即返回（后台发完）；设 0 直接发 RST 丢弃数据（<code>Socket.java:1153</code>）</td><td>第二讲</td></tr><tr><td>10</td><td><code>TCP_NODELAY</code> 是干什么的？</td><td>关 Nagle 小包合并，降低交互延迟；RPC/游戏/终端应打开（<code>Socket.java:1116</code>）</td><td>第二讲</td></tr><tr><td>11</td><td><code>SO_TIMEOUT</code> 是连接超时吗？</td><td>不是，它只作用于 <code>read()</code>；连接超时用 <code>connect(addr, timeout)</code>（<code>Socket.java:639</code>）</td><td>第二讲</td></tr><tr><td>12</td><td><code>backlog</code> 是什么？</td><td><code>listen</code> 的队列长度，JDK 由 <code>bind</code>/构造器透传（<code>ServerSocket.java:310</code>/<code>:177</code>）；满了就拒连</td><td>第二讲</td></tr><tr><td>13</td><td>TCP 与 UDP 的区别？</td><td>TCP：面向连接、可靠、有序、有流量/拥塞控制、字节流；UDP：无连接、尽最大努力、有报文边界、8 字节头</td><td>第三讲</td></tr><tr><td>14</td><td>UDP 的 <code>connect</code> 会握手吗？</td><td>不会，只绑定默认对端地址用于过滤和省参数（<code>DatagramSocket.java:414</code>）</td><td>第三讲</td></tr><tr><td>15</td><td>GET 与 POST 的区别？</td><td>语义上 GET 安全且幂等、可缓存、无 body；POST 非幂等有 body。工程上：GET 参数在 URL（长度受限、会留日志）、POST 在 body</td><td>第四讲</td></tr><tr><td>16</td><td>HTTP 状态码 301/302/304 分别是什么？</td><td>301 永久重定向（浏览器会缓存）；302 临时；304 未修改，用本地缓存</td><td>第四讲</td></tr><tr><td>17</td><td>502 与 504 有什么区别？</td><td>502 网关收到上游<strong>无效响应</strong>；504 网关<strong>等上游超时</strong></td><td>第四讲</td></tr><tr><td>18</td><td>HTTP 长连接是什么？JDK 怎么池化？</td><td>一个 TCP 上跑多次请求响应；JDK 用 <code>KeepAliveCache</code>，<strong>每 host 默认 5 条</strong>（<code>:85</code>），可调 <code>http.maxConnections</code>（<code>:89</code>）</td><td>第四讲</td></tr><tr><td>19</td><td>上传大文件为什么会 OOM？</td><td>未设 <code>Content-Length</code> 也未开 chunked，JDK 会把整个 body 缓冲在内存（<code>HttpURLConnection.java:70</code>/<code>:280</code>）</td><td>第四讲</td></tr><tr><td>20</td><td>Cookie 与 Session 的区别？</td><td>Cookie 存客户端（有大小与数量限制、不安全），Session 存服务端、只给客户端一个 sessionId（通常放 Cookie）</td><td>第四讲</td></tr><tr><td>21</td><td><code>HttpOnly</code>/<code>Secure</code>/<code>SameSite</code> 防什么？</td><td>HttpOnly 防 XSS 读取；Secure 只走 HTTPS；SameSite 防 CSRF</td><td>第四讲</td></tr><tr><td>22</td><td>HTTPS 握手为什么既用非对称又用对称？</td><td>非对称安全协商会话密钥（慢），对称加密大量数据（快）；证书+主机名校验防中间人</td><td>第四讲</td></tr><tr><td>23</td><td>HTTP/2 相比 1.1 改进了什么？</td><td>二进制分帧 + 多路复用（解决队头阻塞）+ HPACK 头压缩 + 服务端推送</td><td>第四讲</td></tr><tr><td>24</td><td>HTTP/3 为什么换成 UDP？</td><td>底层是 QUIC，在用户态实现可靠与拥塞控制，避免 TCP 队头阻塞并降低握手延迟</td><td>第四讲</td></tr><tr><td>25</td><td>DNS 解析过程？Java 有什么坑？</td><td>浏览器缓存→hosts→本地 DNS 递归→根/顶级/权威迭代；JVM 默认缓存成功结果直到退出，需设 <code>networkaddress.cache.ttl</code>（<code>InetAddress.java:197</code>）</td><td>第五讲</td></tr><tr><td>26</td><td>select / poll / epoll 的区别？</td><td>select 位图且 1024 上限、poll 数组无上限、epoll 红黑树+就绪链表 O(就绪数)；JDK Selector 在 Linux 上就是 epoll（<code>EPollSelectorImpl.java:49</code>/<code>:94</code>）</td><td>第五讲</td></tr></tbody></table>
+<hr>
+<h2 id="七易错点清单">七、易错点清单</h2>
+<ol>
+<li><strong>把 <code>SO_TIMEOUT</code> 当连接超时</strong>：建连超时必须走 <code>connect(addr, timeout)</code>（<code>Socket.java:639</code>）</li>
+<li><strong><code>URL.equals()</code> 会做 DNS 解析</strong>：可能阻塞、可能随网络变化，别做 HashMap key（<code>URL.java:1090</code>、<code>:936</code>）</li>
+<li><strong>调了 <code>disconnect()</code> 还想复用长连接</strong>：它直接关连接不归还池（<code>sun/net/www/protocol/http/HttpURLConnection.java:2698</code>）</li>
+<li><strong><code>URLEncoder</code> 不是通用 URL 编码器</strong>：它是 form 编码（空格→<code>+</code>），编路径请用 <code>URI</code></li>
+<li><strong>以为 UDP 的 <code>connect</code> 会建连接</strong>：不会，只是绑定默认对端（<code>DatagramSocket.java:414</code>）</li>
+<li><strong>服务端主动关闭导致 TIME_WAIT 堆积</strong>：尽量让客户端先关；开 <code>SO_REUSEADDR</code></li>
+<li><strong>关掉主机名校验/信任所有证书</strong>：HTTPS 直接失效</li>
+<li><strong>以为 HTTP/2 就没有队头阻塞</strong>：TCP 层的队头阻塞仍在（丢包会阻塞整条连接），这也是 HTTP/3 换 QUIC 的原因</li>
+<li><strong>JVM DNS 缓存导致灰度/切流不生效</strong>：显式配 <code>networkaddress.cache.ttl</code></li>
+<li><strong>长连接不做心跳</strong>：NAT/防火墙会静默断流，需要 TCP keepalive（<code>Socket.java:1431</code>）或应用层心跳</li>
+</ol>
+<hr>
+<h2 id="八数值速记">八、数值速记</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>数值</th><th>含义</th><th>出处</th></tr></thead><tbody><tr><td><code>5</code></td><td>JDK HTTP 长连接池默认每 host 上限</td><td><code>KeepAliveCache.java:85</code></td></tr><tr><td><code>10</code></td><td>DNS 失败结果缓存秒数（negative ttl 默认）</td><td><code>InetAddress.java:224</code></td></tr><tr><td><code>2MSL</code></td><td>TIME_WAIT 时长（一去一回，通常 1~4 分钟）</td><td>协议（RFC 793）</td></tr><tr><td><code>8 字节</code></td><td>UDP 头部长度</td><td>协议（RFC 768）</td></tr><tr><td><code>-1</code></td><td><code>HttpURLConnection.chunkLength</code> 初值（未开 chunked）</td><td><code>HttpURLConnection.java:70</code></td></tr><tr><td><code>1024</code></td><td>select 的 <code>FD_SETSIZE</code> 经典上限</td><td>协议/实现</td></tr></tbody></table>
+<hr>
+<h2 id="九复习卡">九、复习卡</h2>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled> 能画出三次握手与四次挥手的报文与状态迁移，说出 TIME_WAIT 的两个作用</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能区分流量控制与拥塞控制，说出拥塞控制四阶段</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出 TCP 粘包的三种解法，并指认 HTTP 用的是哪种</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出 Java 侧 6 个 socket 选项分别管什么（<code>backlog</code>/<code>SO_LINGER</code>/<code>TCP_NODELAY</code>/<code>SO_TIMEOUT</code>/<code>SO_REUSEADDR</code>/<code>SO_KEEPALIVE</code>）</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能背出常见状态码（301/302/304/401/403/404/502/504）</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出 JDK 长连接池的默认上限与调优参数</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出 HTTPS 握手为什么非对称+对称混用，以及 hostname 校验的意义</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出 Cookie 三个安全属性分别防什么</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出 DNS 解析链路与 JVM 缓存坑</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能对比 select/poll/epoll，并说出 JDK Selector 在 Linux 上的实现</li>
+</ul>
+<hr>
+<h2 id="十文件索引">十、文件索引</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>文件</th><th>说明</th></tr></thead><tbody><tr><td><code>src/java.base/share/classes/java/net/Socket.java</code></td><td>connect / setTcpNoDelay / setSoLinger / setSoTimeout / setKeepAlive</td></tr><tr><td><code>src/java.base/share/classes/java/net/ServerSocket.java</code></td><td>backlog、bind、setReuseAddress</td></tr><tr><td><code>src/java.base/share/classes/java/net/DatagramSocket.java</code></td><td>UDP send/receive/connect/setBroadcast</td></tr><tr><td><code>src/java.base/share/classes/java/net/InetAddress.java</code></td><td>DNS 解析入口与缓存策略说明</td></tr><tr><td><code>src/java.base/share/classes/java/net/HttpURLConnection.java</code></td><td>chunkLength / setChunkedStreamingMode</td></tr><tr><td><code>src/java.base/share/classes/sun/net/www/protocol/http/HttpURLConnection.java</code></td><td>真实 HTTP 客户端、streaming 判断、disconnect</td></tr><tr><td><code>src/java.base/share/classes/sun/net/www/http/KeepAliveCache.java</code></td><td>长连接池（MAX_CONNECTIONS=5）</td></tr><tr><td><code>src/java.base/share/classes/java/net/HttpCookie.java</code></td><td>Cookie 属性与过期判断</td></tr><tr><td><code>src/java.base/share/classes/java/net/CookieManager.java</code></td><td>Cookie 策略（默认 ACCEPT_ORIGINAL_SERVER）</td></tr><tr><td><code>src/java.base/share/classes/java/net/URL.java</code></td><td>equals 触发主机解析的坑</td></tr><tr><td><code>src/java.base/share/classes/java/net/URI.java</code></td><td>normalize / resolve</td></tr><tr><td><code>src/java.base/share/classes/java/net/URLEncoder.java</code></td><td>form 编码</td></tr><tr><td><code>src/java.base/share/classes/javax/net/ssl/HttpsURLConnection.java</code></td><td>SSLSocketFactory / HostnameVerifier</td></tr><tr><td><code>src/java.base/linux/classes/sun/nio/ch/EPollSelectorImpl.java</code></td><td>epoll 选择器实现</td></tr></tbody></table>  </div> <div class="post-nav"> <span><a href="/ai-agent/">← AI Agent 源码深度学习笔记</a></span> <span></span> </div> </article>  </main> <footer class="site-footer"> <div class="inner"> <div class="foot-brand"> <span class="brand-mark">&lt;/&gt;</span> <b>源码深读</b> <span>逐文件、逐函数地读源码，结论都带 文件:行号</span> </div> <div class="foot-links"> <a href="/#principles">原理速查</a> <a href="/animations/">动画</a> <a href="/categories/">分类</a> <a href="/tags/">标签</a> </div> <p class="foot-note">由 Astro 静态生成 · 内容以 Markdown 源码笔记为唯一事实源</p> </div> </footer> </body></html> <script type="module" src="/_astro/PostLayout.astro_astro_type_script_index_0_lang.B4vzteL_.js"></script>

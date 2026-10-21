@@ -1,0 +1,633 @@
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>操作系统源码深度学习笔记 · 源码深读</title><meta name="description" content="源码级技术笔记：中间件、Spring、Java、存储、云原生与 RAG"><link rel="icon" href="data:,"><link rel="stylesheet" href="/_astro/aqs-lock.D0PgXYln.css"></head> <body> <header class="site-header"> <div class="inner"> <a class="brand" href="/"> <span class="brand-mark">&lt;/&gt;</span> <span class="brand-name">源码深读</span> </a> <nav class="site-nav"> <a href="/" class> 首页 </a><a href="/#principles" class> 原理速查 </a><a href="/animations/" class> 动画 </a><a href="/categories/" class> 分类 </a><a href="/tags/" class> 标签 </a> </nav> </div> </header> <main class="main">  <article class="post"> <div class="crumb"> <a href="/">首页</a>  / <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a>  </div> <div class="post-head"> <h1>操作系统源码深度学习笔记</h1> <div class="page-meta"> <time datetime="2026-10-21T00:00:00.000Z">2026-10-21</time>  · <a class="chip" href="/tags/%E8%BF%9B%E7%A8%8B/">进程</a>  <a class="chip" href="/tags/%E7%BA%BF%E7%A8%8B/">线程</a>  <a class="chip" href="/tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/">内存管理</a>  <a class="chip" href="/tags/IO/">IO</a>  <a class="chip" href="/tags/%E6%BA%90%E7%A0%81/">源码</a>  </div> </div> <nav class="toc"> <div class="toc-title">目录</div> <ol> <li class="d2"> <a href="#〇全景地图">〇、全景地图</a> </li><li class="d2"> <a href="#第一讲-进程与线程">第一讲 进程与线程</a> </li><li class="d3"> <a href="#11-进程是怎么生出来的">1.1 进程是怎么”生”出来的</a> </li><li class="d3"> <a href="#12-线程共享什么私有什么">1.2 线程：共享什么、私有什么</a> </li><li class="d3"> <a href="#13-jvm-创建一条-java-线程的完整链路">1.3 JVM 创建一条 Java 线程的完整链路</a> </li><li class="d3"> <a href="#14-进程信息java-也能查">1.4 进程信息：Java 也能查</a> </li><li class="d3"> <a href="#15-协程与虚拟线程">1.5 协程与虚拟线程</a> </li><li class="d2"> <a href="#第二讲-上下文切换与调度">第二讲 上下文切换与调度</a> </li><li class="d3"> <a href="#21-一次上下文切换到底换了什么">2.1 一次上下文切换到底换了什么</a> </li><li class="d3"> <a href="#22-线程状态java-说的和-os-说的不是一回事">2.2 线程状态：Java 说的和 OS 说的不是一回事</a> </li><li class="d3"> <a href="#23-调度算法速记">2.3 调度算法速记</a> </li><li class="d2"> <a href="#第三讲-内存管理">第三讲 内存管理</a> </li><li class="d3"> <a href="#31-虚拟内存为什么要多一层地址">3.1 虚拟内存：为什么要多一层地址</a> </li><li class="d3"> <a href="#32-分页与缺页">3.2 分页与缺页</a> </li><li class="d3"> <a href="#33-进程的内存布局">3.3 进程的内存布局</a> </li><li class="d2"> <a href="#第四讲-io系统调用多路复用与零拷贝">第四讲 IO：系统调用、多路复用与零拷贝</a> </li><li class="d3"> <a href="#41-用户态--内核态">4.1 用户态 / 内核态</a> </li><li class="d3"> <a href="#42-阻塞--非阻塞同步--异步">4.2 阻塞 / 非阻塞、同步 / 异步</a> </li><li class="d3"> <a href="#43-多路复用一个线程管万条连接">4.3 多路复用：一个线程管万条连接</a> </li><li class="d3"> <a href="#44-零拷贝sendfile-是怎么回事">4.4 零拷贝：sendfile 是怎么回事</a> </li><li class="d2"> <a href="#第五讲-同步互斥与死锁">第五讲 同步、互斥与死锁</a> </li><li class="d3"> <a href="#51-为什么需要同步">5.1 为什么需要同步</a> </li><li class="d3"> <a href="#52-死锁四条件缺一不可">5.2 死锁四条件（缺一不可）</a> </li><li class="d3"> <a href="#53-进程间通信ipc">5.3 进程间通信（IPC）</a> </li><li class="d2"> <a href="#六面试高频-qa">六、面试高频 Q&amp;A</a> </li><li class="d2"> <a href="#七易错点清单">七、易错点清单</a> </li><li class="d2"> <a href="#八数值速记">八、数值速记</a> </li><li class="d2"> <a href="#九复习卡">九、复习卡</a> </li><li class="d2"> <a href="#十文件索引">十、文件索引</a> </li> </ol> </nav> <div class="markdown-body">  <blockquote>
+<p>基于两条真实源码线的精读整理而成：
+① <strong>HotSpot 虚拟机</strong>（<code>src/hotspot/share/runtime/</code>：<code>javaThread.cpp</code>、<code>thread.cpp</code>、<code>os.cpp</code>、<code>osThread.hpp</code>、<code>continuationFreezeThaw.cpp</code>）——JVM 是”离操作系统最近”的 Java 程序，它对线程的每一次创建、挂起、恢复都直接踩在 OS 系统调用上；
+② <strong>JDK 类库里最贴近内核的那几个类</strong>（<code>java.base/unix/classes/java/lang/ProcessImpl.java</code>、<code>java/lang/ProcessHandleImpl.java</code>、<code>sun/nio/ch/FileChannelImpl.java</code>、<code>FileDispatcher.java</code>、<code>linux/classes/sun/nio/ch/EPollSelectorImpl.java</code>、<code>java/lang/Thread.java</code>、<code>VirtualThread.java</code>）。</p>
+<p>阅读顺序即学习顺序：<strong>进程与线程 → 上下文切换与调度 → 内存管理 → IO 与零拷贝 → 同步互斥与死锁</strong>。</p>
+<p>所有结论均标注了源文件位置（格式 <code>src/hotspot/share/runtime/xxx.cpp:行号</code> 或 <code>src/java.base/.../xxx.java:行号</code>），建议对照代码阅读。</p>
+<p><strong>版本基线</strong>：JDK <strong>21（jdk-21-ga）</strong> commit <code>890adb64</code>（HotSpot 与 <code>java.lang</code> 部分）；<code>java.io</code>/<code>java.net</code>/<code>sun.nio.ch</code> 与 Unix 平台类取自 OpenJDK 主线 commit <code>6c48f4ed</code>（2025-08-12）。</p>
+<p>说明：Linux 内核自身（<code>fs/</code>、<code>mm/</code>、<code>kernel/</code>）不在本仓源码范围内，凡是内核内部机制均为规范描述；凡能落到 JVM/JDK 实现上的，都挂了真实行号——<strong>本文的方法是用”JVM 怎么调 OS”来反证 OS 概念</strong>。并发与锁的 Java 侧细节见 <code>java-concurrent.md</code>、<code>java-lock.md</code>，IO 多路复用见 <code>java-io.md</code>。</p>
+</blockquote>
+<hr>
+<h2 id="〇全景地图">〇、全景地图</h2>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>┌────────────────────────── 操作系统四大件 ──────────────────────────┐</span></span>
+<span class="line"><span>│                                                                    │</span></span>
+<span class="line"><span>│  ① 进程/线程管理          ② 内存管理                               │</span></span>
+<span class="line"><span>│     fork+exec 建进程         虚拟地址空间 → 页表 → 物理页           │</span></span>
+<span class="line"><span>│     pthread_create 建线程     页大小 vm_page_size（os.cpp:1488）     │</span></span>
+<span class="line"><span>│     JavaThread 创建链路        TLB / 缺页中断 / 页面置换             │</span></span>
+<span class="line"><span>│     VirtualThread（用户态调度）                                      │</span></span>
+<span class="line"><span>│                                                                    │</span></span>
+<span class="line"><span>│  ③ 文件系统与 IO           ④ 同步互斥                              │</span></span>
+<span class="line"><span>│     系统调用 read/write        互斥锁 / 条件变量 / park-unpark       │</span></span>
+<span class="line"><span>│     PageCache + mmap           死锁四条件与四种对策                  │</span></span>
+<span class="line"><span>│     sendfile 零拷贝（FileChannelImpl:934）                          │</span></span>
+<span class="line"><span>│     epoll 多路复用（EPollSelectorImpl:94）                          │</span></span>
+<span class="line"><span>└────────────────────────────────────────────────────────────────────┘</span></span></code></pre>
+<p>一句话主线：<strong>OS 做两件事——“抽象”（把 CPU 抽象成进程/线程、把内存抽象成地址空间、把设备抽象成文件）和”仲裁”（谁先用、用多少、出事了怎么收场）</strong>。面试里所有 OS 题都能归到这两件事上。</p>
+<hr>
+<h2 id="第一讲-进程与线程">第一讲 进程与线程</h2>
+<h3 id="11-进程是怎么生出来的">1.1 进程是怎么”生”出来的</h3>
+<p>Linux 的经典模型是 <strong>fork + exec</strong>：</p>
+<ul>
+<li><code>fork()</code>：复制出一个几乎一模一样的子进程（写时复制 COW，不是真拷内存）</li>
+<li><code>exec()</code>：把子进程的代码段换成新程序</li>
+</ul>
+<p>JDK 里创建进程就是这条路的直接映射：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> native</span><span style="color:#D73A49"> int</span><span style="color:#6F42C1"> forkAndExec</span><span style="color:#24292E">(</span><span style="color:#D73A49">int</span><span style="color:#24292E"> mode, </span><span style="color:#D73A49">byte</span><span style="color:#24292E">[] helperpath, ...)   </span><span style="color:#6A737D">// src/java.base/unix/classes/java/lang/ProcessImpl.java:282</span></span>
+<span class="line"><span style="color:#24292E">pid </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> forkAndExec</span><span style="color:#24292E">(launchMechanism.</span><span style="color:#6F42C1">ordinal</span><span style="color:#24292E">() </span><span style="color:#D73A49">+</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">, ...);              </span><span style="color:#6A737D">// :300  拿到子进程 pid</span></span>
+<span class="line"><span style="color:#24292E">processHandle </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ProcessHandleImpl.</span><span style="color:#6F42C1">getInternal</span><span style="color:#24292E">(pid);                 </span><span style="color:#6A737D">// :308</span></span></code></pre>
+<p>有意思的是 JDK 还有第三种更快的机制（<code>launchMechanism</code>）：<code>fork</code> 之外还能走 <strong><code>posix_spawn</code></strong> 或 <strong><code>vfork</code></strong>，因为”先复制再 exec”在超大堆的 JVM 上代价极高——这是”Java 里 <code>Runtime.exec()</code> 为什么慢”的标准解释。</p>
+<p>子进程结束后的收尸：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">ProcessHandleImpl.</span><span style="color:#6F42C1">completion</span><span style="color:#24292E">(pid, </span><span style="color:#005CC5">true</span><span style="color:#24292E">).</span><span style="color:#6F42C1">handle</span><span style="color:#24292E">((exitcode, throwable) </span><span style="color:#D73A49">-></span><span style="color:#24292E"> ...)  </span><span style="color:#6A737D">// :342 / :378</span></span></code></pre>
+<ul>
+<li>父进程不 <code>wait()</code> 回收，子进程就变<strong>僵尸进程</strong>（PCB 还占着，pid 不释放）</li>
+<li>父进程先死，子进程被 init/systemd 收养，成<strong>孤儿进程</strong>（无害）</li>
+</ul>
+<p>进程的三要素：<strong>PCB（进程控制块）+ 地址空间 + 打开的文件描述符表</strong>。</p>
+<h3 id="12-线程共享什么私有什么">1.2 线程：共享什么、私有什么</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>共享（进程级）</th><th>私有（线程级）</th></tr></thead><tbody><tr><td>代码段、堆、全局变量</td><td>栈、寄存器上下文（PC/SP）</td></tr><tr><td>打开的文件描述符、信号处理</td><td>线程局部存储（ThreadLocal）</td></tr><tr><td>进程凭证、地址空间</td><td>调度状态、errno</td></tr></tbody></table>
+<p><strong>为什么线程切换比进程切换快</strong>：线程切换不换页表（不换 CR3），因此 <strong>TLB 不失效</strong>；进程切换要换地址空间，TLB 全刷，代价高一个量级。</p>
+<h3 id="13-jvm-创建一条-java-线程的完整链路">1.3 JVM 创建一条 Java 线程的完整链路</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>Thread.start()                       ← src/java.base/share/classes/java/lang/Thread.java</span></span>
+<span class="line"><span>   └─ JVM_StartThread (native)</span></span>
+<span class="line"><span>        └─ JavaThread 构造：</span></span>
+<span class="line"><span>             pd_initialize()                       // src/hotspot/share/runtime/javaThread.cpp:513</span></span>
+<span class="line"><span>             os::create_thread(this, thr_type, stack_sz)  // :605  真正 pthread_create</span></span>
+<span class="line"><span>        └─ Thread::start(thread)                   // src/hotspot/share/runtime/thread.cpp:371</span></span>
+<span class="line"><span>             os::start_thread(thread)              // :382  让它跑起来</span></span>
+<span class="line"><span>        └─ JavaThread::run()                       // javaThread.cpp:666  初始化 TLAB、栈保护页</span></span>
+<span class="line"><span>        └─ 结束：set_thread_status(TERMINATED)      // javaThread.cpp:742</span></span></code></pre>
+<p>三个可直接引用的结论：</p>
+<ol>
+<li><strong>Java 线程 = 内核线程（1:1 模型）</strong>：<code>os::create_thread</code>（<code>javaThread.cpp:605</code>）最终落到 <code>pthread_create</code>，所以 <code>new Thread()</code> 的代价 ≈ 一次系统调用 + 内核栈/线程结构体分配，<strong>默认栈 1MB 级</strong>（<code>-Xss</code> 可调）</li>
+<li><strong>创建失败会 OOM</strong>：源码注释明确写了”可能因活跃线程太多导致 <code>_osthread</code> 为 null，抛 OutOfMemoryError”（<code>javaThread.cpp:607</code> 附近）——这就是”unable to create new native thread”的出处</li>
+<li><strong>线程栈大小按页对齐</strong>：<code>JavaThread::set_stack_size_at_create(align_up(stack_size_in_bytes, vm_page_size()))</code>（<code>src/hotspot/share/runtime/os.cpp:2081</code>），所以 <code>-Xss</code> 设成非页整数倍会被向上取整</li>
+</ol>
+<h3 id="14-进程信息java-也能查">1.4 进程信息：Java 也能查</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> long</span><span style="color:#6F42C1"> pid</span><span style="color:#24292E">()                                  </span><span style="color:#6A737D">// src/java.base/share/classes/java/lang/ProcessHandleImpl.java:269</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#24292E"> Stream</span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">ProcessHandle</span><span style="color:#D73A49">></span><span style="color:#6F42C1"> children</span><span style="color:#24292E">()            </span><span style="color:#6A737D">// :391</span></span>
+<span class="line"><span style="color:#D73A49">boolean</span><span style="color:#6F42C1"> destroyProcess</span><span style="color:#24292E">(</span><span style="color:#D73A49">boolean</span><span style="color:#24292E"> force)              </span><span style="color:#6A737D">// :332  force=true 就是 SIGKILL</span></span></code></pre>
+<p><code>children()</code>（<code>:391</code>）在 Linux 上是读 <code>/proc/*/stat</code> 的 PPID 字段拼出进程树——<strong>Linux 把进程信息做成文件系统的典型例子</strong>（<code>destroyProcess</code> 则是 <code>kill(pid, SIGTERM/SIGKILL)</code>）。</p>
+<h3 id="15-协程与虚拟线程">1.5 协程与虚拟线程</h3>
+<p>虚拟线程（JDK 21）是<strong>用户态调度</strong>的线程：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">Continuation.</span><span style="color:#6F42C1">yield</span><span style="color:#24292E">(VTHREAD_SCOPE);   </span><span style="color:#6A737D">// src/java.base/share/classes/java/lang/VirtualThread.java:441</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> mount</span><span style="color:#24292E">()                 </span><span style="color:#6A737D">// :351  绑定到 carrier 线程</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> unmount</span><span style="color:#24292E">()               </span><span style="color:#6A737D">// :378  解绑</span></span></code></pre>
+<p>挂起时 JVM 要把 Java 栈帧从 carrier 线程的栈搬到堆上的 continuation chunk：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="c"><code><span class="line"><span style="color:#D73A49">static</span><span style="color:#6F42C1"> JRT_BLOCK_ENTRY</span><span style="color:#24292E">(</span><span style="color:#D73A49">int</span><span style="color:#24292E">, </span><span style="color:#6F42C1">freeze</span><span style="color:#24292E">(JavaThread</span><span style="color:#D73A49">*</span><span style="color:#E36209"> current</span><span style="color:#24292E">, </span><span style="color:#D73A49">intptr_t*</span><span style="color:#E36209"> sp</span><span style="color:#24292E">))</span><span style="color:#6A737D">  // src/hotspot/share/runtime/continuationFreezeThaw.cpp:230</span></span>
+<span class="line"><span style="color:#D73A49">static</span><span style="color:#D73A49"> int</span><span style="color:#6F42C1"> freeze</span><span style="color:#24292E">(JavaThread</span><span style="color:#D73A49">*</span><span style="color:#E36209"> thread</span><span style="color:#24292E">, </span><span style="color:#D73A49">intptr_t*</span><span style="color:#D73A49"> const</span><span style="color:#E36209"> sp</span><span style="color:#24292E">)</span><span style="color:#6A737D">                // :271</span></span></code></pre>
+<p><strong>对比表</strong>：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th></th><th>进程</th><th>线程（内核）</th><th>协程 / 虚拟线程</th></tr></thead><tbody><tr><td>调度方</td><td>内核</td><td>内核</td><td><strong>用户态（JVM）</strong></td></tr><tr><td>切换代价</td><td>最高（换页表）</td><td>中（内核进出）</td><td>最低（不进内核）</td></tr><tr><td>阻塞影响</td><td>只影响自己</td><td>只影响自己</td><td>会占住 carrier（<strong>pinning</strong>）</td></tr><tr><td>数量级</td><td>百</td><td>千</td><td><strong>百万</strong></td></tr></tbody></table>
+<blockquote>
+<p><strong>虚拟线程的核心告诫</strong>：它解决的是”<strong>并发数多但多因 IO 等待</strong>”的场景；不要在虚拟线程里跑 CPU 密集任务，也不要在 <code>synchronized</code> 里做阻塞 IO（会把 carrier 钉住）。</p>
+</blockquote>
+<hr>
+<h2 id="第二讲-上下文切换与调度">第二讲 上下文切换与调度</h2>
+<h3 id="21-一次上下文切换到底换了什么">2.1 一次上下文切换到底换了什么</h3>
+<p><strong>进程切换</strong>：保存/恢复寄存器 → 切换页表（CR3）→ <strong>TLB 失效</strong> → 内核栈切换 → 调度器选下一个。
+<strong>线程切换</strong>：同进程的线程不换页表，省掉 TLB 刷新这一大块。</p>
+<p><strong>什么时候会切</strong>：</p>
+<ul>
+<li><strong>自愿（voluntary）</strong>：等 IO、等锁、sleep、yield</li>
+<li><strong>非自愿（involuntary）</strong>：时间片用完、被更高优先级抢占</li>
+</ul>
+<p><code>Thread.yield()</code> 只是”提示调度器我可以下台”，<strong>不保证真的让出</strong>（且 JVM 优先级映射到 OS 优先级后可能被忽略，见 <code>src/java.base/share/classes/java/lang/Thread.java:363/368/373</code>）。自旋等待时应调用：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> onSpinWait</span><span style="color:#24292E">() {}   </span><span style="color:#6A737D">// src/java.base/share/classes/java/lang/Thread.java:636</span></span></code></pre>
+<p>它是给 CPU 的提示（x86 上是 <code>PAUSE</code>），能降低自旋功耗、减少对流水线的破坏。</p>
+<h3 id="22-线程状态java-说的和-os-说的不是一回事">2.2 线程状态：Java 说的和 OS 说的不是一回事</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> enum</span><span style="color:#6F42C1"> State</span><span style="color:#24292E"> {   </span><span style="color:#6A737D">// src/java.base/share/classes/java/lang/Thread.java:2664</span></span>
+<span class="line"><span style="color:#005CC5">    NEW</span><span style="color:#24292E">, </span><span style="color:#005CC5">RUNNABLE</span><span style="color:#24292E">, </span><span style="color:#005CC5">BLOCKED</span><span style="color:#24292E">, </span><span style="color:#005CC5">WAITING</span><span style="color:#24292E">, </span><span style="color:#005CC5">TIMED_WAITING</span><span style="color:#24292E">, </span><span style="color:#005CC5">TERMINATED</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>HotSpot 侧另有自己的状态记录（而且只作<strong>提示</strong>用）：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="c"><code><span class="line"><span style="color:#D73A49">volatile</span><span style="color:#24292E"> ThreadState _state;</span><span style="color:#6A737D">   // src/hotspot/share/runtime/osThread.hpp:69  "Thread state *hint*"</span></span></code></pre>
+<p><strong>高频考点</strong>：<code>RUNNABLE</code> <strong>不等于正在 CPU 上跑</strong>——JDK 文档明说它也包含”等待操作系统资源（如 IO）“的状态。所以 jstack 里看到一片 <code>RUNNABLE</code> 且栈顶是 <code>socketRead</code>，真实情况是<strong>卡在网络 IO 上</strong>（详见 <code>perf-troubleshooting.md</code>）。</p>
+<h3 id="23-调度算法速记">2.3 调度算法速记</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>算法</th><th>规则</th><th>问题</th></tr></thead><tbody><tr><td>FCFS</td><td>先来先服务</td><td>长作业拖死短作业（护航效应）</td></tr><tr><td>SJF/STCF</td><td>最短作业优先</td><td>长作业饥饿</td></tr><tr><td>RR 时间片轮转</td><td>每人一片</td><td>片太大退化 FCFS，太小切换开销大</td></tr><tr><td>多级反馈队列 MLFQ</td><td>优先级 + 降级</td><td>Linux CFS 的近亲（实际用”虚拟运行时间”红黑树）</td></tr></tbody></table>
+<hr>
+<h2 id="第三讲-内存管理">第三讲 内存管理</h2>
+<h3 id="31-虚拟内存为什么要多一层地址">3.1 虚拟内存：为什么要多一层地址</h3>
+<ul>
+<li><strong>隔离</strong>：每个进程看到的是独立的地址空间，踩不到别人</li>
+<li><strong>简化链接</strong>：链接器可以用固定地址</li>
+<li><strong>超订（overcommit）</strong>：虚拟地址空间可以比物理内存大得多，靠”按需调页”兑现</li>
+</ul>
+<p>JVM 侧的页大小：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="c"><code><span class="line"><span style="color:#D73A49">size_t</span><span style="color:#24292E"> os::</span><span style="color:#6F42C1">page_size_for_region</span><span style="color:#24292E">(...)</span><span style="color:#6A737D">  // src/hotspot/share/runtime/os.cpp:1473</span></span>
+<span class="line"><span style="color:#D73A49">return</span><span style="color:#6F42C1"> vm_page_size</span><span style="color:#24292E">();</span><span style="color:#6A737D">                 // :1488  标准页（x86 通常 4KB）</span></span></code></pre>
+<p>以及前面提到的栈大小按页对齐（<code>os.cpp:2081</code>）。大页（HugePage，2MB/1GB）能显著减少 TLB miss，是数据库/JVM 大堆的常见优化项（<code>-XX:+UseLargePages</code>）。</p>
+<h3 id="32-分页与缺页">3.2 分页与缺页</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>虚拟地址 = 页号 + 页内偏移</span></span>
+<span class="line"><span>   │</span></span>
+<span class="line"><span>   ├─ TLB 命中 → 直接拿物理页（快）</span></span>
+<span class="line"><span>   └─ TLB 未命中 → 查页表 → 页表项 Present?</span></span>
+<span class="line"><span>          ├─ 是 → 填 TLB，重试指令</span></span>
+<span class="line"><span>          └─ 否 → **缺页中断**（page fault）：</span></span>
+<span class="line"><span>                     • 合法但未分配 → 分配物理页、可能触发**页面置换**</span></span>
+<span class="line"><span>                     • 非法 → SIGSEGV</span></span></code></pre>
+<p>页面置换算法：OPT（理论最优，不可实现）、<strong>FIFO（可能 Belady 异常）</strong>、LRU（最接近 OPT）、LFU、Clock（LRU 的近似，OS 实际用得多）。</p>
+<h3 id="33-进程的内存布局">3.3 进程的内存布局</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>高地址</span></span>
+<span class="line"><span>  ┌──────────────┐</span></span>
+<span class="line"><span>  │   内核空间    │  用户态不可见（系统调用才进得去）</span></span>
+<span class="line"><span>  ├──────────────┤</span></span>
+<span class="line"><span>  │   栈 stack    │  向下增长，存放局部变量与调用帧</span></span>
+<span class="line"><span>  ├──────────────┤</span></span>
+<span class="line"><span>  │   mmap 区     │  动态库、mmap 文件映射</span></span>
+<span class="line"><span>  ├──────────────┤</span></span>
+<span class="line"><span>  │   堆 heap     │  向上增长（malloc / JVM 堆）</span></span>
+<span class="line"><span>  ├──────────────┤</span></span>
+<span class="line"><span>  │   BSS / Data  │  未初始化 / 已初始化的全局量</span></span>
+<span class="line"><span>  ├──────────────┤</span></span>
+<span class="line"><span>  │   代码段 text │</span></span>
+<span class="line"><span>低地址</span></span></code></pre>
+<p><strong>栈溢出 vs 堆溢出</strong>：栈是线程私有的、大小固定（<code>StackOverflowError</code>）；堆是所有线程共享（<code>OutOfMemoryError: Java heap space</code>）。JVM 还会在栈边缘放<strong>保护页</strong>做栈溢出检测（<code>javaThread.cpp:666</code> 的 <code>create_stack_guard_pages()</code>）。</p>
+<hr>
+<h2 id="第四讲-io系统调用多路复用与零拷贝">第四讲 IO：系统调用、多路复用与零拷贝</h2>
+<h3 id="41-用户态--内核态">4.1 用户态 / 内核态</h3>
+<ul>
+<li><strong>用户态</strong>：跑应用程序，不能直接访问硬件/内核内存</li>
+<li><strong>内核态</strong>：跑内核代码，能访问一切</li>
+<li><strong>切换的三种触发</strong>：系统调用（主动）、中断（异步）、异常（故障）</li>
+</ul>
+<p><strong>系统调用的代价</strong>：陷入内核（保存现场、切栈）、权限检查、可能的调度 → 单次约微秒级。所以”减少系统调用次数”是所有 IO 优化的第一原则——<strong>缓冲（BufferedInputStream）就是这么来的</strong>。</p>
+<h3 id="42-阻塞--非阻塞同步--异步">4.2 阻塞 / 非阻塞、同步 / 异步</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th></th><th>阻塞</th><th>非阻塞</th></tr></thead><tbody><tr><td>同步</td><td>read 一直等到数据（最常见）</td><td>read 立刻返回 EAGAIN，需轮询</td></tr><tr><td>异步</td><td>—</td><td>提交请求，完成由回调/信号通知</td></tr></tbody></table>
+<p>Java 里：<code>BIO</code>（同步阻塞）→ <code>NIO</code>（同步非阻塞 + 多路复用）→ <code>AIO</code>（异步，Linux 上实际由线程池模拟）。</p>
+<h3 id="43-多路复用一个线程管万条连接">4.3 多路复用：一个线程管万条连接</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">class</span><span style="color:#6F42C1"> EPollSelectorImpl</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> SelectorImpl</span><span style="color:#24292E"> {                     </span><span style="color:#6A737D">// src/java.base/linux/classes/sun/nio/ch/EPollSelectorImpl.java:49</span></span>
+<span class="line"><span style="color:#D73A49">    protected</span><span style="color:#D73A49"> int</span><span style="color:#6F42C1"> doSelect</span><span style="color:#24292E">(Consumer&#x3C;</span><span style="color:#D73A49">SelectionKey</span><span style="color:#24292E">> </span><span style="color:#E36209">action</span><span style="color:#24292E">, </span><span style="color:#D73A49">long</span><span style="color:#E36209"> timeout</span><span style="color:#24292E">)  </span><span style="color:#6A737D">// :94  内部就是 epoll_wait</span></span></code></pre>
+<ul>
+<li><code>select</code>/<code>poll</code>：每次都要把整个 fd 集合拷进内核并 O(n) 扫描</li>
+<li><code>epoll</code>：内核维护红黑树 + 就绪链表，<code>epoll_wait</code> 只返回就绪的 fd → O(就绪数)</li>
+</ul>
+<p><strong>为什么 epoll 能撑 C10K</strong>：不随连接数线性增长，且不需要为每个连接开一个线程（省掉线程栈与切换开销）。</p>
+<h3 id="44-零拷贝sendfile-是怎么回事">4.4 零拷贝：sendfile 是怎么回事</h3>
+<p>传统”读文件再发出去”要走 <strong>4 次拷贝 + 4 次上下文切换</strong>：磁盘→内核缓冲区→用户缓冲区→socket 内核缓冲→网卡。</p>
+<p>Java 的 <code>transferTo</code> 直接走内核的 <code>sendfile</code>：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> long</span><span style="color:#6F42C1"> transferTo</span><span style="color:#24292E">(</span><span style="color:#D73A49">long</span><span style="color:#24292E"> position, </span><span style="color:#D73A49">long</span><span style="color:#24292E"> count, WritableByteChannel target)  </span><span style="color:#6A737D">// src/java.base/share/classes/sun/nio/ch/FileChannelImpl.java:934</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> long</span><span style="color:#6F42C1"> transferToTrustedChannel</span><span style="color:#24292E">(...)     </span><span style="color:#6A737D">// :849  目标是可信 channel（SocketChannel）→ 走 sendfile</span></span>
+<span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> long</span><span style="color:#6F42C1"> transferToArbitraryChannel</span><span style="color:#24292E">(...)  </span><span style="color:#6A737D">// :901  不可信则退化成 mmap/缓冲拷贝</span></span>
+<span class="line"><span style="color:#D73A49">abstract</span><span style="color:#D73A49"> long</span><span style="color:#6F42C1"> transferTo</span><span style="color:#24292E">(FileDescriptor src, </span><span style="color:#D73A49">long</span><span style="color:#24292E"> position, </span><span style="color:#D73A49">long</span><span style="color:#24292E"> count, ...)   </span><span style="color:#6A737D">// src/java.base/share/classes/sun/nio/ch/FileDispatcher.java:86</span></span></code></pre>
+<p><code>FileDispatcher.transferTo</code>（<code>:86</code>）是 native 方法，在 Linux 上就是 <code>sendfile(2)</code>：数据<strong>全程不进用户态</strong>，只剩”磁盘→内核缓冲→网卡”两次 DMA 拷贝。</p>
+<blockquote>
+<p><strong>注意</strong>：<code>transferTo</code> 是否真的零拷贝取决于目标 channel 类型（<code>:849</code> vs <code>:901</code> 两条分支），而且需要在支持的系统上；不要无条件宣称”用了 transferTo 就一定零拷贝”。</p>
+</blockquote>
+<hr>
+<h2 id="第五讲-同步互斥与死锁">第五讲 同步、互斥与死锁</h2>
+<h3 id="51-为什么需要同步">5.1 为什么需要同步</h3>
+<p><strong>竞态条件（race condition）</strong>：多个线程对共享数据的读写序列不确定。解决靠<strong>互斥</strong>（一次只准一个进临界区）+ <strong>可见性/顺序</strong>（内存屏障）。</p>
+<p>实现手段：关中断（单核内核）、<strong>自旋锁</strong>（临界区极短）、<strong>互斥锁</strong>（会睡眠，临界区较长）、信号量、条件变量、读写锁。</p>
+<h3 id="52-死锁四条件缺一不可">5.2 死锁四条件（缺一不可）</h3>
+<ol>
+<li><strong>互斥</strong>：资源一次只能被一个持有</li>
+<li><strong>占有且等待</strong>：持有一个还等着别的</li>
+<li><strong>不可抢占</strong>：不能强行抢走</li>
+<li><strong>循环等待</strong>：形成环形等待链</li>
+</ol>
+<p>对应四种对策：<strong>预防</strong>（破坏任一条件，如统一加锁顺序破循环等待）、<strong>避免</strong>（银行家算法，运行时判断）、<strong>检测 + 恢复</strong>（画等待图，检测到就回滚/杀线程）、<strong>鸵鸟</strong>（不管，重启——多数数据库和 JVM 的实用选择）。</p>
+<p>JVM 自带的死锁检测：<code>jstack</code> 能直接报 <code>Found one Java-level deadlock</code>（基于线程等待图），数据库则靠超时或等待图检测后回滚代价最小的事务。</p>
+<h3 id="53-进程间通信ipc">5.3 进程间通信（IPC）</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>方式</th><th>特点</th></tr></thead><tbody><tr><td>管道 pipe</td><td>半双工、字节流、父子进程</td></tr><tr><td>命名管道 FIFO</td><td>无亲缘关系也能用</td></tr><tr><td>消息队列</td><td>有边界的消息，内核维护</td></tr><tr><td>共享内存 + 信号量</td><td><strong>最快</strong>（不拷数据，靠映射同一块物理页），但要自己同步</td></tr><tr><td>信号 signal</td><td>异步通知（<code>kill -9</code> 就是 SIGKILL，见 <code>ProcessHandleImpl.destroyProcess</code>）</td></tr><tr><td>socket</td><td>跨主机也能用</td></tr></tbody></table>
+<p><strong>最快的是共享内存</strong>，因为它唯一地”绕开了内核拷贝”。</p>
+<hr>
+<h2 id="六面试高频-qa">六、面试高频 Q&#x26;A</h2>
+<p>26 道最高频题的「一句话答案」。先报结论占住阵地，面试官真追问时，按「深入」列展开到对应讲次。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>#</th><th>问题</th><th>答案（先给结论）</th><th>深入</th></tr></thead><tbody><tr><td>1</td><td>进程和线程的区别？</td><td>进程是<strong>资源分配</strong>的基本单位（独立地址空间），线程是<strong>CPU 调度</strong>的基本单位（共享地址空间，私有栈与寄存器）</td><td>第一讲</td></tr><tr><td>2</td><td>为什么线程切换比进程切换快？</td><td>线程不换页表，<strong>TLB 不失效</strong>；进程切换要换地址空间并刷 TLB</td><td>第一讲</td></tr><tr><td>3</td><td>线程共享什么、私有什么？</td><td>共享堆/代码段/文件描述符；私有栈、寄存器上下文、ThreadLocal</td><td>第一讲</td></tr><tr><td>4</td><td>fork 和 exec 分别做什么？</td><td>fork 复制进程（COW），exec 换成新程序；JDK 的 <code>forkAndExec</code>（<code>ProcessImpl.java:282</code>）就是这对组合</td><td>第一讲</td></tr><tr><td>5</td><td>什么是僵尸进程？怎么产生？</td><td>子进程退出但父进程没 <code>wait()</code> 回收，PCB 与 pid 仍占着</td><td>第一讲</td></tr><tr><td>6</td><td>孤儿进程有害吗？</td><td>无害，被 init/systemd 收养并回收</td><td>第一讲</td></tr><tr><td>7</td><td>Java 线程是内核线程吗？</td><td>是 1:1 模型：<code>os::create_thread</code>（<code>javaThread.cpp:605</code>）最终是 <code>pthread_create</code></td><td>第一讲</td></tr><tr><td>8</td><td>“unable to create new native thread” 是什么原因？</td><td>线程数触到系统/ulimit 上限或虚拟内存不足，HotSpot 在 <code>create_thread</code> 拿不到 <code>_osthread</code> 时抛 OOM</td><td>第一讲</td></tr><tr><td>9</td><td>协程与线程的区别？</td><td>协程在<strong>用户态</strong>调度，切换不进内核，可开百万级；线程由内核调度，千级</td><td>第一讲</td></tr><tr><td>10</td><td>虚拟线程为什么能支撑高并发？</td><td>阻塞时 <code>Continuation.yield</code>（<code>VirtualThread.java:441</code>）把栈帧 freeze 到堆（<code>continuationFreezeThaw.cpp:230</code>）并释放 carrier</td><td>第一讲</td></tr><tr><td>11</td><td>虚拟线程的 pinning 是什么？</td><td>阻塞操作发生在 <code>synchronized</code> 内时无法 unmount，carrier 被钉住，吞吐退化</td><td>第一讲</td></tr><tr><td>12</td><td>什么是上下文切换？什么时候发生？</td><td>保存/恢复执行现场；自愿（等 IO/锁/sleep）与非自愿（时间片到/被抢占）</td><td>第二讲</td></tr><tr><td>13</td><td><code>Thread.yield()</code> 一定让出 CPU 吗？</td><td>不保证，只是提示；且 Java 优先级（1/5/10）映射到 OS 后可能被忽略</td><td>第二讲</td></tr><tr><td>14</td><td><code>onSpinWait()</code> 有什么用？</td><td>给 CPU 的自旋提示（x86 <code>PAUSE</code>），降低功耗与流水线惩罚（<code>Thread.java:636</code>）</td><td>第二讲</td></tr><tr><td>15</td><td>线程状态 RUNNABLE 就是在跑吗？</td><td><strong>不是</strong>，它还包含”等待 OS 资源”（如阻塞 IO）——jstack 里 <code>RUNNABLE</code> + <code>socketRead</code> 其实是卡住了</td><td>第二讲</td></tr><tr><td>16</td><td>为什么要有虚拟内存？</td><td>隔离（进程之间互相踩不到）、简化链接、支持超订与按需调页</td><td>第三讲</td></tr><tr><td>17</td><td>什么是缺页中断？</td><td>访问的页不在内存（页表项未 Present）时触发，内核分配物理页/换入后重试；非法访问则 SIGSEGV</td><td>第三讲</td></tr><tr><td>18</td><td>页面置换算法有哪些？</td><td>OPT（理论）、FIFO（有 Belady 异常）、LRU、LFU、Clock（LRU 近似，OS 实际常用）</td><td>第三讲</td></tr><tr><td>19</td><td>栈溢出与堆溢出的区别？</td><td>栈私有且固定 → <code>StackOverflowError</code>；堆共享 → <code>OutOfMemoryError: Java heap space</code></td><td>第三讲</td></tr><tr><td>20</td><td>用户态和内核态怎么切换？</td><td>系统调用（主动）、中断（异步）、异常（故障）；每次切换要保存现场+切栈，约微秒级</td><td>第四讲</td></tr><tr><td>21</td><td>同步/异步与阻塞/非阻塞的区别？</td><td>同步/异步看”结果怎么拿到”（自己等 vs 回调通知）；阻塞/非阻塞看”等的时候线程挂不挂”</td><td>第四讲</td></tr><tr><td>22</td><td>select / poll / epoll 为什么 epoll 快？</td><td>epoll 用红黑树+就绪链表，返回就绪集合 O(就绪数)；前两者每次 O(n) 扫描+拷贝</td><td>第四讲</td></tr><tr><td>23</td><td>什么是零拷贝？Java 怎么做？</td><td>数据不经过用户态；<code>FileChannel.transferTo</code>（<code>FileChannelImpl.java:934</code>）→ <code>FileDispatcher.transferTo</code>（<code>:86</code>）→ <code>sendfile</code></td><td>第四讲</td></tr><tr><td>24</td><td>用了 <code>transferTo</code> 就一定零拷贝吗？</td><td>不一定：只有目标是可信 channel 才走 sendfile（<code>:849</code>），否则退化（<code>:901</code>）</td><td>第四讲</td></tr><tr><td>25</td><td>死锁的四个必要条件？</td><td>互斥、占有且等待、不可抢占、循环等待；破任一条即可预防（最实用：统一加锁顺序）</td><td>第五讲</td></tr><tr><td>26</td><td>进程间通信最快的是哪种？</td><td>共享内存（映射同一块物理页，不拷数据），但要自己配信号量同步</td><td>第五讲</td></tr></tbody></table>
+<hr>
+<h2 id="七易错点清单">七、易错点清单</h2>
+<ol>
+<li><strong>把 <code>RUNNABLE</code> 当”正在运行”</strong>：它包含阻塞在 OS IO 上的线程，排查时要看栈顶帧</li>
+<li><strong>以为 <code>Thread.yield()</code> 能控制调度</strong>：只是提示，行为依赖 OS</li>
+<li><strong>虚拟线程里跑 CPU 密集任务</strong>：占住 carrier 不释放，比线程池还差</li>
+<li><strong>虚拟线程 + <code>synchronized</code> + 阻塞 IO</strong>：触发 pinning，吞吐骤降（应改 <code>ReentrantLock</code>）</li>
+<li><strong>以为线程栈可以任意设</strong>：HotSpot 会按页大小向上取整（<code>os.cpp:2081</code>）</li>
+<li><strong>以为 <code>transferTo</code> 一律零拷贝</strong>：分可信/不可信两条分支（<code>:849</code> vs <code>:901</code>）</li>
+<li><strong>混淆同步异步与阻塞非阻塞</strong>：两组正交概念，别混答</li>
+<li><strong>忘记父进程要回收子进程</strong>：不 <code>wait()</code> 就堆僵尸进程（<code>ProcessImpl.java:342</code> 的 completion 回调就是干这个的）</li>
+<li><strong>把”减少系统调用”理解成”减少 IO 次数”</strong>：真正该做的是<strong>加大每次 IO 的粒度</strong>（缓冲/批量）</li>
+<li><strong>死锁只说”加锁顺序”</strong>：四条件里任意一条都能破，检测/恢复也是正经策略</li>
+</ol>
+<hr>
+<h2 id="八数值速记">八、数值速记</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>数值</th><th>含义</th><th>出处</th></tr></thead><tbody><tr><td><code>4KB</code></td><td>x86 标准页大小（HugePage 通常 2MB/1GB）</td><td><code>os.cpp:1488</code> <code>vm_page_size()</code></td></tr><tr><td><code>1 / 5 / 10</code></td><td>Java 线程优先级 MIN/NORM/MAX（OS 可忽略）</td><td><code>Thread.java:363/368/373</code></td></tr><tr><td><code>6</code></td><td><code>Thread.State</code> 枚举值个数</td><td><code>Thread.java:2664</code></td></tr><tr><td><code>4 → 2</code></td><td>零拷贝把”数据拷贝次数”从 4 降到 2（DMA 直传）</td><td><code>FileChannelImpl.java:849</code></td></tr><tr><td><code>SIGTERM / SIGKILL</code></td><td><code>destroyProcess(false)</code> / <code>destroyProcess(true)</code></td><td><code>ProcessHandleImpl.java:332</code></td></tr><tr><td><code>1:1</code></td><td>Java 线程模型（一个 Java 线程一个内核线程）</td><td><code>javaThread.cpp:605</code></td></tr></tbody></table>
+<hr>
+<h2 id="九复习卡">九、复习卡</h2>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled> 能说出进程与线程的三点区别，并解释”线程切换更快”的真实原因（TLB）</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能画出 JVM 创建 Java 线程的调用链（JavaThread → os::create_thread → pthread_create）</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能解释 fork/exec、僵尸/孤儿进程，并说出 JDK 里对应的行号</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说清虚拟线程 mount/unmount + freeze 的机制，以及 pinning 的触发条件</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能区分自愿/非自愿上下文切换，并说出 RUNNABLE 的真实语义</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出虚拟内存三大作用与缺页中断的处理流程</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出页面置换算法并指出 OS 实际常用的那个</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能解释用户态/内核态切换的三种触发方式与代价</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能对比 select/poll/epoll，并说出 JDK Selector 在 Linux 的实现</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出零拷贝的原理、Java API 与”并非总是零拷贝”的边界</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能背出死锁四条件与四种对策</li>
+</ul>
+<hr>
+<h2 id="十文件索引">十、文件索引</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>文件</th><th>说明</th></tr></thead><tbody><tr><td><code>src/hotspot/share/runtime/javaThread.cpp</code></td><td>Java 线程创建（<code>:605</code> create_thread）、<code>run()</code>（<code>:666</code>）、TERMINATED（<code>:742</code>）</td></tr><tr><td><code>src/hotspot/share/runtime/thread.cpp</code></td><td><code>Thread::start</code>（<code>:371</code>）→ <code>os::start_thread</code>（<code>:382</code>）</td></tr><tr><td><code>src/hotspot/share/runtime/os.cpp</code></td><td><code>os::start_thread</code>（<code>:842</code>）、页大小（<code>:1488</code>）、栈按页对齐（<code>:2081</code>）</td></tr><tr><td><code>src/hotspot/share/runtime/osThread.hpp</code></td><td>OS 线程状态”提示”（<code>:69</code>）</td></tr><tr><td><code>src/hotspot/share/runtime/continuationFreezeThaw.cpp</code></td><td>协程栈帧 freeze（<code>:230</code>/<code>:271</code>）、栈布局（<code>:144</code>）</td></tr><tr><td><code>src/java.base/unix/classes/java/lang/ProcessImpl.java</code></td><td>forkAndExec（<code>:282</code>）、pid（<code>:300</code>）、子进程回收（<code>:342</code>）</td></tr><tr><td><code>src/java.base/share/classes/java/lang/ProcessHandleImpl.java</code></td><td>pid（<code>:269</code>）、destroyProcess（<code>:332</code>）、children（<code>:391</code>）</td></tr><tr><td><code>src/java.base/share/classes/java/lang/Thread.java</code></td><td>State（<code>:2664</code>）、优先级、onSpinWait（<code>:636</code>）</td></tr><tr><td><code>src/java.base/share/classes/java/lang/VirtualThread.java</code></td><td>mount/unmount（<code>:351</code>/<code>:378</code>）、<code>Continuation.yield</code>（<code>:441</code>）</td></tr><tr><td><code>src/java.base/share/classes/sun/nio/ch/FileChannelImpl.java</code></td><td>transferTo 与零拷贝两条分支（<code>:934</code>/<code>:849</code>/<code>:901</code>）</td></tr><tr><td><code>src/java.base/share/classes/sun/nio/ch/FileDispatcher.java</code></td><td><code>transferTo</code> native 声明（<code>:86</code>）</td></tr><tr><td><code>src/java.base/linux/classes/sun/nio/ch/EPollSelectorImpl.java</code></td><td>epoll 选择器（<code>:49</code>/<code>:94</code>）</td></tr></tbody></table>  </div> <div class="post-nav"> <span><a href="/perf-troubleshooting/">← 线上问题排查与性能瓶颈定位实战</a></span> <span><a href="/java-basics/">Java 基础源码深度学习笔记 →</a></span> </div> </article>  </main> <footer class="site-footer"> <div class="inner"> <div class="foot-brand"> <span class="brand-mark">&lt;/&gt;</span> <b>源码深读</b> <span>逐文件、逐函数地读源码，结论都带 文件:行号</span> </div> <div class="foot-links"> <a href="/#principles">原理速查</a> <a href="/animations/">动画</a> <a href="/categories/">分类</a> <a href="/tags/">标签</a> </div> <p class="foot-note">由 Astro 静态生成 · 内容以 Markdown 源码笔记为唯一事实源</p> </div> </footer> </body></html> <script type="module" src="/_astro/PostLayout.astro_astro_type_script_index_0_lang.B4vzteL_.js"></script>

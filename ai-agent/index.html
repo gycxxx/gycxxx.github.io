@@ -1,0 +1,573 @@
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>AI Agent 源码深度学习笔记 · 源码深读</title><meta name="description" content="源码级技术笔记：中间件、Spring、Java、存储、云原生与 RAG"><link rel="icon" href="data:,"><link rel="stylesheet" href="/_astro/aqs-lock.D0PgXYln.css"></head> <body> <header class="site-header"> <div class="inner"> <a class="brand" href="/"> <span class="brand-mark">&lt;/&gt;</span> <span class="brand-name">源码深读</span> </a> <nav class="site-nav"> <a href="/" class> 首页 </a><a href="/#principles" class> 原理速查 </a><a href="/animations/" class> 动画 </a><a href="/categories/" class> 分类 </a><a href="/tags/" class> 标签 </a> </nav> </div> </header> <main class="main">  <article class="post"> <div class="crumb"> <a href="/">首页</a>  / <a href="/categories/RAG%20%E4%B8%8E%20Agent/">RAG 与 Agent</a>  </div> <div class="post-head"> <h1>AI Agent 源码深度学习笔记</h1> <div class="page-meta"> <time datetime="2026-10-21T00:00:00.000Z">2026-10-21</time>  · <a class="chip" href="/tags/AI%20Agent/">AI Agent</a>  <a class="chip" href="/tags/Dify/">Dify</a>  <a class="chip" href="/tags/ReAct/">ReAct</a>  <a class="chip" href="/tags/Function%20Calling/">Function Calling</a>  <a class="chip" href="/tags/MCP/">MCP</a>  <a class="chip" href="/tags/%E6%BA%90%E7%A0%81/">源码</a>  </div> </div> <nav class="toc"> <div class="toc-title">目录</div> <ol> <li class="d2"> <a href="#〇全景地图">〇、全景地图</a> </li><li class="d2"> <a href="#第一讲-agent-是什么与大模型工作流的边界">第一讲 Agent 是什么：与大模型、工作流的边界</a> </li><li class="d3"> <a href="#11-三者的区别">1.1 三者的区别</a> </li><li class="d3"> <a href="#12-agent-的五件套">1.2 Agent 的五件套</a> </li><li class="d2"> <a href="#第二讲-function-calling-循环">第二讲 Function Calling 循环</a> </li><li class="d2"> <a href="#第三讲-react-循环chain-of-thought">第三讲 ReAct 循环（Chain-of-Thought）</a> </li><li class="d3"> <a href="#策略是自动选的">策略是自动选的</a> </li><li class="d2"> <a href="#第四讲-工具系统从-tool-到-mcp">第四讲 工具系统：从 Tool 到 MCP</a> </li><li class="d3"> <a href="#41-工具是怎么塞给模型的">4.1 工具是怎么塞给模型的</a> </li><li class="d3"> <a href="#42-mcp工具的usb-c-接口">4.2 MCP：工具的”USB-C 接口”</a> </li><li class="d2"> <a href="#第五讲-记忆与上下文">第五讲 记忆与上下文</a> </li><li class="d3"> <a href="#51-短期记忆token-预算制">5.1 短期记忆：token 预算制</a> </li><li class="d3"> <a href="#52-长期记忆与上下文工程">5.2 长期记忆与上下文工程</a> </li><li class="d2"> <a href="#第六讲-工程化上限可观测成本与安全">第六讲 工程化：上限、可观测、成本与安全</a> </li><li class="d3"> <a href="#61-必须设的三道闸">6.1 必须设的三道闸</a> </li><li class="d3"> <a href="#62-可观测每一步都要能回放">6.2 可观测：每一步都要能回放</a> </li><li class="d3"> <a href="#63-成本钱花在哪">6.3 成本：钱花在哪</a> </li><li class="d3"> <a href="#64-安全四条">6.4 安全四条</a> </li><li class="d2"> <a href="#七面试高频-qa">七、面试高频 Q&amp;A</a> </li><li class="d2"> <a href="#八易错点清单">八、易错点清单</a> </li><li class="d2"> <a href="#九数值速记">九、数值速记</a> </li><li class="d2"> <a href="#十复习卡">十、复习卡</a> </li><li class="d2"> <a href="#十一文件索引">十一、文件索引</a> </li> </ol> </nav> <div class="markdown-body">  <blockquote>
+<p>基于对 <strong>Dify</strong> 后端 Agent 全链路源码的逐文件精读整理而成：<code>api/core/agent/</code>（<code>fc_agent_runner.py</code>、<code>cot_agent_runner.py</code>、<code>base_agent_runner.py</code>、<code>entities.py</code>、<code>prompt/template.py</code>）、<code>api/core/app/apps/agent_chat/app_runner.py</code>、<code>api/core/tools/tool_engine.py</code>、<code>api/core/mcp/mcp_client.py</code>、<code>api/core/memory/token_buffer_memory.py</code>、<code>api/core/workflow/nodes/agent/agent_node.py</code>。</p>
+<p>阅读顺序即学习顺序：<strong>Agent 是什么 → Function Calling 循环 → ReAct 循环 → 工具与 MCP → 记忆与上下文 → 工程化与边界</strong>。</p>
+<p>所有结论均标注了源文件位置（格式 <code>api/core/xxx.py:行号</code>），建议对照代码阅读。</p>
+<p><strong>版本基线</strong>：Dify <code>1.14.2-128-g5c5a6e83e5</code>，精确 commit <code>5c5a6e83e5</code>，commit 时间 <code>2026-05-27 02:12:11 +0000</code>。</p>
+<p>选 Dify 作为样本的理由：它同时实现了<strong>两条主流 Agent 范式</strong>（Function Calling 与 ReAct），并且把工具、插件、MCP、知识检索、记忆全部接进同一个循环里——读一份代码就能看清 Agent 的完整骨架。RAG 侧见 <code>agent/rag.md</code>、<code>agent/rrf.md</code>，另一种（Eino 图编排）实现见 <code>agent/opencoze-agent.md</code>。</p>
+</blockquote>
+<hr>
+<h2 id="〇全景地图">〇、全景地图</h2>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>┌────────────────────── 一个 Agent = 一个"带工具的循环" ──────────────────────┐</span></span>
+<span class="line"><span>│                                                                            │</span></span>
+<span class="line"><span>│   用户 query                                                               │</span></span>
+<span class="line"><span>│       │                                                                    │</span></span>
+<span class="line"><span>│       ▼                                                                    │</span></span>
+<span class="line"><span>│   ┌────────────┐   记忆（history + scratchpad）                            │</span></span>
+<span class="line"><span>│   │ 组织提示词  │◀──────────────────────────────────┐                       │</span></span>
+<span class="line"><span>│   └─────┬──────┘                                    │                      │</span></span>
+<span class="line"><span>│         ▼                                           │                      │</span></span>
+<span class="line"><span>│   ┌────────────┐   工具列表（tools/MCP/知识库）       │                      │</span></span>
+<span class="line"><span>│   │  LLM 推理   │◀───────────── _init_prompt_tools   │                      │</span></span>
+<span class="line"><span>│   └─────┬──────┘                                    │                      │</span></span>
+<span class="line"><span>│         ▼                                           │                      │</span></span>
+<span class="line"><span>│   输出是什么？──── 有 tool_call ──▶ 执行工具 ──▶ 结果回灌 ─┘                  │</span></span>
+<span class="line"><span>│         │                                                                  │</span></span>
+<span class="line"><span>│         └── 无 tool_call（Final Answer）──▶ 结束，发 QueueMessageEndEvent    │</span></span>
+<span class="line"><span>│                                                                            │</span></span>
+<span class="line"><span>│   上限保护：max_iteration（默认 10，硬上限 99）→ AgentMaxIterationError      │</span></span>
+<span class="line"><span>└────────────────────────────────────────────────────────────────────────────┘</span></span></code></pre>
+<p><strong>一句话定义</strong>：<strong>Agent = 大模型 + 工具 + 记忆 + 一个由模型自己决定何时退出的循环</strong>。少了循环就是 Chatbot；少了工具就是纯 LLM；少了模型就退化成工作流。</p>
+<p>Dify 用两个类承载两条范式，选型逻辑写在数据模型里：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#D73A49">class</span><span style="color:#6F42C1"> AgentEntity</span><span style="color:#24292E">(</span><span style="color:#6F42C1">BaseModel</span><span style="color:#24292E">):                     </span><span style="color:#6A737D"># api/core/agent/entities.py:68</span></span>
+<span class="line"><span style="color:#D73A49">    class</span><span style="color:#6F42C1"> Strategy</span><span style="color:#24292E">(</span><span style="color:#6F42C1">StrEnum</span><span style="color:#24292E">):                      </span><span style="color:#6A737D"># :73</span></span>
+<span class="line"><span style="color:#005CC5">        CHAIN_OF_THOUGHT</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> "chain-of-thought"</span><span style="color:#6A737D">     # :78   ReAct：靠提示词约束输出格式</span></span>
+<span class="line"><span style="color:#005CC5">        FUNCTION_CALLING</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> "function-calling"</span><span style="color:#6A737D">     # :79   靠模型原生 tool_calls 字段</span></span>
+<span class="line"><span style="color:#24292E">    provider: </span><span style="color:#005CC5">str</span></span>
+<span class="line"><span style="color:#24292E">    model: </span><span style="color:#005CC5">str</span></span>
+<span class="line"><span style="color:#24292E">    strategy: Strategy</span></span>
+<span class="line"><span style="color:#24292E">    prompt: AgentPromptEntity </span><span style="color:#D73A49">|</span><span style="color:#005CC5"> None</span><span style="color:#D73A49"> =</span><span style="color:#005CC5"> None</span></span>
+<span class="line"><span style="color:#24292E">    tools: list[AgentToolEntity] </span><span style="color:#D73A49">|</span><span style="color:#005CC5"> None</span><span style="color:#D73A49"> =</span><span style="color:#005CC5"> None</span></span>
+<span class="line"><span style="color:#24292E">    max_iteration: </span><span style="color:#005CC5">int</span><span style="color:#D73A49"> =</span><span style="color:#005CC5"> 10</span><span style="color:#6A737D">                       # :86   默认最多 10 轮</span></span></code></pre>
+<hr>
+<h2 id="第一讲-agent-是什么与大模型工作流的边界">第一讲 Agent 是什么：与大模型、工作流的边界</h2>
+<h3 id="11-三者的区别">1.1 三者的区别</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th></th><th>纯 LLM（Chatbot）</th><th>Agent</th><th>工作流 Workflow</th></tr></thead><tbody><tr><td>谁决定下一步</td><td>用户（下一句话）</td><td><strong>模型自己</strong></td><td>开发者（画好的图）</td></tr><tr><td>能否调外部能力</td><td>不能</td><td>能（工具/API/检索）</td><td>能（节点）</td></tr><tr><td>执行路径</td><td>单轮</td><td><strong>不确定，循环</strong></td><td>确定（DAG）</td></tr><tr><td>可预测性</td><td>高</td><td>低</td><td>最高</td></tr><tr><td>适用</td><td>问答、写作</td><td>探索性、多步任务</td><td>固定 SOP、需审计</td></tr></tbody></table>
+<p>工程上的判断标准很朴素：<strong>路径能画出来就用工作流，画不出来才用 Agent</strong>。Dify 自己也是这个思路——它把 Agent 做成了工作流里的一个节点：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#D73A49">class</span><span style="color:#6F42C1"> AgentNode</span><span style="color:#24292E">(Node[AgentNodeData]):   </span><span style="color:#6A737D"># api/core/workflow/nodes/agent/agent_node.py:27</span></span>
+<span class="line"><span style="color:#D73A49">    def</span><span style="color:#6F42C1"> _run</span><span style="color:#24292E">(self) -> Generator[NodeEventBase, </span><span style="color:#005CC5">None</span><span style="color:#24292E">, </span><span style="color:#005CC5">None</span><span style="color:#24292E">]:   </span><span style="color:#6A737D"># :72</span></span></code></pre>
+<p>即”<strong>确定性的骨架里嵌一小段不确定的推理</strong>”，这是当下最稳的落地形态。</p>
+<h3 id="12-agent-的五件套">1.2 Agent 的五件套</h3>
+<ol>
+<li><strong>模型（Brain）</strong>：负责推理与决策</li>
+<li><strong>工具（Tools）</strong>：让模型能”动手”——API、数据库、检索、代码执行</li>
+<li><strong>记忆（Memory）</strong>：短期（本轮 scratchpad + 历史对话）+ 长期（向量库/数据库）</li>
+<li><strong>规划（Planning）</strong>：把大目标拆成子任务（ReAct 就是最朴素的规划）</li>
+<li><strong>行动（Action）</strong>：真正执行并回灌结果</li>
+</ol>
+<hr>
+<h2 id="第二讲-function-calling-循环">第二讲 Function Calling 循环</h2>
+<p>模型原生支持 <code>tool_calls</code> 时，Dify 走 <code>FunctionCallAgentRunner</code>。核心就是这个 while：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#D73A49">def</span><span style="color:#6F42C1"> run</span><span style="color:#24292E">(self, message, query, </span><span style="color:#D73A49">**</span><span style="color:#24292E">kwargs):                    </span><span style="color:#6A737D"># api/core/agent/fc_agent_runner.py:35</span></span>
+<span class="line"><span style="color:#005CC5">    ...</span></span>
+<span class="line"><span style="color:#24292E">    iteration_step </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 1</span></span>
+<span class="line"><span style="color:#24292E">    max_iteration_steps </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> min</span><span style="color:#24292E">(app_config.agent.max_iteration, </span><span style="color:#005CC5">99</span><span style="color:#24292E">) </span><span style="color:#D73A49">+</span><span style="color:#005CC5"> 1</span><span style="color:#6A737D">   # :52  硬上限 99</span></span>
+<span class="line"><span style="color:#24292E">    function_call_state </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> True</span><span style="color:#6A737D">                                          # :55</span></span>
+<span class="line"><span style="color:#D73A49">    while</span><span style="color:#24292E"> function_call_state </span><span style="color:#D73A49">and</span><span style="color:#24292E"> iteration_step </span><span style="color:#D73A49">&#x3C;=</span><span style="color:#24292E"> max_iteration_steps: </span><span style="color:#6A737D"># :77</span></span>
+<span class="line"><span style="color:#24292E">        function_call_state </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> False</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> iteration_step </span><span style="color:#D73A49">==</span><span style="color:#24292E"> max_iteration_steps:</span></span>
+<span class="line"><span style="color:#24292E">            prompt_messages_tools </span><span style="color:#D73A49">=</span><span style="color:#24292E"> []                                  </span><span style="color:#6A737D"># :80  最后一轮没收工具</span></span>
+<span class="line"><span style="color:#24292E">        prompt_messages </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> self</span><span style="color:#24292E">._organize_prompt_messages()              </span><span style="color:#6A737D"># :91 之后</span></span>
+<span class="line"><span style="color:#005CC5">        self</span><span style="color:#24292E">.recalc_llm_max_tokens(</span><span style="color:#005CC5">self</span><span style="color:#24292E">.model_config, prompt_messages)   </span><span style="color:#6A737D"># :91  重算 token 预算</span></span>
+<span class="line"><span style="color:#24292E">        chunks </span><span style="color:#D73A49">=</span><span style="color:#24292E"> model_instance.invoke_llm(</span><span style="color:#005CC5">...</span><span style="color:#24292E">, </span><span style="color:#E36209">tools</span><span style="color:#D73A49">=</span><span style="color:#24292E">prompt_messages_tools, </span><span style="color:#005CC5">...</span><span style="color:#24292E">)  </span><span style="color:#6A737D"># :96</span></span></code></pre>
+<p>四个值得记住的设计点：</p>
+<p><strong>① 循环退出条件是”模型不再要调工具”</strong>（<code>:77</code> 的 <code>function_call_state</code>）。每轮开头置 False，只有解析出 tool_call 才置 True（<code>:123</code>/<code>:150</code>）——<strong>模型自己决定何时结束</strong>，这是 Agent 与流水线的本质差别。</p>
+<p><strong>② 最后一轮强制收口</strong>（<code>:80</code>）：到最大轮次时把工具列表清空，模型拿不到工具就只能输出文本。这一招同时解决两个问题：避免无限循环，避免最后一轮还在调工具却没有机会把结论说出来。</p>
+<p><strong>③ 每轮重算 token 预算</strong>（<code>:91</code> <code>recalc_llm_max_tokens</code>）：因为每轮都把工具结果塞回上下文（<code>:272</code>），prompt 会越来越长，必须动态压缩”留给模型的最大输出”。</p>
+<p><strong>④ 观察回灌成一条 <code>ToolPromptMessage</code></strong>（<code>:272</code>）：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#005CC5">self</span><span style="color:#24292E">._current_thoughts.append(</span></span>
+<span class="line"><span style="color:#24292E">    ToolPromptMessage(</span><span style="color:#E36209">content</span><span style="color:#D73A49">=</span><span style="color:#005CC5">str</span><span style="color:#24292E">(tool_response[</span><span style="color:#032F62">"tool_response"</span><span style="color:#24292E">]),</span></span>
+<span class="line"><span style="color:#E36209">                      tool_call_id</span><span style="color:#D73A49">=</span><span style="color:#24292E">tool_call_id,</span></span>
+<span class="line"><span style="color:#E36209">                      name</span><span style="color:#D73A49">=</span><span style="color:#24292E">tool_call_name))</span></span></code></pre>
+<p>工具结果以 <code>role=tool</code> 且带 <code>tool_call_id</code> 的身份回到对话里——<strong>这就是 Function Calling 协议的核心</strong>：不是把结果当普通文本拼进去，而是严格对应到某一次调用 id，模型才知道”这个结果属于哪个调用”。</p>
+<p>工具找不到的兜底也写得很直白（<code>:231-236</code>）：不抛异常，而是把 <code>"there is not a tool named xxx"</code> 当作<strong>观察结果</strong>回灌给模型，让它自己纠错重试。</p>
+<p>收尾：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#D73A49">if</span><span style="color:#24292E"> iteration_step </span><span style="color:#D73A49">==</span><span style="color:#24292E"> max_iteration_steps </span><span style="color:#D73A49">and</span><span style="color:#24292E"> tool_calls:        </span><span style="color:#6A737D"># :224</span></span>
+<span class="line"><span style="color:#D73A49">    raise</span><span style="color:#24292E"> AgentMaxIterationError(app_config.agent.max_iteration) </span><span style="color:#6A737D"># :225</span></span>
+<span class="line"><span style="color:#005CC5">...</span></span>
+<span class="line"><span style="color:#005CC5">self</span><span style="color:#24292E">.queue_manager.publish(QueueMessageEndEvent(</span><span style="color:#005CC5">...</span><span style="color:#24292E">))            </span><span style="color:#6A737D"># :310</span></span></code></pre>
+<hr>
+<h2 id="第三讲-react-循环chain-of-thought">第三讲 ReAct 循环（Chain-of-Thought）</h2>
+<p>模型不支持原生 tool_calls 时，只能靠<strong>提示词约束输出格式 + 解析器</strong>模拟同样的循环。这就是 ReAct。</p>
+<p>模板把格式写死：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>Respond to the human as helpfully and accurately as possible.   # api/core/agent/prompt/template.py:1</span></span>
+<span class="line"><span>...</span></span>
+<span class="line"><span>Valid "action" values: "Final Answer" or {{tool_names}}        # :10</span></span>
+<span class="line"><span>...</span></span>
+<span class="line"><span>Question: input question to answer</span></span>
+<span class="line"><span>Thought: consider previous and subsequent steps</span></span>
+<span class="line"><span>Action:</span></span></code></pre>
+<p>$JSON_BLOB</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>Observation: action result</span></span>
+<span class="line"><span>... (repeat Thought/Action/Observation N times)</span></span>
+<span class="line"><span>Thought: I know what to respond</span></span>
+<span class="line"><span>Action:</span></span></code></pre>
+<p>{
+“action”: “Final Answer”,
+“action_input”: “Final response to human”
+}</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span></span></span></code></pre>
+<p>循环结构与 FC 几乎一致，差别在”怎么从输出里抠出动作”：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#D73A49">while</span><span style="color:#24292E"> function_call_state </span><span style="color:#D73A49">and</span><span style="color:#24292E"> iteration_step </span><span style="color:#D73A49">&#x3C;=</span><span style="color:#24292E"> max_iteration_steps:              </span><span style="color:#6A737D"># api/core/agent/cot_agent_runner.py:103</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> iteration_step </span><span style="color:#D73A49">==</span><span style="color:#24292E"> max_iteration_steps:</span></span>
+<span class="line"><span style="color:#005CC5">        self</span><span style="color:#24292E">._prompt_messages_tools </span><span style="color:#D73A49">=</span><span style="color:#24292E"> []                                          </span><span style="color:#6A737D"># :107  同样最后一轮收口</span></span>
+<span class="line"><span style="color:#24292E">    chunks </span><span style="color:#D73A49">=</span><span style="color:#24292E"> model_instance.invoke_llm(</span><span style="color:#005CC5">...</span><span style="color:#24292E">, </span><span style="color:#E36209">tools</span><span style="color:#D73A49">=</span><span style="color:#24292E">[], </span><span style="color:#E36209">stream</span><span style="color:#D73A49">=</span><span style="color:#005CC5">True</span><span style="color:#24292E">, </span><span style="color:#005CC5">...</span><span style="color:#24292E">)            </span><span style="color:#6A737D"># :126  注意 tools=[] ！</span></span>
+<span class="line"><span style="color:#24292E">    react_chunks </span><span style="color:#D73A49">=</span><span style="color:#24292E"> CotAgentOutputParser.handle_react_stream_output(chunks, usage_dict)  </span><span style="color:#6A737D"># :136  流式解析 JSON blob</span></span>
+<span class="line"><span style="color:#24292E">    scratchpad </span><span style="color:#D73A49">=</span><span style="color:#24292E"> AgentScratchpadUnit(</span><span style="color:#E36209">agent_response</span><span style="color:#D73A49">=</span><span style="color:#032F62">""</span><span style="color:#24292E">, </span><span style="color:#E36209">thought</span><span style="color:#D73A49">=</span><span style="color:#032F62">""</span><span style="color:#24292E">, </span><span style="color:#E36209">action_str</span><span style="color:#D73A49">=</span><span style="color:#032F62">""</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#E36209">                                     observation</span><span style="color:#D73A49">=</span><span style="color:#032F62">""</span><span style="color:#24292E">, </span><span style="color:#E36209">action</span><span style="color:#D73A49">=</span><span style="color:#005CC5">None</span><span style="color:#24292E">)                  </span><span style="color:#6A737D"># :137</span></span>
+<span class="line"><span style="color:#005CC5">    ...</span></span>
+<span class="line"><span style="color:#005CC5">    self</span><span style="color:#24292E">._agent_scratchpad.append(scratchpad)                                      </span><span style="color:#6A737D"># :173</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> iteration_step </span><span style="color:#D73A49">==</span><span style="color:#24292E"> max_iteration_steps </span><span style="color:#D73A49">and</span><span style="color:#24292E"> scratchpad.action:                </span><span style="color:#6A737D"># :176</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> scratchpad.action.action_name.lower() </span><span style="color:#D73A49">!=</span><span style="color:#032F62"> "final answer"</span><span style="color:#24292E">:                </span><span style="color:#6A737D"># :177</span></span>
+<span class="line"><span style="color:#D73A49">            raise</span><span style="color:#24292E"> AgentMaxIterationError(app_config.agent.max_iteration)           </span><span style="color:#6A737D"># :178</span></span></code></pre>
+<p><strong>关键差别</strong>：FC 走 <code>tools=prompt_messages_tools</code>（模型返回结构化的 <code>tool_calls</code>），ReAct 走 <code>tools=[]</code> 并靠 <code>CotAgentOutputParser</code> 从<strong>流式文本</strong>里边收边解析出 JSON blob。</p>
+<p>每轮的 scratchpad 最终被格式化回提示词，形成”思路链”：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#D73A49">def</span><span style="color:#6F42C1"> _format_assistant_message</span><span style="color:#24292E">(self, agent_scratchpad):   </span><span style="color:#6A737D"># api/core/agent/cot_agent_runner.py:372</span></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#24292E"> scratchpad </span><span style="color:#D73A49">in</span><span style="color:#24292E"> agent_scratchpad:</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> scratchpad.is_final():</span></span>
+<span class="line"><span style="color:#24292E">            message </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> f</span><span style="color:#032F62">"Final Answer: </span><span style="color:#005CC5">{</span><span style="color:#24292E">scratchpad.agent_response</span><span style="color:#005CC5">}</span><span style="color:#032F62">"</span></span>
+<span class="line"><span style="color:#D73A49">        else</span><span style="color:#24292E">:</span></span>
+<span class="line"><span style="color:#24292E">            message </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> f</span><span style="color:#032F62">"Thought: </span><span style="color:#005CC5">{</span><span style="color:#24292E">scratchpad.thought</span><span style="color:#005CC5">}\n\n</span><span style="color:#032F62">"</span></span>
+<span class="line"><span style="color:#D73A49">            if</span><span style="color:#24292E"> scratchpad.action_str:</span></span>
+<span class="line"><span style="color:#24292E">                message </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> f</span><span style="color:#032F62">"Action: </span><span style="color:#005CC5">{</span><span style="color:#24292E">scratchpad.action_str</span><span style="color:#005CC5">}\n\n</span><span style="color:#032F62">"</span></span>
+<span class="line"><span style="color:#D73A49">            if</span><span style="color:#24292E"> scratchpad.observation:</span></span>
+<span class="line"><span style="color:#24292E">                message </span><span style="color:#D73A49">+=</span><span style="color:#D73A49"> f</span><span style="color:#032F62">"Observation: </span><span style="color:#005CC5">{</span><span style="color:#24292E">scratchpad.observation</span><span style="color:#005CC5">}\n\n</span><span style="color:#032F62">"</span><span style="color:#6A737D">     # :372-387</span></span></code></pre>
+<p><code>AgentScratchpadUnit</code> 的”是否结束”判定也很朴素——看动作名里有没有 final + answer：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#D73A49">class</span><span style="color:#6F42C1"> AgentScratchpadUnit</span><span style="color:#24292E">(</span><span style="color:#6F42C1">BaseModel</span><span style="color:#24292E">):     </span><span style="color:#6A737D"># api/core/agent/entities.py:31</span></span>
+<span class="line"><span style="color:#D73A49">    def</span><span style="color:#6F42C1"> is_final</span><span style="color:#24292E">(self) -> </span><span style="color:#005CC5">bool</span><span style="color:#24292E">:           </span><span style="color:#6A737D"># :59</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#005CC5"> self</span><span style="color:#24292E">.action </span><span style="color:#D73A49">is</span><span style="color:#005CC5"> None</span><span style="color:#D73A49"> or</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#032F62">            "final"</span><span style="color:#D73A49"> in</span><span style="color:#005CC5"> self</span><span style="color:#24292E">.action.action_name.lower()</span></span>
+<span class="line"><span style="color:#D73A49">            and</span><span style="color:#032F62"> "answer"</span><span style="color:#D73A49"> in</span><span style="color:#005CC5"> self</span><span style="color:#24292E">.action.action_name.lower())</span></span></code></pre>
+<h3 id="策略是自动选的">策略是自动选的</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#24292E">model_schema </span><span style="color:#D73A49">=</span><span style="color:#24292E"> llm_model.get_model_schema(model_instance.model_name, </span><span style="color:#005CC5">...</span><span style="color:#24292E">)   </span><span style="color:#6A737D"># api/core/app/apps/agent_chat/app_runner.py:181</span></span>
+<span class="line"><span style="color:#D73A49">if</span><span style="color:#24292E"> {ModelFeature.</span><span style="color:#005CC5">MULTI_TOOL_CALL</span><span style="color:#24292E">, ModelFeature.</span><span style="color:#005CC5">TOOL_CALL</span><span style="color:#24292E">}.intersection(model_schema.features </span><span style="color:#D73A49">or</span><span style="color:#24292E"> []):</span></span>
+<span class="line"><span style="color:#24292E">    agent_entity.strategy </span><span style="color:#D73A49">=</span><span style="color:#24292E"> AgentEntity.Strategy.</span><span style="color:#005CC5">FUNCTION_CALLING</span><span style="color:#6A737D">           # :186</span></span>
+<span class="line"><span style="color:#005CC5">...</span></span>
+<span class="line"><span style="color:#D73A49">if</span><span style="color:#24292E"> agent_entity.strategy </span><span style="color:#D73A49">==</span><span style="color:#24292E"> AgentEntity.Strategy.</span><span style="color:#005CC5">CHAIN_OF_THOUGHT</span><span style="color:#24292E">:          </span><span style="color:#6A737D"># :199</span></span>
+<span class="line"><span style="color:#24292E">    runner_cls </span><span style="color:#D73A49">=</span><span style="color:#24292E"> CotChatAgentRunner </span><span style="color:#D73A49">/</span><span style="color:#24292E"> CotCompletionAgentRunner              </span><span style="color:#6A737D"># :202/:204</span></span>
+<span class="line"><span style="color:#D73A49">elif</span><span style="color:#24292E"> agent_entity.strategy </span><span style="color:#D73A49">==</span><span style="color:#24292E"> AgentEntity.Strategy.</span><span style="color:#005CC5">FUNCTION_CALLING</span><span style="color:#24292E">:        </span><span style="color:#6A737D"># :207</span></span>
+<span class="line"><span style="color:#24292E">    runner_cls </span><span style="color:#D73A49">=</span><span style="color:#24292E"> FunctionCallAgentRunner                                    </span><span style="color:#6A737D"># :208</span></span></code></pre>
+<p>即：<strong>模型能力声明里带 <code>TOOL_CALL</code>/<code>MULTI_TOOL_CALL</code> 就自动升级成 FC，否则退回 ReAct</strong>。所以”要不要自己写 ReAct prompt”的问题答案是——能升级就升级，FC 的稳定性显著高于文本解析。</p>
+<hr>
+<h2 id="第四讲-工具系统从-tool-到-mcp">第四讲 工具系统：从 Tool 到 MCP</h2>
+<h3 id="41-工具是怎么塞给模型的">4.1 工具是怎么塞给模型的</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#D73A49">def</span><span style="color:#6F42C1"> _init_prompt_tools</span><span style="color:#24292E">(self) -> tuple[dict[</span><span style="color:#005CC5">str</span><span style="color:#24292E">, Tool], list[PromptMessageTool]]:   </span><span style="color:#6A737D"># api/core/agent/base_agent_runner.py:185</span></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#24292E"> tool </span><span style="color:#D73A49">in</span><span style="color:#005CC5"> self</span><span style="color:#24292E">.app_config.agent.tools </span><span style="color:#D73A49">or</span><span style="color:#24292E"> []:                                  </span><span style="color:#6A737D"># :192</span></span>
+<span class="line"><span style="color:#24292E">        prompt_tool, tool_entity </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> self</span><span style="color:#24292E">._convert_tool_to_prompt_message_tool(tool)  </span><span style="color:#6A737D"># :196 → :135</span></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#24292E"> dataset_tool </span><span style="color:#D73A49">in</span><span style="color:#005CC5"> self</span><span style="color:#24292E">.dataset_tools:</span></span>
+<span class="line"><span style="color:#24292E">        prompt_tool </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> self</span><span style="color:#24292E">._convert_dataset_retriever_tool_to_prompt_message_tool(dataset_tool)  </span><span style="color:#6A737D"># :155  知识库也是工具</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#24292E"> tool_instances, prompt_messages_tools</span></span></code></pre>
+<p>注意最后一类：<strong>知识库检索在 Agent 眼里就是一个普通工具</strong>（<code>:155</code>）——这正是”RAG 是 Agent 的一个工具子集”这句话的实现依据。</p>
+<p>工具执行统一走：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#D73A49">class</span><span style="color:#6F42C1"> ToolEngine</span><span style="color:#24292E">:                      </span><span style="color:#6A737D"># api/core/tools/tool_engine.py:42</span></span>
+<span class="line"><span style="color:#D73A49">    def</span><span style="color:#6F42C1"> agent_invoke</span><span style="color:#24292E">(...)              </span><span style="color:#6A737D"># :48</span></span></code></pre>
+<p>调用点分别在 <code>fc_agent_runner.py:239</code>（FC）与 <code>cot_agent_runner.py:222</code>（ReAct 走 <code>_handle_invoke_action</code>，<code>:287</code>）。</p>
+<h3 id="42-mcp工具的usb-c-接口">4.2 MCP：工具的”USB-C 接口”</h3>
+<p>没有 MCP 时，N 个 Agent 框架 × M 个工具 = N×M 套适配代码。MCP 把它变成 N+M：工具方按协议暴露一次，所有支持 MCP 的客户端都能直接用。</p>
+<p>Dify 的 MCP 客户端：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#D73A49">class</span><span style="color:#6F42C1"> MCPClient</span><span style="color:#24292E">:                                        </span><span style="color:#6A737D"># api/core/mcp/mcp_client.py:17</span></span>
+<span class="line"><span style="color:#24292E">    session_context </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ClientSession(</span><span style="color:#D73A49">*</span><span style="color:#24292E">streams)           </span><span style="color:#6A737D"># :88   建立会话</span></span>
+<span class="line"><span style="color:#005CC5">    self</span><span style="color:#24292E">._session.initialize()                          </span><span style="color:#6A737D"># :90   握手（能力协商）</span></span>
+<span class="line"><span style="color:#D73A49">    def</span><span style="color:#6F42C1"> list_tools</span><span style="color:#24292E">(self) -> list[Tool]:                 </span><span style="color:#6A737D"># :92   拉取工具清单</span></span>
+<span class="line"><span style="color:#D73A49">    def</span><span style="color:#6F42C1"> invoke_tool</span><span style="color:#24292E">(self, tool_name, tool_args) -> CallToolResult:   </span><span style="color:#6A737D"># :99   调用</span></span></code></pre>
+<p><strong>MCP 的三个原语</strong>：<code>tools</code>（可被模型调用的函数）、<code>resources</code>（可被读取的数据）、<code>prompts</code>（预置提示词模板）。传输层用 JSON-RPC over stdio 或 HTTP+SSE。</p>
+<p>对 Agent 的意义：<strong>工具发现变成动态的</strong>（<code>list_tools</code> 拉回来再转成 <code>PromptMessageTool</code>），不再需要为每个工具写死 Schema。</p>
+<hr>
+<h2 id="第五讲-记忆与上下文">第五讲 记忆与上下文</h2>
+<h3 id="51-短期记忆token-预算制">5.1 短期记忆：token 预算制</h3>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#D73A49">class</span><span style="color:#6F42C1"> TokenBufferMemory</span><span style="color:#24292E">:                                       </span><span style="color:#6A737D"># api/core/memory/token_buffer_memory.py:30</span></span>
+<span class="line"><span style="color:#D73A49">    def</span><span style="color:#6F42C1"> get_history_prompt_messages</span><span style="color:#24292E">(self, max_token_limit: </span><span style="color:#005CC5">int</span><span style="color:#D73A49"> =</span><span style="color:#005CC5"> 2000</span><span style="color:#24292E">, ...):   </span><span style="color:#6A737D"># :122  默认 2000 token</span></span>
+<span class="line"><span style="color:#005CC5">        ...</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> curr_message_tokens </span><span style="color:#D73A49">></span><span style="color:#24292E"> max_token_limit:              </span><span style="color:#6A737D"># :202</span></span>
+<span class="line"><span style="color:#D73A49">            while</span><span style="color:#24292E"> curr_message_tokens </span><span style="color:#D73A49">></span><span style="color:#24292E"> max_token_limit </span><span style="color:#D73A49">and</span><span style="color:#005CC5"> len</span><span style="color:#24292E">(prompt_messages) </span><span style="color:#D73A49">></span><span style="color:#005CC5"> 1</span><span style="color:#24292E">:  </span><span style="color:#6A737D"># :203</span></span>
+<span class="line"><span style="color:#24292E">                prompt_messages.pop(</span><span style="color:#005CC5">0</span><span style="color:#24292E">)                          </span><span style="color:#6A737D"># 从最旧的消息开始丢</span></span></code></pre>
+<p>三个结论：</p>
+<ol>
+<li><strong>上下文是预算，不是无限容器</strong>：默认只保留 2000 token 的历史</li>
+<li><strong>溢出策略是从旧到新丢</strong>（<code>:203</code>），代价是”忘了开头说了什么”——这就是”多轮对话聊久了就失忆”的根因</li>
+<li><strong>每轮 <code>recalc_llm_max_tokens</code></strong>（<code>fc_agent_runner.py:91</code>）与它配合，保证 prompt + 预留输出不超模型窗口</li>
+</ol>
+<p><code>AgentEntity</code> 侧还有一份”本轮的思考记录”（<code>_current_thoughts</code> / <code>_agent_scratchpad</code>），它是<strong>跨轮次的工作记忆</strong>，只活在一次请求内，请求结束即丢弃。</p>
+<h3 id="52-长期记忆与上下文工程">5.2 长期记忆与上下文工程</h3>
+<ul>
+<li><strong>长期记忆</strong>：把历史摘要/用户画像/关键事实落到数据库或向量库，按需检索注入</li>
+<li><strong>上下文工程（Context Engineering）</strong>：比提示词工程更上位的概念——<strong>在有限的 token 预算里，动态决定”这一轮该把什么放进上下文”</strong>（历史消息、工具描述、检索结果、示例）</li>
+<li>常见手段：滑动窗口（Dify 的做法）、摘要压缩、向量检索按需注入、工具描述按需加载（工具多了也吃 token）</li>
+</ul>
+<hr>
+<h2 id="第六讲-工程化上限可观测成本与安全">第六讲 工程化：上限、可观测、成本与安全</h2>
+<h3 id="61-必须设的三道闸">6.1 必须设的三道闸</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>闸</th><th>实现</th><th>位置</th></tr></thead><tbody><tr><td>轮次上限</td><td><code>min(max_iteration, 99) + 1</code>，超出抛 <code>AgentMaxIterationError</code></td><td><code>fc_agent_runner.py:52</code>、<code>:224</code></td></tr><tr><td>最后一轮收口</td><td>清空 tools 强制输出文本</td><td><code>fc_agent_runner.py:80</code>、<code>cot_agent_runner.py:107</code></td></tr><tr><td>Token 预算</td><td>每轮重算 max_tokens；历史按 2000 token 窗口截断</td><td><code>fc_agent_runner.py:91</code>、<code>token_buffer_memory.py:202</code></td></tr></tbody></table>
+<p><strong>没有闸的 Agent 在生产里一定会烧钱</strong>：一个死循环就能把几万 token 烧光。</p>
+<h3 id="62-可观测每一步都要能回放">6.2 可观测：每一步都要能回放</h3>
+<p>Dify 把每一次”思考/动作/观察”都落库并推事件：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#24292E">agent_thought_id </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> self</span><span style="color:#24292E">.create_agent_thought(</span><span style="color:#005CC5">...</span><span style="color:#24292E">)   </span><span style="color:#6A737D"># api/core/agent/fc_agent_runner.py:85</span></span>
+<span class="line"><span style="color:#005CC5">self</span><span style="color:#24292E">.save_agent_thought(</span><span style="color:#005CC5">...</span><span style="color:#24292E">, </span><span style="color:#E36209">observation</span><span style="color:#D73A49">=</span><span style="color:#24292E">{</span><span style="color:#005CC5">...</span><span style="color:#24292E">}, </span><span style="color:#E36209">llm_usage</span><span style="color:#D73A49">=</span><span style="color:#24292E">current_llm_usage)  </span><span style="color:#6A737D"># :206 / :281</span></span>
+<span class="line"><span style="color:#005CC5">self</span><span style="color:#24292E">.queue_manager.publish(QueueAgentThoughtEvent(</span><span style="color:#E36209">agent_thought_id</span><span style="color:#D73A49">=</span><span style="color:#005CC5">...</span><span style="color:#24292E">))       </span><span style="color:#6A737D"># :174 / :297</span></span></code></pre>
+<p><code>agent_thought</code> 表就是 Agent 的”调用链追踪”：哪一轮调了什么工具、入参是什么、返回了什么、花了多少 token。<strong>没有它，Agent 出问题只能靠猜</strong>。</p>
+<h3 id="63-成本钱花在哪">6.3 成本：钱花在哪</h3>
+<ul>
+<li><strong>每轮都重发完整上下文</strong>（历史 + scratchpad + 工具描述）→ 轮次越多越贵，近似 O(轮次²)</li>
+<li><strong>工具描述本身吃 token</strong>：接了 20 个工具，光 Schema 就上千 token</li>
+<li>优化：减少轮次（更好的提示词/更好的工具描述）、按需加载工具、缓存检索结果、小模型做路由</li>
+</ul>
+<h3 id="64-安全四条">6.4 安全四条</h3>
+<ol>
+<li><strong>工具最小权限</strong>：只给 Agent 完成任务必需的工具（Dify 的 <code>AgentToolEntity</code> 逐工具配凭证，<code>api/core/agent/entities.py:10</code>）</li>
+<li><strong>参数校验到运行时</strong>：模型生成的 SQL/命令必须在执行前校验表名、库名、路径白名单</li>
+<li><strong>防提示词注入</strong>：检索回来的网页/文档内容是不可信输入，必须当作数据而非指令</li>
+<li><strong>人工确认（Human-in-the-loop）</strong>：高风险动作（付款、删数据）必须二次确认</li>
+</ol>
+<hr>
+<h2 id="七面试高频-qa">七、面试高频 Q&#x26;A</h2>
+<p>24 道最高频题的「一句话答案」。先报结论占住阵地，面试官真追问时，按「深入」列展开到对应讲次。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>#</th><th>问题</th><th>答案（先给结论）</th><th>深入</th></tr></thead><tbody><tr><td>1</td><td>什么是 AI Agent？</td><td><strong>大模型 + 工具 + 记忆 + 由模型自己决定何时退出的循环</strong>；少了循环是 Chatbot，少了工具是纯 LLM</td><td>〇</td></tr><tr><td>2</td><td>Agent 和大模型的区别？</td><td>大模型只能”说”，Agent 能”做”——调用工具改变外部世界，并根据结果继续推理</td><td>〇</td></tr><tr><td>3</td><td>Agent 与工作流的区别？</td><td>工作流路径确定（DAG），Agent 路径由模型决定；能画出流程图就用工作流</td><td>第一讲</td></tr><tr><td>4</td><td>Agent 有哪几个核心模块？</td><td>模型、工具、记忆（短/长期）、规划、行动</td><td>第一讲</td></tr><tr><td>5</td><td>什么是 ReAct？</td><td><strong>Reasoning + Acting 交替</strong>：Thought → Action → Observation 循环，直到输出 Final Answer</td><td>第三讲</td></tr><tr><td>6</td><td>Function Calling 是什么？</td><td>模型原生输出结构化 <code>tool_calls</code>，框架执行后把结果以 <code>tool_call_id</code> 对应回灌</td><td>第二讲</td></tr><tr><td>7</td><td>FC 与 ReAct 哪个好？</td><td>能用 FC 就用 FC：结构化字段比从文本里解析 JSON blob 稳定得多；Dify 会按模型能力自动升级（<code>app_runner.py:186</code>）</td><td>第三讲</td></tr><tr><td>8</td><td>Agent 怎么知道该结束了？</td><td>模型不再产出工具调用（FC 的 <code>function_call_state</code>，<code>fc_agent_runner.py:77</code>）或产出 Final Answer（<code>:177-178</code> 判定）</td><td>第二讲</td></tr><tr><td>9</td><td>Agent 死循环怎么办？</td><td>三道闸：轮次上限（默认 10、硬上限 99，<code>fc_agent_runner.py:52</code>）、最后一轮清空工具强制收口（<code>:80</code>）、超轮抛 <code>AgentMaxIterationError</code>（<code>:225</code>）</td><td>第六讲</td></tr><tr><td>10</td><td>工具调用失败怎么处理？</td><td>不抛异常，把错误信息当作 <strong>Observation</strong> 回灌给模型让它自我纠错（<code>fc_agent_runner.py:231-236</code>）</td><td>第二讲</td></tr><tr><td>11</td><td>什么是 MCP？为什么需要它？</td><td>模型上下文协议，工具的”USB-C”：把 N×M 适配变成 N+M；三个原语 tools/resources/prompts（<code>mcp_client.py:92</code>/<code>:99</code>）</td><td>第四讲</td></tr><tr><td>12</td><td>MCP 相比普通 Function Calling 多了什么？</td><td><strong>动态发现</strong>（<code>list_tools</code>）与跨框架复用；FC 的 Schema 是写死在每个应用里的</td><td>第四讲</td></tr><tr><td>13</td><td>A2A / 多 Agent 协作是什么？</td><td>Agent 之间用协议互调（一个 Agent 把另一个当工具）；适合复杂任务拆分，但调试与成本翻倍</td><td>第一讲</td></tr><tr><td>14</td><td>知识库检索在 Agent 里是什么角色？</td><td>就是一个普通工具——Dify 把 dataset retriever 转成 <code>PromptMessageTool</code>（<code>base_agent_runner.py:155</code>）</td><td>第四讲</td></tr><tr><td>15</td><td>RAG 和 Agent 的区别？</td><td>RAG 是”检索增强生成”，解决知识问题；Agent 是”循环 + 工具”，解决行动问题。RAG 常作为 Agent 的一个工具</td><td>第四讲</td></tr><tr><td>16</td><td>Agent 的记忆怎么做？</td><td>短期：本轮 scratchpad + 历史窗口（Dify 默认 2000 token，超限从旧到新丢，<code>token_buffer_memory.py:202</code>）；长期：摘要/画像落库按需检索</td><td>第五讲</td></tr><tr><td>17</td><td>什么是上下文工程？</td><td>在有限 token 预算里动态决定”这一轮放什么进上下文”（历史、工具、检索、示例），比提示词工程更上位</td><td>第五讲</td></tr><tr><td>18</td><td>为什么多轮对话会”失忆”？</td><td>历史按 token 窗口截断，超出部分从最旧的消息开始丢（<code>token_buffer_memory.py:203</code>）</td><td>第五讲</td></tr><tr><td>19</td><td>Agent 为什么贵？钱花在哪？</td><td>每轮重发完整上下文 → 近似 O(轮次²)；工具 Schema 本身也吃 token</td><td>第六讲</td></tr><tr><td>20</td><td>怎么降低 Agent 成本？</td><td>减少轮次、按需加载工具、检索缓存、小模型路由、更短的工具描述</td><td>第六讲</td></tr><tr><td>21</td><td>什么是提示词注入？怎么防？</td><td>外部内容（网页/文档）被当作指令执行；防御：外部内容一律当数据、工具最小权限、敏感操作人工确认</td><td>第六讲</td></tr><tr><td>22</td><td>Agent 输出不稳定怎么排查？</td><td>靠 <code>agent_thought</code> 记录回放每一步（工具、入参、返回、token），<code>fc_agent_runner.py:85</code>/<code>:206</code>/<code>:281</code></td><td>第六讲</td></tr><tr><td>23</td><td>幻觉能根治吗？</td><td>不能，只能缓解：接检索给证据、要求引用来源、工具校验事实、降低 temperature、关键结论二次校验</td><td>第六讲</td></tr><tr><td>24</td><td>什么时候不该用 Agent？</td><td>路径确定、要求可审计/低延迟/低成本的场景——直接上工作流或普通代码</td><td>第一讲</td></tr></tbody></table>
+<hr>
+<h2 id="八易错点清单">八、易错点清单</h2>
+<ol>
+<li><strong>把 Agent 当万能</strong>：能用确定性代码/工作流解决的别上 Agent，成本与不确定性都高一个量级</li>
+<li><strong>不设轮次上限</strong>：一个循环烧掉几万 token（<code>fc_agent_runner.py:52</code> 的 99 是最后防线，业务侧应更小）</li>
+<li><strong>把工具错误直接抛给前端</strong>：应回灌成 Observation 让模型纠错（<code>fc_agent_runner.py:231-236</code>）</li>
+<li><strong>工具 Schema 写得含糊</strong>：模型靠描述决定调不调、怎么调，描述质量直接决定命中率</li>
+<li><strong>工具接太多</strong>：Schema 吃 token 且模型选择困难，按需加载</li>
+<li><strong>忽略 <code>tool_call_id</code> 对应关系</strong>：多工具并发调用时结果会串</li>
+<li><strong>以为历史消息会一直保留</strong>：实际按 token 预算从旧到新丢弃（<code>token_buffer_memory.py:203</code>）</li>
+<li><strong>把检索内容当可信指令</strong>：提示词注入的主要入口</li>
+<li><strong>没有 <code>agent_thought</code> 级别的可观测</strong>：线上问题无法复现</li>
+<li><strong>盲目追求 FC</strong>：模型不支持时 ReAct 是可用退路，但要做好解析容错（<code>cot_agent_runner.py:136</code>）</li>
+</ol>
+<hr>
+<h2 id="九数值速记">九、数值速记</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>数值</th><th>含义</th><th>出处</th></tr></thead><tbody><tr><td><code>10</code></td><td><code>AgentEntity.max_iteration</code> 默认值</td><td><code>api/core/agent/entities.py:86</code></td></tr><tr><td><code>99</code></td><td>轮次硬上限（<code>min(max_iteration, 99) + 1</code>）</td><td><code>api/core/agent/fc_agent_runner.py:52</code></td></tr><tr><td><code>2000</code></td><td>历史消息默认 token 上限</td><td><code>api/core/memory/token_buffer_memory.py:122</code></td></tr><tr><td><code>2</code></td><td>Agent 策略数（chain-of-thought / function-calling）</td><td><code>api/core/agent/entities.py:78-79</code></td></tr><tr><td><code>5</code></td><td>Agent 五件套（模型/工具/记忆/规划/行动）</td><td>概念</td></tr></tbody></table>
+<hr>
+<h2 id="十复习卡">十、复习卡</h2>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled> 能一句话定义 Agent，并说清它与 Chatbot、工作流的边界</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能默写出 FC 循环的骨架（while → 组织提示词 → 调 LLM → 有 tool_call 就执行并回灌 → 否则结束）</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出”最后一轮清空工具”这一招解决了什么问题</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出 ReAct 的 Thought/Action/Observation 格式与解析器位置</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出 FC 与 ReAct 的本质差异与自动切换的判定条件</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出 MCP 解决了什么规模问题、三个原语是什么</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出短期记忆的 token 窗口策略与溢出行为</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出 Agent 成本的来源与四种降本手段</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出三道安全闸（最小权限、运行时校验、注入防御、人工确认）</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出可观测需要记录哪些字段</li>
+</ul>
+<hr>
+<h2 id="十一文件索引">十一、文件索引</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>文件</th><th>行数</th><th>说明</th></tr></thead><tbody><tr><td><code>api/core/agent/entities.py</code></td><td>94</td><td><code>AgentEntity</code>（策略、max_iteration）、<code>AgentScratchpadUnit</code></td></tr><tr><td><code>api/core/agent/fc_agent_runner.py</code></td><td>469</td><td>Function Calling 主循环</td></tr><tr><td><code>api/core/agent/cot_agent_runner.py</code></td><td>443</td><td>ReAct 主循环与 scratchpad 格式化</td></tr><tr><td><code>api/core/agent/base_agent_runner.py</code></td><td>478</td><td>工具初始化、历史组织、thought 落库</td></tr><tr><td><code>api/core/agent/prompt/template.py</code></td><td>105</td><td>ReAct 提示词模板</td></tr><tr><td><code>api/core/app/apps/agent_chat/app_runner.py</code></td><td>220+</td><td>按模型能力选择 FC / CoT runner</td></tr><tr><td><code>api/core/tools/tool_engine.py</code></td><td>—</td><td><code>ToolEngine.agent_invoke</code>（<code>:48</code>）</td></tr><tr><td><code>api/core/mcp/mcp_client.py</code></td><td>—</td><td>MCP 会话、list_tools（<code>:92</code>）、invoke_tool（<code>:99</code>）</td></tr><tr><td><code>api/core/memory/token_buffer_memory.py</code></td><td>—</td><td>历史窗口与 token 截断（<code>:122</code>/<code>:202</code>）</td></tr><tr><td><code>api/core/workflow/nodes/agent/agent_node.py</code></td><td>—</td><td>工作流里嵌 Agent 节点（<code>:27</code>/<code>:72</code>）</td></tr></tbody></table>  </div> <div class="post-nav"> <span><a href="/java-basics/">← Java 基础源码深度学习笔记</a></span> <span><a href="/computer-network/">计算机网络源码深度学习笔记 →</a></span> </div> </article>  </main> <footer class="site-footer"> <div class="inner"> <div class="foot-brand"> <span class="brand-mark">&lt;/&gt;</span> <b>源码深读</b> <span>逐文件、逐函数地读源码，结论都带 文件:行号</span> </div> <div class="foot-links"> <a href="/#principles">原理速查</a> <a href="/animations/">动画</a> <a href="/categories/">分类</a> <a href="/tags/">标签</a> </div> <p class="foot-note">由 Astro 静态生成 · 内容以 Markdown 源码笔记为唯一事实源</p> </div> </footer> </body></html> <script type="module" src="/_astro/PostLayout.astro_astro_type_script_index_0_lang.B4vzteL_.js"></script>
