@@ -176,6 +176,406 @@
   "c": "游戏与云原生"
  },
  {
+  "q": "什么是 AI Agent？",
+  "a": "大模型 + 工具 + 记忆 + 由模型自己决定何时退出的循环；少了循环是 Chatbot，少了工具是纯 LLM",
+  "d": "〇",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "Agent 和大模型的区别？",
+  "a": "大模型只能\"说\"，Agent 能\"做\"——调用工具改变外部世界，并根据结果继续推理",
+  "d": "〇",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "Agent 与工作流的区别？",
+  "a": "工作流路径确定（DAG），Agent 路径由模型决定；能画出流程图就用工作流",
+  "d": "第一讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "Agent 有哪几个核心模块？",
+  "a": "模型、工具、记忆（短/长期）、规划、行动",
+  "d": "第一讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "什么是 ReAct？",
+  "a": "Reasoning + Acting 交替：Thought → Action → Observation 循环，直到输出 Final Answer",
+  "d": "第三讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "Function Calling 是什么？",
+  "a": "模型原生输出结构化 tool_calls，框架执行后把结果以 tool_call_id 对应回灌",
+  "d": "第二讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "FC 与 ReAct 哪个好？",
+  "a": "能用 FC 就用 FC：结构化字段比从文本里解析 JSON blob 稳定得多；Dify 会按模型能力自动升级（app_runner.py:186）",
+  "d": "第三讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "Agent 怎么知道该结束了？",
+  "a": "模型不再产出工具调用（FC 的 function_call_state，fc_agent_runner.py:77）或产出 Final Answer（:177-178 判定）",
+  "d": "第二讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "Agent 死循环怎么办？",
+  "a": "三道闸：轮次上限（默认 10、硬上限 99，fc_agent_runner.py:52）、最后一轮清空工具强制收口（:80）、超轮抛 AgentMaxIterationError（:225）",
+  "d": "第六讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "工具调用失败怎么处理？",
+  "a": "不抛异常，把错误信息当作 Observation 回灌给模型让它自我纠错（fc_agent_runner.py:231-236）",
+  "d": "第二讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "什么是 MCP？为什么需要它？",
+  "a": "模型上下文协议，工具的\"USB-C\"：把 N×M 适配变成 N+M；三个原语 tools/resources/prompts（mcp_client.py:92/:99）",
+  "d": "第四讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "MCP 相比普通 Function Calling 多了什么？",
+  "a": "动态发现（list_tools）与跨框架复用；FC 的 Schema 是写死在每个应用里的",
+  "d": "第四讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "A2A / 多 Agent 协作是什么？",
+  "a": "Agent 之间用协议互调（一个 Agent 把另一个当工具）；适合复杂任务拆分，但调试与成本翻倍",
+  "d": "第一讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "知识库检索在 Agent 里是什么角色？",
+  "a": "就是一个普通工具——Dify 把 dataset retriever 转成 PromptMessageTool（base_agent_runner.py:155）",
+  "d": "第四讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "RAG 和 Agent 的区别？",
+  "a": "RAG 是\"检索增强生成\"，解决知识问题；Agent 是\"循环 + 工具\"，解决行动问题。RAG 常作为 Agent 的一个工具",
+  "d": "第四讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "Agent 的记忆怎么做？",
+  "a": "短期：本轮 scratchpad + 历史窗口（Dify 默认 2000 token，超限从旧到新丢，token_buffer_memory.py:202）；长期：摘要/画像落库按需检索",
+  "d": "第五讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "什么是上下文工程？",
+  "a": "在有限 token 预算里动态决定\"这一轮放什么进上下文\"（历史、工具、检索、示例），比提示词工程更上位",
+  "d": "第五讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "为什么多轮对话会\"失忆\"？",
+  "a": "历史按 token 窗口截断，超出部分从最旧的消息开始丢（token_buffer_memory.py:203）",
+  "d": "第五讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "Agent 为什么贵？钱花在哪？",
+  "a": "每轮重发完整上下文 → 近似 O(轮次²)；工具 Schema 本身也吃 token",
+  "d": "第六讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "怎么降低 Agent 成本？",
+  "a": "减少轮次、按需加载工具、检索缓存、小模型路由、更短的工具描述",
+  "d": "第六讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "什么是提示词注入？怎么防？",
+  "a": "外部内容（网页/文档）被当作指令执行；防御：外部内容一律当数据、工具最小权限、敏感操作人工确认",
+  "d": "第六讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "Agent 输出不稳定怎么排查？",
+  "a": "靠 agent_thought 记录回放每一步（工具、入参、返回、token），fc_agent_runner.py:85/:206/:281",
+  "d": "第六讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "幻觉能根治吗？",
+  "a": "不能，只能缓解：接检索给证据、要求引用来源、工具校验事实、降低 temperature、关键结论二次校验",
+  "d": "第六讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "什么时候不该用 Agent？",
+  "a": "路径确定、要求可审计/低延迟/低成本的场景——直接上工作流或普通代码",
+  "d": "第一讲",
+  "s": "ai-agent",
+  "t": "AI Agent 源码深度学习笔记",
+  "c": "RAG 与 Agent"
+ },
+ {
+  "q": "OSI 七层与 TCP/IP 四层怎么对应？",
+  "a": "应用/表示/会话 → 应用层；传输 → 传输层；网络 → 网际层；链路+物理 → 链路层",
+  "d": "第一讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "为什么要三次握手？",
+  "a": "两次只能确认客户端序号，服务端无法确认自己的初始序号被收到；旧 SYN 重传会建立幽灵连接",
+  "d": "第二讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "为什么要四次挥手？",
+  "a": "全双工，两个方向分别关闭；被动方的 ACK 与 FIN 之间还要发完剩余数据",
+  "d": "第二讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "TIME_WAIT 有什么用？为什么要 2MSL？",
+  "a": "① 保证最后 ACK 能到达（丢了对方重发 FIN）② 让残余报文消散；2MSL 刚好覆盖\"一去一回\"",
+  "d": "第二讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "服务器大量 TIME_WAIT 怎么办？",
+  "a": "只有主动关闭方才进 TIME_WAIT；让客户端主动关、开 SO_REUSEADDR（ServerSocket.java:770）、调短内核回收",
+  "d": "第二讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "TCP 怎么保证可靠？",
+  "a": "序列号+累积确认、超时重传、滑动窗口（流量控制）、拥塞控制四阶段",
+  "d": "第二讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "流量控制和拥塞控制的区别？",
+  "a": "流量控制看接收方 rwnd（别冲垮对端）；拥塞控制看网络 cwnd（别冲垮网络）",
+  "d": "第二讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "TCP 粘包怎么解决？",
+  "a": "协议层定边界：定长 / 分隔符 / 长度字段（HTTP 的 Content-Length 与 chunked 就是后者）",
+  "d": "第二讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "`SO_LINGER` 是什么？",
+  "a": "关闭行为开关：默认 close 立即返回（后台发完）；设 0 直接发 RST 丢弃数据（Socket.java:1153）",
+  "d": "第二讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "`TCP_NODELAY` 是干什么的？",
+  "a": "关 Nagle 小包合并，降低交互延迟；RPC/游戏/终端应打开（Socket.java:1116）",
+  "d": "第二讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "`SO_TIMEOUT` 是连接超时吗？",
+  "a": "不是，它只作用于 read()；连接超时用 connect(addr, timeout)（Socket.java:639）",
+  "d": "第二讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "`backlog` 是什么？",
+  "a": "listen 的队列长度，JDK 由 bind/构造器透传（ServerSocket.java:310/:177）；满了就拒连",
+  "d": "第二讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "TCP 与 UDP 的区别？",
+  "a": "TCP：面向连接、可靠、有序、有流量/拥塞控制、字节流；UDP：无连接、尽最大努力、有报文边界、8 字节头",
+  "d": "第三讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "UDP 的 `connect` 会握手吗？",
+  "a": "不会，只绑定默认对端地址用于过滤和省参数（DatagramSocket.java:414）",
+  "d": "第三讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "GET 与 POST 的区别？",
+  "a": "语义上 GET 安全且幂等、可缓存、无 body；POST 非幂等有 body。工程上：GET 参数在 URL（长度受限、会留日志）、POST 在 body",
+  "d": "第四讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "HTTP 状态码 301/302/304 分别是什么？",
+  "a": "301 永久重定向（浏览器会缓存）；302 临时；304 未修改，用本地缓存",
+  "d": "第四讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "502 与 504 有什么区别？",
+  "a": "502 网关收到上游无效响应；504 网关等上游超时",
+  "d": "第四讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "HTTP 长连接是什么？JDK 怎么池化？",
+  "a": "一个 TCP 上跑多次请求响应；JDK 用 KeepAliveCache，每 host 默认 5 条（:85），可调 http.maxConnections（:89）",
+  "d": "第四讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "上传大文件为什么会 OOM？",
+  "a": "未设 Content-Length 也未开 chunked，JDK 会把整个 body 缓冲在内存（HttpURLConnection.java:70/:280）",
+  "d": "第四讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "Cookie 与 Session 的区别？",
+  "a": "Cookie 存客户端（有大小与数量限制、不安全），Session 存服务端、只给客户端一个 sessionId（通常放 Cookie）",
+  "d": "第四讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "`HttpOnly`/`Secure`/`SameSite` 防什么？",
+  "a": "HttpOnly 防 XSS 读取；Secure 只走 HTTPS；SameSite 防 CSRF",
+  "d": "第四讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "HTTPS 握手为什么既用非对称又用对称？",
+  "a": "非对称安全协商会话密钥（慢），对称加密大量数据（快）；证书+主机名校验防中间人",
+  "d": "第四讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "HTTP/2 相比 1.1 改进了什么？",
+  "a": "二进制分帧 + 多路复用（解决队头阻塞）+ HPACK 头压缩 + 服务端推送",
+  "d": "第四讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "HTTP/3 为什么换成 UDP？",
+  "a": "底层是 QUIC，在用户态实现可靠与拥塞控制，避免 TCP 队头阻塞并降低握手延迟",
+  "d": "第四讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "DNS 解析过程？Java 有什么坑？",
+  "a": "浏览器缓存→hosts→本地 DNS 递归→根/顶级/权威迭代；JVM 默认缓存成功结果直到退出，需设 networkaddress.cache.ttl（InetAddress.java:197）",
+  "d": "第五讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
+  "q": "select / poll / epoll 的区别？",
+  "a": "select 位图且 1024 上限、poll 数组无上限、epoll 红黑树+就绪链表 O(就绪数)；JDK Selector 在 Linux 上就是 epoll（EPollSelectorImpl.java:49/:94）",
+  "d": "第五讲",
+  "s": "computer-network",
+  "t": "计算机网络源码深度学习笔记",
+  "c": "计算机网络"
+ },
+ {
   "q": "Seata 三个角色？",
   "a": "TM 发起/结束全局事务；RM 管理分支资源、执行二阶段；TC 持会话、驱动状态、管全局锁",
   "d": "`server/src/main/java/org/apache/seata/server/coordinator/DefaultCoordinator.java`",
@@ -406,6 +806,222 @@
   "s": "elasticsearch",
   "t": "Elasticsearch 源码深度学习笔记",
   "c": "存储与缓存"
+ },
+ {
+  "q": "String 为什么不可变？",
+  "a": "类 final（String.java:142）+ 存储数组 private final byte[] value（:158）+ 无任何写方法；所有\"修改\"方法都 new 新对象",
+  "d": "第一讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "String 内部为什么是 `byte[]` 不是 `char[]`？",
+  "a": "JDK 9 Compact Strings：Latin-1 内容按 1 字节存，内存减半；coder（:171）标记编码，COMPACT_STRINGS（:223）总开关",
+  "d": "第一讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`String s = new String(\"abc\")` 创建几个对象？",
+  "a": "常量池已有 \"abc\" 时只创建 1 个堆对象；没有则 2 个（池里一份 + 堆上一份）",
+  "d": "第一讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`intern()` 做了什么？",
+  "a": "池里有就返回池中引用，没有就把当前对象引用放进去再返回；JDK 7 起常量池在堆中，可被 GC（String.java:4636）",
+  "d": "第一讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "String 的 hashCode 为什么要缓存？",
+  "a": "字符串作 HashMap key 极频繁；缓存靠 hash（:174）+ hashIsZero（:180）两个字段区分\"未算\"与\"算出 0\"",
+  "d": "第一讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "循环里用 `+` 拼接字符串有什么问题？",
+  "a": "每轮 new 一个 StringBuilder 再 toString，O(n²)；应显式持有一个 StringBuilder 并预设容量",
+  "d": "第一讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "StringBuilder 与 StringBuffer 区别？",
+  "a": "后者方法全部 synchronized（StringBuffer.java:311）且带 toStringCache（:121）；单线程一律用 StringBuilder",
+  "d": "第一讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`Integer a=127, b=127; a==b` 为什么是 true？",
+  "a": "valueOf（Integer.java:1067）走 IntegerCache，默认缓存 -128~127（:1009）；128 就越界 new 了",
+  "d": "第二讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`==` 和 `equals` 的区别？",
+  "a": "== 比身份（引用类型比地址）；equals 默认就是 ==（Object.java:163），重写后比内容",
+  "d": "第二讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "为什么重写 equals 必须重写 hashCode？",
+  "a": "契约要求 equals 相等则 hash 必相等；否则 HashMap 里存得进、取不出",
+  "d": "第二讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "Java 是值传递还是引用传递？",
+  "a": "只有值传递：引用类型传的是\"引用的副本\"，改副本指向不影响实参，改副本指向对象的内容会影响",
+  "d": "第二讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`Class.forName` 有什么讲究？",
+  "a": "两参版（:501）可传 initialize=false 只加载不初始化（不执行 static 块）；单参版（:409）会初始化",
+  "d": "第三讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "getMethod 与 getDeclaredMethod 区别？",
+  "a": "getMethod（:2385）取本类+父类 public；getDeclaredMethod（:2838）取本类全部（含 private），不含继承",
+  "d": "第三讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "反射慢在哪？怎么做才不慢？",
+  "a": "走 MethodAccessor、无法内联与逃逸分析；缓存 Class/Method 对象，热路径改接口或 MethodHandle",
+  "d": "第三讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "反射调用为啥总看到 `InvocationTargetException`？",
+  "a": "Method.invoke（reflect/Method.java:558）把目标异常包了一层，要 getCause() 才拿到原始异常",
+  "d": "第三讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "什么是泛型擦除？",
+  "a": "编译期把 T 替换为边界（无边界为 Object）并插 checkcast；运行时 List<String> 与 List<Integer> 同类",
+  "d": "第三讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "泛型信息真的一点都不剩吗？",
+  "a": "类/方法/字段的泛型签名写在 class 文件 Signature 属性里，反射能读回（reflect/Method.java:297）",
+  "d": "第三讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "受检异常与非受检异常的区别？",
+  "a": "RuntimeException/Error 是非受检（编译器不强制）；其余 Exception 是受检，必须 catch 或 throws",
+  "d": "第四讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "finally 一定会执行吗？",
+  "a": "除非 System.exit、线程被 kill、JVM 崩溃；且 finally 里的 return 会覆盖 try 的返回值（别这么写）",
+  "d": "第四讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "try-with-resources 的异常去哪了？",
+  "a": "close 失败不吞主异常，而是 addSuppressed（Throwable.java:1094）挂上去，打印时显示 Suppressed:",
+  "d": "第四讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "为什么不建议用异常控制流程？",
+  "a": "构造异常要 fillInStackTrace（Throwable.java:258）遍历整个栈，成本远高于一次判断",
+  "d": "第四讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "serialVersionUID 有什么用？",
+  "a": "版本校验：不一致直接 InvalidClassException；不显式声明则由编译器按类结构生成，改字段就失效",
+  "d": "第四讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "`transient` 关键字的作用？",
+  "a": "标记字段不参与序列化；反序列化后为基本类型默认值。注意 static 字段本来就不参与",
+  "d": "第四讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "Object 有哪些方法？",
+  "a": "getClass/hashCode/equals/clone/toString/notify/notifyAll/wait×3/finalize（Object.java:67~592）",
+  "d": "第五讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "深拷贝与浅拷贝？",
+  "a": "浅拷贝只复制一层（Object.clone 默认，:229），内部引用共享；深拷贝要递归或序列化",
+  "d": "第五讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "记时该用 `currentTimeMillis` 还是 `nanoTime`？",
+  "a": "算耗时一律 nanoTime（System.java:571）——单调不回拨；currentTimeMillis（:527）是挂钟时间",
+  "d": "第五讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
+ },
+ {
+  "q": "为什么推荐用枚举实现单例？",
+  "a": "clone 被 final 化抛异常（Enum.java:202）、反序列化走 valueOf（:285）保证同一实例、天然防反射攻击",
+  "d": "第五讲",
+  "s": "java-basics",
+  "t": "Java 基础源码深度学习笔记",
+  "c": "Java"
  },
  {
   "q": "ArrayList 怎么扩容？",
@@ -2606,6 +3222,214 @@
   "s": "opencoze-agent",
   "t": "OpenCoze Agent 模块源码深读笔记",
   "c": "RAG 与 Agent"
+ },
+ {
+  "q": "进程和线程的区别？",
+  "a": "进程是资源分配的基本单位（独立地址空间），线程是CPU 调度的基本单位（共享地址空间，私有栈与寄存器）",
+  "d": "第一讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "为什么线程切换比进程切换快？",
+  "a": "线程不换页表，TLB 不失效；进程切换要换地址空间并刷 TLB",
+  "d": "第一讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "线程共享什么、私有什么？",
+  "a": "共享堆/代码段/文件描述符；私有栈、寄存器上下文、ThreadLocal",
+  "d": "第一讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "fork 和 exec 分别做什么？",
+  "a": "fork 复制进程（COW），exec 换成新程序；JDK 的 forkAndExec（ProcessImpl.java:282）就是这对组合",
+  "d": "第一讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "什么是僵尸进程？怎么产生？",
+  "a": "子进程退出但父进程没 wait() 回收，PCB 与 pid 仍占着",
+  "d": "第一讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "孤儿进程有害吗？",
+  "a": "无害，被 init/systemd 收养并回收",
+  "d": "第一讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "Java 线程是内核线程吗？",
+  "a": "是 1:1 模型：os::create_thread（javaThread.cpp:605）最终是 pthread_create",
+  "d": "第一讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "\"unable to create new native thread\" 是什么原因？",
+  "a": "线程数触到系统/ulimit 上限或虚拟内存不足，HotSpot 在 create_thread 拿不到 _osthread 时抛 OOM",
+  "d": "第一讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "协程与线程的区别？",
+  "a": "协程在用户态调度，切换不进内核，可开百万级；线程由内核调度，千级",
+  "d": "第一讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "虚拟线程为什么能支撑高并发？",
+  "a": "阻塞时 Continuation.yield（VirtualThread.java:441）把栈帧 freeze 到堆（continuationFreezeThaw.cpp:230）并释放 carrier",
+  "d": "第一讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "虚拟线程的 pinning 是什么？",
+  "a": "阻塞操作发生在 synchronized 内时无法 unmount，carrier 被钉住，吞吐退化",
+  "d": "第一讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "什么是上下文切换？什么时候发生？",
+  "a": "保存/恢复执行现场；自愿（等 IO/锁/sleep）与非自愿（时间片到/被抢占）",
+  "d": "第二讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "`Thread.yield()` 一定让出 CPU 吗？",
+  "a": "不保证，只是提示；且 Java 优先级（1/5/10）映射到 OS 后可能被忽略",
+  "d": "第二讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "`onSpinWait()` 有什么用？",
+  "a": "给 CPU 的自旋提示（x86 PAUSE），降低功耗与流水线惩罚（Thread.java:636）",
+  "d": "第二讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "线程状态 RUNNABLE 就是在跑吗？",
+  "a": "不是，它还包含\"等待 OS 资源\"（如阻塞 IO）——jstack 里 RUNNABLE + socketRead 其实是卡住了",
+  "d": "第二讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "为什么要有虚拟内存？",
+  "a": "隔离（进程之间互相踩不到）、简化链接、支持超订与按需调页",
+  "d": "第三讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "什么是缺页中断？",
+  "a": "访问的页不在内存（页表项未 Present）时触发，内核分配物理页/换入后重试；非法访问则 SIGSEGV",
+  "d": "第三讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "页面置换算法有哪些？",
+  "a": "OPT（理论）、FIFO（有 Belady 异常）、LRU、LFU、Clock（LRU 近似，OS 实际常用）",
+  "d": "第三讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "栈溢出与堆溢出的区别？",
+  "a": "栈私有且固定 → StackOverflowError；堆共享 → OutOfMemoryError: Java heap space",
+  "d": "第三讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "用户态和内核态怎么切换？",
+  "a": "系统调用（主动）、中断（异步）、异常（故障）；每次切换要保存现场+切栈，约微秒级",
+  "d": "第四讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "同步/异步与阻塞/非阻塞的区别？",
+  "a": "同步/异步看\"结果怎么拿到\"（自己等 vs 回调通知）；阻塞/非阻塞看\"等的时候线程挂不挂\"",
+  "d": "第四讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "select / poll / epoll 为什么 epoll 快？",
+  "a": "epoll 用红黑树+就绪链表，返回就绪集合 O(就绪数)；前两者每次 O(n) 扫描+拷贝",
+  "d": "第四讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "什么是零拷贝？Java 怎么做？",
+  "a": "数据不经过用户态；FileChannel.transferTo（FileChannelImpl.java:934）→ FileDispatcher.transferTo（:86）→ sendfile",
+  "d": "第四讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "用了 `transferTo` 就一定零拷贝吗？",
+  "a": "不一定：只有目标是可信 channel 才走 sendfile（:849），否则退化（:901）",
+  "d": "第四讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "死锁的四个必要条件？",
+  "a": "互斥、占有且等待、不可抢占、循环等待；破任一条即可预防（最实用：统一加锁顺序）",
+  "d": "第五讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
+ },
+ {
+  "q": "进程间通信最快的是哪种？",
+  "a": "共享内存（映射同一块物理页，不拷数据），但要自己配信号量同步",
+  "d": "第五讲",
+  "s": "operating-system",
+  "t": "操作系统源码深度学习笔记",
+  "c": "操作系统"
  },
  {
   "q": "线上出问题，第一件事做什么？",

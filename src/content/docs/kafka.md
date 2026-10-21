@@ -21,7 +21,7 @@ tags:
 ┌──────────────────────────── 客户端 ────────────────────────────┐
 │ Producer: KafkaProducer → RecordAccumulator(批+内存池) → Sender │
 │ Consumer: KafkaConsumer  → Fetcher(位置管理)  → Coordinator     │
-└──────────────┬─────────────────────────────────────┬───────────┘
+└──────────────┬─────────────────────────────────────┬──────────┘
                │ Produce/Fetch/OffsetCommit          │ Join/Sync/Heartbeat
                ▼                                     ▼
 ┌──────────────────────── SocketServer (network 层) ────────────────────────┐
