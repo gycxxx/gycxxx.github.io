@@ -237,6 +237,14 @@
 </ul>
 <p><strong>系统调用的代价</strong>：陷入内核（保存现场、切栈）、权限检查、可能的调度 → 单次约微秒级。所以”减少系统调用次数”是所有 IO 优化的第一原则——<strong>缓冲（BufferedInputStream）就是这么来的</strong>。</p>
 <h3 id="42-阻塞--非阻塞同步--异步">4.2 阻塞 / 非阻塞、同步 / 异步</h3>
+<p>先钉死最容易混的点：<strong>这是两组正交概念，不是一回事</strong>——</p>
+<ul>
+<li><strong>阻塞 / 非阻塞</strong>：作用于<strong>第一阶段</strong>——数据没就绪时，线程”等不等”。阻塞 = 线程挂起睡眠；非阻塞 = 立即返回 <code>EAGAIN</code>，线程醒着但得自己轮询（烧 CPU）。</li>
+<li><strong>同步 / 异步</strong>：作用于<strong>第二阶段</strong>——数据就绪后，<strong>谁把它从内核缓冲拷到用户缓冲</strong>。同步 = 自己调 <code>read</code> 拷；异步 = 内核拷完再通知你。</li>
+</ul>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>一次网络读的两阶段：</span></span>
+<span class="line"><span>① 设备 → 内核缓冲（等数据到达，慢）    ← 阻塞/非阻塞 决定这一阶段"怎么等"</span></span>
+<span class="line"><span>② 内核缓冲 → 用户缓冲（拷贝，快）      ← 同步/异步   决定这一阶段"谁来做"</span></span></code></pre>
 
 
 
@@ -257,28 +265,144 @@
 
 
 
-<table><thead><tr><th></th><th>阻塞</th><th>非阻塞</th></tr></thead><tbody><tr><td>同步</td><td>read 一直等到数据（最常见）</td><td>read 立刻返回 EAGAIN，需轮询</td></tr><tr><td>异步</td><td>—</td><td>提交请求，完成由回调/信号通知</td></tr></tbody></table>
-<p>Java 里：<code>BIO</code>（同步阻塞）→ <code>NIO</code>（同步非阻塞 + 多路复用）→ <code>AIO</code>（异步，Linux 上实际由线程池模拟）。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>组合</th><th>内核行为</th><th>线程表现</th><th>Java 对应</th></tr></thead><tbody><tr><td>同步 + 阻塞</td><td>数据没到就扣着线程</td><td>挂起睡眠</td><td><strong>BIO</strong>：<code>Socket</code> 的 <code>InputStream.read()</code></td></tr><tr><td>同步 + 非阻塞</td><td>设 <code>O_NONBLOCK</code>，没数据返回 <code>EAGAIN</code></td><td>醒着，但要轮询</td><td><code>configureBlocking(false)</code> 单独用（少见）</td></tr><tr><td>同步非阻塞 + 多路复用</td><td>非阻塞 fd + <code>epoll_wait</code> 统一”等”</td><td>醒着，等在<strong>一个</strong>系统调用上</td><td><strong>NIO</strong>：<code>Selector</code>（Netty / Redis / Nginx 路线）</td></tr><tr><td>异步</td><td>内核把数据拷进你的 buffer 后再通知</td><td>提交请求后完全不管</td><td><strong>AIO</strong>（Linux 上实际由 epoll + 线程池模拟；真异步在 Windows IOCP / Linux io_uring）</td></tr></tbody></table>
+<blockquote>
+<p><strong>关键结论</strong>：多路复用<strong>没有改变”同步”属性</strong>——<code>epoll_wait</code> 返回”就绪”后仍要自己 <code>read</code>。它解决的不是”拷贝谁来做”，而是”<strong>等</strong>”的效率：把 N 个线程各自的”等”合并成 1 个线程在 1 个系统调用里统一等。</p>
+</blockquote>
 <h3 id="43-多路复用一个线程管万条连接">4.3 多路复用：一个线程管万条连接</h3>
+<p>演进动机是数量级问题：BIO 下一连接一线程，1 万连接 = 1 万个内核线程 + 1 万份 1MB 栈 + 无数次上下文切换。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th></th><th>select</th><th>poll</th><th>epoll</th></tr></thead><tbody><tr><td>fd 上限</td><td>位图，<strong>1024</strong>（<code>FD_SETSIZE</code>）</td><td>数组，无硬限制</td><td>无硬限制</td></tr><tr><td>调用时</td><td>每次把<strong>整个 fd 集合</strong>拷进内核</td><td>同左</td><td><strong>内核常驻</strong>（红黑树），<code>epoll_ctl</code> 仅增删改时调用</td></tr><tr><td>就绪检测</td><td>内核 O(n) 线性扫一遍</td><td>同左</td><td>数据到达经<strong>回调</strong> <code>ep_poll_callback</code> 自动挂入就绪链表</td></tr><tr><td>返回</td><td>全部 fd + 就绪位，用户还得再扫</td><td>同左</td><td><strong>只返回就绪的 fd</strong>，O(就绪数)</td></tr></tbody></table>
+<p><strong>epoll 三件套</strong>：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="c"><code><span class="line"><span style="color:#24292E">epfd </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> epoll_create1</span><span style="color:#24292E">(</span><span style="color:#005CC5">0</span><span style="color:#24292E">);</span><span style="color:#6A737D">                            // 建红黑树（内核事件表）</span></span>
+<span class="line"><span style="color:#6F42C1">epoll_ctl</span><span style="color:#24292E">(epfd, EPOLL_CTL_ADD, fd, </span><span style="color:#D73A49">&#x26;</span><span style="color:#E36209">ev</span><span style="color:#24292E">);</span><span style="color:#6A737D">            // 挂树 + 注册回调</span></span>
+<span class="line"><span style="color:#24292E">n </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> epoll_wait</span><span style="color:#24292E">(epfd, events, maxevents, timeout);</span><span style="color:#6A737D">   // 只取就绪链表</span></span></code></pre>
+<p>数据到达网卡 → 中断 → <code>ep_poll_callback</code> → fd 挂入就绪链表 → <code>epoll_wait</code> 醒来只返回这几个 fd。<strong>连接再多，就绪的永远是少数</strong>——这就是它不随连接数线性增长、能撑 C10K 的原因（不需要 per-connection 线程，省掉线程栈与切换开销）。</p>
+<p>JDK 侧完整链路：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>Selector.select()                                   // 应用入口</span></span>
+<span class="line"><span>   └─ EPollSelectorImpl.doSelect(action, timeout)   // :94  内部就是 epoll_wait（native epollWait）</span></span>
+<span class="line"><span>        └─ 返回就绪的 SelectionKey 集合</span></span>
+<span class="line"><span>             └─ 应用线程逐个 channel.read()         // ← 这一步仍是同步 IO</span></span></code></pre>
 <pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">class</span><span style="color:#6F42C1"> EPollSelectorImpl</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> SelectorImpl</span><span style="color:#24292E"> {                     </span><span style="color:#6A737D">// src/java.base/linux/classes/sun/nio/ch/EPollSelectorImpl.java:49</span></span>
 <span class="line"><span style="color:#D73A49">    protected</span><span style="color:#D73A49"> int</span><span style="color:#6F42C1"> doSelect</span><span style="color:#24292E">(Consumer&#x3C;</span><span style="color:#D73A49">SelectionKey</span><span style="color:#24292E">> </span><span style="color:#E36209">action</span><span style="color:#24292E">, </span><span style="color:#D73A49">long</span><span style="color:#E36209"> timeout</span><span style="color:#24292E">)  </span><span style="color:#6A737D">// :94  内部就是 epoll_wait</span></span></code></pre>
-<ul>
-<li><code>select</code>/<code>poll</code>：每次都要把整个 fd 集合拷进内核并 O(n) 扫描</li>
-<li><code>epoll</code>：内核维护红黑树 + 就绪链表，<code>epoll_wait</code> 只返回就绪的 fd → O(就绪数)</li>
-</ul>
-<p><strong>为什么 epoll 能撑 C10K</strong>：不随连接数线性增长，且不需要为每个连接开一个线程（省掉线程栈与切换开销）。</p>
+<blockquote>
+<p><strong>两个必纠误区</strong>：</p>
+<ol>
+<li><strong>epoll ≠ 异步 IO</strong>：<code>epoll_wait</code> 只给”就绪通知”，<code>read</code> 仍由你发起——NIO 的准确表述是”<strong>同步非阻塞 + 多路复用</strong>”。</li>
+<li><strong>LT vs ET</strong>：LT（默认）只要缓冲区还有数据就反复提醒，安全好写；ET 只提醒一次，必须循环读到 <code>EAGAIN</code> 且必须配非阻塞 fd（Netty 边缘触发模式即此），漏读连接就”假死”。</li>
+</ol>
+</blockquote>
 <h3 id="44-零拷贝sendfile-是怎么回事">4.4 零拷贝：sendfile 是怎么回事</h3>
-<p>传统”读文件再发出去”要走 <strong>4 次拷贝 + 4 次上下文切换</strong>：磁盘→内核缓冲区→用户缓冲区→socket 内核缓冲→网卡。</p>
+<p>传统”读文件再发出去”（read + write）要走 <strong>4 次拷贝 + 4 次上下文切换</strong>：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>磁盘 ──DMA──→ 页缓存(PageCache) ──CPU──→ 用户缓冲区 ──CPU──→ socket 缓冲区 ──DMA──→ 网卡</span></span>
+<span class="line"><span>        ①                    ②                        ③                    ④</span></span>
+<span class="line"><span>上下文切换：read 陷入/返回 + write 陷入/返回 = 4 次</span></span></code></pre>
+<p>②③ 是两次纯浪费的 CPU 拷贝——数据在用户态根本没被修改，只是路过。零拷贝的优化路径就是逐级砍掉它们：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>方案</th><th>拷贝次数</th><th>上下文切换</th><th>砍掉了什么</th><th>适用</th></tr></thead><tbody><tr><td>read + write</td><td>4（2 DMA + 2 CPU）</td><td>4</td><td>—</td><td>基线</td></tr><tr><td><strong>mmap + write</strong></td><td>3（2 DMA + 1 CPU）</td><td>4</td><td>用户缓冲与页缓存共享映射，不再多拷一份</td><td>需在用户态<strong>改数据</strong>（加密/压缩前处理）；JDK 即 <code>MappedByteBuffer</code></td></tr><tr><td><strong>sendfile</strong></td><td>3（2 DMA + 1 CPU）</td><td><strong>2</strong></td><td>数据不进用户态，read/write 合成一次系统调用</td><td>纯”文件 → socket”</td></tr><tr><td><strong>sendfile + SG-DMA</strong></td><td><strong>2（全 DMA，0 CPU 拷贝）</strong></td><td><strong>2</strong></td><td>socket 缓冲区只存 fd + 长度，网卡控制器直接从页缓存 gather</td><td>Kafka 默认路径</td></tr></tbody></table>
 <p>Java 的 <code>transferTo</code> 直接走内核的 <code>sendfile</code>：</p>
 <pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> long</span><span style="color:#6F42C1"> transferTo</span><span style="color:#24292E">(</span><span style="color:#D73A49">long</span><span style="color:#24292E"> position, </span><span style="color:#D73A49">long</span><span style="color:#24292E"> count, WritableByteChannel target)  </span><span style="color:#6A737D">// src/java.base/share/classes/sun/nio/ch/FileChannelImpl.java:934</span></span>
 <span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> long</span><span style="color:#6F42C1"> transferToTrustedChannel</span><span style="color:#24292E">(...)     </span><span style="color:#6A737D">// :849  目标是可信 channel（SocketChannel）→ 走 sendfile</span></span>
 <span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> long</span><span style="color:#6F42C1"> transferToArbitraryChannel</span><span style="color:#24292E">(...)  </span><span style="color:#6A737D">// :901  不可信则退化成 mmap/缓冲拷贝</span></span>
 <span class="line"><span style="color:#D73A49">abstract</span><span style="color:#D73A49"> long</span><span style="color:#6F42C1"> transferTo</span><span style="color:#24292E">(FileDescriptor src, </span><span style="color:#D73A49">long</span><span style="color:#24292E"> position, </span><span style="color:#D73A49">long</span><span style="color:#24292E"> count, ...)   </span><span style="color:#6A737D">// src/java.base/share/classes/sun/nio/ch/FileDispatcher.java:86</span></span></code></pre>
-<p><code>FileDispatcher.transferTo</code>（<code>:86</code>）是 native 方法，在 Linux 上就是 <code>sendfile(2)</code>：数据<strong>全程不进用户态</strong>，只剩”磁盘→内核缓冲→网卡”两次 DMA 拷贝。</p>
+<p><code>FileDispatcher.transferTo</code>（<code>:86</code>）是 native 方法，在 Linux 上就是 <code>sendfile(2)</code>：数据<strong>全程不进用户态</strong>。</p>
 <blockquote>
-<p><strong>注意</strong>：<code>transferTo</code> 是否真的零拷贝取决于目标 channel 类型（<code>:849</code> vs <code>:901</code> 两条分支），而且需要在支持的系统上；不要无条件宣称”用了 transferTo 就一定零拷贝”。</p>
+<p><strong>三个必纠边界</strong>：</p>
+<ol>
+<li><strong>“用了 transferTo 就一定零拷贝”是错的</strong>——看 <code>:849</code> vs <code>:901</code> 两条分支，目标不可信就退化；且需系统支持。</li>
+<li><strong>sendfile 只适合”文件 → socket”单向搬运</strong>：中途要改数据（压缩/加密）就用不了，得退回 mmap——这正是 mmap 存在的价值。</li>
+<li><strong>零拷贝省的是 CPU 拷贝与上下文切换</strong>，DMA 拷贝永远存在——所以速记是”4 → 2”，不是”4 → 0”。</li>
+</ol>
 </blockquote>
-<hr>
+<p><strong>落地案例</strong>：Kafka 消费者拉消息即 sendfile（Broker 磁盘段文件直发网卡，是其高吞吐支柱之一）；RocketMQ 走 mmap；Nginx <code>sendfile on;</code> 同理。</p>
 <h2 id="第五讲-同步互斥与死锁">第五讲 同步、互斥与死锁</h2>
 <h3 id="51-为什么需要同步">5.1 为什么需要同步</h3>
 <p><strong>竞态条件（race condition）</strong>：多个线程对共享数据的读写序列不确定。解决靠<strong>互斥</strong>（一次只准一个进临界区）+ <strong>可见性/顺序</strong>（内存屏障）。</p>
@@ -330,7 +454,7 @@
 <p><strong>最快的是共享内存</strong>，因为它唯一地”绕开了内核拷贝”。</p>
 <hr>
 <h2 id="六面试高频-qa">六、面试高频 Q&#x26;A</h2>
-<p>26 道最高频题的「一句话答案」。先报结论占住阵地，面试官真追问时，按「深入」列展开到对应讲次。</p>
+<p>32 道最高频题的「一句话答案」。先报结论占住阵地，面试官真追问时，按「深入」列展开到对应讲次。</p>
 
 
 
@@ -498,7 +622,43 @@
 
 
 
-<table><thead><tr><th>#</th><th>问题</th><th>答案（先给结论）</th><th>深入</th></tr></thead><tbody><tr><td>1</td><td>进程和线程的区别？</td><td>进程是<strong>资源分配</strong>的基本单位（独立地址空间），线程是<strong>CPU 调度</strong>的基本单位（共享地址空间，私有栈与寄存器）</td><td>第一讲</td></tr><tr><td>2</td><td>为什么线程切换比进程切换快？</td><td>线程不换页表，<strong>TLB 不失效</strong>；进程切换要换地址空间并刷 TLB</td><td>第一讲</td></tr><tr><td>3</td><td>线程共享什么、私有什么？</td><td>共享堆/代码段/文件描述符；私有栈、寄存器上下文、ThreadLocal</td><td>第一讲</td></tr><tr><td>4</td><td>fork 和 exec 分别做什么？</td><td>fork 复制进程（COW），exec 换成新程序；JDK 的 <code>forkAndExec</code>（<code>ProcessImpl.java:282</code>）就是这对组合</td><td>第一讲</td></tr><tr><td>5</td><td>什么是僵尸进程？怎么产生？</td><td>子进程退出但父进程没 <code>wait()</code> 回收，PCB 与 pid 仍占着</td><td>第一讲</td></tr><tr><td>6</td><td>孤儿进程有害吗？</td><td>无害，被 init/systemd 收养并回收</td><td>第一讲</td></tr><tr><td>7</td><td>Java 线程是内核线程吗？</td><td>是 1:1 模型：<code>os::create_thread</code>（<code>javaThread.cpp:605</code>）最终是 <code>pthread_create</code></td><td>第一讲</td></tr><tr><td>8</td><td>“unable to create new native thread” 是什么原因？</td><td>线程数触到系统/ulimit 上限或虚拟内存不足，HotSpot 在 <code>create_thread</code> 拿不到 <code>_osthread</code> 时抛 OOM</td><td>第一讲</td></tr><tr><td>9</td><td>协程与线程的区别？</td><td>协程在<strong>用户态</strong>调度，切换不进内核，可开百万级；线程由内核调度，千级</td><td>第一讲</td></tr><tr><td>10</td><td>虚拟线程为什么能支撑高并发？</td><td>阻塞时 <code>Continuation.yield</code>（<code>VirtualThread.java:441</code>）把栈帧 freeze 到堆（<code>continuationFreezeThaw.cpp:230</code>）并释放 carrier</td><td>第一讲</td></tr><tr><td>11</td><td>虚拟线程的 pinning 是什么？</td><td>阻塞操作发生在 <code>synchronized</code> 内时无法 unmount，carrier 被钉住，吞吐退化</td><td>第一讲</td></tr><tr><td>12</td><td>什么是上下文切换？什么时候发生？</td><td>保存/恢复执行现场；自愿（等 IO/锁/sleep）与非自愿（时间片到/被抢占）</td><td>第二讲</td></tr><tr><td>13</td><td><code>Thread.yield()</code> 一定让出 CPU 吗？</td><td>不保证，只是提示；且 Java 优先级（1/5/10）映射到 OS 后可能被忽略</td><td>第二讲</td></tr><tr><td>14</td><td><code>onSpinWait()</code> 有什么用？</td><td>给 CPU 的自旋提示（x86 <code>PAUSE</code>），降低功耗与流水线惩罚（<code>Thread.java:636</code>）</td><td>第二讲</td></tr><tr><td>15</td><td>线程状态 RUNNABLE 就是在跑吗？</td><td><strong>不是</strong>，它还包含”等待 OS 资源”（如阻塞 IO）——jstack 里 <code>RUNNABLE</code> + <code>socketRead</code> 其实是卡住了</td><td>第二讲</td></tr><tr><td>16</td><td>为什么要有虚拟内存？</td><td>隔离（进程之间互相踩不到）、简化链接、支持超订与按需调页</td><td>第三讲</td></tr><tr><td>17</td><td>什么是缺页中断？</td><td>访问的页不在内存（页表项未 Present）时触发，内核分配物理页/换入后重试；非法访问则 SIGSEGV</td><td>第三讲</td></tr><tr><td>18</td><td>页面置换算法有哪些？</td><td>OPT（理论）、FIFO（有 Belady 异常）、LRU、LFU、Clock（LRU 近似，OS 实际常用）</td><td>第三讲</td></tr><tr><td>19</td><td>栈溢出与堆溢出的区别？</td><td>栈私有且固定 → <code>StackOverflowError</code>；堆共享 → <code>OutOfMemoryError: Java heap space</code></td><td>第三讲</td></tr><tr><td>20</td><td>用户态和内核态怎么切换？</td><td>系统调用（主动）、中断（异步）、异常（故障）；每次切换要保存现场+切栈，约微秒级</td><td>第四讲</td></tr><tr><td>21</td><td>同步/异步与阻塞/非阻塞的区别？</td><td>同步/异步看”结果怎么拿到”（自己等 vs 回调通知）；阻塞/非阻塞看”等的时候线程挂不挂”</td><td>第四讲</td></tr><tr><td>22</td><td>select / poll / epoll 为什么 epoll 快？</td><td>epoll 用红黑树+就绪链表，返回就绪集合 O(就绪数)；前两者每次 O(n) 扫描+拷贝</td><td>第四讲</td></tr><tr><td>23</td><td>什么是零拷贝？Java 怎么做？</td><td>数据不经过用户态；<code>FileChannel.transferTo</code>（<code>FileChannelImpl.java:934</code>）→ <code>FileDispatcher.transferTo</code>（<code>:86</code>）→ <code>sendfile</code></td><td>第四讲</td></tr><tr><td>24</td><td>用了 <code>transferTo</code> 就一定零拷贝吗？</td><td>不一定：只有目标是可信 channel 才走 sendfile（<code>:849</code>），否则退化（<code>:901</code>）</td><td>第四讲</td></tr><tr><td>25</td><td>死锁的四个必要条件？</td><td>互斥、占有且等待、不可抢占、循环等待；破任一条即可预防（最实用：统一加锁顺序）</td><td>第五讲</td></tr><tr><td>26</td><td>进程间通信最快的是哪种？</td><td>共享内存（映射同一块物理页，不拷数据），但要自己配信号量同步</td><td>第五讲</td></tr></tbody></table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>#</th><th>问题</th><th>答案（先给结论）</th><th>深入</th></tr></thead><tbody><tr><td>1</td><td>进程和线程的区别？</td><td>进程是<strong>资源分配</strong>的基本单位（独立地址空间），线程是<strong>CPU 调度</strong>的基本单位（共享地址空间，私有栈与寄存器）</td><td>第一讲</td></tr><tr><td>2</td><td>为什么线程切换比进程切换快？</td><td>线程不换页表，<strong>TLB 不失效</strong>；进程切换要换地址空间并刷 TLB</td><td>第一讲</td></tr><tr><td>3</td><td>线程共享什么、私有什么？</td><td>共享堆/代码段/文件描述符；私有栈、寄存器上下文、ThreadLocal</td><td>第一讲</td></tr><tr><td>4</td><td>fork 和 exec 分别做什么？</td><td>fork 复制进程（COW），exec 换成新程序；JDK 的 <code>forkAndExec</code>（<code>ProcessImpl.java:282</code>）就是这对组合</td><td>第一讲</td></tr><tr><td>5</td><td>什么是僵尸进程？怎么产生？</td><td>子进程退出但父进程没 <code>wait()</code> 回收，PCB 与 pid 仍占着</td><td>第一讲</td></tr><tr><td>6</td><td>孤儿进程有害吗？</td><td>无害，被 init/systemd 收养并回收</td><td>第一讲</td></tr><tr><td>7</td><td>Java 线程是内核线程吗？</td><td>是 1:1 模型：<code>os::create_thread</code>（<code>javaThread.cpp:605</code>）最终是 <code>pthread_create</code></td><td>第一讲</td></tr><tr><td>8</td><td>“unable to create new native thread” 是什么原因？</td><td>线程数触到系统/ulimit 上限或虚拟内存不足，HotSpot 在 <code>create_thread</code> 拿不到 <code>_osthread</code> 时抛 OOM</td><td>第一讲</td></tr><tr><td>9</td><td>协程与线程的区别？</td><td>协程在<strong>用户态</strong>调度，切换不进内核，可开百万级；线程由内核调度，千级</td><td>第一讲</td></tr><tr><td>10</td><td>虚拟线程为什么能支撑高并发？</td><td>阻塞时 <code>Continuation.yield</code>（<code>VirtualThread.java:441</code>）把栈帧 freeze 到堆（<code>continuationFreezeThaw.cpp:230</code>）并释放 carrier</td><td>第一讲</td></tr><tr><td>11</td><td>虚拟线程的 pinning 是什么？</td><td>阻塞操作发生在 <code>synchronized</code> 内时无法 unmount，carrier 被钉住，吞吐退化</td><td>第一讲</td></tr><tr><td>12</td><td>什么是上下文切换？什么时候发生？</td><td>保存/恢复执行现场；自愿（等 IO/锁/sleep）与非自愿（时间片到/被抢占）</td><td>第二讲</td></tr><tr><td>13</td><td><code>Thread.yield()</code> 一定让出 CPU 吗？</td><td>不保证，只是提示；且 Java 优先级（1/5/10）映射到 OS 后可能被忽略</td><td>第二讲</td></tr><tr><td>14</td><td><code>onSpinWait()</code> 有什么用？</td><td>给 CPU 的自旋提示（x86 <code>PAUSE</code>），降低功耗与流水线惩罚（<code>Thread.java:636</code>）</td><td>第二讲</td></tr><tr><td>15</td><td>线程状态 RUNNABLE 就是在跑吗？</td><td><strong>不是</strong>，它还包含”等待 OS 资源”（如阻塞 IO）——jstack 里 <code>RUNNABLE</code> + <code>socketRead</code> 其实是卡住了</td><td>第二讲</td></tr><tr><td>16</td><td>为什么要有虚拟内存？</td><td>隔离（进程之间互相踩不到）、简化链接、支持超订与按需调页</td><td>第三讲</td></tr><tr><td>17</td><td>什么是缺页中断？</td><td>访问的页不在内存（页表项未 Present）时触发，内核分配物理页/换入后重试；非法访问则 SIGSEGV</td><td>第三讲</td></tr><tr><td>18</td><td>页面置换算法有哪些？</td><td>OPT（理论）、FIFO（有 Belady 异常）、LRU、LFU、Clock（LRU 近似，OS 实际常用）</td><td>第三讲</td></tr><tr><td>19</td><td>栈溢出与堆溢出的区别？</td><td>栈私有且固定 → <code>StackOverflowError</code>；堆共享 → <code>OutOfMemoryError: Java heap space</code></td><td>第三讲</td></tr><tr><td>20</td><td>用户态和内核态怎么切换？</td><td>系统调用（主动）、中断（异步）、异常（故障）；每次切换要保存现场+切栈，约微秒级</td><td>第四讲</td></tr><tr><td>21</td><td>同步/异步与阻塞/非阻塞的区别？</td><td>同步/异步看”结果怎么拿到”（自己等 vs 回调通知）；阻塞/非阻塞看”等的时候线程挂不挂”</td><td>第四讲</td></tr><tr><td>22</td><td>select / poll / epoll 为什么 epoll 快？</td><td>epoll 用红黑树+就绪链表，返回就绪集合 O(就绪数)；前两者每次 O(n) 扫描+拷贝</td><td>第四讲</td></tr><tr><td>23</td><td>什么是零拷贝？Java 怎么做？</td><td>数据不经过用户态；<code>FileChannel.transferTo</code>（<code>FileChannelImpl.java:934</code>）→ <code>FileDispatcher.transferTo</code>（<code>:86</code>）→ <code>sendfile</code></td><td>第四讲</td></tr><tr><td>24</td><td>用了 <code>transferTo</code> 就一定零拷贝吗？</td><td>不一定：只有目标是可信 channel 才走 sendfile（<code>:849</code>），否则退化（<code>:901</code>）</td><td>第四讲</td></tr><tr><td>25</td><td>死锁的四个必要条件？</td><td>互斥、占有且等待、不可抢占、循环等待；破任一条即可预防（最实用：统一加锁顺序）</td><td>第五讲</td></tr><tr><td>26</td><td>进程间通信最快的是哪种？</td><td>共享内存（映射同一块物理页，不拷数据），但要自己配信号量同步</td><td>第五讲</td></tr><tr><td>27</td><td>epoll 是异步 IO 吗？</td><td><strong>不是</strong>：<code>epoll_wait</code> 只给”就绪通知”，数据拷贝（<code>read</code>）仍要自己做；NIO 准确表述是”同步非阻塞 + 多路复用”</td><td>第四讲</td></tr><tr><td>28</td><td>epoll 的 LT 和 ET 区别？</td><td>LT 有数据就反复提醒（默认、安全）；ET 只提醒一次，须循环读到 <code>EAGAIN</code> 且配非阻塞 fd（Netty 边缘触发）</td><td>第四讲</td></tr><tr><td>29</td><td>mmap+write 和 sendfile 怎么选？</td><td>mmap 3 拷 4 切、能在用户态改数据；sendfile 3 拷 2 切、数据不进用户态；SG-DMA 下 sendfile 达 0 CPU 拷贝</td><td>第四讲</td></tr><tr><td>30</td><td>Kafka 为什么吞吐高？</td><td>顺序写 + 页缓存 + 消费路径 sendfile 零拷贝 + epoll 多路复用——IO 两大优化全占了</td><td>第四讲</td></tr><tr><td>31</td><td>非阻塞后线程就可以去干别的了？</td><td>不完整：还得自己轮询（单连接下纯亏，阻塞反而最优）；真实价值是万级连接的前提 + epoll 的原料（EventLoop 的 fd 必须非阻塞）</td><td>第四讲</td></tr><tr><td>32</td><td>EventLoop 一个线程怎么既等 IO 又干业务？</td><td>固定循环”睡眠等（timeout 兜底）→ 处理就绪 IO → 清任务队列”；任务必须短，长活丢业务线程池，否则饿死 IO 连累所有连接</td><td>第四讲</td></tr></tbody></table>
 <hr>
 <h2 id="七易错点清单">七、易错点清单</h2>
 <ol>
@@ -512,6 +672,10 @@
 <li><strong>忘记父进程要回收子进程</strong>：不 <code>wait()</code> 就堆僵尸进程（<code>ProcessImpl.java:342</code> 的 completion 回调就是干这个的）</li>
 <li><strong>把”减少系统调用”理解成”减少 IO 次数”</strong>：真正该做的是<strong>加大每次 IO 的粒度</strong>（缓冲/批量）</li>
 <li><strong>死锁只说”加锁顺序”</strong>：四条件里任意一条都能破，检测/恢复也是正经策略</li>
+<li><strong>把 epoll 当异步 IO</strong>：就绪通知 ≠ 数据已到用户缓冲，<code>read</code> 还得自己调</li>
+<li><strong>ET 模式没循环读到 <code>EAGAIN</code></strong>：剩余数据不再通知，连接”假死”；ET 必须配非阻塞 fd</li>
+<li><strong>以为零拷贝 = 0 次拷贝</strong>：省的是 CPU 拷贝与上下文切换，DMA 拷贝永远在（4→2 而非 4→0）</li>
+<li><strong>在 EventLoop 里跑长任务/阻塞操作</strong>：饿死 IO 并连累它管的全部连接；长活应丢业务线程池</li>
 </ol>
 <hr>
 <h2 id="八数值速记">八、数值速记</h2>
@@ -555,7 +719,12 @@
 
 
 
-<table><thead><tr><th>数值</th><th>含义</th><th>出处</th></tr></thead><tbody><tr><td><code>4KB</code></td><td>x86 标准页大小（HugePage 通常 2MB/1GB）</td><td><code>os.cpp:1488</code> <code>vm_page_size()</code></td></tr><tr><td><code>1 / 5 / 10</code></td><td>Java 线程优先级 MIN/NORM/MAX（OS 可忽略）</td><td><code>Thread.java:363/368/373</code></td></tr><tr><td><code>6</code></td><td><code>Thread.State</code> 枚举值个数</td><td><code>Thread.java:2664</code></td></tr><tr><td><code>4 → 2</code></td><td>零拷贝把”数据拷贝次数”从 4 降到 2（DMA 直传）</td><td><code>FileChannelImpl.java:849</code></td></tr><tr><td><code>SIGTERM / SIGKILL</code></td><td><code>destroyProcess(false)</code> / <code>destroyProcess(true)</code></td><td><code>ProcessHandleImpl.java:332</code></td></tr><tr><td><code>1:1</code></td><td>Java 线程模型（一个 Java 线程一个内核线程）</td><td><code>javaThread.cpp:605</code></td></tr></tbody></table>
+
+
+
+
+
+<table><thead><tr><th>数值</th><th>含义</th><th>出处</th></tr></thead><tbody><tr><td><code>4KB</code></td><td>x86 标准页大小（HugePage 通常 2MB/1GB）</td><td><code>os.cpp:1488</code> <code>vm_page_size()</code></td></tr><tr><td><code>1 / 5 / 10</code></td><td>Java 线程优先级 MIN/NORM/MAX（OS 可忽略）</td><td><code>Thread.java:363/368/373</code></td></tr><tr><td><code>6</code></td><td><code>Thread.State</code> 枚举值个数</td><td><code>Thread.java:2664</code></td></tr><tr><td><code>4 → 2</code></td><td>零拷贝把”数据拷贝次数”从 4 降到 2（DMA 直传）</td><td><code>FileChannelImpl.java:849</code></td></tr><tr><td><code>1024</code></td><td>select 的 fd 上限（位图 <code>FD_SETSIZE</code>），epoll 无此限</td><td>第四讲 4.3</td></tr><tr><td><code>SIGTERM / SIGKILL</code></td><td><code>destroyProcess(false)</code> / <code>destroyProcess(true)</code></td><td><code>ProcessHandleImpl.java:332</code></td></tr><tr><td><code>1:1</code></td><td>Java 线程模型（一个 Java 线程一个内核线程）</td><td><code>javaThread.cpp:605</code></td></tr></tbody></table>
 <hr>
 <h2 id="九复习卡">九、复习卡</h2>
 <ul class="contains-task-list">
@@ -568,6 +737,10 @@
 <li class="task-list-item"><input type="checkbox" disabled> 能说出页面置换算法并指出 OS 实际常用的那个</li>
 <li class="task-list-item"><input type="checkbox" disabled> 能解释用户态/内核态切换的三种触发方式与代价</li>
 <li class="task-list-item"><input type="checkbox" disabled> 能对比 select/poll/epoll，并说出 JDK Selector 在 Linux 的实现</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能画出一次网络读的两阶段，说清阻塞/非阻塞与同步/异步分别作用于哪一阶段</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说出 epoll 三件套与”红黑树 + 就绪链表 + 回调”机制，并区分 LT/ET</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能说清”非阻塞 + 轮询”的排班困境与 EventLoop 的制度化解法</li>
+<li class="task-list-item"><input type="checkbox" disabled> 能列出传统 read+write 的 4 拷贝 4 切换，说清 mmap/write、sendfile、SG-DMA 各省了哪一步</li>
 <li class="task-list-item"><input type="checkbox" disabled> 能说出零拷贝的原理、Java API 与”并非总是零拷贝”的边界</li>
 <li class="task-list-item"><input type="checkbox" disabled> 能背出死锁四条件与四种对策</li>
 </ul>
