@@ -52,6 +52,7 @@ DOCS = [
     ("computer-network.md", "computer-network", "2026-10-21", ["计算机网络"], ["TCP", "HTTP", "HTTPS", "DNS", "网络", "源码"]),
     ("operating-system.md", "operating-system", "2026-10-21", ["操作系统"], ["进程", "线程", "内存管理", "IO", "源码"]),
     ("agent/ai-agent.md", "ai-agent", "2026-10-21", ["RAG 与 Agent"], ["AI Agent", "Dify", "ReAct", "Function Calling", "MCP", "源码"]),
+    ("agent/agent-harness-design.md", "agent-harness-design", "2026-11-04", ["RAG 与 Agent"], ["Agent", "架构设计", "依赖倒置", "领域层", "应用层", "适配层", "组装根"]),
     # 已下架：learning-path.md（学习路线）与 learning-map.html（思维导图）
     # 源文件仍在 D:/work/2026/deep-dive/，需要时把这两行加回来即可重新发布。
     # ("learning-path.md", "learning-path", "2026-10-17", ["学习路线"], ["思维导图", "学习路径", "记忆方法"]),

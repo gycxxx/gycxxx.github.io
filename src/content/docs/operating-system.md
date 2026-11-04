@@ -261,28 +261,83 @@ return vm_page_size();                 // :1488  标准页（x86 通常 4KB）
 
 ### 4.2 阻塞 / 非阻塞、同步 / 异步
 
-| | 阻塞 | 非阻塞 |
-|---|---|---|
-| 同步 | read 一直等到数据（最常见） | read 立刻返回 EAGAIN，需轮询 |
-| 异步 | — | 提交请求，完成由回调/信号通知 |
+先钉死最容易混的点：**这是两组正交概念，不是一回事**——
 
-Java 里：`BIO`（同步阻塞）→ `NIO`（同步非阻塞 + 多路复用）→ `AIO`（异步，Linux 上实际由线程池模拟）。
+- **阻塞 / 非阻塞**：作用于**第一阶段**——数据没就绪时，线程"等不等"。阻塞 = 线程挂起睡眠；非阻塞 = 立即返回 `EAGAIN`，线程醒着但得自己轮询（烧 CPU）。
+- **同步 / 异步**：作用于**第二阶段**——数据就绪后，**谁把它从内核缓冲拷到用户缓冲**。同步 = 自己调 `read` 拷；异步 = 内核拷完再通知你。
+
+```
+一次网络读的两阶段：
+① 设备 → 内核缓冲（等数据到达，慢）    ← 阻塞/非阻塞 决定这一阶段"怎么等"
+② 内核缓冲 → 用户缓冲（拷贝，快）      ← 同步/异步   决定这一阶段"谁来做"
+```
+
+| 组合 | 内核行为 | 线程表现 | Java 对应 |
+|---|---|---|---|
+| 同步 + 阻塞 | 数据没到就扣着线程 | 挂起睡眠 | **BIO**：`Socket` 的 `InputStream.read()` |
+| 同步 + 非阻塞 | 设 `O_NONBLOCK`，没数据返回 `EAGAIN` | 醒着，但要轮询 | `configureBlocking(false)` 单独用（少见） |
+| 同步非阻塞 + 多路复用 | 非阻塞 fd + `epoll_wait` 统一"等" | 醒着，等在**一个**系统调用上 | **NIO**：`Selector`（Netty / Redis / Nginx 路线） |
+| 异步 | 内核把数据拷进你的 buffer 后再通知 | 提交请求后完全不管 | **AIO**（Linux 上实际由 epoll + 线程池模拟；真异步在 Windows IOCP / Linux io_uring） |
+
+> **关键结论**：多路复用**没有改变"同步"属性**——`epoll_wait` 返回"就绪"后仍要自己 `read`。它解决的不是"拷贝谁来做"，而是"**等**"的效率：把 N 个线程各自的"等"合并成 1 个线程在 1 个系统调用里统一等。
 
 ### 4.3 多路复用：一个线程管万条连接
+
+演进动机是数量级问题：BIO 下一连接一线程，1 万连接 = 1 万个内核线程 + 1 万份 1MB 栈 + 无数次上下文切换。
+
+| | select | poll | epoll |
+|---|---|---|---|
+| fd 上限 | 位图，**1024**（`FD_SETSIZE`） | 数组，无硬限制 | 无硬限制 |
+| 调用时 | 每次把**整个 fd 集合**拷进内核 | 同左 | **内核常驻**（红黑树），`epoll_ctl` 仅增删改时调用 |
+| 就绪检测 | 内核 O(n) 线性扫一遍 | 同左 | 数据到达经**回调** `ep_poll_callback` 自动挂入就绪链表 |
+| 返回 | 全部 fd + 就绪位，用户还得再扫 | 同左 | **只返回就绪的 fd**，O(就绪数) |
+
+**epoll 三件套**：
+
+```c
+epfd = epoll_create1(0);                            // 建红黑树（内核事件表）
+epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev);            // 挂树 + 注册回调
+n = epoll_wait(epfd, events, maxevents, timeout);   // 只取就绪链表
+```
+
+数据到达网卡 → 中断 → `ep_poll_callback` → fd 挂入就绪链表 → `epoll_wait` 醒来只返回这几个 fd。**连接再多，就绪的永远是少数**——这就是它不随连接数线性增长、能撑 C10K 的原因（不需要 per-connection 线程，省掉线程栈与切换开销）。
+
+JDK 侧完整链路：
+
+```
+Selector.select()                                   // 应用入口
+   └─ EPollSelectorImpl.doSelect(action, timeout)   // :94  内部就是 epoll_wait（native epollWait）
+        └─ 返回就绪的 SelectionKey 集合
+             └─ 应用线程逐个 channel.read()         // ← 这一步仍是同步 IO
+```
 
 ```java
 class EPollSelectorImpl extends SelectorImpl {                     // src/java.base/linux/classes/sun/nio/ch/EPollSelectorImpl.java:49
     protected int doSelect(Consumer<SelectionKey> action, long timeout)  // :94  内部就是 epoll_wait
 ```
 
-- `select`/`poll`：每次都要把整个 fd 集合拷进内核并 O(n) 扫描
-- `epoll`：内核维护红黑树 + 就绪链表，`epoll_wait` 只返回就绪的 fd → O(就绪数)
-
-**为什么 epoll 能撑 C10K**：不随连接数线性增长，且不需要为每个连接开一个线程（省掉线程栈与切换开销）。
+> **两个必纠误区**：
+> 1. **epoll ≠ 异步 IO**：`epoll_wait` 只给"就绪通知"，`read` 仍由你发起——NIO 的准确表述是"**同步非阻塞 + 多路复用**"。
+> 2. **LT vs ET**：LT（默认）只要缓冲区还有数据就反复提醒，安全好写；ET 只提醒一次，必须循环读到 `EAGAIN` 且必须配非阻塞 fd（Netty 边缘触发模式即此），漏读连接就"假死"。
 
 ### 4.4 零拷贝：sendfile 是怎么回事
 
-传统"读文件再发出去"要走 **4 次拷贝 + 4 次上下文切换**：磁盘→内核缓冲区→用户缓冲区→socket 内核缓冲→网卡。
+传统"读文件再发出去"（read + write）要走 **4 次拷贝 + 4 次上下文切换**：
+
+```
+磁盘 ──DMA──→ 页缓存(PageCache) ──CPU──→ 用户缓冲区 ──CPU──→ socket 缓冲区 ──DMA──→ 网卡
+        ①                    ②                        ③                    ④
+上下文切换：read 陷入/返回 + write 陷入/返回 = 4 次
+```
+
+②③ 是两次纯浪费的 CPU 拷贝——数据在用户态根本没被修改，只是路过。零拷贝的优化路径就是逐级砍掉它们：
+
+| 方案 | 拷贝次数 | 上下文切换 | 砍掉了什么 | 适用 |
+|---|---|---|---|---|
+| read + write | 4（2 DMA + 2 CPU） | 4 | — | 基线 |
+| **mmap + write** | 3（2 DMA + 1 CPU） | 4 | 用户缓冲与页缓存共享映射，不再多拷一份 | 需在用户态**改数据**（加密/压缩前处理）；JDK 即 `MappedByteBuffer` |
+| **sendfile** | 3（2 DMA + 1 CPU） | **2** | 数据不进用户态，read/write 合成一次系统调用 | 纯"文件 → socket" |
+| **sendfile + SG-DMA** | **2（全 DMA，0 CPU 拷贝）** | **2** | socket 缓冲区只存 fd + 长度，网卡控制器直接从页缓存 gather | Kafka 默认路径 |
 
 Java 的 `transferTo` 直接走内核的 `sendfile`：
 
@@ -293,11 +348,15 @@ private long transferToArbitraryChannel(...)  // :901  不可信则退化成 mma
 abstract long transferTo(FileDescriptor src, long position, long count, ...)   // src/java.base/share/classes/sun/nio/ch/FileDispatcher.java:86
 ```
 
-`FileDispatcher.transferTo`（`:86`）是 native 方法，在 Linux 上就是 `sendfile(2)`：数据**全程不进用户态**，只剩"磁盘→内核缓冲→网卡"两次 DMA 拷贝。
+`FileDispatcher.transferTo`（`:86`）是 native 方法，在 Linux 上就是 `sendfile(2)`：数据**全程不进用户态**。
 
-> **注意**：`transferTo` 是否真的零拷贝取决于目标 channel 类型（`:849` vs `:901` 两条分支），而且需要在支持的系统上；不要无条件宣称"用了 transferTo 就一定零拷贝"。
+> **三个必纠边界**：
+> 1. **"用了 transferTo 就一定零拷贝"是错的**——看 `:849` vs `:901` 两条分支，目标不可信就退化；且需系统支持。
+> 2. **sendfile 只适合"文件 → socket"单向搬运**：中途要改数据（压缩/加密）就用不了，得退回 mmap——这正是 mmap 存在的价值。
+> 3. **零拷贝省的是 CPU 拷贝与上下文切换**，DMA 拷贝永远存在——所以速记是"4 → 2"，不是"4 → 0"。
 
----
+**落地案例**：Kafka 消费者拉消息即 sendfile（Broker 磁盘段文件直发网卡，是其高吞吐支柱之一）；RocketMQ 走 mmap；Nginx `sendfile on;` 同理。
+
 
 ## 第五讲 同步、互斥与死锁
 
@@ -335,7 +394,7 @@ JVM 自带的死锁检测：`jstack` 能直接报 `Found one Java-level deadlock
 
 ## 六、面试高频 Q&A
 
-26 道最高频题的「一句话答案」。先报结论占住阵地，面试官真追问时，按「深入」列展开到对应讲次。
+32 道最高频题的「一句话答案」。先报结论占住阵地，面试官真追问时，按「深入」列展开到对应讲次。
 
 | # | 问题 | 答案（先给结论） | 深入 |
 | --- | --- | --- | --- |
@@ -365,6 +424,12 @@ JVM 自带的死锁检测：`jstack` 能直接报 `Found one Java-level deadlock
 | 24 | 用了 `transferTo` 就一定零拷贝吗？ | 不一定：只有目标是可信 channel 才走 sendfile（`:849`），否则退化（`:901`） | 第四讲 |
 | 25 | 死锁的四个必要条件？ | 互斥、占有且等待、不可抢占、循环等待；破任一条即可预防（最实用：统一加锁顺序） | 第五讲 |
 | 26 | 进程间通信最快的是哪种？ | 共享内存（映射同一块物理页，不拷数据），但要自己配信号量同步 | 第五讲 |
+| 27 | epoll 是异步 IO 吗？ | **不是**：`epoll_wait` 只给"就绪通知"，数据拷贝（`read`）仍要自己做；NIO 准确表述是"同步非阻塞 + 多路复用" | 第四讲 |
+| 28 | epoll 的 LT 和 ET 区别？ | LT 有数据就反复提醒（默认、安全）；ET 只提醒一次，须循环读到 `EAGAIN` 且配非阻塞 fd（Netty 边缘触发） | 第四讲 |
+| 29 | mmap+write 和 sendfile 怎么选？ | mmap 3 拷 4 切、能在用户态改数据；sendfile 3 拷 2 切、数据不进用户态；SG-DMA 下 sendfile 达 0 CPU 拷贝 | 第四讲 |
+| 30 | Kafka 为什么吞吐高？ | 顺序写 + 页缓存 + 消费路径 sendfile 零拷贝 + epoll 多路复用——IO 两大优化全占了 | 第四讲 |
+| 31 | 非阻塞后线程就可以去干别的了？ | 不完整：还得自己轮询（单连接下纯亏，阻塞反而最优）；真实价值是万级连接的前提 + epoll 的原料（EventLoop 的 fd 必须非阻塞） | 第四讲 |
+| 32 | EventLoop 一个线程怎么既等 IO 又干业务？ | 固定循环"睡眠等（timeout 兜底）→ 处理就绪 IO → 清任务队列"；任务必须短，长活丢业务线程池，否则饿死 IO 连累所有连接 | 第四讲 |
 
 ---
 
@@ -380,6 +445,10 @@ JVM 自带的死锁检测：`jstack` 能直接报 `Found one Java-level deadlock
 8. **忘记父进程要回收子进程**：不 `wait()` 就堆僵尸进程（`ProcessImpl.java:342` 的 completion 回调就是干这个的）
 9. **把"减少系统调用"理解成"减少 IO 次数"**：真正该做的是**加大每次 IO 的粒度**（缓冲/批量）
 10. **死锁只说"加锁顺序"**：四条件里任意一条都能破，检测/恢复也是正经策略
+11. **把 epoll 当异步 IO**：就绪通知 ≠ 数据已到用户缓冲，`read` 还得自己调
+12. **ET 模式没循环读到 `EAGAIN`**：剩余数据不再通知，连接"假死"；ET 必须配非阻塞 fd
+13. **以为零拷贝 = 0 次拷贝**：省的是 CPU 拷贝与上下文切换，DMA 拷贝永远在（4→2 而非 4→0）
+14. **在 EventLoop 里跑长任务/阻塞操作**：饿死 IO 并连累它管的全部连接；长活应丢业务线程池
 
 ---
 
@@ -391,6 +460,7 @@ JVM 自带的死锁检测：`jstack` 能直接报 `Found one Java-level deadlock
 | `1 / 5 / 10` | Java 线程优先级 MIN/NORM/MAX（OS 可忽略） | `Thread.java:363/368/373` |
 | `6` | `Thread.State` 枚举值个数 | `Thread.java:2664` |
 | `4 → 2` | 零拷贝把"数据拷贝次数"从 4 降到 2（DMA 直传） | `FileChannelImpl.java:849` |
+| `1024` | select 的 fd 上限（位图 `FD_SETSIZE`），epoll 无此限 | 第四讲 4.3 |
 | `SIGTERM / SIGKILL` | `destroyProcess(false)` / `destroyProcess(true)` | `ProcessHandleImpl.java:332` |
 | `1:1` | Java 线程模型（一个 Java 线程一个内核线程） | `javaThread.cpp:605` |
 
@@ -407,6 +477,10 @@ JVM 自带的死锁检测：`jstack` 能直接报 `Found one Java-level deadlock
 - [ ] 能说出页面置换算法并指出 OS 实际常用的那个
 - [ ] 能解释用户态/内核态切换的三种触发方式与代价
 - [ ] 能对比 select/poll/epoll，并说出 JDK Selector 在 Linux 的实现
+- [ ] 能画出一次网络读的两阶段，说清阻塞/非阻塞与同步/异步分别作用于哪一阶段
+- [ ] 能说出 epoll 三件套与"红黑树 + 就绪链表 + 回调"机制，并区分 LT/ET
+- [ ] 能说清"非阻塞 + 轮询"的排班困境与 EventLoop 的制度化解法
+- [ ] 能列出传统 read+write 的 4 拷贝 4 切换，说清 mmap/write、sendfile、SG-DMA 各省了哪一步
 - [ ] 能说出零拷贝的原理、Java API 与"并非总是零拷贝"的边界
 - [ ] 能背出死锁四条件与四种对策
 
