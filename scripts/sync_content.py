@@ -24,6 +24,7 @@ STATIC_PAGES = [
 # (relpath, slug, date, categories, tags)
 DOCS = [
     ("kafka.md", "kafka", "2026-10-15", ["中间件"], ["Kafka", "源码"]),
+    ("kafka-practice.md", "kafka-practice", "2026-11-11", ["中间件"], ["Kafka", "调优", "参数", "运维", "实战"]),
     ("nacos.md", "nacos", "2026-10-15", ["中间件"], ["Nacos", "源码"]),
     ("springboot.md", "springboot", "2026-10-15", ["Spring"], ["Spring Boot", "源码"]),
     ("springmvc.md", "springmvc", "2026-10-15", ["Spring"], ["Spring MVC", "源码"]),

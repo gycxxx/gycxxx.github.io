@@ -2408,6 +2408,206 @@
   "c": "Java"
  },
  {
+  "q": "为什么需要消息队列？",
+  "a": "解耦 + 削峰填谷 + 异步，代价是最终一致与链路变长；强一致短链路场景不该上",
+  "d": "第一讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "Kafka 整体架构？",
+  "a": "Producer/Broker/Consumer/Topic 四角色，Topic 是逻辑概念、Partition 是物理单元",
+  "d": "第二讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "Partition 是什么？",
+  "a": "逻辑 Topic 的物理分片，对应 Broker 上一个目录，顺序追加写 Segment，分区内 offset 递增",
+  "d": "第三讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "副本有哪两种角色？",
+  "a": "Leader 处理全部读写，Follower 异步拉取日志仅作冗余",
+  "d": "第四讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "ISR 是什么？有何作用？",
+  "a": "AR 中与 Leader 同步的副本子集；两个作用：Leader 选举的唯一候选池 + 决定 HW 取最慢副本的 LEO",
+  "d": "第五讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "怎么保证消息不丢失？",
+  "a": "三端协同：生产者 acks=all+幂等、服务端 RF=3+min.insync.replicas=2+禁脏选举、消费者关自动提交改手动提交",
+  "d": "第六讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "为什么 acks=all 还会丢消息？",
+  "a": "前提是 ISR 里有足够副本。若 ISR 缩到 1 而 min.insync.replicas=2，写入本就被拒绝；若副本都写成功但都未刷盘，机器掉电仍可能丢",
+  "d": "第六讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "Kafka 为什么快？",
+  "a": "磁盘顺序写 + 页缓存 + sendfile 零拷贝 + 攒批压缩，四者叠加",
+  "d": "第三、四讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "零拷贝怎么实现的？",
+  "a": "PlaintextTransportLayer.transferFrom 调 FileChannel.transferTo；SSL 通道因需加密走不了快路径",
+  "d": "第三讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "什么是消费者组？",
+  "a": "消费端逻辑容器；同组内分区独占（队列模式），不同组各存位点各收一份（广播模式）",
+  "d": "第五讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "什么是 Rebalance？",
+  "a": "成员或分区变化后重新协商分配，期间全组暂停消费（Stop The World），频繁触发是延迟元凶",
+  "d": "第五讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "怎么减少 Rebalance？",
+  "a": "CooperativeStickyAssignor 增量分配 + 调大 max.poll.interval.ms + group.instance.id 静态成员",
+  "d": "第五讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "Kafka 是推还是拉？",
+  "a": "Pull；长轮询（fetch.max.wait.ms 默认 500ms）避免空轮询，激活权在消费者",
+  "d": "第五讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "怎么保证消息顺序？",
+  "a": "发送端用相同业务 key 定向到同一分区；Kafka 只保证单分区内有序",
+  "d": "第四讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "怎么避免重复消费？",
+  "a": "at-least-once 语义下重复是常态，靠业务幂等：唯一索引捕获、状态机条件更新、去重表",
+  "d": "第六讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "消息堆积怎么治理？",
+  "a": "先扩容消费者（不超分区数）→ 再扩分区（注意顺序断裂）→ 临时 Topic 分流 → 从源头限流；盯 consumer lag 指标",
+  "d": "第六讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "为什么换成 KRaft？",
+  "a": "元数据变成内部 Topic 的 Raft 日志，去掉 ZK 的运维负担与扩展瓶颈；Controller Quorum 选举，Standby 持有快照秒级接管",
+  "d": "第二讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "`acks=all` 就一定不丢吗？",
+  "a": "不一定。acks=all 只保证 ISR 内副本都确认；若这些副本都未 fsync 就掉电，仍可能丢。需结合副本数跨机架部署",
+  "d": "第六讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "`min.insync.replicas=2` 的真实语义？",
+  "a": "是\"ISR 少于 2 就拒绝写\"，不是\"两个副本写成功即可\"；ISR 缩小时写入直接失败",
+  "d": "第六讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "4.x 的默认值和 2.x 有何不同？",
+  "a": "acks 默认已是 all、enable.idempotence 默认已是 true；enable.auto.commit 仍默认 true 但用默认 group.id 时强制 false",
+  "d": "本篇",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "消费者 `poll()` 返回 0 条说明什么？",
+  "a": "没有新数据（长轮询超时返回），或数据被 auto.offset.reset 跳过了；先看 lag 再判断",
+  "d": "第五讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "分区数能减少吗？",
+  "a": "不能。分区只能增不能减，历史数据归属不可变",
+  "d": "第三讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "消费线程数多于分区数会怎样？",
+  "a": "多出的线程分不到分区，空转拉心跳，浪费资源；并行度上限是分区数",
+  "d": "第五讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "怎么监控 Kafka 健康度？",
+  "a": "consumer lag（堆积）、under-replicated partitions（副本缩水）、ISR shrink/expand 频率（集群稳定性）、请求队列与 P99 延迟",
+  "d": "第六讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
+  "q": "临时 Topic 分流法的风险？",
+  "a": "破坏原 key→分区映射导致顺序断裂；两套位点管理复杂；需额外保证转发不丢",
+  "d": "第六讲",
+  "s": "kafka-practice",
+  "t": "Kafka 实战与参数手册",
+  "c": "中间件"
+ },
+ {
   "q": "ISR 与 HW/LEO 是什么关系？",
   "a": "ISR 是与 leader 保持同步的副本集合，follower 追平后 leader 才推进 HW；消费上界按隔离级别分别取 LEO/HW/LSO",
   "d": "第一讲、第三讲",
